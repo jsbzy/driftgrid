@@ -17,6 +17,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ client: string; project: string }> }
 ) {
+  if (process.env.VERCEL) {
+    return NextResponse.json({ error: 'Read-only in production' }, { status: 403 });
+  }
   const { client, project } = await params;
   const manifest = await request.json();
   await writeManifest(client, project, manifest);

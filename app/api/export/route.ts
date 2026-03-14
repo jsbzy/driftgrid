@@ -27,6 +27,14 @@ export async function POST(request: NextRequest) {
   const height: number | 'auto' = typeof preset?.height === 'number' ? preset.height : 'auto';
   const projectDir = path.join(process.cwd(), 'projects', client, project);
 
+  // Block non-HTML exports on Vercel (requires Playwright)
+  if (process.env.VERCEL && format !== 'html') {
+    return NextResponse.json(
+      { error: 'PDF/PNG/PPTX exports are only available locally' },
+      { status: 403 }
+    );
+  }
+
   // Raw HTML download
   if (format === 'html') {
     if (!versionId) {
