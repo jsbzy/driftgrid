@@ -92,8 +92,6 @@ export function ExportButton({
             This version
           </div>
           <DropdownItem label="PDF" onClick={() => doExport('pdf')} />
-          <DropdownItem label="PNG" onClick={() => doExport('png')} />
-          <DropdownItem label="PPTX" onClick={() => doExport('pptx')} />
           <DropdownItem label="HTML" onClick={() => doExport('html')} />
 
           {workingSets.length > 0 && (
@@ -113,12 +111,6 @@ export function ExportButton({
                       className="text-[10px] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
                     >
                       PDF
-                    </button>
-                    <button
-                      onClick={() => doExport('pptx', ws.id)}
-                      className="text-[10px] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
-                    >
-                      PPTX
                     </button>
                   </div>
                 </div>
