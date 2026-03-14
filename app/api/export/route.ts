@@ -123,6 +123,20 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  if (format === 'pptx') {
+    const concept = manifest.concepts.find(c => c.versions.some(v => v.id === versionId));
+    const buffer = await exportPptx(
+      [{ label: concept?.label || 'Slide', htmlPath, width, height }],
+      manifest.project.name
+    );
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'Content-Disposition': `attachment; filename="${client}-${project}.pptx"`,
+      },
+    });
+  }
+
   // Single PDF
   const buffer = await exportPdf(htmlPath, width, height);
   return new NextResponse(new Uint8Array(buffer), {

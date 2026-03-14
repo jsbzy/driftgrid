@@ -43,7 +43,9 @@ export function GridView({
   mode,
 }: GridViewProps) {
   const maxVersions = Math.max(...concepts.map(c => c.versions.length));
-  const gridCols = `48px repeat(${concepts.length}, 1fr)`;
+  const gridCols = concepts.length <= 2
+    ? `48px repeat(${concepts.length}, minmax(0, 480px))`
+    : `48px repeat(${concepts.length}, 1fr)`;
   const hasSelections = selections.size > 0;
 
   // Build the thumbnail row for a given set of selections

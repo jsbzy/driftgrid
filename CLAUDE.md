@@ -129,6 +129,17 @@ Rules:
 - Set reasonable `data-drift-maxlen` values
 - These enable clients to suggest copy edits in the review view
 
+## Importing Existing HTML Designs
+
+When porting an existing HTML file into a Drift project:
+
+1. **Strip all multi-version scaffolding** — version switchers, JS navigation, external scripts (Figma capture, PDF gen, etc.). The result must be a clean, static, single-page HTML file.
+2. **Adapt CSS to the target canvas format.** Do NOT copy source CSS verbatim. The output must match the Drift canvas boilerplate:
+   - For locked formats (`landscape-16-9`, `a4-portrait`): `html, body { height: 100vh; overflow: hidden; }`. Never add `height: auto`, `overflow: auto/visible`, or `html.scrollable` overrides.
+   - For scrollable formats (`desktop`, `tablet`, `mobile`): use the scrollable boilerplate above.
+3. **Remove wrapper classes from the multi-version system** (e.g. `.page`, `.active`, `.v4`). Content should render directly in `<body>` without requiring a specific class to be visible. If the source uses `.page { display: none }` / `.page.active { display: flex }`, refactor so content is always visible.
+4. **Test rendering** — the design must look identical to the source when viewed in the Drift viewer at the correct canvas dimensions.
+
 ## Version Workflow
 
 - **"Edit this version"** → modify the HTML file in place, no new file
@@ -142,7 +153,7 @@ Always:
 
 ## Manifest Schema
 
-See `projects/recovryai/one-pager/manifest.json` for a working example. Key fields:
+Key fields:
 - `project`: name, slug, client, canvas, created, links
 - `concepts[]`: id, label, description, position, visible, versions[]
 - `versions[]`: id, number, file, parentId, changelog, visible, starred, created, thumbnail

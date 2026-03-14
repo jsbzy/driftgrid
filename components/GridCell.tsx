@@ -49,8 +49,9 @@ export function GridCell({
             draggable={false}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-[var(--background)] text-[var(--border)] text-xs">
-            v{versionNumber}
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[var(--background)]">
+            <span className="text-xs font-medium text-[var(--foreground)] opacity-60">{conceptLabel}</span>
+            <span className="text-[10px] text-[var(--muted)]">v{versionNumber}</span>
           </div>
         )}
       </div>

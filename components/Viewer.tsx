@@ -270,8 +270,12 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   return (
     <div className="h-screen flex flex-col bg-white">
       {topbar}
-      <div className="flex-1 min-h-0">
-        <HtmlFrame src={htmlSrc} />
+      <div className="flex-1 min-h-0 p-4">
+        <HtmlFrame
+            src={htmlSrc}
+            canvasWidth={typeof preset?.width === 'number' ? preset.width : undefined}
+            canvasHeight={typeof preset?.height === 'number' ? preset.height : undefined}
+          />
       </div>
       {gridVisible && (
         <NavigationGrid
