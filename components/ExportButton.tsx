@@ -49,7 +49,12 @@ export function ExportButton({
           workingSetId,
         }),
       });
-      if (!res.ok) throw new Error('Export failed');
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        const msg = data?.error || 'Export failed';
+        alert(msg);
+        return;
+      }
 
       const blob = await res.blob();
       const disposition = res.headers.get('Content-Disposition') || '';
@@ -88,6 +93,7 @@ export function ExportButton({
           </div>
           <DropdownItem label="PDF" onClick={() => doExport('pdf')} />
           <DropdownItem label="PNG" onClick={() => doExport('png')} />
+          <DropdownItem label="PPTX" onClick={() => doExport('pptx')} />
           <DropdownItem label="HTML" onClick={() => doExport('html')} />
 
           {workingSets.length > 0 && (
