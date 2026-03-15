@@ -1,19 +1,15 @@
 'use client';
 
 /**
- * EditableText — handles client-side editable text in the viewer.
- * This component will be used in Phase 4 when client edit tracking is implemented.
- * For now, it's a placeholder that documents the data-drift-editable contract.
+ * EditableText — DEPRECATED stub.
  *
- * HTML designs use these attributes:
- *   data-drift-editable="fieldName"  — marks element as editable
- *   data-drift-maxlen="60"           — max character count
- *
- * In client view mode, these elements become contenteditable.
- * Edits are saved to manifest.clientEdits[].
+ * Client copy editing is now handled via script injection in the iframe.
+ * See: lib/editScript.ts (injected script)
+ *      lib/hooks/useClientEdits.ts (state + localStorage)
+ *      components/EditToggle.tsx (topbar toggle)
+ *      components/HtmlFrame.tsx (postMessage bridge)
  */
 
 export function EditableText() {
-  // Phase 4 implementation
   return null;
 }

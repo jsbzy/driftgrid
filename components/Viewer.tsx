@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import type { Manifest, ViewMode, WorkingSet, WorkingSetSelection } from '@/lib/types';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { filterVisibleManifest } from '@/lib/filterManifest';
 import { ViewerTopbar } from './ViewerTopbar';
-import { HtmlFrame } from './HtmlFrame';
+import { HtmlFrame, type HtmlFrameHandle } from './HtmlFrame';
 import { NavigationGrid } from './NavigationGrid';
 import { GridView } from './GridView';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { useKeyboardNav } from '@/lib/hooks/useKeyboardNav';
+import { useClientEdits } from '@/lib/hooks/useClientEdits';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -176,6 +177,16 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     setActiveWorkingSetId(null);
   }, []);
 
+  const isClientMode = mode === 'client';
+  const clientEdits = useClientEdits({
+    client,
+    project,
+    versionId: currentVersion?.id ?? '',
+    enabled: isClientMode,
+  });
+  const htmlFrameRef = useRef<HtmlFrameHandle>(null);
+  const showEdits = clientEdits.viewEdited && clientEdits.hasEdits && !clientEdits.editMode;
+
   useKeyboardNav({
     conceptIndex,
     versionIndex,
@@ -231,6 +242,48 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       viewMode={viewMode}
       workingSets={filtered.workingSets}
       canvasLabel={preset?.label}
+      isClientMode={isClientMode}
+      editMode={clientEdits.editMode}
+      onToggleEdit={() => {
+        const entering = !clientEdits.editMode;
+        clientEdits.setEditMode(entering);
+        if (entering) clientEdits.setViewEdited(true);
+      }}
+      editCount={clientEdits.editCount}
+      hasEdits={clientEdits.hasEdits}
+      viewEdited={clientEdits.viewEdited}
+      onToggleView={clientEdits.setViewEdited}
+      onExportPdf={async () => {
+        const html = htmlFrameRef.current?.getHtml();
+        if (!html) return;
+
+        // Try server-side PDF generation (Playwright)
+        try {
+          const res = await fetch('/api/export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client, project, format: 'pdf', htmlContent: html }),
+          });
+          if (res.ok) {
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${project}-alt.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+            return;
+          }
+        } catch {}
+
+        // Fallback: open in new tab for browser print-to-PDF
+        const printWin = window.open('', '_blank');
+        if (printWin) {
+          printWin.document.write(html);
+          printWin.document.close();
+          printWin.addEventListener('load', () => printWin.print());
+        }
+      }}
     />
   );
 
@@ -272,9 +325,15 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       {topbar}
       <div className="flex-1 min-h-0 p-4">
         <HtmlFrame
+            ref={htmlFrameRef}
             src={htmlSrc}
             canvasWidth={typeof preset?.width === 'number' ? preset.width : undefined}
             canvasHeight={typeof preset?.height === 'number' ? preset.height : undefined}
+            editMode={clientEdits.editMode}
+            showEdits={showEdits}
+            hasEdits={clientEdits.hasEdits}
+            savedEdits={clientEdits.edits}
+            onEditsChange={clientEdits.handleEditsChange}
           />
       </div>
       {gridVisible && (

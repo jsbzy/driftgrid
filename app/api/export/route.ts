@@ -7,12 +7,13 @@ import { exportPdf, mergePdfs } from '@/lib/export-pdf';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { client, project, format, versionId, workingSetId } = body as {
+  const { client, project, format, versionId, workingSetId, htmlContent } = body as {
     client: string;
     project: string;
     format: 'pdf' | 'html';
     versionId?: string;
     workingSetId?: string;
+    htmlContent?: string;
   };
 
   const manifest = await getManifest(client, project);
@@ -46,6 +47,31 @@ export async function POST(request: NextRequest) {
 
   // PDF export
   if (format === 'pdf') {
+    // Edited HTML content — write temp file, generate PDF, clean up
+    if (htmlContent) {
+      if (process.env.VERCEL) {
+        return NextResponse.json(
+          { error: 'PDF generation not available in production. Use browser print.' },
+          { status: 501 }
+        );
+      }
+      const tmpDir = path.join(process.cwd(), '.tmp');
+      await fs.mkdir(tmpDir, { recursive: true });
+      const tmpFile = path.join(tmpDir, `export-${Date.now()}.html`);
+      try {
+        await fs.writeFile(tmpFile, htmlContent, 'utf-8');
+        const buffer = await exportPdf(tmpFile, width, height);
+        return new NextResponse(new Uint8Array(buffer), {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${client}-${project}-alt.pdf"`,
+          },
+        });
+      } finally {
+        await fs.unlink(tmpFile).catch(() => {});
+      }
+    }
+
     // Single version
     if (versionId && !workingSetId) {
       const version = manifest.concepts.flatMap(c => c.versions).find(v => v.id === versionId);

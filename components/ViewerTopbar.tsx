@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { WorkingSet } from '@/lib/types';
 import { ExportButton } from './ExportButton';
+import { EditToggle } from './EditToggle';
 
 interface ViewerTopbarProps {
   client: string;
@@ -16,6 +17,14 @@ interface ViewerTopbarProps {
   viewMode: 'fullscreen' | 'grid';
   workingSets: WorkingSet[];
   canvasLabel?: string;
+  isClientMode?: boolean;
+  editMode?: boolean;
+  onToggleEdit?: () => void;
+  editCount?: number;
+  hasEdits?: boolean;
+  viewEdited?: boolean;
+  onToggleView?: (edited: boolean) => void;
+  onExportPdf?: () => void;
 }
 
 export function ViewerTopbar({
@@ -30,6 +39,14 @@ export function ViewerTopbar({
   viewMode,
   workingSets,
   canvasLabel,
+  isClientMode,
+  editMode,
+  onToggleEdit,
+  editCount,
+  hasEdits,
+  viewEdited,
+  onToggleView,
+  onExportPdf,
 }: ViewerTopbarProps) {
   return (
     <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--border)] bg-[var(--background)] shrink-0 z-10">
@@ -58,14 +75,26 @@ export function ViewerTopbar({
         <span>? for shortcuts</span>
       </div>
 
-      {/* Right: export · concept label · version */}
+      {/* Right: edit toggle or export · concept label · version */}
       <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
-        <ExportButton
-          client={clientSlug}
-          project={project}
-          versionId={versionId}
-          workingSets={workingSets}
-        />
+        {isClientMode && onToggleEdit && onToggleView ? (
+          <EditToggle
+            editMode={editMode ?? false}
+            onToggleEdit={onToggleEdit}
+            editCount={editCount ?? 0}
+            hasEdits={hasEdits ?? false}
+            viewEdited={viewEdited ?? false}
+            onToggleView={onToggleView}
+            onExportPdf={onExportPdf}
+          />
+        ) : (
+          <ExportButton
+            client={clientSlug}
+            project={project}
+            versionId={versionId}
+            workingSets={workingSets}
+          />
+        )}
         <span className="text-[var(--border)]">·</span>
         <span>
           <span className="font-medium text-[var(--foreground)]">{conceptLabel}</span>
