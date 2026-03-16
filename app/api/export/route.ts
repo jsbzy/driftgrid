@@ -25,9 +25,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const preset = CANVAS_PRESETS[manifest.project.canvas];
-  const width = typeof preset?.width === 'number' ? preset.width : 1440;
-  const height: number | 'auto' = typeof preset?.height === 'number' ? preset.height : 'auto';
+  // Resolve canvas dimensions — handle both preset strings and freeform objects
+  const canvas = manifest.project.canvas;
+  let width: number;
+  let height: number | 'auto';
+  if (typeof canvas === 'object' && canvas !== null) {
+    // Freeform canvas with explicit dimensions: { type: "freeform", width: N, height: N }
+    width = (canvas as any).width ?? 1440;
+    height = (canvas as any).height ?? 'auto';
+  } else {
+    const preset = CANVAS_PRESETS[canvas];
+    width = typeof preset?.width === 'number' ? preset.width : 1440;
+    height = typeof preset?.height === 'number' ? preset.height : 'auto';
+  }
   const projectDir = path.join(process.cwd(), 'projects', client, project);
 
   // Raw HTML download
