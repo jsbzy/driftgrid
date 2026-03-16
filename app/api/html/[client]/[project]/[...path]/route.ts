@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import path from 'path';
+import { promises as fs } from 'fs';
 import { getHtmlFile } from '@/lib/manifest';
 import { getEditScript } from '@/lib/editScript';
+
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.css': 'text/css',
+  '.js': 'application/javascript',
+};
 
 export async function GET(
   request: NextRequest,
@@ -8,6 +22,29 @@ export async function GET(
 ) {
   const { client, project, path: pathParts } = await params;
   const filePath = pathParts.join('/');
+  const ext = path.extname(filePath).toLowerCase();
+
+  // Non-HTML assets: serve directly from project directory
+  if (ext && ext !== '.html') {
+    const mime = MIME_TYPES[ext];
+    if (!mime) {
+      return new NextResponse('Unsupported file type', { status: 415 });
+    }
+    const fullPath = path.join(process.cwd(), 'projects', client, project, filePath);
+    try {
+      const data = await fs.readFile(fullPath);
+      return new NextResponse(data, {
+        headers: {
+          'Content-Type': mime,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
+    } catch {
+      return new NextResponse('Not found', { status: 404 });
+    }
+  }
+
+  // HTML files
   let html = await getHtmlFile(client, project, filePath);
   if (!html) {
     return new NextResponse('Not found', { status: 404 });
