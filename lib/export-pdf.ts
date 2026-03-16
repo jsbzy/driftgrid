@@ -1,5 +1,24 @@
-import { chromium } from 'playwright';
 import { PDFDocument } from 'pdf-lib';
+
+async function launchBrowser(width: number, height: number) {
+  if (process.env.VERCEL) {
+    // Production: use @sparticuz/chromium + puppeteer-core
+    const chromium = (await import('@sparticuz/chromium')).default;
+    const puppeteer = (await import('puppeteer-core')).default;
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: { width, height, deviceScaleFactor: 2 },
+      executablePath: await chromium.executablePath(),
+      headless: 'shell' as const,
+    });
+    return { browser, type: 'puppeteer' as const };
+  } else {
+    // Local dev: use Playwright
+    const { chromium } = await import('playwright');
+    const browser = await chromium.launch();
+    return { browser, type: 'playwright' as const };
+  }
+}
 
 /**
  * Export a single HTML file as a PDF.
@@ -10,47 +29,97 @@ export async function exportPdf(
   width: number,
   height: number | 'auto'
 ): Promise<Buffer> {
-  const browser = await chromium.launch();
-  const page = await browser.newPage({
-    viewport: { width, height: height === 'auto' ? 900 : height },
-    deviceScaleFactor: 2,
-  });
-  await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle' });
+  const { browser, type } = await launchBrowser(width, height === 'auto' ? 900 : height);
 
-  // Get actual content dimensions
-  const dimensions = await page.evaluate(() => ({
-    width: document.documentElement.scrollWidth,
-    height: document.documentElement.scrollHeight,
-  }));
+  if (type === 'puppeteer') {
+    const page = await browser.newPage();
+    await page.setViewport({ width, height: height === 'auto' ? 900 : height, deviceScaleFactor: 2 });
+    await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle0' });
+    const dimensions = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
+    }));
+    const pxHeight = height === 'auto' ? dimensions.height : height;
+    const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
+    const imgPage = await browser.newPage();
+    const pngBase64 = Buffer.from(pngBuffer).toString('base64');
+    await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`);
+    await imgPage.setViewport({ width, height: pxHeight as number });
+    const pdfBuffer = await imgPage.pdf({
+      width: `${width}px`,
+      height: `${pxHeight}px`,
+      printBackground: true,
+      margin: { top: 0, right: 0, bottom: 0, left: 0 },
+    });
+    await browser.close();
+    return Buffer.from(pdfBuffer);
+  } else {
+    // Playwright path
+    const page = await browser.newPage({ viewport: { width, height: height === 'auto' ? 900 : height }, deviceScaleFactor: 2 });
+    await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle' });
+    const dimensions = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
+    }));
+    const pxHeight = height === 'auto' ? dimensions.height : height;
+    const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
+    const imgPage = await browser.newPage();
+    const pngBase64 = Buffer.from(pngBuffer).toString('base64');
+    await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`, { waitUntil: 'load' });
+    const pdfBuffer = await imgPage.pdf({ width: `${width}px`, height: `${pxHeight}px`, printBackground: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } });
+    await browser.close();
+    return Buffer.from(pdfBuffer);
+  }
+}
 
-  const pxWidth = height === 'auto' ? width : width;
-  const pxHeight = height === 'auto' ? dimensions.height : height;
+/**
+ * Export HTML content string as PDF (for edited versions).
+ */
+export async function exportPdfFromHtml(
+  htmlContent: string,
+  width: number,
+  height: number | 'auto'
+): Promise<Buffer> {
+  const { browser, type } = await launchBrowser(width, height === 'auto' ? 900 : height);
 
-  // Screenshot the full content
-  const pngBuffer = await page.screenshot({
-    type: 'png',
-    fullPage: height === 'auto',
-  });
-
-  // Create a new page with the screenshot embedded, then PDF it
-  const imgPage = await browser.newPage();
-  const pngBase64 = Buffer.from(pngBuffer).toString('base64');
-  await imgPage.setContent(`
-    <html><body style="margin:0;padding:0;">
-      <img src="data:image/png;base64,${pngBase64}"
-           style="display:block;width:${pxWidth}px;height:${pxHeight}px;" />
-    </body></html>
-  `, { waitUntil: 'load' });
-
-  const pdfBuffer = await imgPage.pdf({
-    width: `${pxWidth}px`,
-    height: `${pxHeight}px`,
-    printBackground: true,
-    margin: { top: 0, right: 0, bottom: 0, left: 0 },
-  });
-
-  await browser.close();
-  return Buffer.from(pdfBuffer);
+  if (type === 'puppeteer') {
+    const page = await browser.newPage();
+    await page.setViewport({ width, height: height === 'auto' ? 900 : height, deviceScaleFactor: 2 });
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    const dimensions = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
+    }));
+    const pxHeight = height === 'auto' ? dimensions.height : height;
+    const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
+    const imgPage = await browser.newPage();
+    const pngBase64 = Buffer.from(pngBuffer).toString('base64');
+    await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`);
+    await imgPage.setViewport({ width, height: pxHeight as number });
+    const pdfBuffer = await imgPage.pdf({
+      width: `${width}px`,
+      height: `${pxHeight}px`,
+      printBackground: true,
+      margin: { top: 0, right: 0, bottom: 0, left: 0 },
+    });
+    await browser.close();
+    return Buffer.from(pdfBuffer);
+  } else {
+    const page = await browser.newPage({ viewport: { width, height: height === 'auto' ? 900 : height }, deviceScaleFactor: 2 });
+    await page.setContent(htmlContent, { waitUntil: 'networkidle' });
+    const dimensions = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
+    }));
+    const pxHeight = height === 'auto' ? dimensions.height : height;
+    const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
+    const imgPage = await browser.newPage();
+    const pngBase64 = Buffer.from(pngBuffer).toString('base64');
+    await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`, { waitUntil: 'load' });
+    const pdfBuffer = await imgPage.pdf({ width: `${width}px`, height: `${pxHeight}px`, printBackground: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } });
+    await browser.close();
+    return Buffer.from(pdfBuffer);
+  }
 }
 
 /**

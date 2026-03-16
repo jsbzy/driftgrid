@@ -67,12 +67,38 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     [concepts]
   );
 
+  // On manifest load, apply hash to jump to the right concept/version
+  useEffect(() => {
+    if (!concepts.length) return;
+    const hash = window.location.hash.replace('#', '');
+    if (!hash) return;
+    const [conceptId, vStr] = hash.split('/');
+    const ci = concepts.findIndex(c => c.id === conceptId);
+    if (ci < 0) return;
+    let vi = 0;
+    if (vStr) {
+      const vNum = parseInt(vStr.replace('v', ''), 10);
+      const found = concepts[ci].versions.findIndex(v => v.number === vNum);
+      if (found >= 0) vi = found;
+    }
+    setConceptIndex(ci);
+    setVersionIndex(vi);
+    setViewMode('fullscreen');
+    setGridVisible(false);
+  }, [concepts.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleNavigate = useCallback(
     (ci: number, vi: number) => {
       setConceptIndex(ci);
       setVersionIndex(vi);
+      // Update hash to enable deep-linking
+      const concept = concepts[ci];
+      const version = concept?.versions[vi];
+      if (concept && version) {
+        window.history.replaceState(null, '', `#${concept.id}/v${version.number}`);
+      }
     },
-    []
+    [concepts]
   );
 
   const handleToggleGrid = useCallback(() => {
@@ -103,6 +129,11 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         setConceptIndex(ci);
         setVersionIndex(vi);
         setViewMode('fullscreen');
+        const concept = concepts[ci];
+        const version = concept?.versions[vi];
+        if (concept && version) {
+          window.history.replaceState(null, '', `#${concept.id}/v${version.number}`);
+        }
       }
     },
     [selectMode, concepts]
@@ -253,37 +284,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       hasEdits={clientEdits.hasEdits}
       viewEdited={clientEdits.viewEdited}
       onToggleView={clientEdits.setViewEdited}
-      onExportPdf={async () => {
-        const html = htmlFrameRef.current?.getHtml();
-        if (!html) return;
-
-        // Try server-side PDF generation (Playwright)
-        try {
-          const res = await fetch('/api/export', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ client, project, format: 'pdf', htmlContent: html }),
-          });
-          if (res.ok) {
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${project}-alt.pdf`;
-            a.click();
-            URL.revokeObjectURL(url);
-            return;
-          }
-        } catch {}
-
-        // Fallback: open in new tab for browser print-to-PDF
-        const printWin = window.open('', '_blank');
-        if (printWin) {
-          printWin.document.write(html);
-          printWin.document.close();
-          printWin.addEventListener('load', () => printWin.print());
-        }
-      }}
+      onExportPdf={() => htmlFrameRef.current?.exportPdf(`${project}-alt.pdf`, client, project)}
     />
   );
 

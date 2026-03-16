@@ -15,6 +15,7 @@ interface HtmlFrameProps {
 
 export interface HtmlFrameHandle {
   getHtml: () => string | null;
+  exportPdf: (filename: string, client: string, project: string) => Promise<void>;
 }
 
 export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
@@ -105,12 +106,35 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       return () => observer.disconnect();
     }, [canvasWidth, canvasHeight]);
 
-    // Expose method to get the iframe's current HTML (with edits baked in)
+    // Expose methods for export
     useImperativeHandle(ref, () => ({
       getHtml: () => {
         const doc = iframeRef.current?.contentDocument;
         if (!doc) return null;
         return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+      },
+      exportPdf: async (filename: string, client: string, project: string) => {
+        const doc = iframeRef.current?.contentDocument;
+        if (!doc) return;
+        const html = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+
+        const res = await fetch('/api/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client, project, format: 'pdf', htmlContent: html }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          alert(data?.error || 'Export failed');
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
       },
     }));
 

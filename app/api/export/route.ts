@@ -3,7 +3,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { getManifest } from '@/lib/manifest';
 import { CANVAS_PRESETS } from '@/lib/constants';
-import { exportPdf, mergePdfs } from '@/lib/export-pdf';
+import { exportPdf, exportPdfFromHtml, mergePdfs } from '@/lib/export-pdf';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -47,29 +47,15 @@ export async function POST(request: NextRequest) {
 
   // PDF export
   if (format === 'pdf') {
-    // Edited HTML content — write temp file, generate PDF, clean up
+    // Edited HTML content — render directly from string
     if (htmlContent) {
-      if (process.env.VERCEL) {
-        return NextResponse.json(
-          { error: 'PDF generation not available in production. Use browser print.' },
-          { status: 501 }
-        );
-      }
-      const tmpDir = path.join(process.cwd(), '.tmp');
-      await fs.mkdir(tmpDir, { recursive: true });
-      const tmpFile = path.join(tmpDir, `export-${Date.now()}.html`);
-      try {
-        await fs.writeFile(tmpFile, htmlContent, 'utf-8');
-        const buffer = await exportPdf(tmpFile, width, height);
-        return new NextResponse(new Uint8Array(buffer), {
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="${client}-${project}-alt.pdf"`,
-          },
-        });
-      } finally {
-        await fs.unlink(tmpFile).catch(() => {});
-      }
+      const buffer = await exportPdfFromHtml(htmlContent, width, height);
+      return new NextResponse(new Uint8Array(buffer), {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${client}-${project}-alt.pdf"`,
+        },
+      });
     }
 
     // Single version

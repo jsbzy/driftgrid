@@ -66,13 +66,31 @@ export function EditToggle({
         </>
       )}
 
-      {/* Edit mode toggle — always visible */}
+      {/* Edit mode toggle — label + mini switch */}
       <button
         onClick={onToggleEdit}
-        className="transition-colors hover:opacity-80"
+        className="flex items-center gap-1.5 transition-colors hover:opacity-80"
         style={{ color: editMode ? 'rgb(20, 184, 166)' : 'var(--muted)' }}
       >
-        {editMode ? 'Edit Mode' : 'Edit'}
+        <span>Edit Mode</span>
+        {/* Mini toggle switch */}
+        <span
+          className="relative inline-flex items-center rounded-full transition-colors"
+          style={{
+            width: 24,
+            height: 13,
+            backgroundColor: editMode ? 'rgb(20, 184, 166)' : 'rgba(0,0,0,0.15)',
+          }}
+        >
+          <span
+            className="inline-block rounded-full bg-white transition-transform"
+            style={{
+              width: 9,
+              height: 9,
+              transform: editMode ? 'translateX(13px)' : 'translateX(2px)',
+            }}
+          />
+        </span>
       </button>
 
       {/* Export PDF — always visible, disabled during edit mode */}

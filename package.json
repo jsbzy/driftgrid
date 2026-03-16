@@ -13,9 +13,11 @@
     "build-exports": "npx tsx scripts/build-exports.ts"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^143.0.4",
     "next": "16.1.6",
     "pdf-lib": "^1.17.1",
     "pptxgenjs": "^4.0.1",
+    "puppeteer-core": "^24.39.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "swr": "^2.4.1"
