@@ -24,7 +24,7 @@ interface ViewerTopbarProps {
   hasEdits?: boolean;
   viewEdited?: boolean;
   onToggleView?: (edited: boolean) => void;
-  onExportPdf?: () => void;
+  onExportPdf?: () => Promise<void> | void;
 }
 
 export function ViewerTopbar({
@@ -50,7 +50,7 @@ export function ViewerTopbar({
 }: ViewerTopbarProps) {
   return (
     <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--border)] bg-[var(--background)] shrink-0 z-10">
-      {/* Left: Drift · client · project · canvas */}
+      {/* Left: Drift · client · project · concept · version */}
       <div className="flex items-center gap-2.5 text-xs">
         <Link
           href="/"
@@ -58,16 +58,14 @@ export function ViewerTopbar({
         >
           Drift
         </Link>
-        <span className="text-[var(--border)]">·</span>
+        <span className="text-[var(--border)]">&middot;</span>
         <span className="text-[var(--muted)]">{client}</span>
-        <span className="text-[var(--border)]">·</span>
+        <span className="text-[var(--border)]">&middot;</span>
         <span className="font-medium">{projectName}</span>
-        {canvasLabel && (
-          <>
-            <span className="text-[var(--border)]">·</span>
-            <span className="text-[10px] text-[var(--border)]">{canvasLabel}</span>
-          </>
-        )}
+        <span className="text-[var(--border)]">&middot;</span>
+        <span className="font-medium text-[var(--foreground)]">{conceptLabel}</span>
+        <span className="text-[var(--border)]">&middot;</span>
+        <span className="text-[var(--muted)]">v{versionNumber}</span>
       </div>
 
       {/* Center: hints */}
@@ -75,7 +73,7 @@ export function ViewerTopbar({
         <span>? for shortcuts</span>
       </div>
 
-      {/* Right: edit toggle or export · concept label · version */}
+      {/* Right: edit controls · canvas label */}
       <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
         {isClientMode && onToggleEdit && onToggleView ? (
           <EditToggle
@@ -95,12 +93,12 @@ export function ViewerTopbar({
             workingSets={workingSets}
           />
         )}
-        <span className="text-[var(--border)]">·</span>
-        <span>
-          <span className="font-medium text-[var(--foreground)]">{conceptLabel}</span>
-          <span className="mx-1.5 text-[var(--border)]">·</span>
-          v{versionNumber}
-        </span>
+        {canvasLabel && (
+          <>
+            <span className="text-[var(--border)]">&middot;</span>
+            <span className="text-[10px] text-[var(--border)]">{canvasLabel}</span>
+          </>
+        )}
       </div>
     </div>
   );

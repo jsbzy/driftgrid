@@ -75,7 +75,7 @@ export function EditToggle({
         className="flex items-center gap-1.5 transition-colors hover:opacity-80"
         style={{ color: editMode ? 'rgb(20, 184, 166)' : 'var(--muted)' }}
       >
-        <span>{editMode ? 'Edit Mode' : 'Edit'}</span>
+        <span>Edit Mode</span>
         {/* Mini toggle switch */}
         <span
           className="relative inline-flex items-center rounded-full transition-colors"
