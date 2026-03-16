@@ -5,6 +5,9 @@ import { getManifest } from '@/lib/manifest';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { exportPdf, exportPdfFromHtml, mergePdfs } from '@/lib/export-pdf';
 
+// Allow up to 30s for PDF generation with headless Chrome
+export const maxDuration = 30;
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const { client, project, format, versionId, workingSetId, htmlContent } = body as {
@@ -49,13 +52,21 @@ export async function POST(request: NextRequest) {
   if (format === 'pdf') {
     // Edited HTML content — render directly from string
     if (htmlContent) {
-      const buffer = await exportPdfFromHtml(htmlContent, width, height);
-      return new NextResponse(new Uint8Array(buffer), {
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${client}-${project}-alt.pdf"`,
-        },
-      });
+      try {
+        const buffer = await exportPdfFromHtml(htmlContent, width, height);
+        return new NextResponse(new Uint8Array(buffer), {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${client}-${project}-alt.pdf"`,
+          },
+        });
+      } catch (err) {
+        console.error('PDF export error:', err);
+        return NextResponse.json(
+          { error: `PDF generation failed: ${err instanceof Error ? err.message : 'Unknown error'}` },
+          { status: 500 }
+        );
+      }
     }
 
     // Single version
