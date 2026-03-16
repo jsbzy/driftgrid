@@ -50,16 +50,14 @@ export function ViewerTopbar({
 }: ViewerTopbarProps) {
   return (
     <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--border)] bg-[var(--background)] shrink-0 z-10">
-      {/* Left: Drift · client · project · concept · version */}
+      {/* Left: client · project · concept · version */}
       <div className="flex items-center gap-2.5 text-xs">
         <Link
-          href="/"
-          className="font-medium text-[var(--foreground)] hover:text-[var(--muted)] transition-colors"
+          href={`/review/${clientSlug}`}
+          className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
         >
-          Drift
+          {client}
         </Link>
-        <span className="text-[var(--border)]">&middot;</span>
-        <span className="text-[var(--muted)]">{client}</span>
         <span className="text-[var(--border)]">&middot;</span>
         <span className="font-medium">{projectName}</span>
         <span className="text-[var(--border)]">&middot;</span>
