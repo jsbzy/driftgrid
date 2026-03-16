@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import { getManifest } from '@/lib/manifest';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { exportPdf, exportPdfFromHtml, mergePdfs } from '@/lib/export-pdf';
+import { injectViewportLock } from '@/lib/viewport-lock';
 
 // Allow up to 30s for PDF generation with headless Chrome
 export const maxDuration = 30;
@@ -39,7 +40,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     }
     const htmlPath = path.resolve(projectDir, version.file);
-    const htmlContent = await fs.readFile(htmlPath, 'utf-8');
+    let htmlContent = await fs.readFile(htmlPath, 'utf-8');
+    // For locked canvases, inject viewport-lock so the design scales to fit any browser window
+    htmlContent = injectViewportLock(htmlContent, width, height);
     return new NextResponse(htmlContent, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',

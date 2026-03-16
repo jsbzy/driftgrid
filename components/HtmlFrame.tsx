@@ -187,22 +187,28 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
 
         // Lock exported HTML to exact canvas dimensions with auto-scaling
         if (canvasWidth && canvasHeight) {
+          const w = canvasWidth, h = canvasHeight;
           const viewportLock = `
 <style>
-html { height: 100%; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden; }
-body { width: ${canvasWidth}px; height: ${canvasHeight}px; overflow: hidden; transform-origin: 0 0; flex-shrink: 0; }
+html { margin: 0 !important; padding: 0 !important; width: 100vw !important; height: 100vh !important; overflow: hidden !important; background: #000 !important; }
+body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; height: ${h}px !important; overflow: hidden !important; transform-origin: 0 0 !important; position: absolute !important; }
 </style>
 <script>
 (function() {
-  var w = ${canvasWidth}, h = ${canvasHeight};
-  function fitViewport() {
-    var s = Math.min(window.innerWidth / w, window.innerHeight / h);
-    document.body.style.transform = 'scale(' + s + ')';
-    document.body.style.marginLeft = ((window.innerWidth - w * s) / 2) + 'px';
-    document.body.style.marginTop = ((window.innerHeight - h * s) / 2) + 'px';
+  var w = ${w}, h = ${h};
+  function fit() {
+    var s = Math.min(innerWidth / w, innerHeight / h);
+    var b = document.body;
+    b.style.transform = 'scale(' + s + ')';
+    b.style.left = ((innerWidth - w * s) / 2) + 'px';
+    b.style.top = ((innerHeight - h * s) / 2) + 'px';
   }
-  window.addEventListener('resize', fitViewport);
-  fitViewport();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fit);
+  } else {
+    fit();
+  }
+  window.addEventListener('resize', fit);
 })();
 </script>`;
           html = html.replace('</body>', viewportLock + '\n</body>');
