@@ -39,7 +39,7 @@ export function Dashboard() {
               return (
                 <Link
                   key={project.slug}
-                  href={`/view/${client.slug}/${project.slug}`}
+                  href={`/admin/${client.slug}/${project.slug}`}
                   className="block group"
                 >
                   <div className="flex items-baseline justify-between py-3 px-4 rounded-lg border border-transparent hover:border-[var(--border)] transition-colors">

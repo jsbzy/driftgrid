@@ -218,5 +218,6 @@ Each client has `projects/{client}/brand/guidelines.md` with colors, fonts, voic
 ## Viewing Designs
 
 - Dashboard: `localhost:3000`
-- Viewer: `localhost:3000/view/{client}/{project}`
+- Admin: `localhost:3000/admin/{client}/{project}`
+- Review (client-facing): `localhost:3000/review/{client}/{project}`
 - Arrow keys navigate: left/right = concepts, up/down = versions
