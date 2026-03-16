@@ -22,12 +22,12 @@ export function EditToggle({
   onExportPdf,
 }: EditToggleProps) {
   const [exporting, setExporting] = useState(false);
-  // When editing, we're always on Alt
+  // When editing, we're always on Revision
   const showingEdited = editMode || viewEdited;
 
   return (
     <div className="flex items-center gap-3 text-[10px] tracking-wide">
-      {/* Original / Alt tabs — visible whenever edits exist */}
+      {/* Original / Revision tabs — visible whenever edits exist */}
       {hasEdits && (
         <>
           <div className="flex items-center gap-0.5">
@@ -51,7 +51,7 @@ export function EditToggle({
                 fontWeight: showingEdited ? 500 : 400,
               }}
             >
-              <span>Alt</span>
+              <span>Revision</span>
               <span
                 className="inline-flex items-center justify-center rounded-full text-[8px] font-medium leading-none"
                 style={{
