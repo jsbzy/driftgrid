@@ -25,6 +25,7 @@ interface ViewerTopbarProps {
   viewEdited?: boolean;
   onToggleView?: (edited: boolean) => void;
   onExportPdf?: () => Promise<void> | void;
+  frameWidth?: number;
 }
 
 export function ViewerTopbar({
@@ -47,9 +48,14 @@ export function ViewerTopbar({
   viewEdited,
   onToggleView,
   onExportPdf,
+  frameWidth,
 }: ViewerTopbarProps) {
   return (
-    <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--border)] bg-[var(--background)] shrink-0 z-10">
+    <div className="h-10 flex items-center justify-center border-b border-[var(--border)] bg-[var(--background)] shrink-0 z-10">
+    <div
+      className="h-full flex items-center justify-between w-full"
+      style={frameWidth ? { maxWidth: frameWidth, padding: '0 2px' } : { padding: '0 16px' }}
+    >
       {/* Left: client · project · concept · version */}
       <div className="flex items-center gap-2.5 text-xs">
         <Link
@@ -98,6 +104,7 @@ export function ViewerTopbar({
           </>
         )}
       </div>
+    </div>
     </div>
   );
 }

@@ -216,6 +216,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     enabled: isClientMode,
   });
   const htmlFrameRef = useRef<HtmlFrameHandle>(null);
+  const [frameWidth, setFrameWidth] = useState<number | undefined>();
   const showEdits = clientEdits.viewEdited && clientEdits.hasEdits && !clientEdits.editMode;
 
   useKeyboardNav({
@@ -285,6 +286,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       viewEdited={clientEdits.viewEdited}
       onToggleView={clientEdits.setViewEdited}
       onExportPdf={async () => { await htmlFrameRef.current?.exportPdf(`${project}-alt.pdf`, client, project); }}
+      frameWidth={frameWidth}
     />
   );
 
@@ -335,6 +337,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             hasEdits={clientEdits.hasEdits}
             savedEdits={clientEdits.edits}
             onEditsChange={clientEdits.handleEditsChange}
+            onScaledWidth={setFrameWidth}
           />
       </div>
       {gridVisible && (

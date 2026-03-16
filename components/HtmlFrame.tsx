@@ -11,6 +11,7 @@ interface HtmlFrameProps {
   hasEdits?: boolean;
   savedEdits?: Record<string, string>;
   onEditsChange?: (allEdits: Record<string, string>) => void;
+  onScaledWidth?: (width: number) => void;
 }
 
 export interface HtmlFrameHandle {
@@ -19,7 +20,7 @@ export interface HtmlFrameHandle {
 }
 
 export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
-  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange }, ref) {
+  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth }, ref) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0);
@@ -97,7 +98,9 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
         if (!container) return;
         const scaleX = container.clientWidth / canvasWidth;
         const scaleY = container.clientHeight / canvasHeight;
-        setScale(Math.min(scaleX, scaleY));
+        const s = Math.min(scaleX, scaleY);
+        setScale(s);
+        onScaledWidth?.(canvasWidth * s);
       };
 
       updateScale();
