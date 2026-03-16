@@ -107,7 +107,7 @@ export function EditToggle({
             }}
             className="transition-colors"
             style={{
-              color: editMode || exporting ? 'var(--border)' : 'var(--muted)',
+              color: editMode ? 'var(--border)' : 'var(--muted)',
               cursor: editMode || exporting ? 'default' : 'pointer',
             }}
           >
