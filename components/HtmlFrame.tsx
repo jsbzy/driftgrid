@@ -144,7 +144,7 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       const scaledHeight = canvasHeight * scale;
 
       return (
-        <div ref={containerRef} className="w-full h-full flex items-center justify-start overflow-hidden">
+        <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden">
           <div style={{ width: scaledWidth, height: scaledHeight, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 4 }}>
             <iframe
               ref={iframeRef}
