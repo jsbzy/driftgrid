@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { AnimatedDots } from './AnimatedDots';
 
 interface EditToggleProps {
   editMode: boolean;
@@ -141,7 +142,7 @@ export function EditToggle({
                 cursor: editMode ? 'default' : 'pointer',
               }}
             >
-              {exporting ? 'Exporting...' : 'Export'}
+              {exporting ? <><span>Exporting</span><AnimatedDots /></> : 'Export'}
             </button>
             {exportOpen && !editMode && (
               <div className="absolute right-0 top-full mt-1 z-50 min-w-[120px] py-1 rounded-sm border border-[var(--border)] bg-[var(--background)] shadow-sm">

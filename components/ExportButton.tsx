@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { WorkingSet } from '@/lib/types';
+import { AnimatedDots } from './AnimatedDots';
 
 interface ExportButtonProps {
   client: string;
@@ -81,7 +82,7 @@ export function ExportButton({
         disabled={exporting}
         className="text-[10px] tracking-wide text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
       >
-        {exporting ? 'Exporting...' : 'Export'}
+        {exporting ? <><span>Exporting</span><AnimatedDots /></> : 'Export'}
       </button>
 
       {open && (
