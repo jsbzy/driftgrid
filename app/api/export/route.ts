@@ -60,24 +60,6 @@ export async function POST(request: NextRequest) {
     if (!version) {
       return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     }
-    if (process.env.VERCEL) {
-      // Check for pre-built PNG
-      const prebuiltPath = path.join(projectDir, '.exports', `${version.id}.png`);
-      try {
-        const data = await fs.readFile(prebuiltPath);
-        return new NextResponse(data, {
-          headers: {
-            'Content-Type': 'image/png',
-            'Content-Disposition': `attachment; filename="${version.id}.png"`,
-          },
-        });
-      } catch {
-        return NextResponse.json(
-          { error: 'PNG not available. Run `npm run build-exports` locally and push.' },
-          { status: 404 }
-        );
-      }
-    }
     const htmlPath = path.resolve(projectDir, version.file);
     const buffer = await exportPng(htmlPath, width, height);
     return new NextResponse(new Uint8Array(buffer), {
