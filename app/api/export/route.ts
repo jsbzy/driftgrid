@@ -3,7 +3,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { getManifest } from '@/lib/manifest';
 import { CANVAS_PRESETS } from '@/lib/constants';
-import { exportPdf, exportPdfFromHtml, mergePdfs } from '@/lib/export-pdf';
+import { exportPdf, exportPdfFromHtml, exportPng, mergePdfs } from '@/lib/export-pdf';
 import { injectViewportLock } from '@/lib/viewport-lock';
 
 // Allow up to 30s for PDF generation with headless Chrome
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   const { client, project, format, versionId, workingSetId, htmlContent } = body as {
     client: string;
     project: string;
-    format: 'pdf' | 'html';
+    format: 'pdf' | 'png' | 'html';
     versionId?: string;
     workingSetId?: string;
     htmlContent?: string;
@@ -47,6 +47,43 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'Content-Disposition': `attachment; filename="${version.id}.html"`,
+      },
+    });
+  }
+
+  // PNG export
+  if (format === 'png') {
+    if (!versionId) {
+      return NextResponse.json({ error: 'versionId required for PNG export' }, { status: 400 });
+    }
+    const version = manifest.concepts.flatMap(c => c.versions).find(v => v.id === versionId);
+    if (!version) {
+      return NextResponse.json({ error: 'Version not found' }, { status: 404 });
+    }
+    if (process.env.VERCEL) {
+      // Check for pre-built PNG
+      const prebuiltPath = path.join(projectDir, '.exports', `${version.id}.png`);
+      try {
+        const data = await fs.readFile(prebuiltPath);
+        return new NextResponse(data, {
+          headers: {
+            'Content-Type': 'image/png',
+            'Content-Disposition': `attachment; filename="${version.id}.png"`,
+          },
+        });
+      } catch {
+        return NextResponse.json(
+          { error: 'PNG not available. Run `npm run build-exports` locally and push.' },
+          { status: 404 }
+        );
+      }
+    }
+    const htmlPath = path.resolve(projectDir, version.file);
+    const buffer = await exportPng(htmlPath, width, height);
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        'Content-Type': 'image/png',
+        'Content-Disposition': `attachment; filename="${version.id}.png"`,
       },
     });
   }

@@ -165,6 +165,33 @@ export async function exportPdfFromHtml(
 }
 
 /**
+ * Export a single HTML file as a PNG screenshot at exact canvas dimensions.
+ */
+export async function exportPng(
+  htmlPath: string,
+  width: number,
+  height: number | 'auto'
+): Promise<Buffer> {
+  const pxHeight = height === 'auto' ? 900 : height;
+  const { browser, type } = await launchBrowser(width, pxHeight);
+
+  if (type === 'puppeteer') {
+    const page = await browser.newPage();
+    await page.setViewport({ width, height: pxHeight, deviceScaleFactor: 2 });
+    await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle0' });
+    const pngBuffer = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height: pxHeight } });
+    await browser.close();
+    return Buffer.from(pngBuffer);
+  } else {
+    const page = await browser.newPage({ viewport: { width, height: pxHeight }, deviceScaleFactor: 2 });
+    await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle' });
+    const pngBuffer = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height: pxHeight } });
+    await browser.close();
+    return Buffer.from(pngBuffer);
+  }
+}
+
+/**
  * Merge multiple single-page PDFs into one multi-page document.
  */
 export async function mergePdfs(pdfBuffers: Buffer[]): Promise<Buffer> {

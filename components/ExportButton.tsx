@@ -92,6 +92,7 @@ export function ExportButton({
           <div className="px-3 py-1.5 text-[9px] tracking-widest uppercase text-[var(--border)]">
             This version
           </div>
+          <DropdownItem label="PNG" onClick={() => doExport('png')} />
           <DropdownItem label="PDF" onClick={() => doExport('pdf')} />
           <DropdownItem label="HTML" onClick={() => doExport('html')} />
 
