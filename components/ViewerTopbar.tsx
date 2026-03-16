@@ -56,7 +56,7 @@ export function ViewerTopbar({
       className="h-full flex items-center justify-between w-full"
       style={frameWidth ? { maxWidth: frameWidth, padding: '0 2px' } : { padding: '0 16px' }}
     >
-      {/* Left: client · project · concept · version */}
+      {/* Left: client · project · concept · version · canvas */}
       <div className="flex items-center gap-2.5 text-xs">
         <Link
           href={`/review/${clientSlug}`}
@@ -70,14 +70,15 @@ export function ViewerTopbar({
         <span className="font-medium text-[var(--foreground)]">{conceptLabel}</span>
         <span className="text-[var(--border)]">&middot;</span>
         <span className="text-[var(--muted)]">v{versionNumber}</span>
+        {canvasLabel && (
+          <>
+            <span className="text-[var(--border)]">&middot;</span>
+            <span className="text-[10px] text-[var(--border)]">{canvasLabel}</span>
+          </>
+        )}
       </div>
 
-      {/* Center: hints */}
-      <div className="flex items-center gap-4 text-[10px] text-[var(--border)] tracking-wide">
-        <span>? for shortcuts</span>
-      </div>
-
-      {/* Right: edit controls · canvas label */}
+      {/* Right: edit controls */}
       <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
         {isClientMode && onToggleEdit && onToggleView ? (
           <EditToggle
@@ -96,12 +97,6 @@ export function ViewerTopbar({
             versionId={versionId}
             workingSets={workingSets}
           />
-        )}
-        {canvasLabel && (
-          <>
-            <span className="text-[var(--border)]">&middot;</span>
-            <span className="text-[10px] text-[var(--border)]">{canvasLabel}</span>
-          </>
         )}
       </div>
     </div>
