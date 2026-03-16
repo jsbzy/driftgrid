@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 interface EditToggleProps {
   editMode: boolean;
   onToggleEdit: () => void;
@@ -7,7 +9,7 @@ interface EditToggleProps {
   hasEdits: boolean;
   viewEdited: boolean;
   onToggleView: (edited: boolean) => void;
-  onExportPdf?: () => void;
+  onExportPdf?: () => Promise<void> | void;
 }
 
 export function EditToggle({
@@ -19,6 +21,7 @@ export function EditToggle({
   onToggleView,
   onExportPdf,
 }: EditToggleProps) {
+  const [exporting, setExporting] = useState(false);
   // When editing, we're always on Alt
   const showingEdited = editMode || viewEdited;
 
@@ -93,19 +96,22 @@ export function EditToggle({
         </span>
       </button>
 
-      {/* Export PDF — always visible, disabled during edit mode */}
+      {/* Export PDF — always visible, disabled during edit mode or while exporting */}
       {onExportPdf && (
         <>
           <span className="text-[var(--border)]">&middot;</span>
           <button
-            onClick={editMode ? undefined : onExportPdf}
+            onClick={editMode || exporting ? undefined : async () => {
+              setExporting(true);
+              try { await onExportPdf(); } finally { setExporting(false); }
+            }}
             className="transition-colors"
             style={{
-              color: editMode ? 'var(--border)' : 'var(--muted)',
-              cursor: editMode ? 'default' : 'pointer',
+              color: editMode || exporting ? 'var(--border)' : 'var(--muted)',
+              cursor: editMode || exporting ? 'default' : 'pointer',
             }}
           >
-            Export PDF
+            {exporting ? 'Exporting...' : 'Export PDF'}
           </button>
         </>
       )}
