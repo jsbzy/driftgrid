@@ -286,6 +286,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       viewEdited={clientEdits.viewEdited}
       onToggleView={clientEdits.setViewEdited}
       onExportPdf={async () => { await htmlFrameRef.current?.exportPdf(`${project}-alt.pdf`, client, project); }}
+      onExportHtml={async () => { await htmlFrameRef.current?.exportHtml(`${project}.html`); }}
       onClearEdits={clientEdits.clearEdits}
       frameWidth={frameWidth}
     />

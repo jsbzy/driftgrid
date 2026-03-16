@@ -17,6 +17,7 @@ interface HtmlFrameProps {
 export interface HtmlFrameHandle {
   getHtml: () => string | null;
   exportPdf: (filename: string, client: string, project: string) => Promise<void>;
+  exportHtml: (filename: string) => Promise<void>;
 }
 
 export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
@@ -132,6 +133,54 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
           return;
         }
         const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      exportHtml: async (filename: string) => {
+        const doc = iframeRef.current?.contentDocument;
+        if (!doc) return;
+        let html = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+
+        // Embed images as base64 for a self-contained file
+        // Find all url() references in style tags and img src attributes
+        const urlPattern = /url\(['"]?((?!data:)[^'")\s]+)['"]?\)/g;
+        const imgPattern = /<img[^>]+src=["']((?!data:)[^"']+)["']/g;
+        const urls = new Set<string>();
+        let match;
+        while ((match = urlPattern.exec(html)) !== null) urls.add(match[1]);
+        while ((match = imgPattern.exec(html)) !== null) urls.add(match[1]);
+
+        // Fetch each URL and convert to base64
+        for (const imgUrl of urls) {
+          try {
+            // Resolve relative URLs against the iframe's base
+            const resolved = new URL(imgUrl, iframeRef.current?.src || window.location.href).href;
+            const res = await fetch(resolved);
+            if (!res.ok) continue;
+            const blob = await res.blob();
+            const reader = new FileReader();
+            const dataUrl = await new Promise<string>((resolve) => {
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+            // Replace all occurrences of this URL in the HTML
+            html = html.split(imgUrl).join(dataUrl);
+          } catch {
+            // Skip URLs that can't be fetched
+          }
+        }
+
+        // Remove the injected edit script if present
+        html = html.replace(/<style>\s*\[data-drift-editable\][\s\S]*?<\/script>/g, '');
+        // Remove data-drift attributes for a clean file
+        html = html.replace(/\s*data-drift-editable="[^"]*"/g, '');
+        html = html.replace(/\s*data-drift-maxlen="[^"]*"/g, '');
+
+        const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;

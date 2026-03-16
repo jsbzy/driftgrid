@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface EditToggleProps {
   editMode: boolean;
@@ -10,6 +10,7 @@ interface EditToggleProps {
   viewEdited: boolean;
   onToggleView: (edited: boolean) => void;
   onExportPdf?: () => Promise<void> | void;
+  onExportHtml?: () => Promise<void> | void;
   onClearEdits?: () => void;
 }
 
@@ -21,9 +22,24 @@ export function EditToggle({
   viewEdited,
   onToggleView,
   onExportPdf,
+  onExportHtml,
   onClearEdits,
 }: EditToggleProps) {
   const [exporting, setExporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!exportOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setExportOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [exportOpen]);
   // When editing, we're always on Revision
   const showingEdited = editMode || viewEdited;
 
@@ -112,23 +128,50 @@ export function EditToggle({
         </>
       )}
 
-      {/* Export PDF — always visible, disabled during edit mode or while exporting */}
-      {onExportPdf && (
+      {/* Export dropdown */}
+      {(onExportPdf || onExportHtml) && (
         <>
           <span className="text-[var(--border)]">&middot;</span>
-          <button
-            onClick={editMode || exporting ? undefined : async () => {
-              setExporting(true);
-              try { await onExportPdf(); } finally { setExporting(false); }
-            }}
-            className="transition-colors"
-            style={{
-              color: editMode ? 'var(--border)' : 'var(--muted)',
-              cursor: editMode || exporting ? 'default' : 'pointer',
-            }}
-          >
-            {exporting ? 'Exporting...' : 'Export PDF'}
-          </button>
+          <div ref={exportRef} className="relative">
+            <button
+              onClick={editMode ? undefined : () => setExportOpen(v => !v)}
+              className="transition-colors"
+              style={{
+                color: editMode ? 'var(--border)' : exporting ? 'var(--muted)' : 'var(--muted)',
+                cursor: editMode ? 'default' : 'pointer',
+              }}
+            >
+              {exporting ? 'Exporting...' : 'Export'}
+            </button>
+            {exportOpen && !editMode && (
+              <div className="absolute right-0 top-full mt-1 z-50 min-w-[120px] py-1 rounded-sm border border-[var(--border)] bg-[var(--background)] shadow-sm">
+                {onExportPdf && (
+                  <button
+                    onClick={async () => {
+                      setExportOpen(false);
+                      setExporting(true);
+                      try { await onExportPdf(); } finally { setExporting(false); }
+                    }}
+                    className="block w-full text-left px-3 py-1.5 text-[10px] tracking-wide text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[rgba(0,0,0,0.04)] transition-colors"
+                  >
+                    PDF
+                  </button>
+                )}
+                {onExportHtml && (
+                  <button
+                    onClick={async () => {
+                      setExportOpen(false);
+                      setExporting(true);
+                      try { await onExportHtml(); } finally { setExporting(false); }
+                    }}
+                    className="block w-full text-left px-3 py-1.5 text-[10px] tracking-wide text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[rgba(0,0,0,0.04)] transition-colors"
+                  >
+                    HTML
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>
