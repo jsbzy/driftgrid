@@ -2,14 +2,16 @@ import { PDFDocument } from 'pdf-lib';
 
 async function launchBrowser(width: number, height: number) {
   if (process.env.VERCEL) {
-    // Production: use @sparticuz/chromium + puppeteer-core
-    const chromium = (await import('@sparticuz/chromium')).default;
+    // Production: use @sparticuz/chromium-min (downloads binary at runtime)
+    const chromium = (await import('@sparticuz/chromium-min')).default;
     const puppeteer = (await import('puppeteer-core')).default;
     const browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width, height, deviceScaleFactor: 2 },
-      executablePath: await chromium.executablePath(),
-      headless: 'shell' as const,
+      executablePath: await chromium.executablePath(
+        'https://github.com/nicholasgasior/chromium-binaries/releases/download/v131.0.0/chromium-v131.0.0-pack.tar'
+      ),
+      headless: true,
     });
     return { browser, type: 'puppeteer' as const };
   } else {
