@@ -13,7 +13,7 @@
     "build-exports": "npx tsx scripts/build-exports.ts"
   },
   "dependencies": {
-    "@sparticuz/chromium-min": "^143.0.4",
+    "@sparticuz/chromium": "^143.0.4",
     "next": "16.1.6",
     "pdf-lib": "^1.17.1",
     "pptxgenjs": "^4.0.1",
