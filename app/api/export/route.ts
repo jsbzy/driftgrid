@@ -50,10 +50,15 @@ export async function POST(request: NextRequest) {
 
   // PDF export
   if (format === 'pdf') {
-    // Edited HTML content — render directly from string
+    // Edited HTML content — write to temp file so relative image paths resolve
     if (htmlContent) {
       try {
-        const buffer = await exportPdfFromHtml(htmlContent, width, height);
+        // Use first concept dir as source dir (relative paths like ../assets/ resolve from here)
+        const firstVersion = manifest.concepts.flatMap(c => c.versions)[0];
+        const sourceDir = firstVersion
+          ? path.resolve(projectDir, path.dirname(firstVersion.file))
+          : projectDir;
+        const buffer = await exportPdfFromHtml(htmlContent, width, height, sourceDir);
         return new NextResponse(new Uint8Array(buffer), {
           headers: {
             'Content-Type': 'application/pdf',

@@ -1,4 +1,6 @@
 import { PDFDocument } from 'pdf-lib';
+import path from 'path';
+import { promises as fs } from 'fs';
 
 async function launchBrowser(width: number, height: number) {
   if (process.env.VERCEL) {
@@ -72,20 +74,60 @@ export async function exportPdf(
   }
 }
 
+const MIME_MAP: Record<string, string> = {
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+  '.gif': 'image/gif', '.svg': 'image/svg+xml', '.webp': 'image/webp',
+};
+
+/**
+ * Embed all image references in HTML as base64 data URIs.
+ * Resolves relative paths (url(), img src) against sourceDir.
+ */
+async function embedImagesAsBase64(html: string, sourceDir: string): Promise<string> {
+  // Collect all unique image paths from CSS url() and <img src="">
+  const urls = new Set<string>();
+  const urlPattern = /url\(['"]?((?!data:)[^'")\s]+)['"]?\)/g;
+  const imgPattern = /<img[^>]+src=["']((?!data:)[^"']+)["']/g;
+  let m;
+  while ((m = urlPattern.exec(html)) !== null) urls.add(m[1]);
+  while ((m = imgPattern.exec(html)) !== null) urls.add(m[1]);
+
+  for (const relPath of urls) {
+    const absPath = path.resolve(sourceDir, relPath);
+    const ext = path.extname(absPath).toLowerCase();
+    const mime = MIME_MAP[ext];
+    if (!mime) continue;
+    try {
+      const data = await fs.readFile(absPath);
+      const dataUri = `data:${mime};base64,${data.toString('base64')}`;
+      html = html.split(relPath).join(dataUri);
+    } catch {
+      // Image not found on disk — skip
+    }
+  }
+  return html;
+}
+
 /**
  * Export HTML content string as PDF (for edited versions).
+ * Embeds all images as base64 so the headless browser renders them without external resources.
  */
 export async function exportPdfFromHtml(
   htmlContent: string,
   width: number,
-  height: number | 'auto'
+  height: number | 'auto',
+  sourceDir: string
 ): Promise<Buffer> {
+  // Embed images as base64 data URIs — critical for Vercel where filesystem is read-only
+  // and page.setContent() has no base URL to resolve relative paths
+  const html = await embedImagesAsBase64(htmlContent, sourceDir);
+
   const { browser, type } = await launchBrowser(width, height === 'auto' ? 900 : height);
 
   if (type === 'puppeteer') {
     const page = await browser.newPage();
     await page.setViewport({ width, height: height === 'auto' ? 900 : height, deviceScaleFactor: 2 });
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'networkidle0' });
     const dimensions = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,
       height: document.documentElement.scrollHeight,
@@ -106,7 +148,7 @@ export async function exportPdfFromHtml(
     return Buffer.from(pdfBuffer);
   } else {
     const page = await browser.newPage({ viewport: { width, height: height === 'auto' ? 900 : height }, deviceScaleFactor: 2 });
-    await page.setContent(htmlContent, { waitUntil: 'networkidle' });
+    await page.setContent(html, { waitUntil: 'networkidle' });
     const dimensions = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,
       height: document.documentElement.scrollHeight,

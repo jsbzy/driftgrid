@@ -169,6 +169,48 @@ Key fields:
 - Minimal, monospace aesthetic — the designs are the hero, not the chrome
 - SWR for client-side data fetching
 
+## Export-Safe Design Rules
+
+These rules ensure every design exports correctly as PDF, HTML, and PPTX. Follow them when creating or editing any HTML design file.
+
+### Images must be self-contained
+
+The PDF export (edited/alt versions) and HTML export both embed images as base64 at export time via `HtmlFrame.embedImages()`. This works automatically **only if images are reachable from the browser at export time:**
+
+- **Use relative paths** from the project folder: `../../brand/logo.svg`, `../../brand/assets/photo.jpg`
+- **Or absolute paths** served by Next.js: `/projects/{client}/brand/logo.svg`
+- **Never use external URLs** (CDNs, Unsplash hotlinks, etc.) — they break in offline/PDF contexts
+- **Store all images** in the client's `brand/assets/` folder or the project folder itself
+- If an image appears black/missing in export, the URL couldn't be resolved — check the path
+
+### Background images
+
+CSS `background-image: url(...)` is captured by both the screenshot-to-PDF pipeline and the base64 embedding. Rules:
+- Always use `background-size: cover` or explicit sizing — never rely on intrinsic image dimensions
+- Ensure `background` shorthand includes `no-repeat` when appropriate
+- Test with the export button locally before sharing
+
+### Fonts
+
+- Always include Google Fonts `<link>` tags in the `<head>` — the Playwright/Puppeteer renderer needs them
+- Don't use `@import` in CSS for fonts — `<link>` loads faster and more reliably in headless browsers
+- System fonts (Arial, Helvetica, Georgia) are safe; custom local fonts are not available in export
+
+### Locked canvas export
+
+For locked formats (`landscape-16-9`, `a4-portrait`):
+- HTML export auto-injects a viewport-lock script that scales the design to fit any browser window at the correct aspect ratio with black bars (letterboxing)
+- PDF export renders at exact canvas dimensions (1920×1080 or 794×1123) — no scaling needed
+- Never add responsive breakpoints or `@media` queries to locked canvases
+
+### Pre-flight checklist (before sharing with client)
+
+1. Open the design locally in the Drift viewer — does it render correctly?
+2. Export PDF — do all images, backgrounds, and fonts appear?
+3. Export HTML — open the downloaded file in a browser at different window sizes. Does it scale correctly?
+4. If working set: export the multi-page PDF and verify all pages
+5. Generate thumbnails: `npm run generate-thumbs`
+
 ## Brand Guidelines
 
 Each client has `projects/{client}/brand/guidelines.md` with colors, fonts, voice, and reference links. Always read this before creating or modifying designs for that client.

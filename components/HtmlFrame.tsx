@@ -110,6 +110,34 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       return () => observer.disconnect();
     }, [canvasWidth, canvasHeight]);
 
+    // Embed all images in HTML as base64 data URLs for self-contained export
+    const embedImages = async (html: string): Promise<string> => {
+      const urlPattern = /url\(['"]?((?!data:)[^'")\s]+)['"]?\)/g;
+      const imgPattern = /<img[^>]+src=["']((?!data:)[^"']+)["']/g;
+      const urls = new Set<string>();
+      let match;
+      while ((match = urlPattern.exec(html)) !== null) urls.add(match[1]);
+      while ((match = imgPattern.exec(html)) !== null) urls.add(match[1]);
+
+      for (const imgUrl of urls) {
+        try {
+          const resolved = new URL(imgUrl, iframeRef.current?.src || window.location.href).href;
+          const res = await fetch(resolved);
+          if (!res.ok) continue;
+          const blob = await res.blob();
+          const reader = new FileReader();
+          const dataUrl = await new Promise<string>((resolve) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+          html = html.split(imgUrl).join(dataUrl);
+        } catch {
+          // Skip URLs that can't be fetched
+        }
+      }
+      return html;
+    };
+
     // Expose methods for export
     useImperativeHandle(ref, () => ({
       getHtml: () => {
@@ -120,7 +148,10 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       exportPdf: async (filename: string, client: string, project: string) => {
         const doc = iframeRef.current?.contentDocument;
         if (!doc) return;
-        const html = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+        let html = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+
+        // Embed images as base64 so headless browser can render them
+        html = await embedImages(html);
 
         const res = await fetch('/api/export', {
           method: 'POST',
@@ -146,39 +177,36 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
         let html = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
 
         // Embed images as base64 for a self-contained file
-        // Find all url() references in style tags and img src attributes
-        const urlPattern = /url\(['"]?((?!data:)[^'")\s]+)['"]?\)/g;
-        const imgPattern = /<img[^>]+src=["']((?!data:)[^"']+)["']/g;
-        const urls = new Set<string>();
-        let match;
-        while ((match = urlPattern.exec(html)) !== null) urls.add(match[1]);
-        while ((match = imgPattern.exec(html)) !== null) urls.add(match[1]);
-
-        // Fetch each URL and convert to base64
-        for (const imgUrl of urls) {
-          try {
-            // Resolve relative URLs against the iframe's base
-            const resolved = new URL(imgUrl, iframeRef.current?.src || window.location.href).href;
-            const res = await fetch(resolved);
-            if (!res.ok) continue;
-            const blob = await res.blob();
-            const reader = new FileReader();
-            const dataUrl = await new Promise<string>((resolve) => {
-              reader.onload = () => resolve(reader.result as string);
-              reader.readAsDataURL(blob);
-            });
-            // Replace all occurrences of this URL in the HTML
-            html = html.split(imgUrl).join(dataUrl);
-          } catch {
-            // Skip URLs that can't be fetched
-          }
-        }
+        html = await embedImages(html);
 
         // Remove the injected edit script if present
         html = html.replace(/<style>\s*\[data-drift-editable\][\s\S]*?<\/script>/g, '');
         // Remove data-drift attributes for a clean file
         html = html.replace(/\s*data-drift-editable="[^"]*"/g, '');
         html = html.replace(/\s*data-drift-maxlen="[^"]*"/g, '');
+
+        // Lock exported HTML to exact canvas dimensions with auto-scaling
+        if (canvasWidth && canvasHeight) {
+          const viewportLock = `
+<style>
+html { height: 100%; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden; }
+body { width: ${canvasWidth}px; height: ${canvasHeight}px; overflow: hidden; transform-origin: 0 0; flex-shrink: 0; }
+</style>
+<script>
+(function() {
+  var w = ${canvasWidth}, h = ${canvasHeight};
+  function fitViewport() {
+    var s = Math.min(window.innerWidth / w, window.innerHeight / h);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.marginLeft = ((window.innerWidth - w * s) / 2) + 'px';
+    document.body.style.marginTop = ((window.innerHeight - h * s) / 2) + 'px';
+  }
+  window.addEventListener('resize', fitViewport);
+  fitViewport();
+})();
+</script>`;
+          html = html.replace('</body>', viewportLock + '\n</body>');
+        }
 
         const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
         const url = URL.createObjectURL(blob);
