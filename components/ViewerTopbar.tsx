@@ -25,6 +25,7 @@ interface ViewerTopbarProps {
   viewEdited?: boolean;
   onToggleView?: (edited: boolean) => void;
   onExportPdf?: () => Promise<void> | void;
+  onClearEdits?: () => void;
   frameWidth?: number;
 }
 
@@ -48,6 +49,7 @@ export function ViewerTopbar({
   viewEdited,
   onToggleView,
   onExportPdf,
+  onClearEdits,
   frameWidth,
 }: ViewerTopbarProps) {
   return (
@@ -89,6 +91,7 @@ export function ViewerTopbar({
             viewEdited={viewEdited ?? false}
             onToggleView={onToggleView}
             onExportPdf={onExportPdf}
+            onClearEdits={onClearEdits}
           />
         ) : (
           <ExportButton

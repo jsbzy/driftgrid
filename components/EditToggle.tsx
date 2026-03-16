@@ -10,6 +10,7 @@ interface EditToggleProps {
   viewEdited: boolean;
   onToggleView: (edited: boolean) => void;
   onExportPdf?: () => Promise<void> | void;
+  onClearEdits?: () => void;
 }
 
 export function EditToggle({
@@ -20,6 +21,7 @@ export function EditToggle({
   viewEdited,
   onToggleView,
   onExportPdf,
+  onClearEdits,
 }: EditToggleProps) {
   const [exporting, setExporting] = useState(false);
   // When editing, we're always on Revision
@@ -95,6 +97,20 @@ export function EditToggle({
           />
         </span>
       </button>
+
+      {/* Clear Edits — visible when editing and edits exist */}
+      {editMode && hasEdits && onClearEdits && (
+        <>
+          <span className="text-[var(--border)]">&middot;</span>
+          <button
+            onClick={onClearEdits}
+            className="transition-colors hover:opacity-80"
+            style={{ color: 'var(--muted)' }}
+          >
+            Clear Edits
+          </button>
+        </>
+      )}
 
       {/* Export PDF — always visible, disabled during edit mode or while exporting */}
       {onExportPdf && (
