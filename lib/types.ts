@@ -35,6 +35,15 @@ export interface Version {
   starred: boolean;
   created: string;
   thumbnail: string;
+  roundId?: string;
+}
+
+export interface Round {
+  id: string;
+  number: number;
+  name: string;
+  closedAt: string;
+  note?: string;
 }
 
 export interface Concept {
@@ -84,6 +93,7 @@ export interface ClientEdit {
 export interface Manifest {
   project: ProjectMeta;
   concepts: Concept[];
+  rounds: Round[];
   workingSets: WorkingSet[];
   comments: Comment[];
   clientEdits: ClientEdit[];

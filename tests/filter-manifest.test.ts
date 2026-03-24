@@ -43,6 +43,7 @@ function makeManifest(concepts: Concept[]): Manifest {
       links: {},
     },
     concepts,
+    rounds: [],
     workingSets: [],
     comments: [],
     clientEdits: [],

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback, useMemo, memo, forwardRef, useImperativeHandle } from 'react';
-import type { Concept, ViewMode } from '@/lib/types';
+import type { Concept, Round, ViewMode } from '@/lib/types';
 import { computeCanvasLayout, getColumnBounds, getCardBounds } from '@/lib/hooks/useCanvasLayout';
 import { useCanvasTransform } from '@/lib/hooks/useCanvasTransform';
 import { CanvasCard } from './CanvasCard';
@@ -16,6 +16,7 @@ export interface CanvasViewHandle {
 
 interface CanvasViewProps {
   concepts: Concept[];
+  rounds: Round[];
   conceptIndex: number;
   versionIndex: number;
   onSelect: (conceptIndex: number, versionIndex: number) => void;
@@ -40,6 +41,7 @@ interface CanvasViewProps {
 
 export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function CanvasView({
   concepts,
+  rounds,
   conceptIndex,
   versionIndex,
   onSelect,
@@ -63,9 +65,29 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   const viewportRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
   const [thumbVersion, setThumbVersion] = useState(0);
+
+  // Collapsed rounds state — all rounds collapsed by default
+  const [collapsedRounds, setCollapsedRounds] = useState<Set<string>>(new Set());
+  const collapsedRoundsInitialized = useRef(false);
+  useEffect(() => {
+    if (collapsedRoundsInitialized.current) return;
+    if (!concepts.length) return;
+    // Collect all roundIds that appear in versions
+    const roundIds = new Set<string>();
+    for (const c of concepts) {
+      for (const v of c.versions) {
+        if (v.roundId) roundIds.add(v.roundId);
+      }
+    }
+    if (roundIds.size > 0) {
+      setCollapsedRounds(roundIds);
+      collapsedRoundsInitialized.current = true;
+    }
+  }, [concepts]);
+
   const layout = useMemo(
-    () => computeCanvasLayout(concepts, aspectRatio),
-    [concepts, aspectRatio]
+    () => computeCanvasLayout(concepts, aspectRatio, rounds, collapsedRounds),
+    [concepts, aspectRatio, rounds, collapsedRounds]
   );
   const {
     transform,
@@ -492,6 +514,59 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
                   →
                 </button>
               )}
+            </div>
+          ))}
+
+          {/* Round dividers */}
+          {layout.dividers.map(div => (
+            <div
+              key={`divider-${div.roundId}-${div.conceptIndex}`}
+              className="absolute cursor-pointer"
+              style={{
+                left: div.x,
+                top: div.y,
+                width: div.width,
+                height: 24,
+              }}
+              onClick={() => {
+                setCollapsedRounds(prev => {
+                  const next = new Set(prev);
+                  if (next.has(div.roundId)) {
+                    next.delete(div.roundId);
+                  } else {
+                    next.add(div.roundId);
+                  }
+                  return next;
+                });
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                height: '100%',
+              }}>
+                <div style={{
+                  flex: 1,
+                  height: 1,
+                  background: 'var(--border)',
+                }} />
+                <span style={{
+                  fontSize: 9,
+                  fontFamily: 'var(--font-mono, monospace)',
+                  letterSpacing: '0.06em',
+                  color: 'var(--muted)',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {div.roundName}
+                  {collapsedRounds.has(div.roundId) && ` (${div.versionCount})`}
+                </span>
+                <div style={{
+                  flex: 1,
+                  height: 1,
+                  background: 'var(--border)',
+                }} />
+              </div>
             </div>
           ))}
 

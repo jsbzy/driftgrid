@@ -21,6 +21,7 @@ interface CommandPaletteProps {
   onToggleTheme: () => void;
   onToggleHud: () => void;
   onToggleNavbar: () => void;
+  onCloseRound: () => void;
 }
 
 export function CommandPalette({
@@ -36,6 +37,7 @@ export function CommandPalette({
   onToggleTheme,
   onToggleHud,
   onToggleNavbar,
+  onCloseRound,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -53,6 +55,7 @@ export function CommandPalette({
     { label: 'Toggle theme', shortcut: '', action: onToggleTheme },
     { label: 'Toggle HUD', shortcut: 'H', action: onToggleHud },
     { label: 'Toggle navbar', shortcut: 'N', action: onToggleNavbar },
+    { label: 'Close round', shortcut: '', action: onCloseRound },
   ];
 
   // Fuzzy match: every character in the query must appear in order in the label

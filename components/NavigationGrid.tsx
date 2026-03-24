@@ -11,6 +11,8 @@ interface NavigationGridProps {
   /** versionIds[conceptIdx][versionIdx] = versionId */
   versionIds?: string[][];
   inSelectsRow?: boolean;
+  /** Number of versions hidden in collapsed rounds */
+  collapsedCount?: number;
 }
 
 const MAX_VISIBLE_ROWS = 8;
@@ -23,6 +25,7 @@ export const NavigationGrid = memo(function NavigationGrid({
   conceptIds,
   versionIds,
   inSelectsRow = false,
+  collapsedCount = 0,
 }: NavigationGridProps) {
   const conceptCount = versionCounts.length;
   const maxVersions = versionCounts.length > 0 ? Math.max(...versionCounts) : 0;
@@ -145,6 +148,15 @@ export const NavigationGrid = memo(function NavigationGrid({
 
       {hasOverflowBottom && (
         <div style={{ textAlign: 'center', fontSize: 8, color: 'var(--muted)', marginTop: 2 }}>···</div>
+      )}
+
+      {collapsedCount > 0 && (
+        <>
+          <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: `${gap + 1}px 0` }} />
+          <div style={{ textAlign: 'center', fontSize: 7, color: 'var(--muted)', opacity: 0.5, fontFamily: 'var(--font-mono, monospace)', letterSpacing: '0.05em' }}>
+            +{collapsedCount}
+          </div>
+        </>
       )}
     </div>
   );

@@ -8,7 +8,10 @@ export async function getManifest(client: string, project: string): Promise<Mani
   try {
     const manifestPath = path.join(PROJECTS_DIR, client, project, 'manifest.json');
     const data = await fs.readFile(manifestPath, 'utf-8');
-    return JSON.parse(data) as Manifest;
+    const manifest = JSON.parse(data) as Manifest;
+    // Backward compat: ensure rounds array exists
+    if (!manifest.rounds) manifest.rounds = [];
+    return manifest;
   } catch {
     return null;
   }

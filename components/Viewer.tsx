@@ -917,6 +917,20 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       }}
       onToggleHud={() => { setNavGridHidden(v => !v); setCommandPaletteOpen(false); }}
       onToggleNavbar={() => { setTopbarHidden(v => !v); setCommandPaletteOpen(false); }}
+      onCloseRound={async () => {
+        setCommandPaletteOpen(false);
+        const name = window.prompt('Round name (or leave blank for default):');
+        const res = await fetch('/api/rounds', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client, project, name: name || undefined }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          await mutate();
+          alert(`Round "${data.name}" closed — ${data.stamped} versions stamped`);
+        }
+      }}
     />
   );
 
@@ -1018,6 +1032,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           <CanvasView
             ref={canvasRef}
             concepts={concepts}
+            rounds={filtered?.rounds ?? []}
             conceptIndex={conceptIndex}
             versionIndex={versionIndex}
             onSelect={handleGridSelect}
