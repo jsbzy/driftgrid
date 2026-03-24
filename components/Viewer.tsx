@@ -55,6 +55,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [topbarHidden, setTopbarHidden] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [designModeActive, setDesignModeActive] = useState(false);
+  const [transitionFade, setTransitionFade] = useState(false);
 
   const handleZoomToLevel = useCallback((level: ZoomLevel) => {
     setZoomLevel(level);
@@ -225,18 +226,27 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const handleToggleGridView = useCallback(() => {
     setViewMode(v => {
       if (v === 'frame') {
+        // Frame → Grid: fade overlay masks the switch
+        setTransitionFade(true);
         setPresentationMode(false);
         setDesignModeActive(false);
         setZoomLevel('z3');
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
+        setTimeout(() => setTransitionFade(false), 50);
         return 'grid';
       }
-      // Grid → Frame: zoom to card first, then switch
+      // Grid → Frame: zoom to card, then fade-switch
       if (canvasRef.current) {
         canvasRef.current.zoomToCard(conceptIndex, versionIndex);
-        setTimeout(() => setViewMode('frame'), 280);
+        setTimeout(() => {
+          setTransitionFade(true);
+          setViewMode('frame');
+          setTimeout(() => setTransitionFade(false), 50);
+        }, 280);
         return v;
       }
+      setTransitionFade(true);
+      setTimeout(() => setTransitionFade(false), 50);
       return 'frame';
     });
   }, [conceptIndex, versionIndex, getTransitionCardBounds]);
@@ -901,6 +911,24 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     `}</style>
   );
 
+  // Transition fade overlay — masks the instant view mode switch
+  const fadeOverlay = transitionFade ? (
+    <div
+      className="fixed inset-0 z-[200] pointer-events-none"
+      style={{
+        background: 'var(--background)',
+        animation: 'fadeOut 0.2s ease forwards',
+      }}
+    >
+      <style>{`
+        @keyframes fadeOut {
+          0% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+      `}</style>
+    </div>
+  ) : null;
+
   const commandPalette = (
     <CommandPalette
       open={commandPaletteOpen}
@@ -1044,6 +1072,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   if (viewMode === 'grid') {
     return (
       <div className="h-screen flex flex-col bg-[var(--background)]">
+        {fadeOverlay}
         {globalStyles}
         {driftOverlay}
         {deleteOverlay}
@@ -1091,6 +1120,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   return (
     <div className="h-screen flex flex-col" style={{ background: 'var(--background)' }}>
+      {fadeOverlay}
       {globalStyles}
       {driftOverlay}
       {deleteOverlay}

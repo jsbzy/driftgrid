@@ -31,9 +31,11 @@
     "generate-thumbs": "npx tsx scripts/generate-thumbnails.ts",
     "export-pdf": "npx tsx scripts/export-pdf.ts",
     "export-png": "npx tsx scripts/export-png.ts",
-    "build-exports": "npx tsx scripts/build-exports.ts"
+    "build-exports": "npx tsx scripts/build-exports.ts",
+    "mcp": "npx tsx mcp/server.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "@sparticuz/chromium": "^143.0.4",
     "next": "16.1.6",
     "pdf-lib": "^1.17.1",
