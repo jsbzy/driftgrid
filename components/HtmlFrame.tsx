@@ -14,6 +14,7 @@ interface HtmlFrameProps {
   onScaledWidth?: (width: number) => void;
   designMode?: boolean;
   placeholder?: string | null;
+  onReady?: () => void;
 }
 
 export interface HtmlFrameHandle {
@@ -23,7 +24,7 @@ export interface HtmlFrameHandle {
 }
 
 export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
-  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, designMode, placeholder }, ref) {
+  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, designMode, placeholder, onReady }, ref) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0);
@@ -47,7 +48,8 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
     // Handle iframe load
     const handleLoad = useCallback(() => {
       setIframeReady(true);
-    }, []);
+      onReady?.();
+    }, [onReady]);
 
     // Toggle designMode on the iframe document
     useEffect(() => {

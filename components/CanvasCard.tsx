@@ -169,11 +169,11 @@ export const CanvasCard = memo(function CanvasCard({
                 src={thumbSrc}
                 alt={`${conceptLabel} v${versionNumber}`}
                 className="w-full h-full object-cover object-top"
-                style={{ imageRendering: 'auto', WebkitBackfaceVisibility: 'hidden' }}
                 draggable={false}
                 loading="lazy"
                 onLoad={handleImageLoad}
                 style={{
+                  imageRendering: 'auto' as const,
                   transition: isFading ? 'opacity 0.4s ease' : 'none',
                   opacity: isFading ? 0.6 : 1,
                 }}

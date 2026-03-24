@@ -207,15 +207,14 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         setPresentationMode(false);
         setDesignModeActive(false);
         setZoomLevel('z3');
-        // Set card bounds so grid starts zoomed into current card, then animates out
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
         return 'grid';
       }
-      // Grid to fullscreen: zoom into the card first, then switch
+      // Grid → Frame: zoom to card first, then switch
       if (canvasRef.current) {
         canvasRef.current.zoomToCard(conceptIndex, versionIndex);
-        setTimeout(() => setViewMode('frame'), 320);
-        return v; // Stay in grid for now (setTimeout will switch)
+        setTimeout(() => setViewMode('frame'), 280);
+        return v;
       }
       return 'frame';
     });
