@@ -1,8 +1,8 @@
-# Drift — Claude Code Conventions
+# DriftGrid — Claude Code Conventions
 
-## What is Drift?
+## What is DriftGrid?
 
-Drift is Jeff's design iteration and client presentation platform. Every design project lives here — Claude Code creates the work, and clients review it in the same place. The repo contains both the Next.js app and all project files.
+DriftGrid is Jeff's design iteration and client presentation platform. Every design project lives here — Claude Code creates the work, and clients review it in the same place. The repo contains both the Next.js app and all project files.
 
 ## Project Structure
 
@@ -131,14 +131,14 @@ Rules:
 
 ## Importing Existing HTML Designs
 
-When porting an existing HTML file into a Drift project:
+When porting an existing HTML file into a DriftGrid project:
 
 1. **Strip all multi-version scaffolding** — version switchers, JS navigation, external scripts (Figma capture, PDF gen, etc.). The result must be a clean, static, single-page HTML file.
-2. **Adapt CSS to the target canvas format.** Do NOT copy source CSS verbatim. The output must match the Drift canvas boilerplate:
+2. **Adapt CSS to the target canvas format.** Do NOT copy source CSS verbatim. The output must match the DriftGrid canvas boilerplate:
    - For locked formats (`landscape-16-9`, `a4-portrait`): `html, body { height: 100vh; overflow: hidden; }`. Never add `height: auto`, `overflow: auto/visible`, or `html.scrollable` overrides.
    - For scrollable formats (`desktop`, `tablet`, `mobile`): use the scrollable boilerplate above.
 3. **Remove wrapper classes from the multi-version system** (e.g. `.page`, `.active`, `.v4`). Content should render directly in `<body>` without requiring a specific class to be visible. If the source uses `.page { display: none }` / `.page.active { display: flex }`, refactor so content is always visible.
-4. **Test rendering** — the design must look identical to the source when viewed in the Drift viewer at the correct canvas dimensions.
+4. **Test rendering** — the design must look identical to the source when viewed in the DriftGrid viewer at the correct canvas dimensions.
 
 ## Version Workflow
 
@@ -205,7 +205,7 @@ For locked formats (`landscape-16-9`, `a4-portrait`):
 
 ### Pre-flight checklist (before sharing with client)
 
-1. Open the design locally in the Drift viewer — does it render correctly?
+1. Open the design locally in the DriftGrid viewer — does it render correctly?
 2. Export PDF — do all images, backgrounds, and fonts appear?
 3. Export HTML — open the downloaded file in a browser at different window sizes. Does it scale correctly?
 4. If working set: export the multi-page PDF and verify all pages

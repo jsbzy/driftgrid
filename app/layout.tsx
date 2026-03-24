@@ -9,8 +9,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Drift",
-  description: "Design iteration & client presentation",
+  title: "DriftGrid",
+  description: "Design iteration & client presentation platform",
 };
 
 export default function RootLayout({
@@ -19,7 +19,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            if (localStorage.getItem('driftgrid-theme') === 'dark') {
+              document.documentElement.classList.add('dark');
+            }
+          } catch {}
+        `}} />
+      </head>
       <body className={`${jetbrainsMono.variable} antialiased`}>
         {children}
       </body>

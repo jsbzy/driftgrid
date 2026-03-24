@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriftGrid — Build Kanban</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: #fafafa; color: #1a1a1a;
+            -webkit-font-smoothing: antialiased;
+            padding: 32px;
+        }
+        h1 { font-size: 14px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #888; margin-bottom: 24px; }
+        .board { display: flex; gap: 16px; overflow-x: auto; align-items: flex-start; }
+        .col { min-width: 280px; max-width: 280px; flex-shrink: 0; }
+        .col-header {
+            font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 8px 12px; margin-bottom: 8px; border-radius: 6px;
+        }
+        .col-header.backlog { background: #f0f0f0; color: #999; }
+        .col-header.progress { background: #dbeafe; color: #3b82f6; }
+        .col-header.done { background: #d1fae5; color: #059669; }
+        .col-header .count { float: right; font-weight: 400; }
+        .card {
+            background: white; border: 1px solid #e5e5e5; border-radius: 8px;
+            padding: 10px 12px; margin-bottom: 6px; font-size: 11px; line-height: 1.5;
+            transition: box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .card-title { font-weight: 500; color: #1a1a1a; margin-bottom: 4px; }
+        .card-desc { font-weight: 300; color: #888; font-size: 10px; }
+        .card-tag {
+            display: inline-block; font-size: 9px; font-weight: 500; letter-spacing: 0.05em;
+            padding: 2px 6px; border-radius: 3px; margin-top: 6px;
+        }
+        .tag-p2 { background: #dbeafe; color: #3b82f6; }
+        .tag-p3 { background: #e0e7ff; color: #6366f1; }
+        .tag-p5 { background: #fef3c7; color: #d97706; }
+        .tag-done { background: #d1fae5; color: #059669; }
+        .tag-new { background: #f0f0f0; color: #888; }
+        .phase-divider {
+            font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+            color: #ccc; padding: 8px 0 4px; margin-top: 4px;
+        }
+        .updated { font-size: 9px; color: #bbb; margin-top: 16px; }
+    </style>
+</head>
+<body>
+
+<h1>DriftGrid Build Kanban</h1>
+
+<div class="board">
+    <!-- BACKLOG -->
+    <div class="col">
+        <div class="col-header backlog">Backlog <span class="count">8</span></div>
+
+        <div class="phase-divider">Phase 2 — Frame Types</div>
+        <div class="card">
+            <div class="card-title">2.1 Interactive Frames</div>
+            <div class="card-desc">JS-enabled frames with full interactivity in the grid viewer</div>
+            <span class="card-tag tag-p2">PHASE 2</span>
+        </div>
+        <div class="card">
+            <div class="card-title">2.2 Video Frames</div>
+            <div class="card-desc">Remotion video support as a first-class frame type</div>
+            <span class="card-tag tag-p2">PHASE 2</span>
+        </div>
+        <div class="card">
+            <div class="card-title">2.3 Responsive Preview</div>
+            <div class="card-desc">Toggle desktop/tablet/mobile viewport within a frame</div>
+            <span class="card-tag tag-p2">PHASE 2</span>
+        </div>
+
+        <div class="phase-divider">Phase 3 — Selects & Export</div>
+        <div class="card">
+            <div class="card-title">3.2 Comparison View</div>
+            <div class="card-desc">Side-by-side or overlay diff of two versions</div>
+            <span class="card-tag tag-p3">PHASE 3</span>
+        </div>
+        <div class="card">
+            <div class="card-title">3.3 Export Improvements</div>
+            <div class="card-desc">Multi-page PDF from working sets, batch PNG, PPTX polish</div>
+            <span class="card-tag tag-p3">PHASE 3</span>
+        </div>
+        <div class="card">
+            <div class="card-title">3.4 Share Link</div>
+            <div class="card-desc">Generate a shareable URL for client review (cloud tier)</div>
+            <span class="card-tag tag-p3">PHASE 3</span>
+        </div>
+
+        <div class="phase-divider">Phase 5 — Launch</div>
+        <div class="card">
+            <div class="card-title">5.2 Launch Assets</div>
+            <div class="card-desc">Hero GIF, demo video, landing page</div>
+            <span class="card-tag tag-p5">PHASE 5</span>
+        </div>
+        <div class="card">
+            <div class="card-title">5.3 Monetization Planning</div>
+            <div class="card-desc">Cloud tier pricing, feature gating, Stripe integration</div>
+            <span class="card-tag tag-p5">PHASE 5</span>
+        </div>
+    </div>
+
+    <!-- IN PROGRESS -->
+    <div class="col">
+        <div class="col-header progress">In Progress <span class="count">2</span></div>
+
+        <div class="card">
+            <div class="card-title">5.1 Open-Source Prep</div>
+            <div class="card-desc">LICENSE ✓, CONTRIBUTING ✓, .gitignore ✓, package.json ✓, demo project ✓. Remaining: final repo cleanup, push to GitHub.</div>
+            <span class="card-tag tag-p5">PHASE 5</span>
+        </div>
+        <div class="card">
+            <div class="card-title">H to Hide UI</div>
+            <div class="card-desc">Press H to toggle minimap, star button, and trash button in fullscreen view</div>
+            <span class="card-tag tag-new">NEW</span>
+        </div>
+    </div>
+
+    <!-- DONE -->
+    <div class="col">
+        <div class="col-header done">Done <span class="count">24</span></div>
+
+        <div class="phase-divider">Phase 0 — Stabilize ✓</div>
+        <div class="card">
+            <div class="card-title">0.1 Frame Sizing Reliability</div>
+            <div class="card-desc">resolveCanvas() handles string + freeform canvas configs</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">0.2 Project Setup</div>
+            <div class="card-desc">npm run init, manifest validation, auto-create dirs</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">0.3 Local → Prod Parity</div>
+            <div class="card-desc">npm run doctor validates all projects</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">0.4 Selects UX Overhaul</div>
+            <div class="card-desc">SelectsBar bottom dock, gold starring, presentation mode</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">0.5 Auto-Thumbnails</div>
+            <div class="card-desc">Stale detection, background regen, shimmer overlay, SSE watcher</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">Bug Fix Pass (12 bugs)</div>
+            <div class="card-desc">Canvas drag, dashboard error, navigation, and more</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">Performance Optimization</div>
+            <div class="card-desc">Memoized CardLayer, stable callbacks, reduced re-renders</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+
+        <div class="phase-divider">Phase 1 — Polish the Grid ✓</div>
+        <div class="card">
+            <div class="card-title">Infinite Canvas</div>
+            <div class="card-desc">Pan/zoom, dot grid, momentum scrolling, space-to-pan</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">Zoom Levels (` 1 2 3 4)</div>
+            <div class="card-desc">Overview, column, 3-card, 1.5-card, single card</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">1.1 Zoom-to-Frame Transition</div>
+            <div class="card-desc">Animated Enter/Esc between grid and fullscreen</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">Minimap + Selects Row</div>
+            <div class="card-desc">NavigationGrid with starred indicators, arrow-key selects navigation</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">Column Reorder</div>
+            <div class="card-desc">Arrange modal + Shift+arrow shortcuts</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">DRIFT Button</div>
+            <div class="card-desc">Duplicate version + copy path + navigate to new</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">Delete + Undo</div>
+            <div class="card-desc">Custom confirm dialog, Cmd+Z undo</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">1.5 Hot Reload</div>
+            <div class="card-desc">SSE file watcher, auto-refresh iframe, "Reloaded" indicator</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">Keyboard Shortcuts (16)</div>
+            <div class="card-desc">Full shortcut set with ? overlay panel</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">Light / Dark Theme</div>
+            <div class="card-desc">Toggle with CSS variables, persisted to localStorage</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+
+        <div class="phase-divider">Phase 3 — Selects (partial) ✓</div>
+        <div class="card">
+            <div class="card-title">Presentation Mode</div>
+            <div class="card-desc">Fullscreen slideshow cycling through selects only</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">SelectsBar (3-state)</div>
+            <div class="card-desc">Collapsed → expanded → presentation, with thumbnails</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+
+        <div class="phase-divider">Phase 4 — Dev Experience ✓</div>
+        <div class="card">
+            <div class="card-title">4.1 CLI Tools</div>
+            <div class="card-desc">npm run init, doctor, generate-thumbs, export-pdf/png</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">4.2 Documentation</div>
+            <div class="card-desc">README, CLAUDE.md, DRIFTGRID-CLAUDE.md</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">4.3 Testing + CI</div>
+            <div class="card-desc">13 tests (tsx --test), GitHub Actions CI</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">4.4 Rename to DriftGrid</div>
+            <div class="card-desc">Package name, all references, repo structure</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+        <div class="card">
+            <div class="card-title">5.1 Open-Source Files</div>
+            <div class="card-desc">MIT LICENSE, CONTRIBUTING.md, package.json fields, .gitignore, demo project</div>
+            <span class="card-tag tag-done">DONE</span>
+        </div>
+    </div>
+</div>
+
+<div class="updated">Last updated: 2026-03-24 · Phase 5 in progress</div>
+
+</body>
+</html>

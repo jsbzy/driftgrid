@@ -14,6 +14,7 @@ interface GridViewProps {
   aspectRatio: string;
   selections: Map<string, string>;
   onToggleSelect: () => void;
+  onStarVersion: (conceptId: string, versionId: string) => void;
   workingSets: WorkingSet[];
   activeWorkingSetId: string | null;
   onSaveWorkingSet: () => void;
@@ -39,181 +40,160 @@ export function GridView({
   onLoadWorkingSet,
   onClearSelections,
   selectMode,
+  onStarVersion,
   onToggleSelectMode,
   mode,
 }: GridViewProps) {
-  const maxVersions = Math.max(...concepts.map(c => c.versions.length));
-  const gridCols = concepts.length <= 2
-    ? `48px repeat(${concepts.length}, minmax(0, 480px))`
-    : `48px repeat(${concepts.length}, 1fr)`;
   const hasSelections = selections.size > 0;
-
-  // Build the thumbnail row for a given set of selections
-  const renderSelectsRow = (sels: Map<string, string>) => (
-    <div
-      className="grid gap-3 px-8 pb-2"
-      style={{ gridTemplateColumns: gridCols }}
-    >
-      <div />
-      {concepts.map((concept) => {
-        const selectedVersionId = sels.get(concept.id);
-
-        if (selectedVersionId) {
-          const version = concept.versions.find(v => v.id === selectedVersionId);
-          if (version) {
-            const thumbSrc = version.thumbnail
-              ? `/api/thumbs/${client}/${project}/${version.id}.png`
-              : null;
-            const vi = concept.versions.indexOf(version);
-            const ci = concepts.indexOf(concept);
-            return (
-              <SelectCell
-                key={concept.id}
-                thumbnail={thumbSrc || ''}
-                conceptLabel={concept.label}
-                versionNumber={version.number}
-                aspectRatio={aspectRatio}
-                onClick={() => onSelect(ci, vi)}
-              />
-            );
-          }
-        }
-
-        // Empty slot
-        return (
-          <div
-            key={concept.id}
-            className="w-full rounded-sm"
-            style={{
-              aspectRatio,
-              border: '1px dashed var(--border)',
-            }}
-            onClick={() => {
-              if (!selectMode) onToggleSelectMode();
-            }}
-          />
-        );
-      })}
-    </div>
-  );
+  const colStyle = concepts.length <= 2
+    ? `repeat(${concepts.length}, minmax(0, 480px))`
+    : `repeat(${concepts.length}, 1fr)`;
 
   return (
     <div className="h-full flex flex-col bg-[var(--background)]">
       {/* Column headers */}
       <div
-        className="grid gap-3 px-8 pt-8 pb-3"
-        style={{ gridTemplateColumns: gridCols }}
+        className="grid gap-4 px-10 pt-8 pb-3"
+        style={{ gridTemplateColumns: colStyle }}
       >
-        <div />
         {concepts.map(c => (
           <div
             key={c.id}
-            className="text-[10px] font-medium tracking-widest uppercase text-[var(--muted)] truncate"
+            className="text-[11px] font-semibold tracking-[0.08em] uppercase truncate"
+            style={{ color: 'var(--foreground)', opacity: 0.5 }}
           >
             {c.label}
           </div>
         ))}
       </div>
 
-      {/* Selects area — designer mode only */}
+      {/* Selects row — always visible in designer mode */}
       {mode !== 'client' && (
-        <>
-          {/* Set tabs + controls */}
-          <div className="flex items-center gap-3 px-8 pb-2">
-            {/* Edit / Done toggle */}
-            <button
-              onClick={onToggleSelectMode}
-              className="text-[10px] tracking-wide transition-colors whitespace-nowrap"
-              style={{
-                color: selectMode ? 'var(--foreground)' : 'var(--border)',
-              }}
-            >
-              {selectMode ? 'Done' : 'Edit'}
-            </button>
-
-            {/* Saved set tabs */}
-            {workingSets.length > 0 && (
-              <span className="text-[var(--border)]">·</span>
-            )}
-            {workingSets.map(ws => (
-              <button
-                key={ws.id}
-                onClick={() => onLoadWorkingSet(ws.id)}
-                className="text-[10px] tracking-wide transition-colors"
-                style={{
-                  color: ws.id === activeWorkingSetId
-                    ? 'var(--foreground)'
-                    : 'var(--muted)',
-                  fontWeight: ws.id === activeWorkingSetId ? 500 : 400,
-                }}
-              >
-                {ws.name}
-              </button>
-            ))}
-
-            {/* Save / Clear actions */}
+        <div className="px-10 pb-3">
+          <div className="flex items-center gap-3 pb-2">
+            <span className="text-[10px] font-medium tracking-[0.06em] uppercase" style={{ color: 'var(--foreground)', opacity: 0.35 }}>
+              Selects
+            </span>
             {hasSelections && (
               <>
-                <span className="text-[var(--border)]">·</span>
                 <button
                   onClick={onSaveWorkingSet}
-                  className="text-[10px] tracking-wide text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                  className="text-[10px] tracking-wide hover:opacity-70 transition-opacity"
+                  style={{ color: 'var(--foreground)', opacity: 0.3 }}
                 >
                   Save set
                 </button>
                 <button
                   onClick={onClearSelections}
-                  className="text-[10px] tracking-wide text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                  className="text-[10px] tracking-wide hover:opacity-70 transition-opacity"
+                  style={{ color: 'var(--foreground)', opacity: 0.3 }}
                 >
                   Clear
                 </button>
               </>
             )}
+            {/* Saved working set tabs */}
+            {workingSets.length > 0 && (
+              <>
+                <span style={{ color: 'var(--foreground)', opacity: 0.15 }}>·</span>
+                {workingSets.map(ws => (
+                  <button
+                    key={ws.id}
+                    onClick={() => onLoadWorkingSet(ws.id)}
+                    className="text-[10px] tracking-wide transition-opacity"
+                    style={{
+                      color: 'var(--foreground)',
+                      opacity: ws.id === activeWorkingSetId ? 0.7 : 0.25,
+                      fontWeight: ws.id === activeWorkingSetId ? 600 : 400,
+                    }}
+                  >
+                    {ws.name}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
-
-          {/* Active selects row */}
-          {renderSelectsRow(selections)}
-
-          {/* Spacer */}
-          <div className="h-4" />
-        </>
+          <div
+            className="grid gap-4"
+            style={{ gridTemplateColumns: colStyle }}
+          >
+            {concepts.map((concept) => {
+              const selectedVersionId = selections.get(concept.id);
+              if (selectedVersionId) {
+                const version = concept.versions.find(v => v.id === selectedVersionId);
+                if (version) {
+                  const thumbFilename = version.thumbnail?.replace('.thumbs/', '') || null;
+                  const thumbSrc = thumbFilename
+                    ? `/api/thumbs/${client}/${project}/${thumbFilename}`
+                    : null;
+                  const vi = concept.versions.indexOf(version);
+                  const ci = concepts.indexOf(concept);
+                  return (
+                    <SelectCell
+                      key={concept.id}
+                      thumbnail={thumbSrc || ''}
+                      conceptLabel={concept.label}
+                      versionNumber={version.number}
+                      aspectRatio={aspectRatio}
+                      onClick={() => onSelect(ci, vi)}
+                    />
+                  );
+                }
+              }
+              // Empty slot — dashed placeholder
+              return (
+                <div
+                  key={concept.id}
+                  className="w-full rounded"
+                  style={{
+                    aspectRatio,
+                    border: '1px dashed rgba(0,0,0,0.1)',
+                  }}
+                />
+              );
+            })}
+          </div>
+          <div className="h-3" />
+          <div style={{ height: 1, background: 'rgba(0,0,0,0.06)' }} />
+        </div>
       )}
 
-      {/* Grid body */}
-      <div className="flex-1 overflow-auto px-8 pb-8">
-        <div className="flex flex-col gap-3">
-          {Array.from({ length: maxVersions }, (_, row) => (
-            <div
-              key={row}
-              className="grid gap-3"
-              style={{ gridTemplateColumns: gridCols }}
-            >
-              <div className="flex items-center justify-end pr-2 text-[10px] text-[var(--muted)] tracking-wide">
-                v{row + 1}
+      {/* Grid body — independent columns, latest versions at top */}
+      <div className="flex-1 overflow-auto px-10 pb-10">
+        <div
+          className="grid gap-4 items-start"
+          style={{ gridTemplateColumns: colStyle }}
+        >
+          {concepts.map((concept, col) => {
+            // Reverse: latest version first
+            const reversed = [...concept.versions].reverse();
+            return (
+              <div key={concept.id} className="flex flex-col gap-4">
+                {reversed.map((version) => {
+                  // Map back to the original index for navigation
+                  const row = concept.versions.indexOf(version);
+                  const thumbFilename = version.thumbnail?.replace('.thumbs/', '') || null;
+                  const thumbSrc = thumbFilename
+                    ? `/api/thumbs/${client}/${project}/${thumbFilename}`
+                    : null;
+                  const isStarred = selections.get(concept.id) === version.id;
+                  return (
+                    <GridCell
+                      key={version.id}
+                      thumbnail={thumbSrc}
+                      conceptLabel={concept.label}
+                      versionNumber={version.number}
+                      isCurrent={col === conceptIndex && row === versionIndex}
+                      isSelected={isStarred}
+                      onStar={() => onStarVersion(concept.id, version.id)}
+                      onClick={() => onSelect(col, row)}
+                      aspectRatio={aspectRatio}
+                    />
+                  );
+                })}
               </div>
-              {concepts.map((concept, col) => {
-                const version = concept.versions[row];
-                if (!version) {
-                  return <div key={`${col}-${row}`} />;
-                }
-                const thumbSrc = version.thumbnail
-                  ? `/api/thumbs/${client}/${project}/${version.id}.png`
-                  : null;
-                return (
-                  <GridCell
-                    key={`${col}-${row}`}
-                    thumbnail={thumbSrc}
-                    conceptLabel={concept.label}
-                    versionNumber={version.number}
-                    isCurrent={col === conceptIndex && row === versionIndex}
-                    isSelected={selections.get(concept.id) === version.id}
-                    onClick={() => onSelect(col, row)}
-                    aspectRatio={aspectRatio}
-                  />
-                );
-              })}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

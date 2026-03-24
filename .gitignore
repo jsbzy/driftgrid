@@ -42,3 +42,13 @@ next-env.d.ts
 
 .env*.local
 _archive/
+
+# User projects (client work — not committed to the public repo)
+/projects/*/
+!/projects/demo/
+
+# Thumbnail caches
+.thumbs/
+
+# Video / Remotion working files
+/video/

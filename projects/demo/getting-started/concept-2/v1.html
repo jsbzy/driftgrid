@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriftGrid Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #0a0a0a;
+            color: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 860px;
+            padding: 0 2rem;
+        }
+        .topline {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 48px;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+        }
+        .topline span {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #525252;
+        }
+        h1 {
+            font-size: 72px;
+            font-weight: 700;
+            line-height: 1.0;
+            letter-spacing: -0.04em;
+            margin-bottom: 28px;
+        }
+        .subtitle {
+            font-size: 18px;
+            font-weight: 400;
+            color: #737373;
+            line-height: 1.7;
+            max-width: 480px;
+            margin-bottom: 48px;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+        }
+        .cta {
+            font-size: 14px;
+            font-weight: 500;
+            color: #0a0a0a;
+            background: #fafafa;
+            border: none;
+            border-radius: 6px;
+            padding: 13px 28px;
+            cursor: pointer;
+            letter-spacing: 0.01em;
+        }
+        .cta-outline {
+            color: #a3a3a3;
+            background: transparent;
+            border: 1px solid #262626;
+        }
+        .cta-outline:hover { border-color: #404040; color: #fafafa; }
+        .grid-preview {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            opacity: 0.15;
+        }
+        .grid-preview div {
+            width: 20px;
+            height: 14px;
+            border-radius: 2px;
+            background: #fafafa;
+        }
+        .grid-preview div:nth-child(5) {
+            background: #2563eb;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topline">
+            <div class="dot"></div>
+            <span>Dark mode concept</span>
+        </div>
+        <h1 data-drift-editable="headline" data-drift-maxlen="60">Your AI designs<br>deserve a grid</h1>
+        <p class="subtitle" data-drift-editable="subtitle" data-drift-maxlen="140">A different direction — dark, minimal, developer-oriented. Every concept is a column. Every iteration is a row. Compare side by side.</p>
+        <div class="actions">
+            <button class="cta" data-drift-editable="cta" data-drift-maxlen="30">npx driftgrid</button>
+            <button class="cta cta-outline" data-drift-editable="cta2" data-drift-maxlen="30">Documentation</button>
+        </div>
+    </div>
+    <div class="grid-preview">
+        <div></div><div></div><div></div>
+        <div></div><div></div><div></div>
+        <div></div><div></div><div></div>
+    </div>
+</body>
+</html>

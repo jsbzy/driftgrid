@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ViewMode } from '@/lib/types';
+
+export type ZoomLevel = 'overview' | 'z1' | 'z2' | 'z3' | 'z4';
 
 interface UseKeyboardNavProps {
   conceptIndex: number;
@@ -10,10 +12,22 @@ interface UseKeyboardNavProps {
   conceptCount: number;
   getVersionCount: (conceptIndex: number) => number;
   onNavigate: (conceptIndex: number, versionIndex: number) => void;
-  onToggleGrid?: () => void;
   onToggleGridView?: () => void;
   onToggleSelect?: () => void;
-  viewMode: 'fullscreen' | 'grid';
+  onZoomToLevel?: (level: ZoomLevel) => void;
+  onDrift?: () => void;
+  onBranch?: () => void;
+  onDelete?: () => void;
+  onUndo?: () => void;
+  onPresent?: () => void;
+  onMoveConceptLeft?: () => void;
+  onMoveConceptRight?: () => void;
+  inSelectsRow?: boolean;
+  onSetSelectsRow?: (inRow: boolean) => void;
+  selectsConceptIndices?: number[];
+  getSelectedVersionIndex?: (conceptIndex: number) => number;
+  viewMode: 'frame' | 'grid';
+  zoomLevel?: ZoomLevel;
   mode?: ViewMode;
   client?: string;
 }
@@ -24,78 +38,229 @@ export function useKeyboardNav({
   conceptCount,
   getVersionCount,
   onNavigate,
-  onToggleGrid,
   onToggleGridView,
   onToggleSelect,
+  onZoomToLevel,
+  onDrift,
+  onBranch,
+  onDelete,
+  onUndo,
+  onPresent,
+  onMoveConceptLeft,
+  onMoveConceptRight,
+  inSelectsRow = false,
+  onSetSelectsRow,
+  selectsConceptIndices = [],
+  getSelectedVersionIndex,
   viewMode,
+  zoomLevel = 'overview',
   mode = 'designer',
   client,
 }: UseKeyboardNavProps) {
   const router = useRouter();
+  // Track preferred version index so horizontal nav doesn't lose your row
+  const preferredVi = useRef(versionIndex);
+  const wasHorizontalNav = useRef(false);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // Don't navigate if user is typing in an input
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         (e.target instanceof HTMLElement && e.target.isContentEditable)
-      ) {
-        return;
-      }
+      ) return;
+
+      // Don't handle space (used for panning)
+      if (e.key === ' ') return;
 
       switch (e.key) {
+        // ── Zoom level keys ──
+        case '`': {
+          e.preventDefault();
+          if (viewMode === 'grid') onZoomToLevel?.('overview');
+          break;
+        }
+        case '1': {
+          e.preventDefault();
+          if (viewMode === 'grid') onZoomToLevel?.('z1');
+          break;
+        }
+        case '2': {
+          e.preventDefault();
+          if (viewMode === 'grid') onZoomToLevel?.('z2');
+          break;
+        }
+        case '3': {
+          e.preventDefault();
+          if (viewMode === 'grid') onZoomToLevel?.('z3');
+          break;
+        }
+        case '4': {
+          e.preventDefault();
+          if (viewMode === 'grid') onZoomToLevel?.('z4');
+          break;
+        }
+
+        // ── Arrow navigation ──
         case 'ArrowRight': {
           e.preventDefault();
-          const nextConcept = Math.min(conceptIndex + 1, conceptCount - 1);
-          if (nextConcept !== conceptIndex) {
-            const maxVersion = getVersionCount(nextConcept) - 1;
-            onNavigate(nextConcept, Math.min(versionIndex, maxVersion));
+          if (e.shiftKey && viewMode === 'grid') {
+            onMoveConceptRight?.();
+            break;
+          }
+          if (inSelectsRow && selectsConceptIndices.length > 0) {
+            const curPos = selectsConceptIndices.indexOf(conceptIndex);
+            const nextPos = curPos < selectsConceptIndices.length - 1 ? curPos + 1 : 0;
+            const nextCi = selectsConceptIndices[nextPos];
+            const nextVi = getSelectedVersionIndex?.(nextCi) ?? 0;
+            onNavigate(nextCi, nextVi);
+          } else {
+            const nextConcept = Math.min(conceptIndex + 1, conceptCount - 1);
+            if (nextConcept !== conceptIndex) {
+              wasHorizontalNav.current = true;
+              const maxVi = getVersionCount(nextConcept) - 1;
+              const targetVi = Math.min(preferredVi.current, maxVi);
+              onNavigate(nextConcept, targetVi);
+            }
           }
           break;
         }
         case 'ArrowLeft': {
           e.preventDefault();
-          const prevConcept = Math.max(conceptIndex - 1, 0);
-          if (prevConcept !== conceptIndex) {
-            const maxVersion = getVersionCount(prevConcept) - 1;
-            onNavigate(prevConcept, Math.min(versionIndex, maxVersion));
+          if (e.shiftKey && viewMode === 'grid') {
+            onMoveConceptLeft?.();
+            break;
+          }
+          if (inSelectsRow && selectsConceptIndices.length > 0) {
+            const curPos = selectsConceptIndices.indexOf(conceptIndex);
+            const prevPos = curPos > 0 ? curPos - 1 : selectsConceptIndices.length - 1;
+            const prevCi = selectsConceptIndices[prevPos];
+            const prevVi = getSelectedVersionIndex?.(prevCi) ?? 0;
+            onNavigate(prevCi, prevVi);
+          } else {
+            const prevConcept = Math.max(conceptIndex - 1, 0);
+            if (prevConcept !== conceptIndex) {
+              wasHorizontalNav.current = true;
+              const maxVi = getVersionCount(prevConcept) - 1;
+              const targetVi = Math.min(preferredVi.current, maxVi);
+              onNavigate(prevConcept, targetVi);
+            }
           }
           break;
         }
         case 'ArrowDown': {
           e.preventDefault();
-          const maxVersion = getVersionCount(conceptIndex) - 1;
-          const nextVersion = Math.min(versionIndex + 1, maxVersion);
-          if (nextVersion !== versionIndex) {
-            onNavigate(conceptIndex, nextVersion);
+          if (inSelectsRow) {
+            onSetSelectsRow?.(false);
+          } else {
+            const olderVersion = Math.max(versionIndex - 1, 0);
+            if (olderVersion !== versionIndex) {
+              preferredVi.current = olderVersion;
+              onNavigate(conceptIndex, olderVersion);
+            }
           }
           break;
         }
         case 'ArrowUp': {
           e.preventDefault();
-          const prevVersion = Math.max(versionIndex - 1, 0);
-          if (prevVersion !== versionIndex) {
-            onNavigate(conceptIndex, prevVersion);
+          const maxVersion = getVersionCount(conceptIndex) - 1;
+          const newerVersion = Math.min(versionIndex + 1, maxVersion);
+          if (newerVersion === versionIndex && selectsConceptIndices.length > 0 && !inSelectsRow) {
+            // At the top — enter selects row
+            onSetSelectsRow?.(true);
+          } else if (!inSelectsRow && newerVersion !== versionIndex) {
+            preferredVi.current = newerVersion;
+            onNavigate(conceptIndex, newerVersion);
           }
           break;
         }
+
+        // ── Enter: drill down one level (or Cmd+Enter to present) ──
+        case 'Enter': {
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            onPresent?.();
+            break;
+          }
+          e.preventDefault();
+          if (viewMode === 'grid') {
+            const levels: ZoomLevel[] = ['overview', 'z1', 'z2', 'z3', 'z4'];
+            const idx = levels.indexOf(zoomLevel);
+            if (idx < levels.length - 1) {
+              onZoomToLevel?.(levels[idx + 1]);
+            } else {
+              onToggleGridView?.(); // z4 → fullscreen
+            }
+          }
+          break;
+        }
+
+        // ── Escape: back one level ──
         case 'Escape': {
           e.preventDefault();
-          if (viewMode === 'fullscreen') {
-            // Fullscreen → grid
+          if (viewMode === 'frame') {
             onToggleGridView?.();
-          } else {
-            // Grid → dashboard
-            router.push(mode === 'client' ? `/review/${client}` : '/');
+            // Don't set zoom here — handleToggleGridView in Viewer already sets z3
+          } else if (viewMode === 'grid') {
+            const levels: ZoomLevel[] = ['overview', 'z1', 'z2', 'z3', 'z4'];
+            const idx = levels.indexOf(zoomLevel);
+            if (idx > 0) {
+              onZoomToLevel?.(levels[idx - 1]);
+            } else {
+              router.push(mode === 'client' ? `/review/${client}` : '/');
+            }
           }
           break;
         }
-        case ' ': {
+
+        // ── Jump to latest ──
+        case 'l':
+        case 'L': {
           e.preventDefault();
-          onToggleGrid?.();
+          if (viewMode === 'grid') {
+            // Navigate to the latest version of the current concept
+            const maxVi = getVersionCount(conceptIndex) - 1;
+            onNavigate(conceptIndex, maxVi);
+            onZoomToLevel?.('z4');
+          }
           break;
         }
+
+        // ── Delete ──
+        case 'Delete':
+        case 'Backspace': {
+          e.preventDefault();
+          onDelete?.();
+          break;
+        }
+
+        // ── Undo (Cmd+Z) ──
+        case 'z':
+        case 'Z': {
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            onUndo?.();
+          }
+          break;
+        }
+
+        // ── Drift ──
+        case 'd':
+        case 'D': {
+          e.preventDefault();
+          onDrift?.();
+          break;
+        }
+
+        // ── Branch ──
+        case 'b':
+        case 'B': {
+          e.preventDefault();
+          onBranch?.();
+          break;
+        }
+
+        // ── Other keys ──
         case 'g':
         case 'G': {
           e.preventDefault();
@@ -104,24 +269,30 @@ export function useKeyboardNav({
         }
         case 's':
         case 'S': {
-          if (viewMode === 'grid') {
-            e.preventDefault();
-            onToggleSelect?.();
-          }
+          e.preventDefault();
+          onToggleSelect?.();
           break;
         }
-        case 'Enter': {
-          if (viewMode === 'grid') {
-            e.preventDefault();
-            // Select current cell → fullscreen
-            onToggleGridView?.();
-          }
+        case 'p':
+        case 'P': {
+          e.preventDefault();
+          onPresent?.();
           break;
         }
       }
     },
-    [conceptIndex, versionIndex, conceptCount, getVersionCount, onNavigate, onToggleGrid, onToggleGridView, onToggleSelect, viewMode, mode, client, router]
+    [conceptIndex, versionIndex, conceptCount, getVersionCount, onNavigate, onToggleGridView, onToggleSelect, onZoomToLevel, onDrift, onBranch, onDelete, onUndo, onPresent, onMoveConceptLeft, onMoveConceptRight, inSelectsRow, onSetSelectsRow, selectsConceptIndices, getSelectedVersionIndex, viewMode, zoomLevel, mode, client, router]
   );
+
+  // Sync preferred row when versionIndex changes via click or vertical nav
+  // Skip when the change came from horizontal nav (clamped value)
+  useEffect(() => {
+    if (wasHorizontalNav.current) {
+      wasHorizontalNav.current = false;
+      return;
+    }
+    preferredVi.current = versionIndex;
+  }, [versionIndex]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);

@@ -4,6 +4,18 @@ import { promises as fs } from 'fs';
 import { getHtmlFile } from '@/lib/manifest';
 import { getEditScript } from '@/lib/editScript';
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ client: string; project: string; path: string[] }> }
+) {
+  const { client, project, path: pathParts } = await params;
+  const filePath = pathParts.join('/');
+  const fullPath = path.join(process.cwd(), 'projects', client, project, filePath);
+  const html = await request.text();
+  await fs.writeFile(fullPath, html, 'utf-8');
+  return new NextResponse('OK', { status: 200 });
+}
+
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.jpg': 'image/jpeg',
@@ -14,6 +26,7 @@ const MIME_TYPES: Record<string, string> = {
   '.webp': 'image/webp',
   '.css': 'text/css',
   '.js': 'application/javascript',
+  '.mp4': 'video/mp4',
 };
 
 export async function GET(

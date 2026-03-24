@@ -40,8 +40,9 @@ async function main() {
 
   for (const concept of manifest.concepts) {
     for (const version of concept.versions) {
-      const outputPath = path.join(thumbsDir, `${version.id}.png`);
-      const thumbRelative = `.thumbs/${version.id}.png`;
+      const thumbName = `${concept.id}-${version.id}`;
+      const outputPath = path.join(thumbsDir, `${thumbName}.png`);
+      const thumbRelative = `.thumbs/${thumbName}.png`;
 
       // Skip if exists (unless --force)
       if (!force) {

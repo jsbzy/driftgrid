@@ -12,6 +12,8 @@ interface HtmlFrameProps {
   savedEdits?: Record<string, string>;
   onEditsChange?: (allEdits: Record<string, string>) => void;
   onScaledWidth?: (width: number) => void;
+  designMode?: boolean;
+  placeholder?: string | null;
 }
 
 export interface HtmlFrameHandle {
@@ -21,7 +23,7 @@ export interface HtmlFrameHandle {
 }
 
 export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
-  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth }, ref) {
+  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, designMode, placeholder }, ref) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0);
@@ -46,6 +48,36 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
     const handleLoad = useCallback(() => {
       setIframeReady(true);
     }, []);
+
+    // Toggle designMode on the iframe document
+    useEffect(() => {
+      if (!iframeReady || !iframeRef.current) return;
+      try {
+        const iframeDoc = iframeRef.current.contentDocument;
+        if (!iframeDoc) return;
+        iframeDoc.designMode = designMode ? 'on' : 'off';
+      } catch {
+        // Cross-origin iframe
+      }
+    }, [designMode, iframeReady]);
+
+    // When designMode is on, intercept paste events to convert to plain text
+    useEffect(() => {
+      if (!designMode || !iframeReady || !iframeRef.current) return;
+      try {
+        const iframeDoc = iframeRef.current.contentDocument;
+        if (!iframeDoc) return;
+        const handler = (e: ClipboardEvent) => {
+          e.preventDefault();
+          const text = e.clipboardData?.getData('text/plain') ?? '';
+          iframeDoc.execCommand('insertText', false, text);
+        };
+        iframeDoc.addEventListener('paste', handler, true);
+        return () => iframeDoc.removeEventListener('paste', handler, true);
+      } catch {
+        // Cross-origin iframe
+      }
+    }, [designMode, iframeReady]);
 
     // Ref for savedEdits to avoid re-triggering the effect on every keystroke
     const savedEditsRef = useRef(savedEdits);
@@ -78,6 +110,65 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
         }
       }
     }, [editMode, showEdits, hasEdits, iframeReady]);
+
+    // Forward navigation keys (G, Escape) from iframe to parent window
+    useEffect(() => {
+      if (!iframeReady || !iframeRef.current) return;
+      try {
+        const iframeDoc = iframeRef.current.contentDocument;
+        if (!iframeDoc) return;
+        const handler = (e: KeyboardEvent) => {
+          // Don't forward keys when user is typing in contentEditable (designMode)
+          if ((e.target as HTMLElement)?.isContentEditable) {
+            // Still forward Cmd+S for save and Escape for exit
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, bubbles: true }));
+            }
+            if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
+            }
+            return;
+          }
+          // Forward Cmd+K / Ctrl+K for command palette
+          if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+            if (e.target instanceof iframeDoc.defaultView!.HTMLInputElement ||
+                e.target instanceof iframeDoc.defaultView!.HTMLTextAreaElement) return;
+            e.preventDefault();
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
+            return;
+          }
+          if (e.key === 'b' || e.key === 'B' ||
+              e.key === 'e' || e.key === 'E' ||
+              e.key === 'g' || e.key === 'G' || e.key === 'Escape' ||
+              e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+              e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
+              e.key === 'h' || e.key === 'H' ||
+              e.key === 'n' || e.key === 'N' ||
+              e.key === 'p' || e.key === 'P' ||
+              e.key === 's' || e.key === 'S' ||
+              e.key === '?') {
+            // Don't intercept if user is typing in an input inside the iframe
+            if (e.target instanceof iframeDoc.defaultView!.HTMLInputElement ||
+                e.target instanceof iframeDoc.defaultView!.HTMLTextAreaElement) return;
+            // Forward Cmd+S with modifier keys preserved
+            if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
+              return;
+            }
+            e.preventDefault();
+            // Re-dispatch on parent window
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, bubbles: true }));
+          }
+        };
+        iframeDoc.addEventListener('keydown', handler, true);
+        return () => iframeDoc.removeEventListener('keydown', handler, true);
+      } catch {
+        // Cross-origin iframe — can't attach listener
+      }
+    }, [iframeReady]);
 
     // Listen for edit-change messages from iframe
     useEffect(() => {
@@ -231,17 +322,46 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
 
       return (
         <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden">
-          <div style={{ width: scaledWidth, height: scaledHeight, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 4 }}>
+          <div style={{
+            width: scaledWidth,
+            height: scaledHeight,
+            overflow: 'hidden',
+            border: designMode ? '2px solid #2dd4bf' : '1px solid rgba(0,0,0,0.08)',
+            borderRadius: 4,
+            transition: 'border-color 0.2s ease',
+            position: 'relative',
+          }}>
+            {/* Thumbnail placeholder — visible until iframe loads */}
+            {placeholder && !iframeReady && (
+              <img
+                src={placeholder}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'top',
+                  zIndex: 1,
+                }}
+              />
+            )}
             <iframe
               ref={iframeRef}
               src={editSrc}
-              sandbox="allow-same-origin allow-scripts allow-modals"
+              sandbox="allow-same-origin allow-scripts allow-modals allow-forms allow-popups allow-fullscreen allow-pointer-lock allow-downloads"
               title="Design preview"
               onLoad={handleLoad}
               style={{
                 width: canvasWidth,
                 height: canvasHeight,
                 border: 'none',
+                position: 'relative',
+                zIndex: 2,
+                opacity: iframeReady ? 1 : 0,
+                transition: 'opacity 0.15s ease',
                 ...(editMode
                   ? { zoom: scale }
                   : { transform: `scale(${scale})`, transformOrigin: '0 0' }
@@ -255,14 +375,30 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
 
     // Responsive canvas: stretch to fill
     return (
-      <iframe
-        ref={iframeRef}
-        src={editSrc}
-        className="w-full h-full border-0"
-        sandbox="allow-same-origin allow-scripts allow-modals"
-        title="Design preview"
+      <div className="w-full h-full relative">
+        {placeholder && !iframeReady && (
+          <img
+            src={placeholder}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover object-top"
+            style={{ zIndex: 1 }}
+          />
+        )}
+        <iframe
+          ref={iframeRef}
+          src={editSrc}
+          className="w-full h-full relative"
+          style={{
+            border: designMode ? '2px solid #2dd4bf' : 'none',
+            transition: 'border-color 0.2s ease, opacity 0.15s ease',
+            zIndex: 2,
+            opacity: iframeReady ? 1 : 0,
+          }}
+          sandbox="allow-same-origin allow-scripts allow-modals allow-forms allow-popups allow-fullscreen allow-pointer-lock allow-downloads"
+          title="Design preview"
         onLoad={handleLoad}
       />
+      </div>
     );
   }
 );

@@ -1,12 +1,30 @@
 {
-  "name": "drift",
+  "name": "driftgrid",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "description": "Local-first design iteration platform — version everything, compare anything, present to clients",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jsbzy/drift.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "design",
+    "iteration",
+    "versioning",
+    "html",
+    "canvas",
+    "presentation",
+    "driftgrid",
+    "local-first"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "init": "tsx scripts/init-project.ts",
+    "doctor": "tsx scripts/doctor.ts",
     "generate-thumbs": "npx tsx scripts/generate-thumbnails.ts",
     "export-pdf": "npx tsx scripts/export-pdf.ts",
     "export-png": "npx tsx scripts/export-png.ts",

@@ -7,14 +7,26 @@ interface KeyboardShortcutsProps {
   onClose: () => void;
 }
 
-const shortcuts = [
-  { key: '←  →', desc: 'Navigate concepts' },
-  { key: '↑  ↓', desc: 'Navigate versions' },
-  { key: 'G', desc: 'Toggle grid / fullscreen' },
-  { key: 'Enter', desc: 'Open selected cell' },
-  { key: 'Space', desc: 'Toggle minimap' },
-  { key: 'S', desc: 'Select version (grid mode)' },
-  { key: 'Esc', desc: 'Back' },
+const shortcuts: { key: string; desc: string }[] = [
+  { key: '←  →  ↑  ↓', desc: 'Navigate' },
+  { key: 'Enter', desc: 'Drill down / open' },
+  { key: 'Esc', desc: 'Back one level' },
+  { key: 'G', desc: 'Toggle grid / frame' },
+  { key: '`', desc: 'Overview zoom' },
+  { key: '1 – 4', desc: 'Zoom levels' },
+  { key: 'D', desc: 'Drift (create new version)' },
+  { key: 'B', desc: 'Branch (create new concept)' },
+  { key: 'L', desc: 'Jump to latest version' },
+  { key: 'S', desc: 'Star / unstar' },
+  { key: 'Del / ⌫', desc: 'Delete version' },
+  { key: '⌘Z', desc: 'Undo delete' },
+  { key: 'Shift ← →', desc: 'Move column' },
+  { key: 'Scroll', desc: 'Pan grid' },
+  { key: '⌘ Scroll', desc: 'Zoom' },
+  { key: 'P / ⌘↵', desc: 'Present selects' },
+  { key: 'H', desc: 'Hide HUD' },
+  { key: 'N', desc: 'Hide navbar' },
+  { key: 'Shift+click', desc: 'Multi-star' },
   { key: '?', desc: 'This panel' },
 ];
 
@@ -40,7 +52,7 @@ export function KeyboardShortcuts({ visible, onClose }: KeyboardShortcutsProps) 
     >
       <div className="absolute inset-0 bg-black/20" />
       <div
-        className="relative bg-[var(--background)] border border-[var(--border)] rounded-sm p-6 min-w-[240px]"
+        className="relative bg-[var(--background)] border border-[var(--border)] rounded-sm p-6 min-w-[280px]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-[10px] font-medium tracking-widest uppercase text-[var(--muted)] mb-4">

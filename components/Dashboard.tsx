@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import Link from 'next/link';
 import type { ClientInfo } from '@/lib/types';
-import { CANVAS_PRESETS } from '@/lib/constants';
+import { resolveCanvas } from '@/lib/constants';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -14,7 +14,7 @@ export function Dashboard() {
     <div className="min-h-screen p-8 max-w-4xl mx-auto">
       <header className="mb-12">
         <h1 className="text-sm font-medium tracking-widest uppercase text-[var(--muted)]">
-          Drift
+          DriftGrid
         </h1>
       </header>
 
@@ -35,7 +35,7 @@ export function Dashboard() {
           </h2>
           <div className="space-y-2">
             {client.projects.map(project => {
-              const preset = CANVAS_PRESETS[project.canvas];
+              const resolved = resolveCanvas(project.canvas);
               return (
                 <Link
                   key={project.slug}
@@ -52,7 +52,7 @@ export function Dashboard() {
                       </span>
                     </div>
                     <span className="text-xs text-[var(--muted)]">
-                      {preset?.label ?? project.canvas}
+                      {resolved.label}
                     </span>
                   </div>
                 </Link>

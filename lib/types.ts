@@ -43,6 +43,10 @@ export interface Concept {
   description: string;
   position: number;
   visible: boolean;
+  branchedFrom?: {
+    conceptId: string;
+    versionId: string;
+  };
   versions: Version[];
 }
 
