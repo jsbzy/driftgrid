@@ -264,6 +264,35 @@ async function main() {
   await fs.writeFile(htmlPath, starterHtml, 'utf-8');
   console.log(`  Created projects/${client}/${project}/concept-1/v1.html`);
 
+  // Write/update CLAUDE.md with DriftGrid conventions
+  const claudeMdPath = path.join(PROJECTS_DIR, '..', 'CLAUDE.md');
+  const driftgridSection = `
+## DriftGrid Conventions
+
+This project uses DriftGrid for design iteration. Key rules:
+
+- **Never overwrite versions.** Copy to the next version number (v2, v3, etc.) and edit the copy.
+- **Update manifest.json** when adding versions or concepts.
+- **HTML files must be self-contained** — inline CSS/JS, Google Fonts via \`<link>\` tags, no external URLs.
+- **Canvas preset:** \`${canvasPreset}\` (${widthPx}${typeof preset.height === 'number' ? `x${preset.height}` : ' x auto'})
+
+### API Endpoints (localhost:3000)
+- \`GET /api/current\` — what the user is currently viewing
+- \`POST /api/iterate\` — create a new version (drift)
+- \`POST /api/branch\` — fork into a new concept
+- \`POST /api/create-project\` — create a new project
+`;
+
+  try {
+    const existing = await fs.readFile(claudeMdPath, 'utf-8');
+    if (!existing.includes('DriftGrid Conventions')) {
+      await fs.writeFile(claudeMdPath, existing + '\n' + driftgridSection, 'utf-8');
+      console.log(`  Updated CLAUDE.md with DriftGrid conventions`);
+    }
+  } catch {
+    // CLAUDE.md doesn't exist — that's fine, the main one in the repo root covers it
+  }
+
   console.log('');
   console.log(`Project initialized at: projects/${client}/${project}/`);
   console.log(`Canvas: ${preset.label} (${widthPx}${typeof preset.height === 'number' ? `x${preset.height}` : ' x auto'})`);

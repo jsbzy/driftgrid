@@ -116,6 +116,27 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const versions = currentConcept?.versions ?? [];
   const currentVersion = versions[versionIndex];
 
+  // Broadcast current view to /api/current for agent integration
+  useEffect(() => {
+    if (!currentConcept || !currentVersion) return;
+    const path = `projects/${client}/${project}/${currentVersion.file}`;
+    fetch('/api/current', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client,
+        project,
+        conceptId: currentConcept.id,
+        conceptLabel: currentConcept.label,
+        versionId: currentVersion.id,
+        versionNumber: currentVersion.number,
+        file: currentVersion.file,
+        absolutePath: `~/drift/${path}`,
+        viewMode,
+      }),
+    }).catch(() => {}); // fire and forget
+  }, [client, project, currentConcept, currentVersion, viewMode]);
+
   // Build presentation playlist — ordered list of {conceptIndex, versionIndex} for selected versions
   const presentationPlaylist = useMemo(() => {
     if (selections.size === 0) return [];
