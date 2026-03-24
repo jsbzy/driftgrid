@@ -521,12 +521,14 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
           {layout.dividers.map(div => (
             <div
               key={`divider-${div.roundId}-${div.conceptIndex}`}
+              data-card
               className="absolute cursor-pointer"
               style={{
                 left: div.x,
                 top: div.y,
                 width: div.width,
                 height: 24,
+                zIndex: 10,
               }}
               onClick={() => {
                 setCollapsedRounds(prev => {
