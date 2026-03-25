@@ -313,14 +313,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     }
   }, [transform.scale, layout, conceptIndex, versionIndex, onSelect]);
 
-  const zoomLabels = useMemo<{ level: ZoomLevel; label: string; key: string }[]>(() => [
-    { level: 'overview', label: 'All', key: '`' },
-    { level: 'z1', label: '1', key: '1' },
-    { level: 'z2', label: '2', key: '2' },
-    { level: 'z3', label: '3', key: '3' },
-    { level: 'z4', label: '4', key: '4' },
-  ], []);
-
   return (
     <div className="h-full flex flex-col" style={{ background: 'var(--canvas)' }}>
       <div
@@ -353,25 +345,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
           >
             Arrange
           </button>
-          <div className="flex items-center gap-1">
-            {zoomLabels.map(z => (
-              <button
-                key={z.level}
-                onClick={() => onZoomLevelChange(z.level)}
-                className="px-1.5 py-0.5 rounded transition-all"
-                style={{
-                  fontSize: 9,
-                  fontFamily: 'var(--font-mono, monospace)',
-                  letterSpacing: '0.04em',
-                  color: zoomLevel === z.level ? 'var(--foreground)' : 'var(--muted)',
-                  background: zoomLevel === z.level ? 'rgba(0,0,0,0.06)' : 'transparent',
-                  fontWeight: zoomLevel === z.level ? 600 : 400,
-                }}
-              >
-                {z.key}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Dot grid background */}
