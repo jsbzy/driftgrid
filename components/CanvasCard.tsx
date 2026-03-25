@@ -151,16 +151,12 @@ export const CanvasCard = memo(function CanvasCard({
         <div
           className="w-full h-full overflow-hidden rounded transition-all"
           style={{
-            border: isSelected
-              ? '2px solid var(--selects-gold)'
-              : isCurrent
-                ? '2px solid var(--foreground)'
-                : '1px solid var(--card-border)',
-            boxShadow: isSelected
+            border: isCurrent
+              ? '2px solid var(--foreground)'
+              : '1px solid var(--card-border)',
+            boxShadow: isCurrent
               ? 'var(--card-shadow-active)'
-              : isCurrent
-                ? 'var(--card-shadow-active)'
-                : 'var(--card-shadow)',
+              : 'var(--card-shadow)',
             background: 'var(--card-bg)',
             position: 'relative',
           }}
@@ -224,7 +220,27 @@ export const CanvasCard = memo(function CanvasCard({
         )}
       </div>
 
-
+      {/* Star button — top-right corner */}
+      {onStar && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onStar(); }}
+          className="absolute top-2 right-2 p-1 rounded transition-all"
+          style={{
+            background: isSelected ? 'transparent' : 'transparent',
+            opacity: isSelected ? 1 : 0.3,
+            zIndex: 5,
+          }}
+          title={isSelected ? 'Remove from selects' : 'Add to selects (S)'}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24"
+            fill={isSelected ? '#facc15' : 'none'}
+            stroke={isSelected ? '#facc15' : 'var(--foreground)'}
+            strokeWidth="2"
+          >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+        </button>
+      )}
 
     </div>
   );
