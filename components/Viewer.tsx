@@ -1331,7 +1331,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             mode={mode}
             zoomLevel={zoomLevel}
             onZoomLevelChange={setZoomLevel}
-            initialCardBounds={null}
+            initialCardBounds={transitionCardBounds}
           />
         </div>
         {/* Fixed action bar — bottom center, always visible when a card is selected */}
