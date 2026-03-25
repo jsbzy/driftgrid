@@ -397,6 +397,56 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             willChange: 'transform',
           }}
         >
+          {/* Grid coordinate labels — columns across top, rows down left */}
+          {layout.labels.map((label, i) => (
+            <div
+              key={`col-num-${i}`}
+              className="absolute pointer-events-none"
+              style={{
+                left: label.x + layout.cardWidth / 2,
+                top: label.y - 20,
+                transform: 'translateX(-50%)',
+                fontSize: 9,
+                fontFamily: 'var(--font-mono, monospace)',
+                color: 'var(--foreground)',
+                opacity: 0.12,
+                letterSpacing: '0.04em',
+              }}
+            >
+              {i + 1}
+            </div>
+          ))}
+          {(() => {
+            // Row numbers — use the first concept's card Y positions
+            const rowYs = new Map<number, number>();
+            let rowNum = 1;
+            for (const card of layout.cards) {
+              if (card.conceptIndex === 0) {
+                rowYs.set(card.y, rowNum++);
+              }
+            }
+            return Array.from(rowYs.entries()).map(([y, num]) => (
+              <div
+                key={`row-num-${num}`}
+                className="absolute pointer-events-none"
+                style={{
+                  left: layout.labels[0]?.x - 28 || 52,
+                  top: y + layout.cardHeight / 2,
+                  transform: 'translateY(-50%)',
+                  fontSize: 9,
+                  fontFamily: 'var(--font-mono, monospace)',
+                  color: 'var(--foreground)',
+                  opacity: 0.12,
+                  letterSpacing: '0.04em',
+                  textAlign: 'right',
+                  width: 20,
+                }}
+              >
+                {num}
+              </div>
+            ));
+          })()}
+
           {/* Selects row — one slot per concept column */}
           {layout.selectsSlots.map(slot => {
             const concept = concepts[slot.conceptIndex];
