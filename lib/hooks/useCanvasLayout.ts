@@ -122,8 +122,9 @@ export function computeCanvasLayout(
       const version = concept.versions[originalIndex];
       const versionRoundId = version.roundId ?? undefined;
 
-      // Detect round boundary — when roundId changes between consecutive rows
-      if (prevRoundId !== null && versionRoundId !== prevRoundId) {
+      // Detect round boundary — when roundId changes, or first version is in a closed round
+      if ((prevRoundId !== null && versionRoundId !== prevRoundId) ||
+          (prevRoundId === null && versionRoundId !== undefined)) {
         // The divider represents the round we're about to enter (the closed round)
         const enteringRoundId = versionRoundId;
         if (enteringRoundId) {
