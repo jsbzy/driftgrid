@@ -146,7 +146,7 @@ export function AnnotationOverlay({
               width: 6,
               height: 6,
               borderRadius: '50%',
-              background: '#f97316',
+              background: 'var(--accent-orange)',
             }}
           />
           <span
@@ -207,7 +207,7 @@ export function AnnotationOverlay({
                 fontSize: 9,
                 fontWeight: 700,
                 color: '#fff',
-                background: annotation.isClient ? '#f97316' : '#1c1c1c',
+                background: annotation.isClient ? 'var(--accent-orange)' : 'var(--foreground)',
                 opacity: annotation.resolved ? 0.3 : 1,
                 boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
                 transition: 'transform 0.1s ease, opacity 0.15s ease',
@@ -389,8 +389,8 @@ export function AnnotationOverlay({
               width: 16,
               height: 16,
               borderRadius: '50%',
-              background: '#1c1c1c',
-              border: '2px solid #f97316',
+              background: 'var(--foreground)',
+              border: '2px solid var(--accent-orange)',
               margin: '0 auto 6px',
             }}
           />

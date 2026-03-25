@@ -132,3 +132,14 @@ export interface ProjectInfo {
   conceptCount: number;
   versionCount: number;
 }
+
+export interface DraftEdit {
+  id: string;
+  type: 'text' | 'annotation';
+  element?: string;
+  original?: string;
+  modified?: string;
+  x?: number | null;
+  y?: number | null;
+  note?: string;
+}

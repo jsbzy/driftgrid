@@ -187,7 +187,7 @@ export const CanvasCard = memo(function CanvasCard({
                   className="absolute top-2 left-2 pointer-events-none flex items-center gap-1.5 px-1.5 py-0.5 rounded"
                   style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
                 >
-                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#facc15' }} />
+                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-gold)' }} />
                   <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-mono, monospace)', letterSpacing: '0.05em' }}>UPDATING</span>
                 </div>
               )}

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import useSWR from 'swr';
-import type { Manifest, ViewMode, WorkingSet, WorkingSetSelection, Annotation } from '@/lib/types';
+import type { Manifest, ViewMode, WorkingSet, WorkingSetSelection, Annotation, DraftEdit } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
 import { filterVisibleManifest } from '@/lib/filterManifest';
 import { ViewerTopbar } from './ViewerTopbar';
@@ -53,7 +53,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [transitionCardBounds, setTransitionCardBounds] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   // Feature 3: Hot reload state — frame version counter for forcing iframe refresh
   const [frameVersion, setFrameVersion] = useState(0);
-  const [hotReloadFlash, setHotReloadFlash] = useState(false);
   const [navGridHidden, setNavGridHidden] = useState(false);
   const [topbarHidden, setTopbarHidden] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -64,16 +63,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   // Unified edit mode state
   const [unifiedEditMode, setUnifiedEditMode] = useState(false);
   const [placingPin, setPlacingPin] = useState(false);
-  interface DraftEdit {
-    id: string;
-    type: 'text' | 'annotation';
-    element?: string;
-    original?: string;
-    modified?: string;
-    x?: number | null;
-    y?: number | null;
-    note?: string;
-  }
   const [draftEdits, setDraftEdits] = useState<DraftEdit[]>([]);
 
   const handleZoomToLevel = useCallback((level: ZoomLevel) => {
@@ -1057,8 +1046,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             if (versionFile === changedFile || versionFile.endsWith('/' + changedFile) || changedFile.endsWith('/' + versionFile)) {
               setFrameVersion(v => v + 1);
               // Show subtle reload flash
-              setHotReloadFlash(true);
-              setTimeout(() => setHotReloadFlash(false), 600);
             }
           }
         } catch { /* ignore */ }
@@ -1216,17 +1203,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     </div>
   ) : null;
 
-  // Global keyframes for hot reload flash (always rendered)
-  const globalStyles = (
-    <style>{`
-      @keyframes hotReloadFlash {
-        0% { opacity: 0; transform: translateY(-4px); }
-        20% { opacity: 1; transform: translateY(0); }
-        80% { opacity: 1; transform: translateY(0); }
-        100% { opacity: 0; transform: translateY(-4px); }
-      }
-    `}</style>
-  );
 
   // Transition fade overlay — masks the instant view mode switch
   const fadeOverlay = transitionFade ? (
@@ -1283,6 +1259,35 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       }}
       onToggleHud={() => { setNavGridHidden(v => !v); setCommandPaletteOpen(false); }}
       onToggleNavbar={() => { setTopbarHidden(v => !v); setCommandPaletteOpen(false); }}
+      onToggleGridFrame={() => { handleToggleGridView(); setCommandPaletteOpen(false); }}
+      onDrift={() => { if (handleDrift) { handleDrift(); setCommandPaletteOpen(false); } }}
+      onBranch={() => { if (handleBranch) { handleBranch(); setCommandPaletteOpen(false); } }}
+      onDelete={() => { handleDeleteCurrent(); setCommandPaletteOpen(false); }}
+      onUndo={() => { handleUndo(); setCommandPaletteOpen(false); }}
+      onEditMode={() => { setUnifiedEditMode(v => !v); setCommandPaletteOpen(false); }}
+      onCopyFeedback={() => {
+        window.dispatchEvent(new CustomEvent('drift:copy-feedback', { detail: { json: false } }));
+        setCommandPaletteOpen(false);
+      }}
+      onExportPng={async () => {
+        if (currentVersion) {
+          const res = await fetch('/api/export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client, project, format: 'png', versionId: currentVersion.id }),
+          });
+          if (res.ok) {
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentConcept?.label}-v${currentVersion.number}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }
+        }
+        setCommandPaletteOpen(false);
+      }}
       onCloseRound={async () => {
         setCommandPaletteOpen(false);
         const name = window.prompt('Round name (or leave blank for default):');
@@ -1401,7 +1406,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     return (
       <div className="h-screen flex flex-col bg-[var(--background)]">
         {fadeOverlay}
-        {globalStyles}
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
@@ -1490,6 +1494,35 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
               </svg>
             </button>
             <button
+              onClick={async () => {
+                const res = await fetch('/api/export', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    client,
+                    project,
+                    format: 'png',
+                    versionId: currentVersion.id,
+                  }),
+                });
+                if (res.ok) {
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${currentConcept.label}-v${currentVersion.number}.png`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }
+              }}
+              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+              title="Export PNG"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </button>
+            <button
               onClick={() => handleGridSelect(conceptIndex, versionIndex)}
               className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
               title="Enter frame"
@@ -1544,7 +1577,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   return (
     <div className="h-screen flex flex-col" style={{ background: 'var(--background)' }}>
       {fadeOverlay}
-      {globalStyles}
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
@@ -1626,32 +1658,12 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           />
         </div>
 
-        {/* Hot reload flash indicator */}
-        {hotReloadFlash && (
-          <div
-            className="absolute top-3 right-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-            style={{
-              background: 'rgba(0,0,0,0.5)',
-              backdropFilter: 'blur(8px)',
-              animation: 'hotReloadFlash 0.6s ease-out forwards',
-            }}
-          >
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-            <span
-              className="text-[10px] text-white/80 tracking-wide"
-              style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}
-            >
-              Reloaded
-            </span>
-          </div>
-        )}
-
         {/* Unified edit mode indicator */}
         {unifiedEditMode && (
           <div
             className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full"
             style={{
-              background: 'rgba(45, 212, 191, 0.9)',
+              background: 'color-mix(in srgb, var(--accent-teal) 90%, transparent)',
               backdropFilter: 'blur(8px)',
             }}
           >

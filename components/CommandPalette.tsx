@@ -22,6 +22,14 @@ interface CommandPaletteProps {
   onToggleHud: () => void;
   onToggleNavbar: () => void;
   onCloseRound: () => void;
+  onToggleGridFrame?: () => void;
+  onDrift?: () => void;
+  onBranch?: () => void;
+  onDelete?: () => void;
+  onUndo?: () => void;
+  onEditMode?: () => void;
+  onCopyFeedback?: () => void;
+  onExportPng?: () => void;
 }
 
 export function CommandPalette({
@@ -38,6 +46,14 @@ export function CommandPalette({
   onToggleHud,
   onToggleNavbar,
   onCloseRound,
+  onToggleGridFrame,
+  onDrift,
+  onBranch,
+  onDelete,
+  onUndo,
+  onEditMode,
+  onCopyFeedback,
+  onExportPng,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -56,6 +72,14 @@ export function CommandPalette({
     { label: 'Toggle HUD', shortcut: 'H', action: onToggleHud },
     { label: 'Toggle navbar', shortcut: 'N', action: onToggleNavbar },
     { label: 'Close round', shortcut: '', action: onCloseRound },
+    ...(onToggleGridFrame ? [{ label: 'Toggle grid / frame', shortcut: 'G', action: onToggleGridFrame }] : []),
+    ...(onDrift ? [{ label: 'Drift \u2193 new version', shortcut: 'D', action: onDrift }] : []),
+    ...(onBranch ? [{ label: 'Drift \u2192 new concept', shortcut: '\u21e7D', action: onBranch }] : []),
+    ...(onDelete ? [{ label: 'Delete version', shortcut: 'Del', action: onDelete }] : []),
+    ...(onUndo ? [{ label: 'Undo', shortcut: '\u2318Z', action: onUndo }] : []),
+    ...(onEditMode ? [{ label: 'Edit mode', shortcut: 'E', action: onEditMode }] : []),
+    ...(onCopyFeedback ? [{ label: 'Copy feedback', shortcut: 'F', action: onCopyFeedback }] : []),
+    ...(onExportPng ? [{ label: 'Export PNG', shortcut: '', action: onExportPng }] : []),
   ];
 
   // Fuzzy match: every character in the query must appear in order in the label

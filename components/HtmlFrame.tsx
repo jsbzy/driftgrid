@@ -419,7 +419,7 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
             width: scaledWidth,
             height: scaledHeight,
             overflow: 'hidden',
-            border: targetedEditMode ? '2px solid #2dd4bf' : '1px solid rgba(0,0,0,0.08)',
+            border: targetedEditMode ? '2px solid var(--accent-teal)' : '1px solid rgba(0,0,0,0.08)',
             borderRadius: 4,
             transition: 'border-color 0.2s ease',
             position: 'relative',
@@ -482,7 +482,7 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
           src={editSrc}
           className="w-full h-full relative"
           style={{
-            border: targetedEditMode ? '2px solid #2dd4bf' : 'none',
+            border: targetedEditMode ? '2px solid var(--accent-teal)' : 'none',
             transition: 'border-color 0.2s ease, opacity 0.15s ease',
             zIndex: 2,
             opacity: iframeReady ? 1 : 0,

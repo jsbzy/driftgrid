@@ -31,6 +31,7 @@ const shortcuts: { key: string; desc: string }[] = [
   { key: 'H', desc: 'Hide HUD' },
   { key: 'N', desc: 'Hide navbar' },
   { key: 'Shift+click', desc: 'Multi-star' },
+  { key: '\u2318K', desc: 'Command palette' },
   { key: '?', desc: 'This panel' },
 ];
 

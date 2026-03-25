@@ -109,7 +109,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     recentlyPanned,
   } = useCanvasTransform(viewportRef);
 
-  const [arrangeMode] = useState(false); // kept for card layer opacity
   const [selectedColumn, setSelectedColumn] = useState<number | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; ci: number; vi: number } | null>(null);
   // Flag to prevent zoom level effect from firing during the initial card transition
@@ -290,7 +289,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   }, [client, project]);
 
   const handleThumbnailClick = useCallback((ci: number, vi: number, shiftKey?: boolean) => {
-    if (isPanning || spaceHeld || arrangeMode || recentlyPanned.current) return;
+    if (isPanning || spaceHeld || recentlyPanned.current) return;
     if (shiftKey) {
       // Shift+click: toggle star without changing highlight
       const concept = concepts[ci];
@@ -304,12 +303,12 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     } else {
       onHighlight(ci, vi);
     }
-  }, [isPanning, spaceHeld, arrangeMode, conceptIndex, versionIndex, onHighlight, onZoomLevelChange, concepts, onStarVersion]);
+  }, [isPanning, spaceHeld, conceptIndex, versionIndex, onHighlight, onZoomLevelChange, concepts, onStarVersion]);
 
   const handleThumbnailDoubleClick = useCallback((ci: number, vi: number) => {
-    if (isPanning || spaceHeld || arrangeMode || recentlyPanned.current) return;
+    if (isPanning || spaceHeld || recentlyPanned.current) return;
     onSelect(ci, vi);
-  }, [isPanning, spaceHeld, arrangeMode, onSelect]);
+  }, [isPanning, spaceHeld, onSelect]);
 
   const handleCardContextMenu = useCallback((ci: number, vi: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -721,7 +720,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             project={project}
             thumbVersion={thumbVersion}
             selections={selections}
-            arrangeMode={arrangeMode}
             onStarVersion={onStarVersion}
             onDeleteVersion={onDeleteVersion}
             onDriftVersion={onDriftVersion}
@@ -781,7 +779,6 @@ const CardLayer = memo(function CardLayer({
   project,
   thumbVersion,
   selections,
-  arrangeMode,
   onStarVersion,
   onDeleteVersion,
   onDriftVersion,
@@ -797,7 +794,6 @@ const CardLayer = memo(function CardLayer({
   project: string;
   thumbVersion: number;
   selections: Map<string, string>;
-  arrangeMode: boolean;
   onStarVersion: (conceptId: string, versionId: string) => void;
   onDeleteVersion: (conceptId: string, versionId: string) => void;
   onDriftVersion: (conceptId: string, versionId: string) => void;
@@ -806,7 +802,7 @@ const CardLayer = memo(function CardLayer({
   onCardContextMenu: (ci: number, vi: number, e: React.MouseEvent) => void;
 }) {
   return (
-    <div style={{ opacity: arrangeMode ? 0.3 : 1, transition: 'opacity 0.2s ease', pointerEvents: arrangeMode ? 'none' : 'auto' }}>
+    <div>
       {layout.cards.map(pos => {
         const concept = concepts[pos.conceptIndex];
         const version = concept.versions[pos.versionIndex];
