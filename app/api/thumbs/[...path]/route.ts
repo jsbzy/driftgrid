@@ -108,7 +108,61 @@ export async function GET(
 
     return new NextResponse(data, { headers });
   } catch {
-    return new NextResponse('Not found', { status: 404 });
+    // Thumbnail doesn't exist yet — generate it on first view
+    const info = await findHtmlPathForThumb(client, project, thumbFilename);
+    if (!info) {
+      return new NextResponse('Not found', { status: 404 });
+    }
+
+    // Check if already generating
+    if (regenerating.has(resolved)) {
+      // Return a transparent 1x1 PNG placeholder while generating
+      return new NextResponse(null, {
+        status: 202,
+        headers: { 'X-Thumbnail-Generating': 'true', 'Retry-After': '3' },
+      });
+    }
+
+    regenerating.add(resolved);
+
+    try {
+      // Ensure .thumbs directory exists
+      const thumbsDir = path.dirname(resolved);
+      await fs.mkdir(thumbsDir, { recursive: true });
+
+      await generateThumbnail(info.htmlPath, resolved, info.width, info.height);
+
+      // Update manifest with thumbnail path
+      const manifest = await getManifest(client, project);
+      if (manifest) {
+        let updated = false;
+        for (const concept of manifest.concepts) {
+          for (const version of concept.versions) {
+            const expectedName = `${concept.id}-${version.id}`;
+            if (expectedName === thumbFilename.replace(/\.png$/, '')) {
+              if (!version.thumbnail) {
+                version.thumbnail = `.thumbs/${thumbFilename}`;
+                updated = true;
+              }
+            }
+          }
+        }
+        if (updated) {
+          const { writeManifest } = await import('@/lib/manifest');
+          await writeManifest(client, project, manifest);
+        }
+      }
+
+      const data = await fs.readFile(resolved);
+      return new NextResponse(data, {
+        headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=60' },
+      });
+    } catch (err) {
+      console.error(`Thumbnail generation failed for ${resolved}:`, err);
+      return new NextResponse('Generation failed', { status: 500 });
+    } finally {
+      regenerating.delete(resolved);
+    }
   }
 }
 

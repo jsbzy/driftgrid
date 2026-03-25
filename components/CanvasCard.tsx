@@ -41,6 +41,7 @@ export const CanvasCard = memo(function CanvasCard({
   width,
   height,
 }: CanvasCardProps) {
+  const [imgError, setImgError] = useState(false);
   const [isStale, setIsStale] = useState(false);
   const [thumbSrc, setThumbSrc] = useState(thumbnail);
   const [isFading, setIsFading] = useState(false);
@@ -52,6 +53,7 @@ export const CanvasCard = memo(function CanvasCard({
     setThumbSrc(thumbnail);
     setIsStale(false);
     setIsFading(false);
+    setImgError(false);
   }, [thumbnail]);
 
   // Stop polling on unmount or when thumbnail changes
@@ -163,7 +165,7 @@ export const CanvasCard = memo(function CanvasCard({
             position: 'relative',
           }}
         >
-          {thumbSrc ? (
+          {thumbSrc && !imgError ? (
             <>
               <img
                 src={thumbSrc}
@@ -172,6 +174,11 @@ export const CanvasCard = memo(function CanvasCard({
                 draggable={false}
                 loading="lazy"
                 onLoad={handleImageLoad}
+                onError={() => {
+                  setImgError(true);
+                  // Retry after 3s in case thumbnail is being generated
+                  setTimeout(() => setImgError(false), 3000);
+                }}
                 style={{
                   imageRendering: 'auto' as const,
                   transition: isFading ? 'opacity 0.4s ease' : 'none',

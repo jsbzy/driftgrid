@@ -698,10 +698,10 @@ const CardLayer = memo(function CardLayer({
       {layout.cards.map(pos => {
         const concept = concepts[pos.conceptIndex];
         const version = concept.versions[pos.versionIndex];
-        const thumbFilename = version.thumbnail?.replace('.thumbs/', '') || null;
-        const thumbSrc = thumbFilename
-          ? `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}`
-          : null;
+        // Always compute a thumb URL — the API will auto-generate on first request
+        const thumbFilename = version.thumbnail?.replace('.thumbs/', '')
+          || `${concept.id}-${version.id}.png`;
+        const thumbSrc = `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}`;
         const isStarred = selections.get(concept.id) === version.id;
         const isLatest = pos.versionIndex === concept.versions.length - 1;
 
