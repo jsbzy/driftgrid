@@ -24,6 +24,7 @@ const shortcuts: { key: string; desc: string }[] = [
   { key: 'Scroll', desc: 'Pan grid' },
   { key: '⌘ Scroll', desc: 'Zoom' },
   { key: 'P / ⌘↵', desc: 'Present selects' },
+  { key: 'R', desc: 'Review selects on grid' },
   { key: 'H', desc: 'Hide HUD' },
   { key: 'N', desc: 'Hide navbar' },
   { key: 'Shift+click', desc: 'Multi-star' },

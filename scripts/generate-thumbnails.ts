@@ -1,7 +1,7 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 import { getManifest, writeManifest } from '../lib/manifest';
-import { CANVAS_PRESETS } from '../lib/constants';
+import { resolveCanvas } from '../lib/constants';
 import { generateThumbnail } from '../lib/thumbnails';
 
 const args = process.argv.slice(2);
@@ -23,14 +23,9 @@ async function main() {
     process.exit(1);
   }
 
-  const preset = CANVAS_PRESETS[manifest.project.canvas];
-  if (!preset) {
-    console.error(`Unknown canvas preset: ${manifest.project.canvas}`);
-    process.exit(1);
-  }
-
-  const width = typeof preset.width === 'number' ? preset.width : 1440;
-  const height: number | 'auto' = typeof preset.height === 'number' ? preset.height : 'auto';
+  const resolved = resolveCanvas(manifest.project.canvas);
+  const width = resolved.width;
+  const height = resolved.height;
 
   const thumbsDir = path.join(projectDir, '.thumbs');
   await fs.mkdir(thumbsDir, { recursive: true });

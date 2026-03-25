@@ -219,9 +219,9 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     const zoomLevelChanged = prevZoomLevel.current !== zoomLevel;
     prevZoomLevel.current = zoomLevel;
 
-    // Only re-zoom when the zoom level itself changed (not just card navigation)
-    // Card navigation via click shouldn't trigger auto-zoom — that's disorienting
-    if (!zoomLevelChanged) return;
+    // At z3/z4: animate to new card on navigation (smooth card-to-card)
+    // At overview/z1/z2: only re-zoom when zoom level changes (not on navigation)
+    if (!zoomLevelChanged && (zoomLevel !== 'z3' && zoomLevel !== 'z4')) return;
 
     handleZoomToLevel(zoomLevel);
   }, [zoomLevel, conceptIndex, versionIndex, handleZoomToLevel]);
@@ -505,6 +505,26 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
               >
                 {label.label}
               </span>
+              {(() => {
+                const concept = concepts[label.conceptIndex];
+                if (!concept?.branchedFrom) return null;
+                const sourceConcept = concepts.find(c => c.id === concept.branchedFrom?.conceptId);
+                if (!sourceConcept) return null;
+                const sourceVersion = sourceConcept.versions.find(v => v.id === concept.branchedFrom?.versionId);
+                return (
+                  <span
+                    style={{
+                      fontSize: 8,
+                      color: 'var(--muted)',
+                      opacity: 0.5,
+                      fontFamily: 'var(--font-mono, monospace)',
+                      marginLeft: 4,
+                    }}
+                  >
+                    ← {sourceConcept.label}{sourceVersion ? ` v${sourceVersion.number}` : ''}
+                  </span>
+                );
+              })()}
               {arrangeMode && label.conceptIndex < concepts.length - 1 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onMoveConceptRight(label.conceptIndex); }}

@@ -56,6 +56,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [designModeActive, setDesignModeActive] = useState(false);
   const [transitionFade, setTransitionFade] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
 
   const handleZoomToLevel = useCallback((level: ZoomLevel) => {
     setZoomLevel(level);
@@ -95,6 +96,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         e.preventDefault();
         setTopbarHidden(v => !v);
       }
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        setReviewMode(v => !v);
+      }
       if (e.key === 'e' || e.key === 'E') {
         e.preventDefault();
         setDesignModeActive(v => !v);
@@ -117,6 +122,81 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const versions = currentConcept?.versions ?? [];
   const currentVersion = versions[versionIndex];
 
+  // Build presentation playlist — ordered list of {conceptIndex, versionIndex} for selected versions
+  const presentationPlaylist = useMemo(() => {
+    if (selections.size === 0) return [];
+    const playlist: { ci: number; vi: number }[] = [];
+    concepts.forEach((concept, ci) => {
+      const selectedVersionId = selections.get(concept.id);
+      if (!selectedVersionId) return;
+      const vi = concept.versions.findIndex(v => v.id === selectedVersionId);
+      if (vi >= 0) {
+        playlist.push({ ci, vi });
+      }
+    });
+    return playlist;
+  }, [concepts, selections]);
+
+  // When entering review mode, jump to the first select at z4
+  useEffect(() => {
+    if (!reviewMode || selections.size === 0) {
+      if (reviewMode) setReviewMode(false); // no selects — exit
+      return;
+    }
+    if (viewMode !== 'grid') setViewMode('grid');
+    // Navigate to first select
+    const firstEntry = Array.from(selections.entries())[0];
+    if (firstEntry) {
+      const [cid, vid] = firstEntry;
+      const ci = concepts.findIndex(c => c.id === cid);
+      if (ci >= 0) {
+        const vi = concepts[ci].versions.findIndex(v => v.id === vid);
+        if (vi >= 0) {
+          setConceptIndex(ci);
+          setVersionIndex(vi);
+          setZoomLevel('z4');
+        }
+      }
+    }
+  }, [reviewMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Review mode: R enters, Esc exits, arrows cycle through selects at z4
+  useEffect(() => {
+    if (!reviewMode || viewMode !== 'grid') return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setReviewMode(false);
+        return;
+      }
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        e.stopPropagation();
+        const currentIdx = presentationPlaylist.findIndex(
+          p => p.ci === conceptIndex && p.vi === versionIndex
+        );
+        let nextIdx: number;
+        if (e.key === 'ArrowRight') {
+          nextIdx = currentIdx < presentationPlaylist.length - 1 ? currentIdx + 1 : 0;
+        } else {
+          nextIdx = currentIdx > 0 ? currentIdx - 1 : presentationPlaylist.length - 1;
+        }
+        const next = presentationPlaylist[nextIdx];
+        if (next) {
+          setConceptIndex(next.ci);
+          setVersionIndex(next.vi);
+          setZoomLevel('z4');
+        }
+      }
+    };
+    window.addEventListener('keydown', handler, true);
+    return () => window.removeEventListener('keydown', handler, true);
+  }, [reviewMode, viewMode, presentationPlaylist, conceptIndex, versionIndex]);
+
   // Broadcast current view to /api/current for agent integration
   useEffect(() => {
     if (!currentConcept || !currentVersion) return;
@@ -137,21 +217,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       }),
     }).catch(() => {}); // fire and forget
   }, [client, project, currentConcept, currentVersion, viewMode]);
-
-  // Build presentation playlist — ordered list of {conceptIndex, versionIndex} for selected versions
-  const presentationPlaylist = useMemo(() => {
-    if (selections.size === 0) return [];
-    const playlist: { ci: number; vi: number }[] = [];
-    concepts.forEach((concept, ci) => {
-      const selectedVersionId = selections.get(concept.id);
-      if (!selectedVersionId) return;
-      const vi = concept.versions.findIndex(v => v.id === selectedVersionId);
-      if (vi >= 0) {
-        playlist.push({ ci, vi });
-      }
-    });
-    return playlist;
-  }, [concepts, selections]);
 
   const getVersionCount = useCallback(
     (ci: number) => concepts[ci]?.versions.length ?? 0,
@@ -1104,6 +1169,24 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             initialCardBounds={null}
           />
         </div>
+        {reviewMode && (
+          <div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-full z-30"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
+          >
+            <span className="text-[10px] tracking-wide text-white/70" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
+              Review {presentationPlaylist.findIndex(p => p.ci === conceptIndex && p.vi === versionIndex) + 1} / {presentationPlaylist.length}
+            </span>
+            <div className="w-px h-3 bg-white/20" />
+            <button
+              onClick={() => setReviewMode(false)}
+              className="text-[10px] tracking-wide text-white/50 hover:text-white transition-colors"
+              style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}
+            >
+              Exit (Esc)
+            </button>
+          </div>
+        )}
         <KeyboardShortcuts
           visible={shortcutsVisible}
           onClose={() => setShortcutsVisible(false)}
