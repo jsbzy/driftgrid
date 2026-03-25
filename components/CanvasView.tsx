@@ -364,15 +364,45 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
           </span>
         </div>
 
-        {/* Dot grid background */}
-        <div
+        {/* Structural grid lines — aligned to actual columns and rows */}
+        <svg
           className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: 'radial-gradient(circle, var(--canvas-dot) 1px, transparent 1px)',
-            backgroundSize: `${24 * transform.scale}px ${24 * transform.scale}px`,
-            backgroundPosition: `${transform.tx % (24 * transform.scale)}px ${transform.ty % (24 * transform.scale)}px`,
-          }}
-        />
+          style={{ width: '100%', height: '100%', overflow: 'visible' }}
+        >
+          {/* Vertical column lines */}
+          {layout.labels.map((label, i) => {
+            const x1 = label.x * transform.scale + transform.tx;
+            const x2 = (label.x + layout.cardWidth) * transform.scale + transform.tx;
+            return (
+              <g key={`col-${i}`}>
+                <line x1={x1} y1={0} x2={x1} y2="100%" stroke="var(--canvas-dot)" strokeWidth={0.5} />
+                <line x1={x2} y1={0} x2={x2} y2="100%" stroke="var(--canvas-dot)" strokeWidth={0.5} />
+              </g>
+            );
+          })}
+          {/* Horizontal row lines */}
+          {(() => {
+            const rowYs = new Set<number>();
+            for (const card of layout.cards) {
+              rowYs.add(card.y);
+              rowYs.add(card.y + layout.cardHeight);
+            }
+            return Array.from(rowYs).map(y => {
+              const screenY = y * transform.scale + transform.ty;
+              return (
+                <line
+                  key={`row-${y}`}
+                  x1={0}
+                  y1={screenY}
+                  x2="100%"
+                  y2={screenY}
+                  stroke="var(--canvas-dot)"
+                  strokeWidth={0.5}
+                />
+              );
+            });
+          })()}
+        </svg>
 
         {/* Zoom percentage */}
         <div
