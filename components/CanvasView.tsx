@@ -397,6 +397,20 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
           })()}
         </svg>
 
+        {/* Branding */}
+        <div
+          className="absolute bottom-3 left-3 z-10 pointer-events-none"
+          style={{
+            fontSize: 9,
+            fontFamily: 'var(--font-mono, monospace)',
+            color: 'var(--foreground)',
+            opacity: 0.1,
+            letterSpacing: '0.06em',
+          }}
+        >
+          DriftGrid
+        </div>
+
         {/* Zoom percentage */}
         <div
           className="absolute bottom-3 right-3 z-10 pointer-events-none"

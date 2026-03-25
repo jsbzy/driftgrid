@@ -1538,6 +1538,20 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           </div>
         )}
 
+        {/* Branding */}
+        <div
+          className="fixed bottom-3 left-3 z-10 pointer-events-none"
+          style={{
+            fontSize: 9,
+            fontFamily: 'var(--font-mono, monospace)',
+            color: 'var(--foreground)',
+            opacity: 0.1,
+            letterSpacing: '0.06em',
+          }}
+        >
+          DriftGrid
+        </div>
+
         {/* Frame action bar — bottom center, matches grid action bar */}
         {mode !== 'client' && currentConcept && currentVersion && !navGridHidden && !presentationMode && (
           <div
