@@ -6,7 +6,6 @@ import { computeCanvasLayout, getColumnBounds, getCardBounds } from '@/lib/hooks
 import { useCanvasTransform } from '@/lib/hooks/useCanvasTransform';
 import { CanvasCard } from './CanvasCard';
 import { ContextMenu } from './ContextMenu';
-import { ArrangeModal } from './ArrangeModal';
 import type { ZoomLevel } from '@/lib/hooks/useKeyboardNav';
 
 export interface CanvasViewHandle {
@@ -104,8 +103,8 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     recentlyPanned,
   } = useCanvasTransform(viewportRef);
 
-  const [arrangeMode, setArrangeMode] = useState(false);
-  const [showArrangeModal, setShowArrangeModal] = useState(false);
+  const [arrangeMode] = useState(false); // kept for card layer opacity
+  const [selectedColumn, setSelectedColumn] = useState<number | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; ci: number; vi: number } | null>(null);
   // Flag to prevent zoom level effect from firing during the initial card transition
   const skipNextZoomEffect = useRef(false);
@@ -225,6 +224,35 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     handleZoomToLevel(zoomLevel);
   }, [zoomLevel, conceptIndex, versionIndex, handleZoomToLevel]);
 
+  // Column selection: arrow keys to reorder, Escape to deselect
+  useEffect(() => {
+    if (selectedColumn === null) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedColumn(null);
+        return;
+      }
+      if (e.key === 'ArrowLeft' && selectedColumn > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        onMoveConceptLeft(selectedColumn);
+        setSelectedColumn(selectedColumn - 1);
+        return;
+      }
+      if (e.key === 'ArrowRight' && selectedColumn < concepts.length - 1) {
+        e.preventDefault();
+        e.stopPropagation();
+        onMoveConceptRight(selectedColumn);
+        setSelectedColumn(selectedColumn + 1);
+        return;
+      }
+    };
+    window.addEventListener('keydown', handler, true);
+    return () => window.removeEventListener('keydown', handler, true);
+  }, [selectedColumn, concepts.length, onMoveConceptLeft, onMoveConceptRight]);
+
   // Attach wheel listener with passive:false to prevent browser back/forward gestures
   useEffect(() => {
     const el = viewportRef.current;
@@ -334,21 +362,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
           <span style={{ fontSize: 9, color: 'var(--foreground)', opacity: 0.2, fontFamily: 'var(--font-mono, monospace)', letterSpacing: '0.05em' }}>
             Scroll to pan · ⌘ Scroll to zoom · Double-click to fit
           </span>
-          <button
-            onClick={() => setShowArrangeModal(true)}
-            className="px-2 py-0.5 rounded transition-all"
-            style={{
-              fontSize: 9,
-              fontFamily: 'var(--font-mono, monospace)',
-              letterSpacing: '0.04em',
-              color: 'var(--muted)',
-              background: 'transparent',
-              border: '1px solid var(--border)',
-              fontWeight: 400,
-            }}
-          >
-            Arrange
-          </button>
         </div>
 
         {/* Dot grid background */}
@@ -455,36 +468,39 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
           {layout.labels.map(label => (
             <div
               key={label.conceptId}
-              className="absolute flex items-center gap-2"
+              data-card
+              className="absolute flex items-center gap-2 cursor-pointer"
               style={{
                 left: label.x,
                 top: label.y,
                 width: layout.cardWidth,
-                zIndex: arrangeMode ? 10 : undefined,
+                zIndex: selectedColumn === label.conceptIndex ? 10 : undefined,
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedColumn(prev =>
+                  prev === label.conceptIndex ? null : label.conceptIndex
+                );
               }}
             >
-              {arrangeMode && label.conceptIndex > 0 && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onMoveConceptLeft(label.conceptIndex); }}
-                  className="p-1 rounded border border-[var(--border)] hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all"
-                  style={{ fontSize: 10, lineHeight: 1 }}
-                >
-                  ←
-                </button>
-              )}
               <span
-                className="text-[11px] font-semibold tracking-[0.08em] uppercase truncate flex-1"
+                className="font-semibold tracking-[0.08em] uppercase truncate flex-1 transition-all"
                 style={{
+                  fontSize: selectedColumn === label.conceptIndex ? 13 : 11,
                   color: 'var(--foreground)',
-                  opacity: arrangeMode ? 0.8 : 0.5,
-                  background: arrangeMode ? 'rgba(0,0,0,0.03)' : undefined,
-                  padding: arrangeMode ? '4px 8px' : undefined,
-                  borderRadius: arrangeMode ? 4 : undefined,
-                  border: arrangeMode ? '1px dashed var(--border)' : undefined,
-                  cursor: arrangeMode ? 'grab' : undefined,
+                  opacity: selectedColumn === label.conceptIndex ? 1 : 0.5,
+                  padding: '4px 8px',
+                  borderRadius: 4,
+                  border: selectedColumn === label.conceptIndex ? '1px solid var(--foreground)' : '1px solid transparent',
+                  background: selectedColumn === label.conceptIndex ? 'rgba(0,0,0,0.04)' : undefined,
                 }}
               >
                 {label.label}
+                {selectedColumn === label.conceptIndex && (
+                  <span style={{ fontSize: 9, opacity: 0.4, marginLeft: 8, fontWeight: 400, letterSpacing: '0.04em' }}>
+                    ← → to move
+                  </span>
+                )}
               </span>
               {(() => {
                 const concept = concepts[label.conceptIndex];
@@ -506,15 +522,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
                   </span>
                 );
               })()}
-              {arrangeMode && label.conceptIndex < concepts.length - 1 && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onMoveConceptRight(label.conceptIndex); }}
-                  className="p-1 rounded border border-[var(--border)] hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all"
-                  style={{ fontSize: 10, lineHeight: 1 }}
-                >
-                  →
-                </button>
-              )}
             </div>
           ))}
 
@@ -592,14 +599,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
           />
         </div>
       </div>
-
-      {showArrangeModal && (
-        <ArrangeModal
-          concepts={concepts}
-          onSave={(newOrder) => onReorderConcepts(newOrder)}
-          onClose={() => setShowArrangeModal(false)}
-        />
-      )}
 
       {contextMenu && (() => {
         const concept = concepts[contextMenu.ci];
