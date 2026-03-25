@@ -1463,28 +1463,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           >
             {currentConcept?.label} · v{currentVersion?.number}
           </button>
-          {currentVersion?.file && (
-            <>
-              <span style={{ color: 'var(--border)', fontSize: 10 }}>/</span>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`~/drift/projects/${client}/${project}/${currentVersion.file}`);
-                }}
-                style={{
-                  fontFamily: 'var(--font-mono, monospace)',
-                  fontSize: 10,
-                  color: 'var(--muted)',
-                  opacity: 0.4,
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-                title="Click to copy path"
-              >
-                {currentVersion.file}
-              </button>
-            </>
-          )}
         </div>
       )}
       <div
