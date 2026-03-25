@@ -237,3 +237,25 @@ This project uses DriftGrid for design iteration. Key rules:
 - `POST /api/iterate` — create a new version (drift)
 - `POST /api/branch` — fork into a new concept
 - `POST /api/create-project` — create a new project
+- `GET /api/annotations?client=X&project=Y&conceptId=Z&versionId=W` — get feedback annotations
+
+### Feedback & Annotations
+
+DriftGrid has two types of annotations on frames:
+
+1. **Designer → Agent** (author: "designer") — Direct instructions for you (Claude). When these exist, the designer wants you to apply them.
+2. **Client → Designer** (isClient: true) — Client feedback for the designer to review. Do NOT auto-apply these — the designer decides what to act on.
+
+**Before editing any version**, check for designer feedback:
+- If MCP is available: call `get_feedback(client, project, conceptId, versionId)`
+- If not: check for a `.feedback.md` sidecar file next to the HTML (e.g., `concept-1/v3.feedback.md`)
+
+**When designer feedback exists:**
+- List the annotations and ask: "I see N feedback items on this version. Want me to apply them?"
+- Wait for confirmation before making changes
+- After applying, create a new version (drift) with the changes — don't overwrite
+
+**When client feedback exists (isClient: true):**
+- Mention it: "There's also client feedback on this version — want me to review it?"
+- Only apply if the designer explicitly asks
+- Client feedback is for the designer's judgment, not automatic application
