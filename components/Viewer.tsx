@@ -17,6 +17,8 @@ import { toast, ToastContainer } from './Toast';
 import { useKeyboardNav, type ZoomLevel } from '@/lib/hooks/useKeyboardNav';
 import { useClientEdits } from '@/lib/hooks/useClientEdits';
 import { computeCanvasLayout, getCardBounds } from '@/lib/hooks/useCanvasLayout';
+import { useFlash } from '@/lib/hooks/useFlash';
+import { useUIVisibility } from '@/lib/hooks/useUIVisibility';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -37,11 +39,9 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [viewMode, setViewMode] = useState<'frame' | 'grid'>('grid');
   const [selections, setSelections] = useState<Map<string, string>>(new Map());
   const [activeWorkingSetId, setActiveWorkingSetId] = useState<string | null>(null);
-  const [shortcutsVisible, setShortcutsVisible] = useState(false);
+  const flash = useFlash();
+  const ui = useUIVisibility();
   const [presentationMode, setPresentationMode] = useState(false);
-  const [driftFlash, setDriftFlash] = useState(false);
-  const [flashLabel, setFlashLabel] = useState<string>('DRIFTED');
-  const [deleteFlash, setDeleteFlash] = useState(false);
   const [lastDeleted, setLastDeleted] = useState<{ conceptId: string; versionId: string; version: unknown; conceptIndex: number } | null>(null);
   const [lastDrift, setLastDrift] = useState<{ conceptId: string; versionId: string } | null>(null);
   const [inSelectsRow, setInSelectsRow] = useState(false);
@@ -54,10 +54,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [transitionCardBounds, setTransitionCardBounds] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   // Feature 3: Hot reload state — frame version counter for forcing iframe refresh
   const [frameVersion, setFrameVersion] = useState(0);
-  const [navGridHidden, setNavGridHidden] = useState(false);
-  const [topbarHidden, setTopbarHidden] = useState(false);
-  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [transitionFade, setTransitionFade] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
 
@@ -90,19 +86,19 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
       if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setCommandPaletteOpen(v => !v);
+        ui.setCommandPaletteOpen(v => !v);
       }
       if (e.key === '?') {
         e.preventDefault();
-        setShortcutsVisible(v => !v);
+        ui.setShortcutsVisible(v => !v);
       }
       if (e.key === 'h' || e.key === 'H') {
         e.preventDefault();
-        setNavGridHidden(v => !v);
+        ui.setNavGridHidden(v => !v);
       }
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
-        setTopbarHidden(v => !v);
+        ui.setTopbarHidden(v => !v);
       }
       if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
@@ -313,31 +309,28 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     setViewMode(v => {
       if (v === 'frame') {
         // Frame → Grid: fade overlay masks the switch
-        setTransitionFade(true);
+        flash.showTransitionFade();
         setPresentationMode(false);
         setUnifiedEditMode(false);
         setDraftEdits([]);
         setPlacingPin(false);
         setZoomLevel('z4');
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
-        setTimeout(() => setTransitionFade(false), 50);
         return 'grid';
       }
       // Grid → Frame: zoom to card, then fade-switch
       if (canvasRef.current) {
         canvasRef.current.zoomToCard(conceptIndex, versionIndex);
         setTimeout(() => {
-          setTransitionFade(true);
+          flash.showTransitionFade();
           setViewMode('frame');
-          setTimeout(() => setTransitionFade(false), 50);
         }, 280);
         return v;
       }
-      setTransitionFade(true);
-      setTimeout(() => setTransitionFade(false), 50);
+      flash.showTransitionFade();
       return 'frame';
     });
-  }, [conceptIndex, versionIndex, getTransitionCardBounds]);
+  }, [conceptIndex, versionIndex, getTransitionCardBounds, flash]);
 
   // Pinch zoom out from frame → exit to grid (passive:false to block browser gesture)
   useEffect(() => {
@@ -422,7 +415,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     });
 
     // Show delete flash
-    setDeleteFlash(true);
+    flash.showDeleteFlash();
 
     const updated: Manifest = {
       ...manifest,
@@ -440,7 +433,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
     // Wait for flash animation
     await new Promise(r => setTimeout(r, 400));
-    setDeleteFlash(false);
 
     // Navigate to the previous version (one above) in the same concept, stay in current viewMode
     const ci = Math.min(conceptIndex, updated.concepts.length - 1);
@@ -589,11 +581,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       });
 
       // Show flash immediately
-      setFlashLabel('DRIFTED');
-      setDriftFlash(true);
+      flash.showDriftFlash('DRIFTED');
 
       const res = await resPromise;
-      if (!res.ok) { setDriftFlash(false); toast('Drift failed', 'error'); return; }
+      if (!res.ok) { flash.hideDriftFlash(); toast('Drift failed', 'error'); return; }
       const { absolutePath, versionId: newVid, versionNumber } = await res.json();
       try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
       toast('Drifted \u2193 \u2014 path copied');
@@ -616,23 +607,19 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           }
         }
       }
-
-      // Let the fade-back finish
-      setTimeout(() => setDriftFlash(false), 1000);
-    } catch { setDriftFlash(false); toast('Drift failed', 'error'); }
+    } catch { flash.hideDriftFlash(); toast('Drift failed', 'error'); }
   }, [client, project, mutate]);
 
   const handleBranchVersion = useCallback(async (conceptId: string, versionId: string) => {
     try {
-      setFlashLabel('DRIFTED →');
-      setDriftFlash(true);
+      flash.showDriftFlash('DRIFTED \u2192');
 
       const res = await fetch('/api/branch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ client, project, conceptId, versionId }),
       });
-      if (!res.ok) { setDriftFlash(false); toast('Branch failed', 'error'); return; }
+      if (!res.ok) { flash.hideDriftFlash(); toast('Branch failed', 'error'); return; }
       const { conceptId: newConceptId, absolutePath } = await res.json();
       try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
       toast('Drifted \u2192 \u2014 new concept, path copied');
@@ -652,11 +639,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           window.history.replaceState(null, '', `#${newConceptId}/v1`);
         }
       }
-
-      // Let the fade-back finish
-      setTimeout(() => setDriftFlash(false), 1000);
-    } catch { setDriftFlash(false); toast('Branch failed', 'error'); }
-  }, [client, project, mutate, viewMode]);
+    } catch { flash.hideDriftFlash(); toast('Branch failed', 'error'); }
+  }, [client, project, mutate, viewMode, flash]);
 
   // Unified edit mode: commit all draft edits (text + annotations) to a new version
   const handleCommitEdits = useCallback(async () => {
@@ -717,9 +701,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     }
 
     // Show drift flash
-    setFlashLabel('COMMITTED');
-    setDriftFlash(true);
-    setTimeout(() => setDriftFlash(false), 1000);
+    flash.showDriftFlash('COMMITTED');
     toast('Changes saved to new version');
 
     // Clear edit mode
@@ -1130,7 +1112,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   });
 
   // Drift overlay — subtle toast, not fullscreen takeover
-  const driftOverlay = driftFlash ? (
+  const driftOverlay = flash.driftFlash ? (
     <div
       className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none flex items-center gap-2 px-4 py-2 rounded-full"
       style={{
@@ -1143,7 +1125,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
         fontSize: 12, fontWeight: 600, letterSpacing: '0.08em',
         color: '#fff',
-      }}>{flashLabel}</span>
+      }}>{flash.flashLabel}</span>
       <span style={{
         fontFamily: 'var(--font-mono, monospace)',
         fontSize: 10, color: 'rgba(255,255,255,0.5)',
@@ -1160,7 +1142,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   ) : null;
 
   // Delete flash overlay
-  const deleteOverlay = deleteFlash ? (
+  const deleteOverlay = flash.deleteFlash ? (
     <div className="fixed inset-0 z-[100] pointer-events-none" style={{ animation: 'deleteFade 0.5s ease-out forwards' }}>
       <style>{`
         @keyframes deleteFade {
@@ -1211,7 +1193,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
 
   // Transition fade overlay — masks the instant view mode switch
-  const fadeOverlay = transitionFade ? (
+  const fadeOverlay = flash.transitionFade ? (
     <div
       className="fixed inset-0 z-[200] pointer-events-none"
       style={{
@@ -1230,13 +1212,13 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const commandPalette = (
     <CommandPalette
-      open={commandPaletteOpen}
-      onClose={() => setCommandPaletteOpen(false)}
-      onFitAll={() => { setZoomLevel('overview'); setCommandPaletteOpen(false); }}
-      onZoomColumn={() => { setZoomLevel('z1'); setCommandPaletteOpen(false); }}
-      onZoomCard={() => { setZoomLevel('z4'); setCommandPaletteOpen(false); }}
-      onToggleStar={() => { handleToggleSelect(); setCommandPaletteOpen(false); }}
-      onPresent={() => { handlePresent(); setCommandPaletteOpen(false); }}
+      open={ui.commandPaletteOpen}
+      onClose={() => ui.setCommandPaletteOpen(false)}
+      onFitAll={() => { setZoomLevel('overview'); ui.setCommandPaletteOpen(false); }}
+      onZoomColumn={() => { setZoomLevel('z1'); ui.setCommandPaletteOpen(false); }}
+      onZoomCard={() => { setZoomLevel('z4'); ui.setCommandPaletteOpen(false); }}
+      onToggleStar={() => { handleToggleSelect(); ui.setCommandPaletteOpen(false); }}
+      onPresent={() => { handlePresent(); ui.setCommandPaletteOpen(false); }}
       onGoToLatest={() => {
         if (currentConcept) {
           const lastVi = currentConcept.versions.length - 1;
@@ -1248,9 +1230,9 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             }
           }
         }
-        setCommandPaletteOpen(false);
+        ui.setCommandPaletteOpen(false);
       }}
-      onClearSelections={() => { handleClearSelections(); setCommandPaletteOpen(false); }}
+      onClearSelections={() => { handleClearSelections(); ui.setCommandPaletteOpen(false); }}
       onToggleTheme={() => {
         const html = document.documentElement;
         const isDark = html.classList.contains('dark');
@@ -1261,19 +1243,19 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           html.classList.add('dark');
           localStorage.setItem('driftgrid-theme', 'dark');
         }
-        setCommandPaletteOpen(false);
+        ui.setCommandPaletteOpen(false);
       }}
-      onToggleHud={() => { setNavGridHidden(v => !v); setCommandPaletteOpen(false); }}
-      onToggleNavbar={() => { setTopbarHidden(v => !v); setCommandPaletteOpen(false); }}
-      onToggleGridFrame={() => { handleToggleGridView(); setCommandPaletteOpen(false); }}
-      onDrift={() => { if (handleDrift) { handleDrift(); setCommandPaletteOpen(false); } }}
-      onBranch={() => { if (handleBranch) { handleBranch(); setCommandPaletteOpen(false); } }}
-      onDelete={() => { handleDeleteCurrent(); setCommandPaletteOpen(false); }}
-      onUndo={() => { handleUndo(); setCommandPaletteOpen(false); }}
-      onEditMode={() => { setUnifiedEditMode(v => !v); setCommandPaletteOpen(false); }}
+      onToggleHud={() => { ui.setNavGridHidden(v => !v); ui.setCommandPaletteOpen(false); }}
+      onToggleNavbar={() => { ui.setTopbarHidden(v => !v); ui.setCommandPaletteOpen(false); }}
+      onToggleGridFrame={() => { handleToggleGridView(); ui.setCommandPaletteOpen(false); }}
+      onDrift={() => { if (handleDrift) { handleDrift(); ui.setCommandPaletteOpen(false); } }}
+      onBranch={() => { if (handleBranch) { handleBranch(); ui.setCommandPaletteOpen(false); } }}
+      onDelete={() => { handleDeleteCurrent(); ui.setCommandPaletteOpen(false); }}
+      onUndo={() => { handleUndo(); ui.setCommandPaletteOpen(false); }}
+      onEditMode={() => { setUnifiedEditMode(v => !v); ui.setCommandPaletteOpen(false); }}
       onCopyFeedback={() => {
         window.dispatchEvent(new CustomEvent('drift:copy-feedback', { detail: { json: false } }));
-        setCommandPaletteOpen(false);
+        ui.setCommandPaletteOpen(false);
       }}
       onExportPng={async () => {
         if (currentVersion) {
@@ -1292,10 +1274,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             URL.revokeObjectURL(url);
           }
         }
-        setCommandPaletteOpen(false);
+        ui.setCommandPaletteOpen(false);
       }}
       onCloseRound={async () => {
-        setCommandPaletteOpen(false);
+        ui.setCommandPaletteOpen(false);
         const name = window.prompt('Round name (or leave blank for default):');
         // Pass current selects as the approved baseline for this round
         const roundSelects = Array.from(selections.entries()).map(([conceptId, versionId]) => ({
@@ -1416,7 +1398,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         {deleteOverlay}
         {deleteDialog}
         {/* Floating project label — top-left */}
-        {!topbarHidden && (
+        {!ui.topbarHidden && (
           <div className="fixed top-4 left-4 z-30 pointer-events-auto">
             <a
               href="/"
@@ -1568,10 +1550,11 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           </div>
         )}
         <KeyboardShortcuts
-          visible={shortcutsVisible}
-          onClose={() => setShortcutsVisible(false)}
+          visible={ui.shortcutsVisible}
+          onClose={() => ui.setShortcutsVisible(false)}
         />
         {commandPalette}
+        <ToastContainer />
       </div>
     );
   }
@@ -1588,7 +1571,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       {deleteOverlay}
       {deleteDialog}
       {/* Floating frame info — top-left */}
-      {!topbarHidden && (
+      {!ui.topbarHidden && (
         <div className="fixed top-4 left-4 z-30 flex items-center gap-2">
           <a
             href="/"
@@ -1711,7 +1694,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         </div>
 
         {/* Frame action bar — bottom center, matches grid action bar */}
-        {mode !== 'client' && currentConcept && currentVersion && !navGridHidden && !presentationMode && (
+        {mode !== 'client' && currentConcept && currentVersion && !ui.navGridHidden && !presentationMode && (
           <div
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-full"
             style={{
@@ -1740,6 +1723,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             <button
               onClick={() => {
                 navigator.clipboard.writeText(`~/drift/projects/${client}/${project}/${currentVersion.file}`);
+                toast('Path copied');
               }}
               className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
               title="Copy path"
@@ -1824,7 +1808,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           </div>
         )}
       </div>
-      {!presentationMode && !navGridHidden && (
+      {!presentationMode && !ui.navGridHidden && (
         <NavigationGrid
           conceptIndex={conceptIndex}
           versionIndex={versionIndex}
@@ -1836,10 +1820,11 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         />
       )}
       <KeyboardShortcuts
-        visible={shortcutsVisible}
-        onClose={() => setShortcutsVisible(false)}
+        visible={ui.shortcutsVisible}
+        onClose={() => ui.setShortcutsVisible(false)}
       />
       {commandPalette}
+      <ToastContainer />
     </div>
   );
 }

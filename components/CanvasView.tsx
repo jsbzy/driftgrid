@@ -403,6 +403,20 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
           })()}
         </svg>
 
+        {/* Empty state */}
+        {layout.cards.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+            <div style={{ textAlign: 'center', fontFamily: 'var(--font-mono, monospace)' }}>
+              <div style={{ fontSize: 14, color: 'var(--foreground)', opacity: 0.25, fontWeight: 500, marginBottom: 8 }}>
+                No versions yet
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', opacity: 0.3 }}>
+                Press D to drift your first iteration
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Branding */}
         <div
           className="absolute bottom-3 left-3 z-10 pointer-events-none"
