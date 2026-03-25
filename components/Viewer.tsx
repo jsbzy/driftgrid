@@ -57,11 +57,24 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [navGridHidden, setNavGridHidden] = useState(false);
   const [topbarHidden, setTopbarHidden] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [designModeActive, setDesignModeActive] = useState(false);
   const [transitionFade, setTransitionFade] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
-  const [annotationMode, setAnnotationMode] = useState(false);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
+
+  // Unified edit mode state
+  const [unifiedEditMode, setUnifiedEditMode] = useState(false);
+  const [placingPin, setPlacingPin] = useState(false);
+  interface DraftEdit {
+    id: string;
+    type: 'text' | 'annotation';
+    element?: string;
+    original?: string;
+    modified?: string;
+    x?: number | null;
+    y?: number | null;
+    note?: string;
+  }
+  const [draftEdits, setDraftEdits] = useState<DraftEdit[]>([]);
 
   const handleZoomToLevel = useCallback((level: ZoomLevel) => {
     setZoomLevel(level);
@@ -107,20 +120,23 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       }
       if (e.key === 'e' || e.key === 'E') {
         e.preventDefault();
-        setDesignModeActive(v => !v);
+        setUnifiedEditMode(v => {
+          if (v) {
+            // Exiting edit mode — discard
+            setDraftEdits([]);
+            setPlacingPin(false);
+          }
+          return !v;
+        });
       }
       if (e.key === 'a' || e.key === 'A') {
         e.preventDefault();
-        setAnnotationMode(v => !v);
+        // In unified edit mode: toggle pin placement. Outside: dispatch legacy copy-feedback
+        setPlacingPin(v => !v);
       }
       if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('drift:copy-feedback', { detail: { json: e.shiftKey } }));
-      }
-      if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        // Trigger designMode save via a custom event (handled in a separate effect)
-        window.dispatchEvent(new CustomEvent('drift:designmode-save'));
       }
     };
     window.addEventListener('keydown', handler);
@@ -307,8 +323,9 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         // Frame → Grid: fade overlay masks the switch
         setTransitionFade(true);
         setPresentationMode(false);
-        setDesignModeActive(false);
-        setAnnotationMode(false);
+        setUnifiedEditMode(false);
+        setDraftEdits([]);
+        setPlacingPin(false);
         setZoomLevel('z4');
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
         setTimeout(() => setTransitionFade(false), 50);
@@ -647,14 +664,15 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     } catch { setDriftFlash(false); }
   }, [client, project, mutate, viewMode]);
 
-  const handleDesignModeSave = useCallback(async () => {
-    if (!designModeActive || !htmlFrameRef.current || !currentConcept || !currentVersion) return;
+  // Unified edit mode: commit all draft edits (text + annotations) to a new version
+  const handleCommitEdits = useCallback(async () => {
+    if (!currentConcept || !currentVersion || draftEdits.length === 0) return;
 
-    // Get edited HTML from the iframe
-    const html = htmlFrameRef.current.getHtml();
+    // Get the modified HTML from iframe (contains text edits)
+    const html = htmlFrameRef.current?.getHtml();
     if (!html) return;
 
-    // Create new version via iterate API
+    // Create new version (drift)
     const res = await fetch('/api/iterate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -671,12 +689,30 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     const newVersion = updated.concepts[ci].versions.find(v => v.id === newVid);
     if (!newVersion) return;
 
-    // Write edited HTML to the new version file
+    // Write modified HTML to new version
     await fetch(`/api/html/${client}/${project}/${newVersion.file}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'text/html' },
       body: html,
     });
+
+    // Save draft annotations to the new version
+    const annotationEdits = draftEdits.filter(e => e.type === 'annotation');
+    for (const ann of annotationEdits) {
+      await fetch('/api/annotations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client, project,
+          conceptId: currentConcept.id,
+          versionId: newVid,
+          x: ann.x, y: ann.y,
+          text: ann.note,
+          author: 'designer',
+          isClient: false,
+        }),
+      });
+    }
 
     // Navigate to new version
     const vi = updated.concepts[ci].versions.findIndex(v => v.id === newVid);
@@ -686,16 +722,54 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       window.history.replaceState(null, '', `#${updated.concepts[ci].id}/v${versionNumber}`);
     }
 
-    // Turn off design mode
-    setDesignModeActive(false);
-  }, [designModeActive, client, project, currentConcept, currentVersion, mutate]);
+    // Show drift flash
+    setFlashLabel('COMMITTED');
+    setDriftFlash(true);
+    setTimeout(() => setDriftFlash(false), 1000);
 
-  // Listen for Cmd+S designMode save trigger
+    // Clear edit mode
+    setUnifiedEditMode(false);
+    setDraftEdits([]);
+    setPlacingPin(false);
+  }, [client, project, currentConcept, currentVersion, draftEdits, mutate]);
+
+  // Listen for text-edit messages from iframe (targeted edit mode)
   useEffect(() => {
-    const handler = () => { handleDesignModeSave(); };
-    window.addEventListener('drift:designmode-save', handler);
-    return () => window.removeEventListener('drift:designmode-save', handler);
-  }, [handleDesignModeSave]);
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'drift:text-edit') {
+        setDraftEdits(prev => [...prev, {
+          id: `edit-${Date.now()}`,
+          type: 'text',
+          element: e.data.element,
+          original: e.data.original,
+          modified: e.data.modified,
+        }]);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  // Unified edit mode: Escape discards all edits and reloads iframe
+  useEffect(() => {
+    if (!unifiedEditMode) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // Don't intercept if user is typing in an input
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setUnifiedEditMode(false);
+        setDraftEdits([]);
+        setPlacingPin(false);
+        // Force iframe reload to discard text changes
+        setFrameVersion(v => v + 1);
+      }
+    };
+    // Capture phase to intercept before useKeyboardNav
+    window.addEventListener('keydown', handler, true);
+    return () => window.removeEventListener('keydown', handler, true);
+  }, [unifiedEditMode]);
 
   // Fetch annotations when version changes
   useEffect(() => {
@@ -711,6 +785,20 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const handleAddAnnotation = useCallback(async (x: number, y: number, text: string) => {
     if (!currentConcept || !currentVersion) return;
+
+    if (unifiedEditMode) {
+      // In unified edit mode: add to draft edits (saved on commit)
+      setDraftEdits(prev => [...prev, {
+        id: `pin-${Date.now()}`,
+        type: 'annotation',
+        x, y,
+        note: text,
+      }]);
+      setPlacingPin(false);
+      return;
+    }
+
+    // Legacy: save immediately
     const res = await fetch('/api/annotations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -727,7 +815,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const annotation = await res.json();
       setAnnotations(prev => [...prev, annotation]);
     }
-  }, [client, project, currentConcept, currentVersion]);
+  }, [client, project, currentConcept, currentVersion, unifiedEditMode]);
 
   const handleResolveAnnotation = useCallback(async (id: string) => {
     if (!currentConcept || !currentVersion) return;
@@ -766,8 +854,25 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (!currentConcept || !currentVersion || annotations.length === 0) return;
+      if (!currentConcept || !currentVersion) return;
       const filePath = `~/drift/projects/${client}/${project}/${currentVersion.file}`;
+
+      // In unified edit mode: copy draft edits
+      if (unifiedEditMode && draftEdits.length > 0) {
+        const lines = [`Edits on ${filePath}:`, ''];
+        draftEdits.forEach((edit, i) => {
+          if (edit.type === 'text') {
+            lines.push(`${i + 1}. "${edit.original}" -> "${edit.modified}"`);
+          } else {
+            lines.push(`${i + 1}. [pin] ${edit.note}`);
+          }
+        });
+        navigator.clipboard.writeText(lines.join('\n'));
+        return;
+      }
+
+      // Legacy: copy annotations
+      if (annotations.length === 0) return;
 
       if (detail?.json) {
         // Shift+F: JSON format
@@ -790,7 +895,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     };
     window.addEventListener('drift:copy-feedback', handler);
     return () => window.removeEventListener('drift:copy-feedback', handler);
-  }, [annotations, client, project, currentConcept, currentVersion]);
+  }, [annotations, client, project, currentConcept, currentVersion, unifiedEditMode, draftEdits]);
 
   const handleStarVersion = useCallback((conceptId: string, versionId: string) => {
     setSelections(prev => {
@@ -993,11 +1098,11 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const handleDrift = useMemo(() => {
     if (!currentConcept || !currentVersion) return undefined;
-    if (designModeActive) {
-      return handleDesignModeSave; // D with designMode = save edits to new version
+    if (unifiedEditMode) {
+      return handleCommitEdits; // D in edit mode = commit all edits to new version
     }
     return () => handleDriftVersion(currentConcept.id, currentVersion.id);
-  }, [currentConcept, currentVersion, handleDriftVersion, designModeActive, handleDesignModeSave]);
+  }, [currentConcept, currentVersion, handleDriftVersion, unifiedEditMode, handleCommitEdits]);
 
   const handleBranch = useMemo(() => {
     return currentConcept && currentVersion
@@ -1227,7 +1332,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     ? `${resolved.width} / ${resolved.height}`
     : '16 / 9';
 
-  const htmlSrc = `/api/html/${client}/${project}/${currentVersion.file}`;
+  const htmlSrc = `/api/html/${client}/${project}/${currentVersion.file}${frameVersion > 0 ? `?_v=${frameVersion}` : ''}`;
   const thumbFilename = currentVersion.thumbnail?.replace('.thumbs/', '') || null;
   const thumbSrc = thumbFilename ? `/api/thumbs/${client}/${project}/${thumbFilename}` : null;
 
@@ -1493,11 +1598,28 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             savedEdits={clientEdits.edits}
             onEditsChange={clientEdits.handleEditsChange}
             onScaledWidth={setFrameWidth}
-            designMode={designModeActive}
+            targetedEditMode={unifiedEditMode}
           />
           <AnnotationOverlay
-            annotations={annotations}
-            annotationMode={annotationMode}
+            annotations={[
+              ...annotations,
+              // Include draft annotation pins so they're visible during edit mode
+              ...draftEdits
+                .filter(e => e.type === 'annotation')
+                .map(e => ({
+                  id: e.id,
+                  x: e.x ?? null,
+                  y: e.y ?? null,
+                  element: null,
+                  text: e.note || '',
+                  author: 'designer',
+                  isClient: false,
+                  created: new Date().toISOString(),
+                  resolved: false,
+                } as Annotation)),
+            ]}
+            editMode={unifiedEditMode}
+            placingPin={placingPin}
             onAdd={handleAddAnnotation}
             onResolve={handleResolveAnnotation}
             onDelete={handleDeleteAnnotation}
@@ -1524,27 +1646,33 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           </div>
         )}
 
-        {/* Design mode indicator */}
-        {designModeActive && (
+        {/* Unified edit mode indicator */}
+        {unifiedEditMode && (
           <div
             className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full"
             style={{
-              background: 'rgba(0,0,0,0.6)',
+              background: 'rgba(45, 212, 191, 0.9)',
               backdropFilter: 'blur(8px)',
             }}
           >
-            <div className="w-1.5 h-1.5 rounded-full bg-teal-400" />
             <span
-              className="text-[10px] text-white/80 tracking-wide uppercase"
-              style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}
+              style={{
+                fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+                fontSize: 11,
+                color: '#fff',
+                fontWeight: 500,
+              }}
             >
-              Edit Mode
+              Edit Mode — {draftEdits.length} change{draftEdits.length !== 1 ? 's' : ''}
             </span>
             <span
-              className="text-[10px] text-white/40 tracking-wide"
-              style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}
+              style={{
+                fontFamily: 'var(--font-mono, monospace)',
+                fontSize: 10,
+                color: 'rgba(255,255,255,0.6)',
+              }}
             >
-              Cmd+S save · Esc exit
+              A pin · D save · F copy · Esc discard
             </span>
           </div>
         )}

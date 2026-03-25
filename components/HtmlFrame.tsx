@@ -12,7 +12,7 @@ interface HtmlFrameProps {
   savedEdits?: Record<string, string>;
   onEditsChange?: (allEdits: Record<string, string>) => void;
   onScaledWidth?: (width: number) => void;
-  designMode?: boolean;
+  targetedEditMode?: boolean;
   placeholder?: string | null;
   onReady?: () => void;
 }
@@ -24,7 +24,7 @@ export interface HtmlFrameHandle {
 }
 
 export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
-  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, designMode, placeholder, onReady }, ref) {
+  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, targetedEditMode, placeholder, onReady }, ref) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0);
@@ -51,35 +51,129 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       onReady?.();
     }, [onReady]);
 
-    // Toggle designMode on the iframe document
+    // Targeted edit mode: per-element contentEditable with hover outlines
     useEffect(() => {
-      if (!iframeReady || !iframeRef.current) return;
-      try {
-        const iframeDoc = iframeRef.current.contentDocument;
-        if (!iframeDoc) return;
-        iframeDoc.designMode = designMode ? 'on' : 'off';
-      } catch {
-        // Cross-origin iframe
-      }
-    }, [designMode, iframeReady]);
+      if (!targetedEditMode || !iframeReady || !iframeRef.current?.contentDocument) return;
 
-    // When designMode is on, intercept paste events to convert to plain text
-    useEffect(() => {
-      if (!designMode || !iframeReady || !iframeRef.current) return;
-      try {
-        const iframeDoc = iframeRef.current.contentDocument;
-        if (!iframeDoc) return;
-        const handler = (e: ClipboardEvent) => {
-          e.preventDefault();
-          const text = e.clipboardData?.getData('text/plain') ?? '';
-          iframeDoc.execCommand('insertText', false, text);
-        };
-        iframeDoc.addEventListener('paste', handler, true);
-        return () => iframeDoc.removeEventListener('paste', handler, true);
-      } catch {
-        // Cross-origin iframe
-      }
-    }, [designMode, iframeReady]);
+      const doc = iframeRef.current.contentDocument;
+
+      // Add edit styles
+      const style = doc.createElement('style');
+      style.id = 'drift-edit-styles';
+      style.textContent = `
+        [data-drift-editable-hover] {
+          outline: 2px dashed rgba(45, 212, 191, 0.4) !important;
+          cursor: text !important;
+          transition: outline 0.15s ease !important;
+        }
+        [contenteditable="true"] {
+          outline: 2px solid rgba(45, 212, 191, 0.8) !important;
+        }
+      `;
+      doc.head.appendChild(style);
+
+      // Text elements selector
+      const TEXT_SELECTOR = 'h1,h2,h3,h4,h5,h6,p,span,a,li,label,button,td,th';
+
+      // Hover handlers
+      const handleMouseOver = (e: Event) => {
+        const el = (e.target as HTMLElement).closest(TEXT_SELECTOR) as HTMLElement | null;
+        if (el && el.textContent?.trim()) {
+          el.setAttribute('data-drift-editable-hover', '');
+        }
+      };
+      const handleMouseOut = (e: Event) => {
+        const el = (e.target as HTMLElement).closest(TEXT_SELECTOR) as HTMLElement | null;
+        if (el) el.removeAttribute('data-drift-editable-hover');
+      };
+
+      // Click handler — make element editable
+      let currentEditing: HTMLElement | null = null;
+      let originalText = '';
+
+      const finishEditing = (el: HTMLElement) => {
+        const newText = el.textContent || '';
+        el.contentEditable = 'false';
+        el.removeAttribute('data-drift-editable-hover');
+
+        if (newText !== originalText) {
+          // Send edit to parent
+          window.parent.postMessage({
+            type: 'drift:text-edit',
+            original: originalText,
+            modified: newText,
+            element: `${el.tagName.toLowerCase()}: "${originalText.substring(0, 30)}"`,
+          }, '*');
+        }
+        currentEditing = null;
+        originalText = '';
+      };
+
+      const handleClick = (e: Event) => {
+        const el = (e.target as HTMLElement).closest(TEXT_SELECTOR) as HTMLElement | null;
+        if (!el || !el.textContent?.trim()) {
+          // Click on empty space — annotations handled by overlay
+          return;
+        }
+
+        // If already editing something else, finish it
+        if (currentEditing && currentEditing !== el) {
+          finishEditing(currentEditing);
+        }
+
+        if (el.contentEditable === 'true') return; // already editing this one
+
+        originalText = el.textContent || '';
+        el.contentEditable = 'true';
+        el.focus();
+        currentEditing = el;
+      };
+
+      const handleBlur = (e: Event) => {
+        const el = e.target as HTMLElement;
+        if (el.contentEditable === 'true') {
+          // Small delay to allow click-on-another-element to fire first
+          setTimeout(() => {
+            if (el.contentEditable === 'true') {
+              finishEditing(el);
+            }
+          }, 100);
+        }
+      };
+
+      // Paste handler — plain text only
+      const handlePaste = (e: Event) => {
+        const clipEvent = e as ClipboardEvent;
+        clipEvent.preventDefault();
+        const text = clipEvent.clipboardData?.getData('text/plain') || '';
+        const ownerDoc = (e.target as HTMLElement).ownerDocument;
+        ownerDoc.execCommand('insertText', false, text);
+      };
+
+      doc.addEventListener('mouseover', handleMouseOver, true);
+      doc.addEventListener('mouseout', handleMouseOut, true);
+      doc.addEventListener('click', handleClick, true);
+      doc.addEventListener('blur', handleBlur, true);
+      doc.addEventListener('paste', handlePaste, true);
+
+      return () => {
+        // Cleanup
+        doc.removeEventListener('mouseover', handleMouseOver, true);
+        doc.removeEventListener('mouseout', handleMouseOut, true);
+        doc.removeEventListener('click', handleClick, true);
+        doc.removeEventListener('blur', handleBlur, true);
+        doc.removeEventListener('paste', handlePaste, true);
+        doc.getElementById('drift-edit-styles')?.remove();
+        // Remove contentEditable from any active element
+        if (currentEditing) {
+          currentEditing.contentEditable = 'false';
+        }
+        // Remove all hover attributes
+        doc.querySelectorAll('[data-drift-editable-hover]').forEach(el => {
+          el.removeAttribute('data-drift-editable-hover');
+        });
+      };
+    }, [targetedEditMode, iframeReady]);
 
     // Ref for savedEdits to avoid re-triggering the effect on every keystroke
     const savedEditsRef = useRef(savedEdits);
@@ -120,16 +214,12 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
         const iframeDoc = iframeRef.current.contentDocument;
         if (!iframeDoc) return;
         const handler = (e: KeyboardEvent) => {
-          // When in contentEditable (designMode editing), only forward Escape and Cmd+S
+          // When in contentEditable (targeted edit), only forward Escape
           // Don't forward letter keys like G — user is typing
           if ((e.target as HTMLElement)?.isContentEditable) {
             if (e.key === 'Escape') {
               e.preventDefault();
               window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, bubbles: true }));
-            }
-            if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
             }
             return;
           }
@@ -156,10 +246,9 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
             // Don't intercept if user is typing in an input inside the iframe
             if (e.target instanceof iframeDoc.defaultView!.HTMLInputElement ||
                 e.target instanceof iframeDoc.defaultView!.HTMLTextAreaElement) return;
-            // Forward Cmd+S with modifier keys preserved
-            if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
+            // Forward Cmd+S with modifier keys preserved (browser save intercept)
+            if ((e.key === 's' || e.key === 'S') && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
-              window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
               return;
             }
             e.preventDefault();
@@ -330,7 +419,7 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
             width: scaledWidth,
             height: scaledHeight,
             overflow: 'hidden',
-            border: designMode ? '2px solid #2dd4bf' : '1px solid rgba(0,0,0,0.08)',
+            border: targetedEditMode ? '2px solid #2dd4bf' : '1px solid rgba(0,0,0,0.08)',
             borderRadius: 4,
             transition: 'border-color 0.2s ease',
             position: 'relative',
@@ -393,7 +482,7 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
           src={editSrc}
           className="w-full h-full relative"
           style={{
-            border: designMode ? '2px solid #2dd4bf' : 'none',
+            border: targetedEditMode ? '2px solid #2dd4bf' : 'none',
             transition: 'border-color 0.2s ease, opacity 0.15s ease',
             zIndex: 2,
             opacity: iframeReady ? 1 : 0,

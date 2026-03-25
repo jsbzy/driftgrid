@@ -5,7 +5,9 @@ import type { Annotation } from '@/lib/types';
 
 interface AnnotationOverlayProps {
   annotations: Annotation[];
-  annotationMode: boolean;
+  editMode?: boolean;
+  placingPin?: boolean;
+  annotationMode?: boolean;
   onAdd: (x: number, y: number, text: string) => void;
   onResolve: (id: string) => void;
   onDelete: (id: string) => void;
@@ -18,11 +20,15 @@ interface PendingPin {
 
 export function AnnotationOverlay({
   annotations,
+  editMode,
+  placingPin,
   annotationMode,
   onAdd,
   onResolve,
   onDelete,
 }: AnnotationOverlayProps) {
+  // Unified: overlay captures clicks when in legacy annotationMode OR when placing a pin in edit mode
+  const isCapturing = annotationMode || (editMode && placingPin);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [pendingPin, setPendingPin] = useState<PendingPin | null>(null);
@@ -53,18 +59,18 @@ export function AnnotationOverlay({
     return () => window.removeEventListener('keydown', handler);
   }, [pendingPin, activePin]);
 
-  // Clear pending/active states when annotation mode changes
+  // Clear pending/active states when capture mode changes
   useEffect(() => {
-    if (!annotationMode) {
+    if (!isCapturing) {
       setPendingPin(null);
       setPendingText('');
       setActivePin(null);
     }
-  }, [annotationMode]);
+  }, [isCapturing]);
 
   const handleOverlayClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!annotationMode) return;
+      if (!isCapturing) return;
       // Don't place pins when clicking on existing pins or popups
       if ((e.target as HTMLElement).closest('[data-annotation-pin]') || (e.target as HTMLElement).closest('[data-annotation-popup]')) {
         return;
@@ -80,7 +86,7 @@ export function AnnotationOverlay({
       setPendingText('');
       setActivePin(null);
     },
-    [annotationMode]
+    [isCapturing]
   );
 
   const handleSubmitPending = useCallback(() => {
@@ -113,12 +119,12 @@ export function AnnotationOverlay({
         position: 'absolute',
         inset: 0,
         zIndex: 10,
-        pointerEvents: annotationMode ? 'auto' : 'none',
-        cursor: annotationMode ? 'crosshair' : 'default',
+        pointerEvents: isCapturing ? 'auto' : 'none',
+        cursor: isCapturing ? 'crosshair' : 'default',
       }}
     >
-      {/* Annotation mode indicator */}
-      {annotationMode && (
+      {/* Pin placement indicator — shown during legacy annotation mode or unified edit pin placement */}
+      {isCapturing && (
         <div
           style={{
             position: 'absolute',
@@ -152,7 +158,7 @@ export function AnnotationOverlay({
               textTransform: 'uppercase',
             }}
           >
-            Annotate
+            Place Pin
           </span>
           <span
             style={{
@@ -161,7 +167,7 @@ export function AnnotationOverlay({
               color: 'rgba(255,255,255,0.35)',
             }}
           >
-            click to pin · A to exit
+            click to pin · A to cancel
           </span>
         </div>
       )}
