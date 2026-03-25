@@ -1149,7 +1149,25 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
-        {topbar}
+        {/* Floating project label — top-left */}
+        {!topbarHidden && (
+          <div className="fixed top-4 left-4 z-30 pointer-events-auto">
+            <a
+              href="/"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all hover:bg-[var(--card-bg)]"
+              style={{
+                fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'var(--foreground)',
+                opacity: 0.5,
+                textDecoration: 'none',
+              }}
+            >
+              {filtered?.project.name}
+            </a>
+          </div>
+        )}
         <div className="flex-1 min-h-0">
           <CanvasView
             ref={canvasRef}
@@ -1215,7 +1233,61 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
-      {!topbarHidden && topbar}
+      {/* Floating frame info — top-left */}
+      {!topbarHidden && (
+        <div className="fixed top-4 left-4 z-30 flex items-center gap-2">
+          <a
+            href="/"
+            style={{
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 11,
+              color: 'var(--muted)',
+              textDecoration: 'none',
+              opacity: 0.6,
+            }}
+          >
+            {filtered?.project.name}
+          </a>
+          <span style={{ color: 'var(--border)', fontSize: 10 }}>/</span>
+          <button
+            onClick={() => handleToggleGridView()}
+            style={{
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 11,
+              fontWeight: 500,
+              color: 'var(--foreground)',
+              opacity: 0.7,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            {currentConcept?.label} · v{currentVersion?.number}
+          </button>
+          {currentVersion?.file && (
+            <>
+              <span style={{ color: 'var(--border)', fontSize: 10 }}>/</span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`~/drift/projects/${client}/${project}/${currentVersion.file}`);
+                }}
+                style={{
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: 10,
+                  color: 'var(--muted)',
+                  opacity: 0.4,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                title="Click to copy path"
+              >
+                {currentVersion.file}
+              </button>
+            </>
+          )}
+        </div>
+      )}
       <div
         ref={frameWrapperRef}
         className="flex-1 min-h-0 relative"

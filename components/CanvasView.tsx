@@ -356,13 +356,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
         onPointerUp={onPointerUp}
         onDoubleClick={handleDoubleClick}
       >
-        {/* Navigation hints + zoom level indicator */}
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4"
-          style={{ opacity: spaceHeld ? 0 : 1, transition: 'opacity 0.3s ease' }}>
-          <span style={{ fontSize: 9, color: 'var(--foreground)', opacity: 0.2, fontFamily: 'var(--font-mono, monospace)', letterSpacing: '0.05em' }}>
-            Scroll to pan · ⌘ Scroll to zoom · Double-click to fit
-          </span>
-        </div>
 
         {/* Structural grid lines — aligned to actual columns and rows */}
         <svg
