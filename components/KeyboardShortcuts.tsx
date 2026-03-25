@@ -53,7 +53,7 @@ export function KeyboardShortcuts({ visible, onClose }: KeyboardShortcutsProps) 
     >
       <div className="absolute inset-0 bg-black/20" />
       <div
-        className="relative bg-[var(--background)] border border-[var(--border)] rounded-sm p-6 min-w-[280px]"
+        className="relative bg-[var(--background)] border border-[var(--border)] rounded-lg p-6 min-w-[280px]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-[10px] font-medium tracking-widest uppercase text-[var(--muted)] mb-4">

@@ -221,3 +221,19 @@ Each client has `projects/{client}/brand/guidelines.md` with colors, fonts, voic
 - Admin: `localhost:3000/admin/{client}/{project}`
 - Review (client-facing): `localhost:3000/review/{client}/{project}`
 - Arrow keys navigate: left/right = concepts, up/down = versions
+
+
+## DriftGrid Conventions
+
+This project uses DriftGrid for design iteration. Key rules:
+
+- **Never overwrite versions.** Copy to the next version number (v2, v3, etc.) and edit the copy.
+- **Update manifest.json** when adding versions or concepts.
+- **HTML files must be self-contained** — inline CSS/JS, Google Fonts via `<link>` tags, no external URLs.
+- **Canvas preset:** `desktop` (1440 x auto)
+
+### API Endpoints (localhost:3000)
+- `GET /api/current` — what the user is currently viewing
+- `POST /api/iterate` — create a new version (drift)
+- `POST /api/branch` — fork into a new concept
+- `POST /api/create-project` — create a new project

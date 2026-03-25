@@ -130,11 +130,12 @@ export function CommandPalette({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[400px] mx-4 rounded-lg border overflow-hidden shadow-xl"
+        className="w-full max-w-[400px] mx-4 border overflow-hidden shadow-xl"
         style={{
           fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
           background: 'var(--background)',
           borderColor: 'var(--border)',
+          borderRadius: 'var(--radius-md, 8px)',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -181,7 +182,7 @@ export function CommandPalette({
                 fontSize: 12,
                 padding: '8px 16px',
                 color: 'var(--foreground)',
-                background: i === highlightIndex ? 'rgba(0,0,0,0.04)' : 'transparent',
+                background: i === highlightIndex ? 'rgba(0,0,0,0.06)' : 'transparent',
                 transition: 'background 0.1s',
               }}
               onMouseEnter={() => setHighlightIndex(i)}

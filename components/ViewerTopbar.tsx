@@ -74,7 +74,15 @@ export function ViewerTopbar({
       {/* Left: client · project · concept · version · canvas */}
       <div className="flex items-center gap-2.5 text-xs">
         <Link
-          href={`/review/${clientSlug}`}
+          href="/"
+          className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+          title="All projects"
+        >
+          ≡
+        </Link>
+        <span className="text-[var(--border)]">&middot;</span>
+        <Link
+          href={isClientMode ? `/review/${clientSlug}` : '/'}
           className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
         >
           {client}
@@ -111,7 +119,7 @@ export function ViewerTopbar({
                 const el = document.activeElement as HTMLElement;
                 el?.blur();
               }}
-              className="text-[9px] text-[var(--border)] hover:text-[var(--muted)] transition-colors cursor-pointer truncate max-w-[200px]"
+              className="text-[10px] text-[var(--border)] hover:text-[var(--muted)] transition-colors cursor-pointer truncate max-w-[200px]"
               title={`~/drift/projects/${clientSlug}/${project}/${versionFile} — click to copy`}
               style={{ fontFamily: 'var(--font-mono, monospace)' }}
             >
