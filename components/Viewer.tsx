@@ -1600,6 +1600,35 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
               </svg>
             </button>
             <button
+              onClick={async () => {
+                const res = await fetch('/api/export', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    client,
+                    project,
+                    format: 'png',
+                    versionId: currentVersion.id,
+                  }),
+                });
+                if (res.ok) {
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${currentConcept.label}-v${currentVersion.number}.png`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }
+              }}
+              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+              title="Export PNG"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </button>
+            <button
               onClick={() => handleToggleGridView()}
               className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
               title="Back to grid (G)"
