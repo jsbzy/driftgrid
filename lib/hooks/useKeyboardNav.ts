@@ -244,19 +244,15 @@ export function useKeyboardNav({
           break;
         }
 
-        // ── Drift ──
+        // ── Drift ↓ (new version) or Drift → (new concept with Shift) ──
         case 'd':
         case 'D': {
           e.preventDefault();
-          onDrift?.();
-          break;
-        }
-
-        // ── Branch ──
-        case 'b':
-        case 'B': {
-          e.preventDefault();
-          onBranch?.();
+          if (e.shiftKey) {
+            onBranch?.();
+          } else {
+            onDrift?.();
+          }
           break;
         }
 

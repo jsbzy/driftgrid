@@ -47,8 +47,8 @@ export function ContextMenu({
 
   const items: MenuEntry[] = [
     { label: isStarred ? 'Unstar' : 'Star', shortcut: 'S', action: onStar },
-    { label: 'Drift \u2014 new version', shortcut: 'D', action: onDrift },
-    { label: 'Branch \u2014 new concept', shortcut: 'B', action: onBranch },
+    { label: 'Drift \u2193 new version', shortcut: 'D', action: onDrift },
+    { label: 'Drift \u2192 new concept', shortcut: '\u21e7D', action: onBranch },
     { label: 'Copy path', shortcut: '\u2318C', action: onCopyPath },
     { label: 'Delete', shortcut: 'Del', action: onDelete, danger: true },
     { separator: true },

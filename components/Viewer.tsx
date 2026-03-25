@@ -572,7 +572,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const handleBranchVersion = useCallback(async (conceptId: string, versionId: string) => {
     try {
-      setFlashLabel('BRANCHED');
+      setFlashLabel('DRIFTED →');
       setDriftFlash(true);
 
       const res = await fetch('/api/branch', {
@@ -908,7 +908,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           <div style={{
             fontFamily: 'var(--font-mono, monospace)',
             fontSize: 11, color: '#888', marginTop: 8,
-          }}>{flashLabel === 'BRANCHED' ? 'New concept created \u00b7 path copied' : 'New version created \u00b7 path copied'}</div>
+          }}>{flashLabel === 'DRIFTED →' ? 'New concept created \u00b7 path copied' : 'New version created \u00b7 path copied'}</div>
         </div>
       </div>
       <style>{`

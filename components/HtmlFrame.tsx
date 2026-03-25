@@ -141,7 +141,7 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
             window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
             return;
           }
-          if (e.key === 'b' || e.key === 'B' ||
+          if (e.key === 'd' || e.key === 'D' ||
               e.key === 'e' || e.key === 'E' ||
               e.key === 'g' || e.key === 'G' || e.key === 'Escape' ||
               e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
@@ -161,8 +161,8 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
               return;
             }
             e.preventDefault();
-            // Re-dispatch on parent window
-            window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, bubbles: true }));
+            // Re-dispatch on parent window (preserve modifier keys)
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
           }
         };
         iframeDoc.addEventListener('keydown', handler, true);
