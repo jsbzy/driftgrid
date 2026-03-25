@@ -47,6 +47,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('overview');
   // Feature 1: Smooth zoom transition state
   const canvasRef = useRef<CanvasViewHandle>(null);
+  const frameWrapperRef = useRef<HTMLDivElement>(null);
   const [transitionCardBounds, setTransitionCardBounds] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   // Feature 3: Hot reload state — frame version counter for forcing iframe refresh
   const [frameVersion, setFrameVersion] = useState(0);
@@ -315,6 +316,20 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       return 'frame';
     });
   }, [conceptIndex, versionIndex, getTransitionCardBounds]);
+
+  // Pinch zoom out from frame → exit to grid (passive:false to block browser gesture)
+  useEffect(() => {
+    const el = frameWrapperRef.current;
+    if (!el || viewMode !== 'frame') return;
+    const handler = (e: WheelEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.deltaY > 0) {
+        e.preventDefault();
+        handleToggleGridView();
+      }
+    };
+    el.addEventListener('wheel', handler, { passive: false });
+    return () => el.removeEventListener('wheel', handler);
+  }, [viewMode, handleToggleGridView]);
 
   const handleGridSelect = useCallback(
     (ci: number, vi: number) => {
@@ -1210,14 +1225,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       {deleteDialog}
       {!topbarHidden && topbar}
       <div
+        ref={frameWrapperRef}
         className="flex-1 min-h-0 relative"
-        onWheel={(e) => {
-          // Pinch zoom out (Cmd+scroll or ctrlKey from trackpad) exits to grid
-          if ((e.ctrlKey || e.metaKey) && e.deltaY > 0) {
-            e.preventDefault();
-            handleToggleGridView();
-          }
-        }}
       >
         <div className="h-full p-4">
           <HtmlFrame

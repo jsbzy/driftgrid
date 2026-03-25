@@ -305,10 +305,10 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
       (el.clientHeight - 80) / cardBounds.h,
     );
     // If we're 30% past z4 scale, enter the frame
-    if (transform.scale > z4Scale * 1.3 && !enterFrameThreshold.current) {
+    if (transform.scale > z4Scale * 1.15 && !enterFrameThreshold.current) {
       enterFrameThreshold.current = true;
       onSelect(conceptIndex, versionIndex);
-    } else if (transform.scale <= z4Scale * 1.3) {
+    } else if (transform.scale <= z4Scale * 1.15) {
       enterFrameThreshold.current = false;
     }
   }, [transform.scale, layout, conceptIndex, versionIndex, onSelect]);
