@@ -13,6 +13,7 @@ import { CanvasView, type CanvasViewHandle } from './CanvasView';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { AnnotationOverlay } from './AnnotationOverlay';
 import { CommandPalette } from './CommandPalette';
+import { toast, ToastContainer } from './Toast';
 import { useKeyboardNav, type ZoomLevel } from '@/lib/hooks/useKeyboardNav';
 import { useClientEdits } from '@/lib/hooks/useClientEdits';
 import { computeCanvasLayout, getCardBounds } from '@/lib/hooks/useCanvasLayout';
@@ -176,7 +177,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         }
       }
     }
-  }, [reviewMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps — intentionally only fires on reviewMode toggle, reads current selections/concepts at call time
+  }, [reviewMode]);
 
   // Review mode: R enters, Esc exits, arrows cycle through selects at z4
   useEffect(() => {
@@ -265,7 +267,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     setConceptIndex(ci);
     setVersionIndex(vi);
     setViewMode('frame');
-  }, [concepts.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps — runs once when concepts first load, reads hash at call time
+  }, [concepts.length]);
 
   const handleNavigate = useCallback(
     (ci: number, vi: number) => {
@@ -590,9 +593,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       setDriftFlash(true);
 
       const res = await resPromise;
-      if (!res.ok) { setDriftFlash(false); return; }
+      if (!res.ok) { setDriftFlash(false); toast('Drift failed', 'error'); return; }
       const { absolutePath, versionId: newVid, versionNumber } = await res.json();
       try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
+      toast('Drifted \u2193 \u2014 path copied');
 
       // Track for Cmd+Z undo
       setLastDrift({ conceptId, versionId: newVid });
@@ -615,7 +619,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
       // Let the fade-back finish
       setTimeout(() => setDriftFlash(false), 1000);
-    } catch { setDriftFlash(false); }
+    } catch { setDriftFlash(false); toast('Drift failed', 'error'); }
   }, [client, project, mutate]);
 
   const handleBranchVersion = useCallback(async (conceptId: string, versionId: string) => {
@@ -628,9 +632,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ client, project, conceptId, versionId }),
       });
-      if (!res.ok) { setDriftFlash(false); return; }
+      if (!res.ok) { setDriftFlash(false); toast('Branch failed', 'error'); return; }
       const { conceptId: newConceptId, absolutePath } = await res.json();
       try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
+      toast('Drifted \u2192 \u2014 new concept, path copied');
 
       // Wait for the white peak of the animation (~500ms) before swapping content
       await new Promise(r => setTimeout(r, 500));
@@ -650,7 +655,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
       // Let the fade-back finish
       setTimeout(() => setDriftFlash(false), 1000);
-    } catch { setDriftFlash(false); }
+    } catch { setDriftFlash(false); toast('Branch failed', 'error'); }
   }, [client, project, mutate, viewMode]);
 
   // Unified edit mode: commit all draft edits (text + annotations) to a new version
@@ -667,12 +672,12 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ client, project, conceptId: currentConcept.id, versionId: currentVersion.id }),
     });
-    if (!res.ok) return;
+    if (!res.ok) { toast('Save failed', 'error'); return; }
     const { versionId: newVid, versionNumber } = await res.json();
 
     // Refresh manifest to pick up the new version
     const updated = await mutate();
-    if (!updated) return;
+    if (!updated) { toast('Save failed', 'error'); return; }
     const ci = updated.concepts.findIndex(c => c.id === currentConcept.id);
     if (ci < 0) return;
     const newVersion = updated.concepts[ci].versions.find(v => v.id === newVid);
@@ -715,6 +720,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     setFlashLabel('COMMITTED');
     setDriftFlash(true);
     setTimeout(() => setDriftFlash(false), 1000);
+    toast('Changes saved to new version');
 
     // Clear edit mode
     setUnifiedEditMode(false);
@@ -1308,7 +1314,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           // Clear selections — they're now saved in the round
           setSelections(new Map());
           setActiveWorkingSetId(null);
-          alert(`Round "${data.name}" closed — ${data.stamped} versions stamped, ${selectCount} selects saved as baseline`);
+          toast(`Round "${data.name}" closed — ${data.stamped} stamped, ${selectCount} selects saved`);
         }
       }}
     />
@@ -1485,6 +1491,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
               onClick={() => {
                 const path = `~/drift/projects/${client}/${project}/${currentVersion.file}`;
                 navigator.clipboard.writeText(path);
+                toast('Path copied');
               }}
               className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
               title="Copy path"

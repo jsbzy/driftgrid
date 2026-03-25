@@ -163,7 +163,8 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     } else {
       fitAll(layout.totalWidth, layout.totalHeight, el.clientWidth, el.clientHeight);
     }
-  }, [layout.totalWidth, layout.totalHeight, fitAll]); // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps — runs once on mount, intentionally ignores initialCardBounds/zoomLevel changes
+  }, [layout.totalWidth, layout.totalHeight, fitAll]);
 
   // No ResizeObserver — fitAll only on mount. Manual zoom controls handle the rest.
 
