@@ -285,68 +285,6 @@ export const CanvasCard = memo(function CanvasCard({
         )}
       </div>
 
-      {/* Floating action bar — appears below highlighted card */}
-      {isCurrent && (
-        <div
-          className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1 rounded-full"
-          style={{
-            bottom: -36,
-            background: 'rgba(0,0,0,0.5)',
-            backdropFilter: 'blur(8px)',
-            opacity: 0,
-            animation: 'fadeInUp 0.15s ease forwards 0.15s',
-            zIndex: 20,
-          }}
-        >
-          {onStar && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onStar(); }}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Star (S)"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill={isSelected ? '#facc15' : 'none'} stroke={isSelected ? '#facc15' : 'white'} strokeWidth="2">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
-            </button>
-          )}
-          {onDrift && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onDrift(); }}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Drift (D)"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
-              </svg>
-            </button>
-          )}
-          {filePath && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(filePath);
-              }}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Copy path"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-            </button>
-          )}
-          {onDoubleClick && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onDoubleClick(); }}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Enter"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <polyline points="9 10 4 15 9 20" /><path d="M20 4v7a4 4 0 0 1-4 4H4" />
-              </svg>
-            </button>
-          )}
-        </div>
-      )}
 
     </div>
   );
