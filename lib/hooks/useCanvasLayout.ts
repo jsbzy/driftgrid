@@ -22,16 +22,23 @@ export interface SelectsSlot {
   conceptId: string;
   x: number;
   y: number;
+  roundId: string | null; // null = current round
 }
 
 export interface DividerPosition {
-  conceptIndex: number;
-  x: number;
+  x: number;              // left edge (CANVAS_PADDING)
   y: number;
-  width: number;
+  width: number;          // full grid width
   roundId: string;
   roundName: string;
-  versionCount: number; // how many versions in this round for this concept
+  versionCount: number;   // total across all concepts
+}
+
+export interface RoundLabelPosition {
+  roundId: string | null; // null = current round
+  roundName: string;
+  x: number;
+  y: number;
 }
 
 export interface CanvasLayout {
@@ -39,6 +46,7 @@ export interface CanvasLayout {
   labels: LabelPosition[];
   selectsSlots: SelectsSlot[];
   dividers: DividerPosition[];
+  roundLabels: RoundLabelPosition[];
   totalWidth: number;
   totalHeight: number;
   cardWidth: number;
@@ -68,33 +76,34 @@ export function computeCanvasLayout(
   const cardHeight = Math.round(CARD_WIDTH * ratio);
   const selectsHeight = Math.round(cardHeight * SELECTS_HEIGHT_RATIO);
 
-  // Build a lookup from roundId → Round for name resolution
-  const roundMap = new Map<string, Round>();
-  if (rounds) {
-    for (const r of rounds) roundMap.set(r.id, r);
-  }
-
   const cards: CardPosition[] = [];
   const labels: LabelPosition[] = [];
   const selectsSlots: SelectsSlot[] = [];
   const dividers: DividerPosition[] = [];
-  let maxColumnBottom = 0;
+  const roundLabels: RoundLabelPosition[] = [];
 
-  // Layout: selects slot → gap → label → cards
-  const selectsRowTop = CANVAS_PADDING;
-  const labelTop = selectsRowTop + selectsHeight + SELECTS_GAP;
-  const cardsTop = labelTop + LABEL_HEIGHT;
+  if (concepts.length === 0) {
+    return {
+      cards,
+      labels,
+      selectsSlots,
+      dividers,
+      roundLabels,
+      totalWidth: CANVAS_PADDING * 2,
+      totalHeight: CANVAS_PADDING * 2,
+      cardWidth: CARD_WIDTH,
+      cardHeight,
+      selectsHeight,
+    };
+  }
 
+  // Grid width across all columns
+  const gridWidth = concepts.length * CARD_WIDTH + (concepts.length - 1) * COLUMN_GAP;
+
+  // --- LABELS at top ---
+  const labelTop = CANVAS_PADDING;
   concepts.forEach((concept, col) => {
     const x = CANVAS_PADDING + col * (CARD_WIDTH + COLUMN_GAP);
-
-    selectsSlots.push({
-      conceptIndex: col,
-      conceptId: concept.id,
-      x,
-      y: selectsRowTop,
-    });
-
     labels.push({
       conceptIndex: col,
       conceptId: concept.id,
@@ -102,103 +111,148 @@ export function computeCanvasLayout(
       x,
       y: labelTop,
     });
+  });
 
-    // Reverse: latest version first (matching GridView behavior)
-    // row 0 = latest version (no roundId = current round)
-    // When we hit a version with a different roundId from the previous, insert a divider
-    const versionCount = concept.versions.length;
-    let currentY = cardsTop;
-    let prevRoundId: string | undefined | null = null; // null = not yet set
-    // Track how many versions per roundId in this concept (for collapsed label count)
-    const roundVersionCounts = new Map<string, number>();
-    for (const v of concept.versions) {
-      if (v.roundId) {
-        roundVersionCounts.set(v.roundId, (roundVersionCounts.get(v.roundId) ?? 0) + 1);
-      }
-    }
+  const cardsTop = labelTop + LABEL_HEIGHT;
+  let currentY = cardsTop;
 
-    for (let row = 0; row < versionCount; row++) {
-      const originalIndex = versionCount - 1 - row;
-      const version = concept.versions[originalIndex];
-      const versionRoundId = version.roundId ?? undefined;
+  // --- CURRENT ROUND SECTION ---
 
-      // Detect round boundary — when roundId changes, or first version is in a closed round
-      if ((prevRoundId !== null && versionRoundId !== prevRoundId) ||
-          (prevRoundId === null && versionRoundId !== undefined)) {
-        // The divider represents the round we're about to enter (the closed round)
-        const enteringRoundId = versionRoundId;
-        if (enteringRoundId) {
-          const round = roundMap.get(enteringRoundId);
-          const roundName = round?.name ?? `Round ${round?.number ?? '?'}`;
-          const vCount = roundVersionCounts.get(enteringRoundId) ?? 0;
+  // Round label for current round
+  const currentRoundNumber = (rounds?.length ?? 0) + 1;
+  roundLabels.push({
+    roundId: null,
+    roundName: `RD ${currentRoundNumber}`,
+    x: CANVAS_PADDING - 60,
+    y: currentY,
+  });
 
-          // Add gap before divider
-          currentY += DIVIDER_GAP;
+  // Selects row for current round
+  concepts.forEach((concept, col) => {
+    const x = CANVAS_PADDING + col * (CARD_WIDTH + COLUMN_GAP);
+    selectsSlots.push({
+      conceptIndex: col,
+      conceptId: concept.id,
+      x,
+      y: currentY,
+      roundId: null,
+    });
+  });
 
-          dividers.push({
-            conceptIndex: col,
-            x,
-            y: currentY,
-            width: CARD_WIDTH,
-            roundId: enteringRoundId,
-            roundName,
-            versionCount: vCount,
-          });
+  currentY += selectsHeight + SELECTS_GAP;
 
-          currentY += DIVIDER_HEIGHT + DIVIDER_GAP;
+  // Current round versions (no roundId) — reverse order (latest first)
+  const currentRoundVersionStartY = currentY;
+  concepts.forEach((concept, col) => {
+    const x = CANVAS_PADDING + col * (CARD_WIDTH + COLUMN_GAP);
+    let colY = currentRoundVersionStartY;
 
-          // If this round is collapsed, skip all versions in this round
-          if (collapsedRounds?.has(enteringRoundId)) {
-            // Skip ahead past all versions with this roundId
-            let skip = row;
-            while (skip < versionCount) {
-              const skipIdx = versionCount - 1 - skip;
-              const skipVersion = concept.versions[skipIdx];
-              if ((skipVersion.roundId ?? undefined) !== enteringRoundId) break;
-              skip++;
-            }
-            // Update prevRoundId to match what comes after the skipped versions
-            // (or stay at the collapsed round if we hit the end)
-            if (skip < versionCount) {
-              const nextIdx = versionCount - 1 - skip;
-              prevRoundId = concept.versions[nextIdx].roundId ?? undefined;
-            }
-            row = skip - 1; // -1 because the for loop will increment
-            continue;
-          }
-        }
-      }
+    // Get versions in reverse order, filter to current round only (no roundId)
+    const versions = [...concept.versions].reverse().filter(v => !v.roundId);
 
-      prevRoundId = versionRoundId;
-
+    for (const version of versions) {
+      const originalIndex = concept.versions.indexOf(version);
       cards.push({
         conceptIndex: col,
         versionIndex: originalIndex,
         conceptId: concept.id,
         versionId: version.id,
         x,
-        y: currentY,
+        y: colY,
       });
-
-      currentY += cardHeight + ROW_GAP;
+      colY += cardHeight + ROW_GAP;
     }
 
-    // Track maximum column bottom for total height
-    // Subtract the last ROW_GAP since there's no card after the last one
-    const columnBottom = currentY - ROW_GAP;
-    if (columnBottom > maxColumnBottom) {
-      maxColumnBottom = columnBottom;
-    }
+    if (colY > currentY) currentY = colY;
   });
 
-  const totalWidth = concepts.length > 0
-    ? CANVAS_PADDING * 2 + concepts.length * CARD_WIDTH + (concepts.length - 1) * COLUMN_GAP
-    : CANVAS_PADDING * 2;
-  const totalHeight = maxColumnBottom > 0
-    ? maxColumnBottom + CANVAS_PADDING
-    : CANVAS_PADDING * 2;
+  // If no current round versions, still leave some space
+  if (currentY === currentRoundVersionStartY) {
+    currentY += cardHeight + ROW_GAP;
+  }
 
-  return { cards, labels, selectsSlots, dividers, totalWidth, totalHeight, cardWidth: CARD_WIDTH, cardHeight, selectsHeight };
+  // --- CLOSED ROUNDS (newest first, i.e., reverse order of rounds array) ---
+  const sortedRounds = [...(rounds ?? [])].reverse();
+
+  for (const round of sortedRounds) {
+    // Count versions in this round across all concepts
+    let totalVersions = 0;
+    for (const c of concepts) {
+      for (const v of c.versions) {
+        if (v.roundId === round.id) totalVersions++;
+      }
+    }
+
+    // Divider
+    currentY += DIVIDER_GAP;
+    dividers.push({
+      x: CANVAS_PADDING,
+      y: currentY,
+      width: gridWidth,
+      roundId: round.id,
+      roundName: round.name,
+      versionCount: totalVersions,
+    });
+    currentY += DIVIDER_HEIGHT + DIVIDER_GAP;
+
+    // If collapsed, skip everything
+    if (collapsedRounds?.has(round.id)) continue;
+
+    // Round label
+    const roundLabelY = currentY;
+    roundLabels.push({
+      roundId: round.id,
+      roundName: `RD ${round.number}`,
+      x: CANVAS_PADDING - 60,
+      y: roundLabelY,
+    });
+
+    // Round selects row (if round has selects)
+    if (round.selects && round.selects.length > 0) {
+      concepts.forEach((concept, col) => {
+        const x = CANVAS_PADDING + col * (CARD_WIDTH + COLUMN_GAP);
+        // Always add the slot — CanvasView will render it filled or empty
+        selectsSlots.push({
+          conceptIndex: col,
+          conceptId: concept.id,
+          x,
+          y: currentY,
+          roundId: round.id,
+        });
+      });
+      currentY += selectsHeight + SELECTS_GAP;
+    }
+
+    // Round versions
+    const roundVersionStartY = currentY;
+    concepts.forEach((concept, col) => {
+      const x = CANVAS_PADDING + col * (CARD_WIDTH + COLUMN_GAP);
+      let colY = roundVersionStartY;
+
+      const versions = [...concept.versions].reverse().filter(v => v.roundId === round.id);
+
+      for (const version of versions) {
+        const originalIndex = concept.versions.indexOf(version);
+        cards.push({
+          conceptIndex: col,
+          versionIndex: originalIndex,
+          conceptId: concept.id,
+          versionId: version.id,
+          x,
+          y: colY,
+        });
+        colY += cardHeight + ROW_GAP;
+      }
+
+      if (colY > currentY) currentY = colY;
+    });
+  }
+
+  // Total dimensions
+  const totalWidth = CANVAS_PADDING * 2 + concepts.length * CARD_WIDTH + (concepts.length - 1) * COLUMN_GAP;
+  const totalHeight = Math.max(currentY, CANVAS_PADDING * 2) + CANVAS_PADDING;
+
+  return { cards, labels, selectsSlots, dividers, roundLabels, totalWidth, totalHeight, cardWidth: CARD_WIDTH, cardHeight, selectsHeight };
 }
 
 /** Bounding box of an entire concept column (label + all cards) */

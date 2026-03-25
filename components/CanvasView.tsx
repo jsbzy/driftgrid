@@ -490,13 +490,26 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             ));
           })()}
 
-          {/* Selects row — one slot per concept column */}
+          {/* Selects rows — per-round slots */}
           {layout.selectsSlots.map(slot => {
             const concept = concepts[slot.conceptIndex];
-            const selectedVid = selections.get(slot.conceptId);
-            const selectedVersion = selectedVid
-              ? concept?.versions.find(v => v.id === selectedVid)
-              : null;
+            let selectedVersion = null;
+            let selectedVid: string | undefined;
+
+            if (slot.roundId === null) {
+              // Current round — live selections
+              selectedVid = selections.get(slot.conceptId);
+              selectedVersion = selectedVid ? concept?.versions.find(v => v.id === selectedVid) : null;
+            } else {
+              // Closed round — frozen selects from round data
+              const round = rounds.find(r => r.id === slot.roundId);
+              const roundSelect = round?.selects?.find(s => s.conceptId === slot.conceptId);
+              if (roundSelect) {
+                selectedVid = roundSelect.versionId;
+                selectedVersion = concept?.versions.find(v => v.id === roundSelect.versionId);
+              }
+            }
+
             const thumbFilename = selectedVersion?.thumbnail?.replace('.thumbs/', '') || null;
             const thumbSrc = thumbFilename
               ? `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}`
@@ -504,7 +517,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
 
             return (
               <div
-                key={`sel-${slot.conceptId}`}
+                key={`sel-${slot.conceptId}-${slot.roundId ?? 'current'}`}
                 className="absolute"
                 style={{
                   left: slot.x,
@@ -622,10 +635,10 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             </div>
           ))}
 
-          {/* Round dividers */}
+          {/* Round dividers — full-width, one per round */}
           {layout.dividers.map(div => (
             <div
-              key={`divider-${div.roundId}-${div.conceptIndex}`}
+              key={`divider-${div.roundId}`}
               data-card
               className="absolute cursor-pointer"
               style={{
@@ -674,6 +687,28 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
                   background: 'var(--border)',
                 }} />
               </div>
+            </div>
+          ))}
+
+          {/* Round labels — left margin */}
+          {layout.roundLabels.map(rl => (
+            <div
+              key={`round-label-${rl.roundId ?? 'current'}`}
+              className="absolute pointer-events-none"
+              style={{
+                left: rl.x,
+                top: rl.y,
+                width: 50,
+                fontFamily: 'var(--font-mono, monospace)',
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: '0.06em',
+                color: 'var(--foreground)',
+                opacity: 0.15,
+                textAlign: 'right',
+              }}
+            >
+              {rl.roundName}
             </div>
           ))}
 
