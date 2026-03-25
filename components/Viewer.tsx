@@ -309,7 +309,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         setPresentationMode(false);
         setDesignModeActive(false);
         setAnnotationMode(false);
-        setZoomLevel('z3');
+        setZoomLevel('z4');
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
         setTimeout(() => setTransitionFade(false), 50);
         return 'grid';
