@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import useSWR from 'swr';
-import type { Manifest, ViewMode, WorkingSet, WorkingSetSelection } from '@/lib/types';
+import type { Manifest, ViewMode, WorkingSet, WorkingSetSelection, Annotation } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
 import { filterVisibleManifest } from '@/lib/filterManifest';
 import { ViewerTopbar } from './ViewerTopbar';
@@ -11,6 +11,7 @@ import { NavigationGrid } from './NavigationGrid';
 import { GridView } from './GridView';
 import { CanvasView, type CanvasViewHandle } from './CanvasView';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
+import { AnnotationOverlay } from './AnnotationOverlay';
 import { CommandPalette } from './CommandPalette';
 import { useKeyboardNav, type ZoomLevel } from '@/lib/hooks/useKeyboardNav';
 import { useClientEdits } from '@/lib/hooks/useClientEdits';
@@ -59,6 +60,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [designModeActive, setDesignModeActive] = useState(false);
   const [transitionFade, setTransitionFade] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
+  const [annotationMode, setAnnotationMode] = useState(false);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
 
   const handleZoomToLevel = useCallback((level: ZoomLevel) => {
     setZoomLevel(level);
@@ -105,6 +108,14 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       if (e.key === 'e' || e.key === 'E') {
         e.preventDefault();
         setDesignModeActive(v => !v);
+      }
+      if (e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        setAnnotationMode(v => !v);
+      }
+      if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('drift:copy-feedback', { detail: { json: e.shiftKey } }));
       }
       if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -297,6 +308,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         setTransitionFade(true);
         setPresentationMode(false);
         setDesignModeActive(false);
+        setAnnotationMode(false);
         setZoomLevel('z3');
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
         setTimeout(() => setTransitionFade(false), 50);
@@ -684,6 +696,101 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     window.addEventListener('drift:designmode-save', handler);
     return () => window.removeEventListener('drift:designmode-save', handler);
   }, [handleDesignModeSave]);
+
+  // Fetch annotations when version changes
+  useEffect(() => {
+    if (!currentConcept || !currentVersion || viewMode !== 'frame') {
+      setAnnotations([]);
+      return;
+    }
+    fetch(`/api/annotations?client=${client}&project=${project}&conceptId=${currentConcept.id}&versionId=${currentVersion.id}`)
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setAnnotations(data); })
+      .catch(() => {});
+  }, [client, project, currentConcept?.id, currentVersion?.id, viewMode]);
+
+  const handleAddAnnotation = useCallback(async (x: number, y: number, text: string) => {
+    if (!currentConcept || !currentVersion) return;
+    const res = await fetch('/api/annotations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId: currentConcept.id,
+        versionId: currentVersion.id,
+        x, y, text,
+        author: 'designer',
+        isClient: false,
+      }),
+    });
+    if (res.ok) {
+      const annotation = await res.json();
+      setAnnotations(prev => [...prev, annotation]);
+    }
+  }, [client, project, currentConcept, currentVersion]);
+
+  const handleResolveAnnotation = useCallback(async (id: string) => {
+    if (!currentConcept || !currentVersion) return;
+    const res = await fetch('/api/annotations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId: currentConcept.id,
+        versionId: currentVersion.id,
+        annotationId: id,
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setAnnotations(prev => prev.map(a => a.id === id ? updated : a));
+    }
+  }, [client, project, currentConcept, currentVersion]);
+
+  const handleDeleteAnnotation = useCallback(async (id: string) => {
+    if (!currentConcept || !currentVersion) return;
+    await fetch('/api/annotations', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId: currentConcept.id,
+        versionId: currentVersion.id,
+        annotationId: id,
+      }),
+    });
+    setAnnotations(prev => prev.filter(a => a.id !== id));
+  }, [client, project, currentConcept, currentVersion]);
+
+  // Copy feedback handler (F key / Shift+F)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!currentConcept || !currentVersion || annotations.length === 0) return;
+      const filePath = `~/drift/projects/${client}/${project}/${currentVersion.file}`;
+
+      if (detail?.json) {
+        // Shift+F: JSON format
+        navigator.clipboard.writeText(JSON.stringify({
+          file: filePath,
+          annotations: annotations.map(a => ({
+            x: a.x, y: a.y, element: a.element, text: a.text, resolved: a.resolved,
+          })),
+        }, null, 2));
+      } else {
+        // F: human-readable
+        const lines = [`Feedback on ${filePath}:`, ''];
+        annotations.forEach((a, i) => {
+          const loc = a.element ? `near ${a.element}` : 'general';
+          const resolved = a.resolved ? ' (resolved)' : '';
+          lines.push(`${i + 1}. (${loc}) — ${a.text}${resolved}`);
+        });
+        navigator.clipboard.writeText(lines.join('\n'));
+      }
+    };
+    window.addEventListener('drift:copy-feedback', handler);
+    return () => window.removeEventListener('drift:copy-feedback', handler);
+  }, [annotations, client, project, currentConcept, currentVersion]);
 
   const handleStarVersion = useCallback((conceptId: string, versionId: string) => {
     setSelections(prev => {
@@ -1384,7 +1491,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         ref={frameWrapperRef}
         className="flex-1 min-h-0 relative"
       >
-        <div className="h-full p-4">
+        <div className="h-full p-4 relative">
           <HtmlFrame
             ref={htmlFrameRef}
             src={htmlSrc}
@@ -1398,6 +1505,13 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             onEditsChange={clientEdits.handleEditsChange}
             onScaledWidth={setFrameWidth}
             designMode={designModeActive}
+          />
+          <AnnotationOverlay
+            annotations={annotations}
+            annotationMode={annotationMode}
+            onAdd={handleAddAnnotation}
+            onResolve={handleResolveAnnotation}
+            onDelete={handleDeleteAnnotation}
           />
         </div>
 

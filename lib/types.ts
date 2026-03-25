@@ -36,6 +36,19 @@ export interface Version {
   created: string;
   thumbnail: string;
   roundId?: string;
+  annotations?: Annotation[];
+}
+
+export interface Annotation {
+  id: string;
+  x: number | null;
+  y: number | null;
+  element: string | null;
+  text: string;
+  author: string;
+  isClient: boolean;
+  created: string;
+  resolved: boolean;
 }
 
 export interface Round {

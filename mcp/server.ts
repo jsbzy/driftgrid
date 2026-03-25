@@ -14,6 +14,8 @@
  *   branch_concept — fork into a new concept
  *   create_project — scaffold a new project
  *   close_round — close the current iteration round
+ *   get_feedback — read annotations/feedback for a version
+ *   add_feedback — add an annotation to a version
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -128,6 +130,53 @@ server.tool(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
+    });
+    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+server.tool(
+  'get_feedback',
+  'Returns annotations/feedback pinned to a specific version. Use this to see what the designer wants changed.',
+  {
+    client: z.string(),
+    project: z.string(),
+    conceptId: z.string(),
+    versionId: z.string(),
+  },
+  async (input) => {
+    const data = await apiFetch(`/api/annotations?client=${input.client}&project=${input.project}&conceptId=${input.conceptId}&versionId=${input.versionId}`);
+    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+server.tool(
+  'add_feedback',
+  'Add a feedback annotation to a version. Use this to document changes you made.',
+  {
+    client: z.string(),
+    project: z.string(),
+    conceptId: z.string(),
+    versionId: z.string(),
+    text: z.string().describe('The feedback note'),
+    x: z.number().optional().describe('Relative X position (0-1), omit for general note'),
+    y: z.number().optional().describe('Relative Y position (0-1), omit for general note'),
+  },
+  async (input) => {
+    const data = await apiFetch('/api/annotations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client: input.client,
+        project: input.project,
+        conceptId: input.conceptId,
+        versionId: input.versionId,
+        x: input.x ?? null,
+        y: input.y ?? null,
+        text: input.text,
+        author: 'agent',
+        isClient: false,
+      }),
     });
     return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
   },
