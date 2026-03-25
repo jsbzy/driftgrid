@@ -224,66 +224,6 @@ export const CanvasCard = memo(function CanvasCard({
         )}
       </div>
 
-      {/* Action buttons — top-right, visible on hover */}
-      <div className={`absolute top-2 right-2 flex items-center gap-1 transition-opacity duration-200 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-        {onDrift && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onDrift(); }}
-            className="p-1 rounded transition-all duration-200"
-            style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
-            title="Drift — create new version and copy path"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
-            </svg>
-          </button>
-        )}
-        {filePath && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigator.clipboard.writeText(filePath);
-              const btn = e.currentTarget;
-              btn.style.background = 'rgba(34,197,94,0.9)';
-              setTimeout(() => { btn.style.background = 'rgba(0,0,0,0.35)'; }, 800);
-            }}
-            className="p-1 rounded transition-all duration-200"
-            style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
-            title="Copy path to iterate with AI"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
-          </button>
-        )}
-        {onDelete && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="p-1 rounded transition-all duration-200"
-            style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
-            title={`Delete v${versionNumber}`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-          </button>
-        )}
-        {onStar && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onStar(); }}
-            className="p-1 rounded transition-all duration-200"
-            style={{
-              background: isSelected ? 'rgba(250, 204, 21, 0.9)' : 'rgba(0,0,0,0.35)',
-              backdropFilter: 'blur(4px)',
-            }}
-            title={isSelected ? 'Remove from selects' : 'Add to selects'}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={isSelected ? '#422006' : 'none'} stroke={isSelected ? '#422006' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-            </svg>
-          </button>
-        )}
-      </div>
 
 
     </div>
