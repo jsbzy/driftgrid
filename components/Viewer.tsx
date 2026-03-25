@@ -280,7 +280,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   // Compute card bounds for a given concept/version for smooth transitions
   const getTransitionCardBounds = useCallback((ci: number, vi: number) => {
-    if (!filtered) return null;
+    if (!filtered?.project?.canvas) return null;
     const resolved = resolveCanvas(filtered.project.canvas);
     const ar = typeof resolved.height === 'number'
       ? `${resolved.width} / ${resolved.height}`
