@@ -1195,6 +1195,9 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           const data = await res.json();
           await mutate();
           const selectCount = data.selects?.length ?? 0;
+          // Clear selections — they're now saved in the round
+          setSelections(new Map());
+          setActiveWorkingSetId(null);
           alert(`Round "${data.name}" closed — ${data.stamped} versions stamped, ${selectCount} selects saved as baseline`);
         }
       }}

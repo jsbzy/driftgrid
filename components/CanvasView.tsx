@@ -65,23 +65,29 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   const hasInitialized = useRef(false);
   const [thumbVersion, setThumbVersion] = useState(0);
 
-  // Collapsed rounds state — all rounds collapsed by default
+  // Collapsed rounds state — all rounds collapsed by default, auto-collapse new rounds
   const [collapsedRounds, setCollapsedRounds] = useState<Set<string>>(new Set());
-  const collapsedRoundsInitialized = useRef(false);
   useEffect(() => {
-    if (collapsedRoundsInitialized.current) return;
     if (!concepts.length) return;
     // Collect all roundIds that appear in versions
-    const roundIds = new Set<string>();
+    const allRoundIds = new Set<string>();
     for (const c of concepts) {
       for (const v of c.versions) {
-        if (v.roundId) roundIds.add(v.roundId);
+        if (v.roundId) allRoundIds.add(v.roundId);
       }
     }
-    if (roundIds.size > 0) {
-      setCollapsedRounds(roundIds);
-      collapsedRoundsInitialized.current = true;
-    }
+    // Auto-collapse any new round IDs we haven't seen yet
+    setCollapsedRounds(prev => {
+      const next = new Set(prev);
+      let changed = false;
+      for (const id of allRoundIds) {
+        if (!next.has(id)) {
+          next.add(id);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
   }, [concepts]);
 
   const layout = useMemo(
