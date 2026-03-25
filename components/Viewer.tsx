@@ -1220,7 +1220,9 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     );
   }
 
-  const resolved = resolveCanvas(filtered.project.canvas);
+  // Use concept-level canvas override if set, otherwise project-level
+  const canvasConfig = currentConcept?.canvas ?? filtered.project.canvas;
+  const resolved = resolveCanvas(canvasConfig);
   const aspectRatio = typeof resolved.height === 'number'
     ? `${resolved.width} / ${resolved.height}`
     : '16 / 9';

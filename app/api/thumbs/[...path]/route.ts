@@ -32,9 +32,18 @@ async function findHtmlPathForThumb(
         const projectDir = path.join(PROJECTS_DIR, client, project);
         const htmlPath = path.resolve(projectDir, version.file);
 
-        const preset = CANVAS_PRESETS[manifest.project.canvas];
-        const width = typeof preset?.width === 'number' ? preset.width : 1440;
-        const height: number | 'auto' = typeof preset?.height === 'number' ? preset.height : 'auto';
+        // Use concept-level canvas override if set
+        const canvasConfig = concept.canvas ?? manifest.project.canvas;
+        let width: number;
+        let height: number | 'auto';
+        if (typeof canvasConfig === 'object' && canvasConfig !== null) {
+          width = (canvasConfig as any).width ?? 1440;
+          height = (canvasConfig as any).height ?? 'auto';
+        } else {
+          const preset = CANVAS_PRESETS[canvasConfig];
+          width = typeof preset?.width === 'number' ? preset.width : 1440;
+          height = typeof preset?.height === 'number' ? preset.height : 'auto';
+        }
 
         return { htmlPath, conceptId: concept.id, versionId: version.id, width, height };
       }

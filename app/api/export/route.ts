@@ -25,12 +25,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  // Resolve canvas dimensions — handle both preset strings and freeform objects
-  const canvas = manifest.project.canvas;
+  // Resolve canvas dimensions — check concept-level override first, then project-level
+  // Find which concept this version belongs to (for concept-level canvas override)
+  let canvas: string | { type?: string; width?: number; height?: number | 'auto' } = manifest.project.canvas;
+  if (versionId) {
+    for (const concept of manifest.concepts) {
+      if (concept.versions.some(v => v.id === versionId) && concept.canvas) {
+        canvas = concept.canvas;
+        break;
+      }
+    }
+  }
   let width: number;
   let height: number | 'auto';
   if (typeof canvas === 'object' && canvas !== null) {
-    // Freeform canvas with explicit dimensions: { type: "freeform", width: N, height: N }
     width = (canvas as any).width ?? 1440;
     height = (canvas as any).height ?? 'auto';
   } else {

@@ -75,6 +75,7 @@ export interface Concept {
     conceptId: string;
     versionId: string;
   };
+  canvas?: string | { type?: string; width?: number; height?: number | 'auto' };
   versions: Version[];
 }
 
