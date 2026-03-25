@@ -120,12 +120,12 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
         const iframeDoc = iframeRef.current.contentDocument;
         if (!iframeDoc) return;
         const handler = (e: KeyboardEvent) => {
-          // Don't forward most keys when user is typing in contentEditable (designMode)
-          // But always forward navigation keys (G, Escape) so user can exit
+          // When in contentEditable (designMode editing), only forward Escape and Cmd+S
+          // Don't forward letter keys like G — user is typing
           if ((e.target as HTMLElement)?.isContentEditable) {
-            if (e.key === 'Escape' || e.key === 'g' || e.key === 'G') {
+            if (e.key === 'Escape') {
               e.preventDefault();
-              window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, bubbles: true }));
             }
             if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
