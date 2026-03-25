@@ -1181,15 +1181,21 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       onCloseRound={async () => {
         setCommandPaletteOpen(false);
         const name = window.prompt('Round name (or leave blank for default):');
+        // Pass current selects as the approved baseline for this round
+        const roundSelects = Array.from(selections.entries()).map(([conceptId, versionId]) => ({
+          conceptId,
+          versionId,
+        }));
         const res = await fetch('/api/rounds', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ client, project, name: name || undefined }),
+          body: JSON.stringify({ client, project, name: name || undefined, selects: roundSelects }),
         });
         if (res.ok) {
           const data = await res.json();
           await mutate();
-          alert(`Round "${data.name}" closed — ${data.stamped} versions stamped`);
+          const selectCount = data.selects?.length ?? 0;
+          alert(`Round "${data.name}" closed — ${data.stamped} versions stamped, ${selectCount} selects saved as baseline`);
         }
       }}
     />

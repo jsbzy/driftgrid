@@ -51,12 +51,18 @@ export interface Annotation {
   resolved: boolean;
 }
 
+export interface RoundSelect {
+  conceptId: string;
+  versionId: string;
+}
+
 export interface Round {
   id: string;
   number: number;
   name: string;
   closedAt: string;
   note?: string;
+  selects?: RoundSelect[];
 }
 
 export interface Concept {

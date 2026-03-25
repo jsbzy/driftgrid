@@ -238,6 +238,16 @@ This project uses DriftGrid for design iteration. Key rules:
 - `POST /api/branch` — fork into a new concept
 - `POST /api/create-project` — create a new project
 - `GET /api/annotations?client=X&project=Y&conceptId=Z&versionId=W` — get feedback annotations
+- `POST /api/rounds` — close current round (stamps versions, saves selects as baseline)
+
+### Rounds & Baseline
+
+When the designer says "close this round" or "move to the next round":
+1. The current round is closed — all versions get stamped, selects are saved as the **approved baseline**
+2. The next round starts fresh — new versions will be unstamped
+3. Use MCP `get_round_baseline` (or `GET /api/manifest`) to read the selects from the last round
+4. The selects are the **approved state** — don't modify them. Build new versions that evolve from them.
+5. When the designer says "use the selects as the baseline", read the select files and create improved versions as new iterations
 
 ### Feedback & Annotations
 

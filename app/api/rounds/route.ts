@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getManifest, writeManifest } from '@/lib/manifest';
 
 export async function POST(request: Request) {
-  const { client, project, name, note } = await request.json();
+  const { client, project, name, note, selects } = await request.json();
 
   if (!client || !project) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -38,21 +38,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No unstamped versions to close' }, { status: 400 });
   }
 
-  // Add the round entry
+  // Capture selects — either passed explicitly or read from the request
+  const roundSelects: { conceptId: string; versionId: string }[] = [];
+  if (Array.isArray(selects) && selects.length > 0) {
+    roundSelects.push(...selects);
+  }
+
+  // Add the round entry with selects
   manifest.rounds.push({
     id: roundId,
     number: roundNumber,
     name: roundName,
     closedAt: new Date().toISOString(),
     note: note || undefined,
+    selects: roundSelects.length > 0 ? roundSelects : undefined,
   });
 
   await writeManifest(client, project, manifest);
+
+  // Build a summary of the selects for the agent
+  const selectsSummary = roundSelects.map(s => {
+    const concept = manifest.concepts.find(c => c.id === s.conceptId);
+    const version = concept?.versions.find(v => v.id === s.versionId);
+    return {
+      concept: concept?.label ?? s.conceptId,
+      version: `v${version?.number ?? '?'}`,
+      file: version?.file ?? 'unknown',
+    };
+  });
 
   return NextResponse.json({
     roundId,
     roundNumber,
     name: roundName,
     stamped,
+    selects: selectsSummary,
   });
 }

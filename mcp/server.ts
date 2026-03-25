@@ -136,6 +136,51 @@ server.tool(
 );
 
 server.tool(
+  'get_round_baseline',
+  'Returns the approved selects (baseline) from a specific round. Use this to understand what was approved and build the next round from it.',
+  {
+    client: z.string(),
+    project: z.string(),
+    roundNumber: z.number().optional().describe('Round number (1, 2, 3...). Omit for the latest closed round.'),
+  },
+  async ({ client, project, roundNumber }) => {
+    const manifest = await apiFetch(`/api/manifest/${client}/${project}`);
+    const rounds = manifest.rounds ?? [];
+    if (rounds.length === 0) {
+      return { content: [{ type: 'text', text: 'No rounds closed yet.' }] };
+    }
+    const round = roundNumber
+      ? rounds.find((r: { number: number }) => r.number === roundNumber)
+      : rounds[rounds.length - 1];
+    if (!round) {
+      return { content: [{ type: 'text', text: `Round ${roundNumber} not found.` }] };
+    }
+    const selects = (round.selects ?? []).map((s: { conceptId: string; versionId: string }) => {
+      const concept = manifest.concepts.find((c: { id: string }) => c.id === s.conceptId);
+      const version = concept?.versions.find((v: { id: string }) => v.id === s.versionId);
+      return {
+        concept: concept?.label ?? s.conceptId,
+        versionNumber: version?.number,
+        file: version?.file,
+        absolutePath: `~/drift/projects/${client}/${project}/${version?.file}`,
+      };
+    });
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          round: round.name,
+          roundNumber: round.number,
+          closedAt: round.closedAt,
+          note: round.note,
+          selects,
+        }, null, 2),
+      }],
+    };
+  },
+);
+
+server.tool(
   'get_feedback',
   'Returns annotations/feedback pinned to a specific version. Use this to see what the designer wants changed.',
   {
