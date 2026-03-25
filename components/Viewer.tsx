@@ -41,6 +41,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [flashLabel, setFlashLabel] = useState<string>('DRIFTED');
   const [deleteFlash, setDeleteFlash] = useState(false);
   const [lastDeleted, setLastDeleted] = useState<{ conceptId: string; versionId: string; version: unknown; conceptIndex: number } | null>(null);
+  const [lastDrift, setLastDrift] = useState<{ conceptId: string; versionId: string } | null>(null);
   const [inSelectsRow, setInSelectsRow] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
@@ -494,7 +495,35 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     }
   }, [currentConcept, currentVersion, skipDeleteConfirm, executeDelete]);
 
-  const handleUndoDelete = useCallback(async () => {
+  const handleUndo = useCallback(async () => {
+    // Undo drift: delete the version that was just created
+    if (lastDrift && manifest) {
+      const { conceptId, versionId } = lastDrift;
+      const updated: Manifest = {
+        ...manifest,
+        concepts: manifest.concepts.map(c => {
+          if (c.id !== conceptId) return c;
+          return { ...c, versions: c.versions.filter(v => v.id !== versionId) };
+        }).filter(c => c.versions.length > 0),
+      };
+      await fetch(`/api/manifest/${client}/${project}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+      // Navigate back to the previous version
+      const ci = updated.concepts.findIndex(c => c.id === conceptId);
+      if (ci >= 0) {
+        const maxVi = updated.concepts[ci].versions.length - 1;
+        setConceptIndex(ci);
+        setVersionIndex(Math.min(versionIndex, maxVi));
+      }
+      mutate(updated);
+      setLastDrift(null);
+      return;
+    }
+
+    // Undo delete: restore the version
     if (!lastDeleted || !manifest) return;
 
     // Restore the version to the manifest — deep copy concepts to avoid mutating SWR cache
@@ -527,7 +556,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     setVersionIndex(vi >= 0 ? vi : 0);
     mutate(updated);
     setLastDeleted(null);
-  }, [lastDeleted, manifest, client, project, mutate]);
+  }, [lastDeleted, lastDrift, manifest, client, project, versionIndex, mutate]);
 
   const handleDriftVersion = useCallback(async (conceptId: string, versionId: string) => {
     try {
@@ -546,6 +575,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       if (!res.ok) { setDriftFlash(false); return; }
       const { absolutePath, versionId: newVid, versionNumber } = await res.json();
       try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
+
+      // Track for Cmd+Z undo
+      setLastDrift({ conceptId, versionId: newVid });
+      setLastDeleted(null); // clear delete undo — drift undo takes priority
 
       // Navigate to the new version
       const updated = await mutate();
@@ -879,7 +912,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     onDelete: handleDeleteCurrent,
     onMoveConceptLeft: handleMoveConceptLeft,
     onMoveConceptRight: handleMoveConceptRight,
-    onUndo: handleUndoDelete,
+    onUndo: handleUndo,
     onPresent: handlePresent,
     inSelectsRow,
     onSetSelectsRow: setInSelectsRow,
