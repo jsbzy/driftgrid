@@ -547,10 +547,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const { absolutePath, versionId: newVid, versionNumber } = await res.json();
       try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
 
-      // Wait for the white peak of the animation (~500ms) before swapping content
-      await new Promise(r => setTimeout(r, 500));
-
-      // Now navigate — the screen is white so the swap is hidden
+      // Navigate to the new version
       const updated = await mutate();
       if (updated) {
         const ci = updated.concepts.findIndex(c => c.id === conceptId);
@@ -894,39 +891,34 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     client,
   });
 
-  // Drift overlay — renders on top of everything regardless of viewMode
+  // Drift overlay — subtle toast, not fullscreen takeover
   const driftOverlay = driftFlash ? (
-    <>
-      <div className="fixed inset-0 z-[100] pointer-events-none" style={{ animation: 'driftFade 1.5s ease-in-out forwards' }} />
-      <div className="fixed inset-0 z-[101] pointer-events-none flex items-center justify-center">
-        <div className="text-center" style={{ animation: 'driftLabel 1.5s ease-in-out forwards' }}>
-          <div style={{
-            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-            fontSize: 20, fontWeight: 700, letterSpacing: '0.15em',
-            color: '#1a1a1a',
-          }}>{flashLabel}</div>
-          <div style={{
-            fontFamily: 'var(--font-mono, monospace)',
-            fontSize: 11, color: '#888', marginTop: 8,
-          }}>{flashLabel === 'DRIFTED →' ? 'New concept created \u00b7 path copied' : 'New version created \u00b7 path copied'}</div>
-        </div>
-      </div>
+    <div
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none flex items-center gap-2 px-4 py-2 rounded-full"
+      style={{
+        background: 'rgba(0,0,0,0.7)',
+        backdropFilter: 'blur(12px)',
+        animation: 'driftToast 1.5s ease forwards',
+      }}
+    >
+      <span style={{
+        fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+        fontSize: 12, fontWeight: 600, letterSpacing: '0.08em',
+        color: '#fff',
+      }}>{flashLabel}</span>
+      <span style={{
+        fontFamily: 'var(--font-mono, monospace)',
+        fontSize: 10, color: 'rgba(255,255,255,0.5)',
+      }}>path copied</span>
       <style>{`
-        @keyframes driftFade {
-          0% { background: rgba(255,255,255,0); }
-          15% { background: rgba(255,255,255,0.97); }
-          50% { background: rgba(255,255,255,0.97); }
-          100% { background: rgba(255,255,255,0); }
-        }
-        @keyframes driftLabel {
-          0% { opacity: 0; transform: translateY(8px); }
-          15% { opacity: 1; transform: translateY(0); }
-          50% { opacity: 1; transform: translateY(0); }
-          75% { opacity: 0; transform: translateY(-6px); }
-          100% { opacity: 0; }
+        @keyframes driftToast {
+          0% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+          10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          70% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
         }
       `}</style>
-    </>
+    </div>
   ) : null;
 
   // Delete flash overlay

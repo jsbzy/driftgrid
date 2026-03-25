@@ -419,6 +419,10 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
                       const vi = concept.versions.findIndex(v => v.id === selectedVid);
                       if (vi >= 0) handleThumbnailClick(slot.conceptIndex, vi);
                     }}
+                    onDoubleClick={() => {
+                      const vi = concept.versions.findIndex(v => v.id === selectedVid);
+                      if (vi >= 0) handleThumbnailDoubleClick(slot.conceptIndex, vi);
+                    }}
                   >
                     {thumbSrc ? (
                       <img
