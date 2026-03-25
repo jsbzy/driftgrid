@@ -219,9 +219,8 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     const zoomLevelChanged = prevZoomLevel.current !== zoomLevel;
     prevZoomLevel.current = zoomLevel;
 
-    // At z3/z4: animate to new card on navigation (smooth card-to-card)
-    // At overview/z1/z2: only re-zoom when zoom level changes (not on navigation)
-    if (!zoomLevelChanged && (zoomLevel !== 'z3' && zoomLevel !== 'z4')) return;
+    // Only re-zoom when the zoom level itself changes, not on card navigation
+    if (!zoomLevelChanged) return;
 
     handleZoomToLevel(zoomLevel);
   }, [zoomLevel, conceptIndex, versionIndex, handleZoomToLevel]);
@@ -265,8 +264,13 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
       if (concept && version) onStarVersion(concept.id, version.id);
       return;
     }
-    onHighlight(ci, vi);
-  }, [isPanning, spaceHeld, arrangeMode, onHighlight, concepts, onStarVersion]);
+    if (ci === conceptIndex && vi === versionIndex) {
+      // Already selected — zoom to this card
+      onZoomLevelChange('z4');
+    } else {
+      onHighlight(ci, vi);
+    }
+  }, [isPanning, spaceHeld, arrangeMode, conceptIndex, versionIndex, onHighlight, onZoomLevelChange, concepts, onStarVersion]);
 
   const handleThumbnailDoubleClick = useCallback((ci: number, vi: number) => {
     if (isPanning || spaceHeld || arrangeMode || recentlyPanned.current) return;

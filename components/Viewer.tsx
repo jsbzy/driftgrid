@@ -559,7 +559,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           if (vi >= 0) {
             setConceptIndex(ci);
             setVersionIndex(vi);
-            setViewMode('frame');
+            // Stay in current view mode — don't force into frame
             window.history.replaceState(null, '', `#${updated.concepts[ci].id}/v${versionNumber}`);
           }
         }
