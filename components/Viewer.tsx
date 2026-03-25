@@ -1560,41 +1560,62 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           </div>
         )}
 
-        {/* Fullscreen action buttons — floating bottom-right */}
-        {mode !== 'client' && currentConcept && currentVersion && !navGridHidden && (
-          <div className="absolute bottom-6 right-6 flex items-center gap-2 z-10">
-            <button
-              onClick={() => {
-                handleDeleteCurrent();
-              }}
-              className="p-2.5 rounded-full transition-all duration-200"
-              style={{
-                background: 'rgba(0,0,0,0.4)',
-                backdropFilter: 'blur(8px)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              }}
-              title="Delete this version (Delete)"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
-            </button>
+        {/* Frame action bar — bottom center, matches grid action bar */}
+        {mode !== 'client' && currentConcept && currentVersion && !navGridHidden && !presentationMode && (
+          <div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-full"
+            style={{
+              background: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(12px)',
+            }}
+          >
             <button
               onClick={() => handleStarVersion(currentConcept.id, currentVersion.id)}
-              className="p-2.5 rounded-full transition-all duration-200"
-              style={{
-                background: isCurrentStarred ? 'rgba(250, 204, 21, 0.95)' : 'rgba(0,0,0,0.4)',
-                backdropFilter: 'blur(8px)',
-                boxShadow: isCurrentStarred
-                  ? '0 0 0 2px rgba(250, 204, 21, 0.3), 0 2px 8px rgba(0,0,0,0.15)'
-                  : '0 2px 8px rgba(0,0,0,0.15)',
-              }}
-              title={isCurrentStarred ? 'Remove from selects (S)' : 'Add to selects (S)'}
+              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+              title="Star (S)"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill={isCurrentStarred ? '#422006' : 'none'} stroke={isCurrentStarred ? '#422006' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill={isCurrentStarred ? '#facc15' : 'none'} stroke={isCurrentStarred ? '#facc15' : 'white'} strokeWidth="2">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
             </button>
+            <button
+              onClick={() => handleDriftVersion(currentConcept.id, currentVersion.id)}
+              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+              title="Drift ↓ (D)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
+              </svg>
+            </button>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`~/drift/projects/${client}/${project}/${currentVersion.file}`);
+              }}
+              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+              title="Copy path"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            </button>
+            <button
+              onClick={() => handleToggleGridView()}
+              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+              title="Back to grid (G)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+              </svg>
+            </button>
+            <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.15)' }} />
+            <span style={{
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 10,
+              color: 'rgba(255,255,255,0.4)',
+              padding: '0 4px',
+            }}>
+              {currentConcept.label} · v{currentVersion.number}
+            </span>
           </div>
         )}
 
