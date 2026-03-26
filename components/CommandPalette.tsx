@@ -30,6 +30,7 @@ interface CommandPaletteProps {
   onEditMode?: () => void;
   onCopyFeedback?: () => void;
   onExportPng?: () => void;
+  onExportDoc?: () => void;
 }
 
 export function CommandPalette({
@@ -54,6 +55,7 @@ export function CommandPalette({
   onEditMode,
   onCopyFeedback,
   onExportPng,
+  onExportDoc,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -80,6 +82,7 @@ export function CommandPalette({
     ...(onEditMode ? [{ label: 'Edit mode', shortcut: 'E', action: onEditMode }] : []),
     ...(onCopyFeedback ? [{ label: 'Copy feedback', shortcut: 'F', action: onCopyFeedback }] : []),
     ...(onExportPng ? [{ label: 'Export PNG', shortcut: '', action: onExportPng }] : []),
+    ...(onExportDoc ? [{ label: 'Copy as doc (text for Google Docs)', shortcut: '', action: onExportDoc }] : []),
   ];
 
   // Fuzzy match: every character in the query must appear in order in the label

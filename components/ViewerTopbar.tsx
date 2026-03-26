@@ -133,19 +133,10 @@ export function ViewerTopbar({
 
       {/* Right: edit controls */}
       <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
-        {isClientMode && onToggleEdit && onToggleView && (
-          <EditToggle
-            editMode={editMode ?? false}
-            onToggleEdit={onToggleEdit}
-            editCount={editCount ?? 0}
-            hasEdits={hasEdits ?? false}
-            viewEdited={viewEdited ?? false}
-            onToggleView={onToggleView}
-            onExportPdf={onExportPdf}
-            onExportHtml={onExportHtml}
-            onClearEdits={onClearEdits}
-            onApplyEdits={onApplyEdits}
-          />
+        {isClientMode && (
+          <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.05em' }}>
+            Click anywhere to comment
+          </span>
         )}
         {!isClientMode && versionFile && (
           <IterateButton clientSlug={clientSlug} project={project} versionFile={versionFile} conceptId={conceptId} versionId={versionId} onIterated={onIterated} />

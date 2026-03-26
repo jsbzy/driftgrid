@@ -109,25 +109,27 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         e.preventDefault();
         setAppMode(prev => prev === 'review' ? 'navigate' : 'review');
       }
-      if (e.key === 'e' || e.key === 'E') {
-        e.preventDefault();
-        setAppMode(prev => {
-          if (prev === 'edit' || prev === 'edit-pin') {
-            // Exiting edit mode — discard
-            setDraftEdits([]);
-            return 'navigate';
-          }
-          return 'edit';
-        });
-      }
-      if (e.key === 'a' || e.key === 'A') {
-        e.preventDefault();
-        // In unified edit mode: toggle pin placement. Outside: dispatch legacy copy-feedback
-        setAppMode(prev => prev === 'edit-pin' ? 'edit' : 'edit-pin');
-      }
-      if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        window.dispatchEvent(new CustomEvent('drift:copy-feedback', { detail: { json: e.shiftKey } }));
+      if (mode !== 'client') {
+        if (e.key === 'e' || e.key === 'E') {
+          e.preventDefault();
+          setAppMode(prev => {
+            if (prev === 'edit' || prev === 'edit-pin') {
+              // Exiting edit mode — discard
+              setDraftEdits([]);
+              return 'navigate';
+            }
+            return 'edit';
+          });
+        }
+        if (e.key === 'a' || e.key === 'A') {
+          e.preventDefault();
+          // In unified edit mode: toggle pin placement. Outside: dispatch legacy copy-feedback
+          setAppMode(prev => prev === 'edit-pin' ? 'edit' : 'edit-pin');
+        }
+        if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey) {
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('drift:copy-feedback', { detail: { json: e.shiftKey } }));
+        }
       }
     };
     window.addEventListener('keydown', handler);
@@ -702,7 +704,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       return;
     }
 
-    // Legacy: save immediately
+    // Save immediately
     const res = await fetch('/api/annotations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -711,15 +713,15 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         conceptId: currentConcept.id,
         versionId: currentVersion.id,
         x, y, text,
-        author: 'designer',
-        isClient: false,
+        author: mode === 'client' ? 'client' : 'designer',
+        isClient: mode === 'client',
       }),
     });
     if (res.ok) {
       const annotation = await res.json();
       setAnnotations(prev => [...prev, annotation]);
     }
-  }, [client, project, currentConcept, currentVersion, isEditing]);
+  }, [client, project, currentConcept, currentVersion, isEditing, mode]);
 
   const handleResolveAnnotation = useCallback(async (id: string) => {
     if (!currentConcept || !currentVersion) return;
@@ -1185,6 +1187,22 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         }
         ui.setCommandPaletteOpen(false);
       }}
+      onExportDoc={async () => {
+        ui.setCommandPaletteOpen(false);
+        const params = new URLSearchParams({ client, project });
+        if (currentConcept && currentVersion) {
+          params.set('conceptId', currentConcept.id);
+          params.set('versionId', currentVersion.id);
+        }
+        const res = await fetch(`/api/export-doc?${params}`);
+        if (res.ok) {
+          const text = await res.text();
+          await navigator.clipboard.writeText(text);
+          toast('Doc text copied to clipboard');
+        } else {
+          toast('Export failed', 'error');
+        }
+      }}
       onCloseRound={async () => {
         ui.setCommandPaletteOpen(false);
         const name = window.prompt('Round name (or leave blank for default):');
@@ -1572,14 +1590,15 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             ]}
             editMode={isEditing}
             placingPin={isPlacingPin}
+            annotationMode={isClientMode}
             onAdd={handleAddAnnotation}
             onResolve={handleResolveAnnotation}
             onDelete={handleDeleteAnnotation}
           />
         </div>
 
-        {/* Unified edit mode indicator */}
-        {isEditing && (
+        {/* Unified edit mode indicator — designer only */}
+        {isEditing && !isClientMode && (
           <div
             className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full"
             style={{

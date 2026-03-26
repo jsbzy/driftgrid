@@ -158,7 +158,7 @@ export function AnnotationOverlay({
               textTransform: 'uppercase',
             }}
           >
-            Place Pin
+            Add Comment
           </span>
           <span
             style={{
@@ -167,7 +167,7 @@ export function AnnotationOverlay({
               color: 'rgba(255,255,255,0.35)',
             }}
           >
-            click to pin · A to cancel
+            click to pin · Esc to cancel
           </span>
         </div>
       )}
