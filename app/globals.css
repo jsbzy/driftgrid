@@ -80,6 +80,13 @@ body {
   font-family: var(--font-mono), ui-monospace, monospace;
 }
 
+/* Mobile: prevent overflow, hide action bars that don't work without keyboard */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
