@@ -319,12 +319,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
         return 'grid';
       }
-      // Grid → Frame: zoom to card, then fade-switch
-      if (canvasRef.current) {
-        canvasRef.current.zoomToCard(conceptIndex, versionIndex);
-        setTimeout(() => setViewMode('frame'), 280);
-        return v;
-      }
+      // Grid → Frame: switch directly (thumbnail placeholder handles the visual)
       return 'frame';
     });
   }, [conceptIndex, versionIndex, getTransitionCardBounds]);
