@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import useSWR from 'swr';
-import type { Manifest, ViewMode, WorkingSet, WorkingSetSelection, Annotation, DraftEdit } from '@/lib/types';
+import type { Manifest, ViewMode, WorkingSet, WorkingSetSelection, Annotation, DraftEdit, AppMode } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
 import { filterVisibleManifest } from '@/lib/filterManifest';
 import { ViewerTopbar } from './ViewerTopbar';
@@ -19,6 +19,7 @@ import { useClientEdits } from '@/lib/hooks/useClientEdits';
 import { computeCanvasLayout, getCardBounds } from '@/lib/hooks/useCanvasLayout';
 import { useFlash } from '@/lib/hooks/useFlash';
 import { useUIVisibility } from '@/lib/hooks/useUIVisibility';
+import { useUndoManager } from '@/lib/hooks/useUndoManager';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -41,9 +42,13 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [activeWorkingSetId, setActiveWorkingSetId] = useState<string | null>(null);
   const flash = useFlash();
   const ui = useUIVisibility();
-  const [presentationMode, setPresentationMode] = useState(false);
-  const [lastDeleted, setLastDeleted] = useState<{ conceptId: string; versionId: string; version: unknown; conceptIndex: number } | null>(null);
-  const [lastDrift, setLastDrift] = useState<{ conceptId: string; versionId: string } | null>(null);
+  // Unified mode state machine
+  const [appMode, setAppMode] = useState<AppMode>('navigate');
+  const isEditing = appMode === 'edit' || appMode === 'edit-pin';
+  const isPlacingPin = appMode === 'edit-pin';
+  const isReviewing = appMode === 'review';
+  const isPresenting = appMode === 'present';
+
   const [inSelectsRow, setInSelectsRow] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
@@ -54,13 +59,13 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [transitionCardBounds, setTransitionCardBounds] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   // Feature 3: Hot reload state — frame version counter for forcing iframe refresh
   const [frameVersion, setFrameVersion] = useState(0);
-  const [reviewMode, setReviewMode] = useState(false);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
 
-  // Unified edit mode state
-  const [unifiedEditMode, setUnifiedEditMode] = useState(false);
-  const [placingPin, setPlacingPin] = useState(false);
+  // Edit mode draft state
   const [draftEdits, setDraftEdits] = useState<DraftEdit[]>([]);
+
+  // Undo manager
+  const undo = useUndoManager(manifest, client, project, mutate, setConceptIndex, setVersionIndex, versionIndex);
 
   const handleZoomToLevel = useCallback((level: ZoomLevel) => {
     setZoomLevel(level);
@@ -102,23 +107,23 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       }
       if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
-        setReviewMode(v => !v);
+        setAppMode(prev => prev === 'review' ? 'navigate' : 'review');
       }
       if (e.key === 'e' || e.key === 'E') {
         e.preventDefault();
-        setUnifiedEditMode(v => {
-          if (v) {
+        setAppMode(prev => {
+          if (prev === 'edit' || prev === 'edit-pin') {
             // Exiting edit mode — discard
             setDraftEdits([]);
-            setPlacingPin(false);
+            return 'navigate';
           }
-          return !v;
+          return 'edit';
         });
       }
       if (e.key === 'a' || e.key === 'A') {
         e.preventDefault();
         // In unified edit mode: toggle pin placement. Outside: dispatch legacy copy-feedback
-        setPlacingPin(v => !v);
+        setAppMode(prev => prev === 'edit-pin' ? 'edit' : 'edit-pin');
       }
       if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
@@ -154,8 +159,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   // When entering review mode, jump to the first select at z4
   useEffect(() => {
-    if (!reviewMode || selections.size === 0) {
-      if (reviewMode) setReviewMode(false); // no selects — exit
+    if (!isReviewing || selections.size === 0) {
+      if (isReviewing) setAppMode('navigate'); // no selects — exit
       return;
     }
     if (viewMode !== 'grid') setViewMode('grid');
@@ -173,19 +178,19 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         }
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps — intentionally only fires on reviewMode toggle, reads current selections/concepts at call time
-  }, [reviewMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps — intentionally only fires on isReviewing toggle, reads current selections/concepts at call time
+  }, [isReviewing]);
 
   // Review mode: R enters, Esc exits, arrows cycle through selects at z4
   useEffect(() => {
-    if (!reviewMode || viewMode !== 'grid') return;
+    if (!isReviewing || viewMode !== 'grid') return;
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
-        setReviewMode(false);
+        setAppMode('navigate');
         return;
       }
 
@@ -211,7 +216,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     };
     window.addEventListener('keydown', handler, true);
     return () => window.removeEventListener('keydown', handler, true);
-  }, [reviewMode, viewMode, presentationPlaylist, conceptIndex, versionIndex]);
+  }, [isReviewing, viewMode, presentationPlaylist, conceptIndex, versionIndex]);
 
   // Broadcast current view to /api/current for agent integration
   useEffect(() => {
@@ -310,10 +315,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       if (v === 'frame') {
         // Frame → Grid: fade overlay masks the switch
         flash.showTransitionFade();
-        setPresentationMode(false);
-        setUnifiedEditMode(false);
+        setAppMode('navigate');
         setDraftEdits([]);
-        setPlacingPin(false);
         setZoomLevel('z4');
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
         return 'grid';
@@ -351,7 +354,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       // Cell click always navigates to fullscreen — starring is handled by the star button
       setConceptIndex(ci);
       setVersionIndex(vi);
-      setPresentationMode(false);
+      setAppMode('navigate');
       const concept = concepts[ci];
       const version = concept?.versions[vi];
       if (concept && version) {
@@ -407,7 +410,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const executeDelete = useCallback(async () => {
     if (!manifest || !currentConcept || !currentVersion) return;
 
-    setLastDeleted({
+    undo.trackDelete({
       conceptId: currentConcept.id,
       versionId: currentVersion.id,
       version: currentVersion,
@@ -508,68 +511,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     }
   }, [currentConcept, currentVersion, skipDeleteConfirm, executeDelete]);
 
-  const handleUndo = useCallback(async () => {
-    // Undo drift: delete the version that was just created
-    if (lastDrift && manifest) {
-      const { conceptId, versionId } = lastDrift;
-      const updated: Manifest = {
-        ...manifest,
-        concepts: manifest.concepts.map(c => {
-          if (c.id !== conceptId) return c;
-          return { ...c, versions: c.versions.filter(v => v.id !== versionId) };
-        }).filter(c => c.versions.length > 0),
-      };
-      await fetch(`/api/manifest/${client}/${project}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-      });
-      // Navigate back to the previous version
-      const ci = updated.concepts.findIndex(c => c.id === conceptId);
-      if (ci >= 0) {
-        const maxVi = updated.concepts[ci].versions.length - 1;
-        setConceptIndex(ci);
-        setVersionIndex(Math.min(versionIndex, maxVi));
-      }
-      mutate(updated);
-      setLastDrift(null);
-      return;
-    }
-
-    // Undo delete: restore the version
-    if (!lastDeleted || !manifest) return;
-
-    // Restore the version to the manifest — deep copy concepts to avoid mutating SWR cache
-    const updated: Manifest = {
-      ...manifest,
-      concepts: manifest.concepts.map(c => {
-        if (c.id !== lastDeleted.conceptId) return c;
-        const restoredVersions = [...c.versions, lastDeleted.version as Manifest['concepts'][0]['versions'][0]];
-        restoredVersions.sort((a, b) => a.number - b.number);
-        return { ...c, versions: restoredVersions };
-      }),
-    };
-    const concept = updated.concepts.find(c => c.id === lastDeleted.conceptId);
-    if (!concept) {
-      // Concept was removed — can't undo cleanly
-      setLastDeleted(null);
-      return;
-    }
-
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
-
-    // Navigate to restored version
-    const ci = updated.concepts.findIndex(c => c.id === lastDeleted.conceptId);
-    const vi = updated.concepts[ci]?.versions.findIndex(v => v.id === lastDeleted.versionId) ?? 0;
-    setConceptIndex(ci >= 0 ? ci : 0);
-    setVersionIndex(vi >= 0 ? vi : 0);
-    mutate(updated);
-    setLastDeleted(null);
-  }, [lastDeleted, lastDrift, manifest, client, project, versionIndex, mutate]);
 
   const handleDriftVersion = useCallback(async (conceptId: string, versionId: string) => {
     try {
@@ -590,8 +531,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       toast('Drifted \u2193 \u2014 path copied');
 
       // Track for Cmd+Z undo
-      setLastDrift({ conceptId, versionId: newVid });
-      setLastDeleted(null); // clear delete undo — drift undo takes priority
+      undo.trackDrift({ conceptId, versionId: newVid });
 
       // Navigate to the new version
       const updated = await mutate();
@@ -705,9 +645,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     toast('Changes saved to new version');
 
     // Clear edit mode
-    setUnifiedEditMode(false);
+    setAppMode('navigate');
     setDraftEdits([]);
-    setPlacingPin(false);
   }, [client, project, currentConcept, currentVersion, draftEdits, mutate]);
 
   // Listen for text-edit messages from iframe (targeted edit mode)
@@ -729,16 +668,15 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   // Unified edit mode: Escape discards all edits and reloads iframe
   useEffect(() => {
-    if (!unifiedEditMode) return;
+    if (!isEditing) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         // Don't intercept if user is typing in an input
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
         e.preventDefault();
         e.stopPropagation();
-        setUnifiedEditMode(false);
+        setAppMode('navigate');
         setDraftEdits([]);
-        setPlacingPin(false);
         // Force iframe reload to discard text changes
         setFrameVersion(v => v + 1);
       }
@@ -746,7 +684,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     // Capture phase to intercept before useKeyboardNav
     window.addEventListener('keydown', handler, true);
     return () => window.removeEventListener('keydown', handler, true);
-  }, [unifiedEditMode]);
+  }, [isEditing]);
 
   // Fetch annotations when version changes
   useEffect(() => {
@@ -763,7 +701,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const handleAddAnnotation = useCallback(async (x: number, y: number, text: string) => {
     if (!currentConcept || !currentVersion) return;
 
-    if (unifiedEditMode) {
+    if (isEditing) {
       // In unified edit mode: add to draft edits (saved on commit)
       setDraftEdits(prev => [...prev, {
         id: `pin-${Date.now()}`,
@@ -771,7 +709,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         x, y,
         note: text,
       }]);
-      setPlacingPin(false);
+      setAppMode('edit');
       return;
     }
 
@@ -792,7 +730,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const annotation = await res.json();
       setAnnotations(prev => [...prev, annotation]);
     }
-  }, [client, project, currentConcept, currentVersion, unifiedEditMode]);
+  }, [client, project, currentConcept, currentVersion, isEditing]);
 
   const handleResolveAnnotation = useCallback(async (id: string) => {
     if (!currentConcept || !currentVersion) return;
@@ -835,7 +773,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const filePath = `~/drift/projects/${client}/${project}/${currentVersion.file}`;
 
       // In unified edit mode: copy draft edits
-      if (unifiedEditMode && draftEdits.length > 0) {
+      if (isEditing && draftEdits.length > 0) {
         const lines = [`Edits on ${filePath}:`, ''];
         draftEdits.forEach((edit, i) => {
           if (edit.type === 'text') {
@@ -872,7 +810,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     };
     window.addEventListener('drift:copy-feedback', handler);
     return () => window.removeEventListener('drift:copy-feedback', handler);
-  }, [annotations, client, project, currentConcept, currentVersion, unifiedEditMode, draftEdits]);
+  }, [annotations, client, project, currentConcept, currentVersion, isEditing, draftEdits]);
 
   const handleStarVersion = useCallback((conceptId: string, versionId: string) => {
     setSelections(prev => {
@@ -936,7 +874,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const handleClearSelections = useCallback(() => {
     setSelections(new Map());
     setActiveWorkingSetId(null);
-    setPresentationMode(false);
+    setAppMode('navigate');
   }, []);
 
   // Presentation mode — enter fullscreen cycling through selects only
@@ -953,7 +891,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     setConceptIndex(ci);
     setVersionIndex(vi);
     setViewMode('frame');
-    setPresentationMode(true);
+    setAppMode('present');
     const concept = concepts[ci];
     const version = concept?.versions[vi];
     if (concept && version) {
@@ -963,7 +901,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   // Presentation mode navigation — left/right through selects only
   useEffect(() => {
-    if (!presentationMode || viewMode !== 'frame') return;
+    if (!isPresenting || viewMode !== 'frame') return;
     const handler = (e: KeyboardEvent) => {
       if (
         e.target instanceof HTMLInputElement ||
@@ -998,14 +936,14 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
       if (e.key === 'Escape') {
         e.preventDefault();
-        setPresentationMode(false);
+        setAppMode('navigate');
         setViewMode('grid');
       }
     };
     // Use capture phase to intercept before useKeyboardNav
     window.addEventListener('keydown', handler, true);
     return () => window.removeEventListener('keydown', handler, true);
-  }, [presentationMode, viewMode, presentationPlaylist, conceptIndex, versionIndex, concepts]);
+  }, [isPresenting, viewMode, presentationPlaylist, conceptIndex, versionIndex, concepts]);
 
   // Feature 3: SSE hot reload — listen for file changes in fullscreen mode
   // Use a ref so the SSE handler always sees the latest version without reconnecting
@@ -1073,11 +1011,11 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const handleDrift = useMemo(() => {
     if (!currentConcept || !currentVersion) return undefined;
-    if (unifiedEditMode) {
+    if (isEditing) {
       return handleCommitEdits; // D in edit mode = commit all edits to new version
     }
     return () => handleDriftVersion(currentConcept.id, currentVersion.id);
-  }, [currentConcept, currentVersion, handleDriftVersion, unifiedEditMode, handleCommitEdits]);
+  }, [currentConcept, currentVersion, handleDriftVersion, isEditing, handleCommitEdits]);
 
   const handleBranch = useMemo(() => {
     return currentConcept && currentVersion
@@ -1099,7 +1037,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     onDelete: handleDeleteCurrent,
     onMoveConceptLeft: handleMoveConceptLeft,
     onMoveConceptRight: handleMoveConceptRight,
-    onUndo: handleUndo,
+    onUndo: undo.handleUndo,
     onPresent: handlePresent,
     inSelectsRow,
     onSetSelectsRow: setInSelectsRow,
@@ -1251,8 +1189,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       onDrift={() => { if (handleDrift) { handleDrift(); ui.setCommandPaletteOpen(false); } }}
       onBranch={() => { if (handleBranch) { handleBranch(); ui.setCommandPaletteOpen(false); } }}
       onDelete={() => { handleDeleteCurrent(); ui.setCommandPaletteOpen(false); }}
-      onUndo={() => { handleUndo(); ui.setCommandPaletteOpen(false); }}
-      onEditMode={() => { setUnifiedEditMode(v => !v); ui.setCommandPaletteOpen(false); }}
+      onUndo={() => { undo.handleUndo(); ui.setCommandPaletteOpen(false); }}
+      onEditMode={() => { setAppMode(prev => prev === 'edit' || prev === 'edit-pin' ? 'navigate' : 'edit'); ui.setCommandPaletteOpen(false); }}
       onCopyFeedback={() => {
         window.dispatchEvent(new CustomEvent('drift:copy-feedback', { detail: { json: false } }));
         ui.setCommandPaletteOpen(false);
@@ -1335,7 +1273,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     .join(' ');
 
   // Presentation mode indicator for the topbar
-  const presentationLabel = presentationMode
+  const presentationLabel = isPresenting
     ? `Presenting ${presentationPlaylist.findIndex(p => p.ci === conceptIndex && p.vi === versionIndex) + 1}/${presentationPlaylist.length}`
     : undefined;
 
@@ -1364,9 +1302,9 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       onToggleView={clientEdits.setViewEdited}
       onExportPdf={async () => { await htmlFrameRef.current?.exportPdf(`${project}-alt.pdf`, client, project); }}
       onExportHtml={async () => { await htmlFrameRef.current?.exportHtml(`${project}.html`); }}
-      onGoToGrid={() => { setViewMode('grid'); setPresentationMode(false); }}
-      onGoToOverview={() => { setViewMode('grid'); setPresentationMode(false); setZoomLevel('overview'); }}
-      onGoToConceptColumn={() => { setViewMode('grid'); setPresentationMode(false); setZoomLevel('z1'); }}
+      onGoToGrid={() => { setViewMode('grid'); setAppMode('navigate'); }}
+      onGoToOverview={() => { setViewMode('grid'); setAppMode('navigate'); setZoomLevel('overview'); }}
+      onGoToConceptColumn={() => { setViewMode('grid'); setAppMode('navigate'); setZoomLevel('z1'); }}
       onClearEdits={clientEdits.clearEdits}
       frameWidth={frameWidth}
       versionFile={currentVersion?.file}
@@ -1443,7 +1381,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           />
         </div>
         {/* Fixed action bar — bottom center, always visible when a card is selected */}
-        {currentConcept && currentVersion && !reviewMode && (
+        {currentConcept && currentVersion && !isReviewing && (
           <div
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-full"
             style={{
@@ -1531,7 +1469,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             </span>
           </div>
         )}
-        {reviewMode && (
+        {isReviewing && (
           <div
             className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-full z-30"
             style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
@@ -1541,7 +1479,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             </span>
             <div className="w-px h-3 bg-white/20" />
             <button
-              onClick={() => setReviewMode(false)}
+              onClick={() => setAppMode('navigate')}
               className="text-[10px] tracking-wide text-white/50 hover:text-white transition-colors"
               style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}
             >
@@ -1620,7 +1558,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             savedEdits={clientEdits.edits}
             onEditsChange={clientEdits.handleEditsChange}
             onScaledWidth={setFrameWidth}
-            targetedEditMode={unifiedEditMode}
+            targetedEditMode={isEditing}
           />
           <AnnotationOverlay
             annotations={[
@@ -1640,8 +1578,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
                   resolved: false,
                 } as Annotation)),
             ]}
-            editMode={unifiedEditMode}
-            placingPin={placingPin}
+            editMode={isEditing}
+            placingPin={isPlacingPin}
             onAdd={handleAddAnnotation}
             onResolve={handleResolveAnnotation}
             onDelete={handleDeleteAnnotation}
@@ -1649,7 +1587,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         </div>
 
         {/* Unified edit mode indicator */}
-        {unifiedEditMode && (
+        {isEditing && (
           <div
             className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full"
             style={{
@@ -1694,7 +1632,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         </div>
 
         {/* Frame action bar — bottom center, matches grid action bar */}
-        {mode !== 'client' && currentConcept && currentVersion && !ui.navGridHidden && !presentationMode && (
+        {mode !== 'client' && currentConcept && currentVersion && !ui.navGridHidden && !isPresenting && (
           <div
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-full"
             style={{
@@ -1783,7 +1721,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         )}
 
         {/* Presentation mode indicator */}
-        {presentationMode && (
+        {isPresenting && (
           <div
             className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-full z-10"
             style={{
@@ -1799,7 +1737,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             </span>
             <div className="w-px h-3 bg-white/20" />
             <button
-              onClick={() => { setPresentationMode(false); setViewMode('grid'); }}
+              onClick={() => { setAppMode('navigate'); setViewMode('grid'); }}
               className="text-[10px] tracking-wide text-white/50 hover:text-white transition-colors"
               style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}
             >
@@ -1808,7 +1746,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           </div>
         )}
       </div>
-      {!presentationMode && !ui.navGridHidden && (
+      {!isPresenting && !ui.navGridHidden && (
         <NavigationGrid
           conceptIndex={conceptIndex}
           versionIndex={versionIndex}

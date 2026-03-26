@@ -2,6 +2,8 @@
 
 export type ViewMode = 'designer' | 'client';
 
+export type AppMode = 'navigate' | 'edit' | 'edit-pin' | 'review' | 'present';
+
 export interface CanvasPreset {
   slug: string;
   label: string;
