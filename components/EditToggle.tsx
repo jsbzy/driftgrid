@@ -13,6 +13,7 @@ interface EditToggleProps {
   onExportPdf?: () => Promise<void> | void;
   onExportHtml?: () => Promise<void> | void;
   onClearEdits?: () => void;
+  onApplyEdits?: () => Promise<void>;
 }
 
 export function EditToggle({
@@ -25,8 +26,10 @@ export function EditToggle({
   onExportPdf,
   onExportHtml,
   onClearEdits,
+  onApplyEdits,
 }: EditToggleProps) {
   const [exporting, setExporting] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
@@ -125,6 +128,24 @@ export function EditToggle({
             style={{ color: 'var(--muted)' }}
           >
             Clear Edits
+          </button>
+        </>
+      )}
+
+      {/* Apply Edits — visible when not editing and edits exist */}
+      {!editMode && hasEdits && onApplyEdits && (
+        <>
+          <span className="text-[var(--border)]">&middot;</span>
+          <button
+            onClick={async () => {
+              setApplying(true);
+              try { await onApplyEdits(); } finally { setApplying(false); }
+            }}
+            className="transition-colors hover:opacity-80"
+            style={{ color: applying ? 'var(--muted)' : 'rgb(20, 184, 166)' }}
+            disabled={applying}
+          >
+            {applying ? <><span>Applying</span><AnimatedDots /></> : 'Apply Edits'}
           </button>
         </>
       )}

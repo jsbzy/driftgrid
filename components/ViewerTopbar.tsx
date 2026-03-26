@@ -27,6 +27,7 @@ interface ViewerTopbarProps {
   onExportPdf?: () => Promise<void> | void;
   onExportHtml?: () => Promise<void> | void;
   onClearEdits?: () => void;
+  onApplyEdits?: () => Promise<void>;
   frameWidth?: number;
   onGoToGrid?: () => void;
   onGoToConceptColumn?: () => void;
@@ -57,6 +58,7 @@ export function ViewerTopbar({
   onExportPdf,
   onExportHtml,
   onClearEdits,
+  onApplyEdits,
   frameWidth,
   onGoToGrid,
   onGoToConceptColumn,
@@ -142,6 +144,7 @@ export function ViewerTopbar({
             onExportPdf={onExportPdf}
             onExportHtml={onExportHtml}
             onClearEdits={onClearEdits}
+            onApplyEdits={onApplyEdits}
           />
         )}
         {!isClientMode && versionFile && (
