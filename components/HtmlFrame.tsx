@@ -72,18 +72,30 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       `;
       doc.head.appendChild(style);
 
-      // Text elements selector
-      const TEXT_SELECTOR = 'h1,h2,h3,h4,h5,h6,p,span,a,li,label,button,td,th';
+      // Find the nearest element that directly contains text (leaf text node)
+      function findTextElement(target: HTMLElement): HTMLElement | null {
+        // Walk up from the target to find an element that has direct text content
+        let el: HTMLElement | null = target;
+        while (el && el !== doc.body) {
+          // Check if this element has direct text nodes (not just child elements)
+          const hasDirectText = Array.from(el.childNodes).some(
+            n => n.nodeType === Node.TEXT_NODE && n.textContent?.trim()
+          );
+          if (hasDirectText) return el;
+          el = el.parentElement;
+        }
+        return null;
+      }
 
       // Hover handlers
       const handleMouseOver = (e: Event) => {
-        const el = (e.target as HTMLElement).closest(TEXT_SELECTOR) as HTMLElement | null;
-        if (el && el.textContent?.trim()) {
+        const el = findTextElement(e.target as HTMLElement);
+        if (el) {
           el.setAttribute('data-drift-editable-hover', '');
         }
       };
       const handleMouseOut = (e: Event) => {
-        const el = (e.target as HTMLElement).closest(TEXT_SELECTOR) as HTMLElement | null;
+        const el = findTextElement(e.target as HTMLElement);
         if (el) el.removeAttribute('data-drift-editable-hover');
       };
 
@@ -97,7 +109,6 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
         el.removeAttribute('data-drift-editable-hover');
 
         if (newText !== originalText) {
-          // Send edit to parent
           window.parent.postMessage({
             type: 'drift:text-edit',
             original: originalText,
@@ -110,11 +121,8 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       };
 
       const handleClick = (e: Event) => {
-        const el = (e.target as HTMLElement).closest(TEXT_SELECTOR) as HTMLElement | null;
-        if (!el || !el.textContent?.trim()) {
-          // Click on empty space — annotations handled by overlay
-          return;
-        }
+        const el = findTextElement(e.target as HTMLElement);
+        if (!el) return;
 
         // If already editing something else, finish it
         if (currentEditing && currentEditing !== el) {
