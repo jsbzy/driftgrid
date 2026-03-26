@@ -313,27 +313,21 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const handleToggleGridView = useCallback(() => {
     setViewMode(v => {
       if (v === 'frame') {
-        // Frame → Grid: fade overlay masks the switch
-        flash.showTransitionFade();
         setAppMode('navigate');
         setDraftEdits([]);
-        setZoomLevel('z4');
+        setZoomLevel('z2');
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
         return 'grid';
       }
       // Grid → Frame: zoom to card, then fade-switch
       if (canvasRef.current) {
         canvasRef.current.zoomToCard(conceptIndex, versionIndex);
-        setTimeout(() => {
-          flash.showTransitionFade();
-          setViewMode('frame');
-        }, 280);
+        setTimeout(() => setViewMode('frame'), 280);
         return v;
       }
-      flash.showTransitionFade();
       return 'frame';
     });
-  }, [conceptIndex, versionIndex, getTransitionCardBounds, flash]);
+  }, [conceptIndex, versionIndex, getTransitionCardBounds]);
 
   // Pinch zoom out from frame → exit to grid (passive:false to block browser gesture)
   useEffect(() => {
@@ -1130,24 +1124,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   ) : null;
 
 
-  // Transition fade overlay — masks the instant view mode switch
-  const fadeOverlay = flash.transitionFade ? (
-    <div
-      className="fixed inset-0 z-[200] pointer-events-none"
-      style={{
-        background: 'var(--background)',
-        animation: 'fadeOut 0.2s ease forwards',
-      }}
-    >
-      <style>{`
-        @keyframes fadeOut {
-          0% { opacity: 1; }
-          100% { opacity: 0; }
-        }
-      `}</style>
-    </div>
-  ) : null;
-
   const commandPalette = (
     <CommandPalette
       open={ui.commandPaletteOpen}
@@ -1331,7 +1307,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   if (viewMode === 'grid') {
     return (
       <div className="h-screen flex flex-col bg-[var(--background)]">
-        {fadeOverlay}
+
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
@@ -1504,7 +1480,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   return (
     <div className="h-screen flex flex-col" style={{ background: 'var(--background)' }}>
-      {fadeOverlay}
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
