@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   const { client, project, format, versionId, workingSetId, htmlContent } = body as {
     client: string;
     project: string;
-    format: 'pdf' | 'png' | 'html';
+    format: 'pdf' | 'png' | 'html' | 'pptx';
     versionId?: string;
     workingSetId?: string;
     htmlContent?: string;
@@ -203,6 +203,52 @@ export async function POST(request: NextRequest) {
           'Content-Disposition': `attachment; filename="${client}-${project}-${ws.name}.pdf"`,
         },
       });
+    }
+  }
+
+  // PPTX export — screenshot the HTML and embed as a slide image
+  if (format === 'pptx') {
+    if (!versionId) {
+      return NextResponse.json({ error: 'versionId required for PPTX export' }, { status: 400 });
+    }
+    const version = manifest.concepts.flatMap(c => c.versions).find(v => v.id === versionId);
+    if (!version) {
+      return NextResponse.json({ error: 'Version not found' }, { status: 404 });
+    }
+
+    try {
+      const htmlPath = path.resolve(projectDir, version.file);
+      const pngBuffer = await exportPng(htmlPath, width, height);
+      const base64 = Buffer.from(pngBuffer).toString('base64');
+
+      const PptxGenJS = (await import('pptxgenjs')).default;
+      const pptx = new PptxGenJS();
+
+      // Set slide dimensions to match canvas
+      const slideW = 10; // inches
+      const slideH = typeof height === 'number' ? (slideW * height) / width : 5.625; // default 16:9
+      pptx.defineLayout({ name: 'CUSTOM', width: slideW, height: slideH });
+      pptx.layout = 'CUSTOM';
+
+      const slide = pptx.addSlide();
+      slide.addImage({
+        data: `image/png;base64,${base64}`,
+        x: 0,
+        y: 0,
+        w: slideW,
+        h: slideH,
+      });
+
+      const pptxBuffer = await pptx.write({ outputType: 'nodebuffer' }) as Buffer;
+      return new NextResponse(new Uint8Array(pptxBuffer), {
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'Content-Disposition': `attachment; filename="${version.id}.pptx"`,
+        },
+      });
+    } catch (err) {
+      console.error('PPTX export error:', err);
+      return NextResponse.json({ error: 'PPTX export failed' }, { status: 500 });
     }
   }
 
