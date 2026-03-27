@@ -26,6 +26,7 @@ interface CanvasViewProps {
   onStarVersion: (conceptId: string, versionId: string) => void;
   onDeleteVersion: (conceptId: string, versionId: string) => void;
   onHideVersion?: (conceptId: string, versionId: string) => void;
+  onDriftToProject?: (conceptId: string, versionId: string) => void;
   onDriftVersion: (conceptId: string, versionId: string) => void;
   onBranchVersion: (conceptId: string, versionId: string) => void;
   onMoveConceptLeft: (conceptIdx?: number) => void;
@@ -52,6 +53,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   onStarVersion,
   onDeleteVersion,
   onHideVersion,
+  onDriftToProject,
   onDriftVersion,
   onBranchVersion,
   onMoveConceptLeft,
@@ -570,6 +572,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
               closeContextMenu();
             }}
             onHide={() => { onHideVersion?.(concept.id, version.id); closeContextMenu(); }}
+            onDriftToProject={() => { onDriftToProject?.(concept.id, version.id); closeContextMenu(); }}
             onDelete={() => { onDeleteVersion(concept.id, version.id); closeContextMenu(); }}
             onZoomToCard={() => {
               const bounds = getCardBounds(layout, contextMenu.ci, contextMenu.vi);

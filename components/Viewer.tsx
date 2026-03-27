@@ -974,6 +974,22 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             onStarVersion={handleStarVersion}
             onDeleteVersion={handleDeleteVersion}
             onHideVersion={handleHideVersion}
+            onDriftToProject={async (conceptId: string, versionId: string) => {
+              const name = window.prompt('New project name:');
+              if (!name) return;
+              const res = await fetch('/api/drift-to-project', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client, project, versions: [{ conceptId, versionId }], newProject: name }),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                toast(`New project "${name}" created`);
+                window.open(data.url, '_blank');
+              } else {
+                toast('Failed to create project', 'error');
+              }
+            }}
             onDriftVersion={handleDriftVersion}
             onBranchVersion={handleBranchVersion}
             onMoveConceptLeft={handleMoveConceptLeft}
