@@ -24,6 +24,7 @@ interface CommandPaletteProps {
   onUndo?: () => void;
   onExportPng?: () => void;
   onToggleShowHidden?: () => void;
+  onDriftToProject?: () => void;
 }
 
 export function CommandPalette({
@@ -42,6 +43,7 @@ export function CommandPalette({
   onUndo,
   onExportPng,
   onToggleShowHidden,
+  onDriftToProject,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -62,6 +64,7 @@ export function CommandPalette({
     ...(onUndo ? [{ label: 'Undo', shortcut: '\u2318Z', action: onUndo }] : []),
     ...(onExportPng ? [{ label: 'Export PNG', shortcut: '', action: onExportPng }] : []),
     ...(onToggleShowHidden ? [{ label: 'Show / hide hidden versions', shortcut: '', action: onToggleShowHidden }] : []),
+    ...(onDriftToProject ? [{ label: 'Drift selects to new project', shortcut: '', action: onDriftToProject }] : []),
   ];
 
   // Fuzzy match: every character in the query must appear in order in the label

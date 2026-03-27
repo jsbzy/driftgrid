@@ -835,6 +835,29 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         ui.setCommandPaletteOpen(false);
       }}
       onToggleShowHidden={() => { setShowHidden(v => !v); ui.setCommandPaletteOpen(false); }}
+      onDriftToProject={async () => {
+        ui.setCommandPaletteOpen(false);
+        if (selections.size === 0) {
+          toast('Star some versions first', 'error');
+          return;
+        }
+        const name = window.prompt('New project name:');
+        if (!name) return;
+        const versions = Array.from(selections.entries()).map(([conceptId, versionId]) => ({ conceptId, versionId }));
+        const res = await fetch('/api/drift-to-project', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client, project, versions, newProject: name }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          toast(`New project "${name}" created with ${data.conceptCount} concepts`);
+          window.open(data.url, '_blank');
+        } else {
+          const err = await res.json().catch(() => null);
+          toast(err?.error || 'Failed to create project', 'error');
+        }
+      }}
       onCloseRound={async () => {
         ui.setCommandPaletteOpen(false);
         if (selections.size === 0) {
