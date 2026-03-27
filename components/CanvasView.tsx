@@ -363,45 +363,15 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
         onDoubleClick={handleDoubleClick}
       >
 
-        {/* Structural grid lines — aligned to actual columns and rows */}
-        <svg
+        {/* Dot grid background */}
+        <div
           className="absolute inset-0 pointer-events-none"
-          style={{ width: '100%', height: '100%', overflow: 'visible' }}
-        >
-          {/* Vertical column lines */}
-          {layout.labels.map((label, i) => {
-            const x1 = label.x * transform.scale + transform.tx;
-            const x2 = (label.x + layout.cardWidth) * transform.scale + transform.tx;
-            return (
-              <g key={`col-${i}`}>
-                <line x1={x1} y1={0} x2={x1} y2="100%" stroke="var(--canvas-dot)" strokeWidth={0.5} />
-                <line x1={x2} y1={0} x2={x2} y2="100%" stroke="var(--canvas-dot)" strokeWidth={0.5} />
-              </g>
-            );
-          })}
-          {/* Horizontal row lines */}
-          {(() => {
-            const rowYs = new Set<number>();
-            for (const card of layout.cards) {
-              rowYs.add(card.y);
-              rowYs.add(card.y + layout.cardHeight);
-            }
-            return Array.from(rowYs).map(y => {
-              const screenY = y * transform.scale + transform.ty;
-              return (
-                <line
-                  key={`row-${y}`}
-                  x1={0}
-                  y1={screenY}
-                  x2="100%"
-                  y2={screenY}
-                  stroke="var(--canvas-dot)"
-                  strokeWidth={0.5}
-                />
-              );
-            });
-          })()}
-        </svg>
+          style={{
+            backgroundImage: 'radial-gradient(circle, var(--canvas-dot) 1px, transparent 1px)',
+            backgroundSize: `${24 * transform.scale}px ${24 * transform.scale}px`,
+            backgroundPosition: `${transform.tx % (24 * transform.scale)}px ${transform.ty % (24 * transform.scale)}px`,
+          }}
+        />
 
         {/* Empty state */}
         {layout.cards.length === 0 && (
@@ -454,56 +424,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             willChange: 'transform',
           }}
         >
-          {/* Grid coordinate labels — columns across top, rows down left */}
-          {layout.labels.map((label, i) => (
-            <div
-              key={`col-num-${i}`}
-              className="absolute pointer-events-none"
-              style={{
-                left: label.x + layout.cardWidth / 2,
-                top: label.y - 20,
-                transform: 'translateX(-50%)',
-                fontSize: 9,
-                fontFamily: 'var(--font-mono, monospace)',
-                color: 'var(--foreground)',
-                opacity: 0.12,
-                letterSpacing: '0.04em',
-              }}
-            >
-              {i + 1}
-            </div>
-          ))}
-          {(() => {
-            // Row numbers — use the first concept's card Y positions
-            const rowYs = new Map<number, number>();
-            let rowNum = 1;
-            for (const card of layout.cards) {
-              if (card.conceptIndex === 0) {
-                rowYs.set(card.y, rowNum++);
-              }
-            }
-            return Array.from(rowYs.entries()).map(([y, num]) => (
-              <div
-                key={`row-num-${num}`}
-                className="absolute pointer-events-none"
-                style={{
-                  left: layout.labels[0]?.x - 28 || 52,
-                  top: y + layout.cardHeight / 2,
-                  transform: 'translateY(-50%)',
-                  fontSize: 9,
-                  fontFamily: 'var(--font-mono, monospace)',
-                  color: 'var(--foreground)',
-                  opacity: 0.12,
-                  letterSpacing: '0.04em',
-                  textAlign: 'right',
-                  width: 20,
-                }}
-              >
-                {num}
-              </div>
-            ));
-          })()}
-
           {/* Selects rows — per-round slots */}
           {layout.selectsSlots.map(slot => {
             const concept = concepts[slot.conceptIndex];

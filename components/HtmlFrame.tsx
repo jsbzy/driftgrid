@@ -12,7 +12,6 @@ interface HtmlFrameProps {
   savedEdits?: Record<string, string>;
   onEditsChange?: (allEdits: Record<string, string>) => void;
   onScaledWidth?: (width: number) => void;
-  targetedEditMode?: boolean;
   placeholder?: string | null;
   onReady?: () => void;
 }
@@ -24,7 +23,7 @@ export interface HtmlFrameHandle {
 }
 
 export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
-  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, targetedEditMode, placeholder, onReady }, ref) {
+  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, placeholder, onReady }, ref) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0);
@@ -50,138 +49,6 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       setIframeReady(true);
       onReady?.();
     }, [onReady]);
-
-    // Targeted edit mode: per-element contentEditable with hover outlines
-    useEffect(() => {
-      if (!targetedEditMode || !iframeReady || !iframeRef.current?.contentDocument) return;
-
-      const doc = iframeRef.current.contentDocument;
-
-      // Add edit styles
-      const style = doc.createElement('style');
-      style.id = 'drift-edit-styles';
-      style.textContent = `
-        [data-drift-editable-hover] {
-          outline: 2px dashed rgba(45, 212, 191, 0.4) !important;
-          cursor: text !important;
-          transition: outline 0.15s ease !important;
-        }
-        [contenteditable="true"] {
-          outline: 2px solid rgba(45, 212, 191, 0.8) !important;
-        }
-      `;
-      doc.head.appendChild(style);
-
-      // Find the nearest element that directly contains text (leaf text node)
-      function findTextElement(target: HTMLElement): HTMLElement | null {
-        // Walk up from the target to find an element that has direct text content
-        let el: HTMLElement | null = target;
-        while (el && el !== doc.body) {
-          // Check if this element has direct text nodes (not just child elements)
-          const hasDirectText = Array.from(el.childNodes).some(
-            n => n.nodeType === Node.TEXT_NODE && n.textContent?.trim()
-          );
-          if (hasDirectText) return el;
-          el = el.parentElement;
-        }
-        return null;
-      }
-
-      // Hover handlers
-      const handleMouseOver = (e: Event) => {
-        const el = findTextElement(e.target as HTMLElement);
-        if (el) {
-          el.setAttribute('data-drift-editable-hover', '');
-        }
-      };
-      const handleMouseOut = (e: Event) => {
-        const el = findTextElement(e.target as HTMLElement);
-        if (el) el.removeAttribute('data-drift-editable-hover');
-      };
-
-      // Click handler — make element editable
-      let currentEditing: HTMLElement | null = null;
-      let originalText = '';
-
-      const finishEditing = (el: HTMLElement) => {
-        const newText = el.textContent || '';
-        el.contentEditable = 'false';
-        el.removeAttribute('data-drift-editable-hover');
-
-        if (newText !== originalText) {
-          window.parent.postMessage({
-            type: 'drift:text-edit',
-            original: originalText,
-            modified: newText,
-            element: `${el.tagName.toLowerCase()}: "${originalText.substring(0, 30)}"`,
-          }, '*');
-        }
-        currentEditing = null;
-        originalText = '';
-      };
-
-      const handleClick = (e: Event) => {
-        const el = findTextElement(e.target as HTMLElement);
-        if (!el) return;
-
-        // If already editing something else, finish it
-        if (currentEditing && currentEditing !== el) {
-          finishEditing(currentEditing);
-        }
-
-        if (el.contentEditable === 'true') return; // already editing this one
-
-        originalText = el.textContent || '';
-        el.contentEditable = 'true';
-        el.focus();
-        currentEditing = el;
-      };
-
-      const handleBlur = (e: Event) => {
-        const el = e.target as HTMLElement;
-        if (el.contentEditable === 'true') {
-          // Small delay to allow click-on-another-element to fire first
-          setTimeout(() => {
-            if (el.contentEditable === 'true') {
-              finishEditing(el);
-            }
-          }, 100);
-        }
-      };
-
-      // Paste handler — plain text only
-      const handlePaste = (e: Event) => {
-        const clipEvent = e as ClipboardEvent;
-        clipEvent.preventDefault();
-        const text = clipEvent.clipboardData?.getData('text/plain') || '';
-        const ownerDoc = (e.target as HTMLElement).ownerDocument;
-        ownerDoc.execCommand('insertText', false, text);
-      };
-
-      doc.addEventListener('mouseover', handleMouseOver, true);
-      doc.addEventListener('mouseout', handleMouseOut, true);
-      doc.addEventListener('click', handleClick, true);
-      doc.addEventListener('blur', handleBlur, true);
-      doc.addEventListener('paste', handlePaste, true);
-
-      return () => {
-        // Cleanup
-        doc.removeEventListener('mouseover', handleMouseOver, true);
-        doc.removeEventListener('mouseout', handleMouseOut, true);
-        doc.removeEventListener('click', handleClick, true);
-        doc.removeEventListener('blur', handleBlur, true);
-        doc.removeEventListener('paste', handlePaste, true);
-        doc.getElementById('drift-edit-styles')?.remove();
-        // Remove contentEditable from any active element
-        if (currentEditing) {
-          currentEditing.contentEditable = 'false';
-        }
-        // Remove all hover attributes
-        doc.querySelectorAll('[data-drift-editable-hover]').forEach(el => {
-          el.removeAttribute('data-drift-editable-hover');
-        });
-      };
-    }, [targetedEditMode, iframeReady]);
 
     // Ref for savedEdits to avoid re-triggering the effect on every keystroke
     const savedEditsRef = useRef(savedEdits);
@@ -215,22 +82,13 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       }
     }, [editMode, showEdits, hasEdits, iframeReady]);
 
-    // Forward navigation keys (G, Escape) from iframe to parent window
+    // Forward navigation keys from iframe to parent window
     useEffect(() => {
       if (!iframeReady || !iframeRef.current) return;
       try {
         const iframeDoc = iframeRef.current.contentDocument;
         if (!iframeDoc) return;
         const handler = (e: KeyboardEvent) => {
-          // When in contentEditable (targeted edit), only forward Escape
-          // Don't forward letter keys like G — user is typing
-          if ((e.target as HTMLElement)?.isContentEditable) {
-            if (e.key === 'Escape') {
-              e.preventDefault();
-              window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, bubbles: true }));
-            }
-            return;
-          }
           // Forward Cmd+K / Ctrl+K for command palette
           if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
             if (e.target instanceof iframeDoc.defaultView!.HTMLInputElement ||
@@ -241,13 +99,9 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
           }
           if (e.key === 'a' || e.key === 'A' ||
               e.key === 'd' || e.key === 'D' ||
-              e.key === 'e' || e.key === 'E' ||
-              e.key === 'f' || e.key === 'F' ||
               e.key === 'g' || e.key === 'G' || e.key === 'Escape' ||
               e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
               e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
-              e.key === 'h' || e.key === 'H' ||
-              e.key === 'n' || e.key === 'N' ||
               e.key === 'p' || e.key === 'P' ||
               e.key === 's' || e.key === 'S' ||
               e.key === '?') {
@@ -427,9 +281,8 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
             width: scaledWidth,
             height: scaledHeight,
             overflow: 'hidden',
-            border: targetedEditMode ? '2px solid var(--accent-teal)' : '1px solid rgba(0,0,0,0.08)',
+            border: '1px solid rgba(0,0,0,0.08)',
             borderRadius: 4,
-            transition: 'border-color 0.2s ease',
             position: 'relative',
           }}>
             {/* Thumbnail placeholder — visible until iframe loads */}
@@ -490,8 +343,8 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
           src={editSrc}
           className="w-full h-full relative"
           style={{
-            border: targetedEditMode ? '2px solid var(--accent-teal)' : 'none',
-            transition: 'border-color 0.2s ease, opacity 0.15s ease',
+            border: 'none',
+            transition: 'opacity 0.15s ease',
             zIndex: 2,
             opacity: iframeReady ? 1 : 0,
           }}

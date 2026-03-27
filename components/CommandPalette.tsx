@@ -12,50 +12,34 @@ interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
   onFitAll: () => void;
-  onZoomColumn: () => void;
   onZoomCard: () => void;
   onToggleStar: () => void;
   onPresent: () => void;
-  onGoToLatest: () => void;
-  onClearSelections: () => void;
   onToggleTheme: () => void;
-  onToggleHud: () => void;
-  onToggleNavbar: () => void;
   onCloseRound: () => void;
   onToggleGridFrame?: () => void;
   onDrift?: () => void;
   onBranch?: () => void;
   onDelete?: () => void;
   onUndo?: () => void;
-  onEditMode?: () => void;
-  onCopyFeedback?: () => void;
   onExportPng?: () => void;
-  onExportDoc?: () => void;
 }
 
 export function CommandPalette({
   open,
   onClose,
   onFitAll,
-  onZoomColumn,
   onZoomCard,
   onToggleStar,
   onPresent,
-  onGoToLatest,
-  onClearSelections,
   onToggleTheme,
-  onToggleHud,
-  onToggleNavbar,
   onCloseRound,
   onToggleGridFrame,
   onDrift,
   onBranch,
   onDelete,
   onUndo,
-  onEditMode,
-  onCopyFeedback,
   onExportPng,
-  onExportDoc,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -63,26 +47,18 @@ export function CommandPalette({
   const listRef = useRef<HTMLDivElement>(null);
 
   const commands: Command[] = [
-    { label: 'Zoom to fit all', shortcut: '0', action: onFitAll },
-    { label: 'Zoom to column', shortcut: '1', action: onZoomColumn },
+    { label: 'Zoom to fit all', shortcut: '`', action: onFitAll },
     { label: 'Zoom to card', shortcut: '4', action: onZoomCard },
     { label: 'Star / unstar', shortcut: 'S', action: onToggleStar },
     { label: 'Present selects', shortcut: 'P', action: onPresent },
-    { label: 'Go to latest version', shortcut: '', action: onGoToLatest },
-    { label: 'Clear all selects', shortcut: '', action: onClearSelections },
     { label: 'Toggle theme', shortcut: '', action: onToggleTheme },
-    { label: 'Toggle HUD', shortcut: 'H', action: onToggleHud },
-    { label: 'Toggle navbar', shortcut: 'N', action: onToggleNavbar },
     { label: 'Close round', shortcut: '', action: onCloseRound },
     ...(onToggleGridFrame ? [{ label: 'Toggle grid / frame', shortcut: 'G', action: onToggleGridFrame }] : []),
     ...(onDrift ? [{ label: 'Drift \u2193 new version', shortcut: 'D', action: onDrift }] : []),
     ...(onBranch ? [{ label: 'Drift \u2192 new concept', shortcut: '\u21e7D', action: onBranch }] : []),
     ...(onDelete ? [{ label: 'Delete version', shortcut: 'Del', action: onDelete }] : []),
     ...(onUndo ? [{ label: 'Undo', shortcut: '\u2318Z', action: onUndo }] : []),
-    ...(onEditMode ? [{ label: 'Edit mode', shortcut: 'E', action: onEditMode }] : []),
-    ...(onCopyFeedback ? [{ label: 'Copy feedback', shortcut: 'F', action: onCopyFeedback }] : []),
     ...(onExportPng ? [{ label: 'Export PNG', shortcut: '', action: onExportPng }] : []),
-    ...(onExportDoc ? [{ label: 'Copy as doc (text for Google Docs)', shortcut: '', action: onExportDoc }] : []),
   ];
 
   // Fuzzy match: every character in the query must appear in order in the label

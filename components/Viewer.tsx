@@ -2,16 +2,13 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import useSWR from 'swr';
-import type { Manifest, ViewMode, WorkingSet, WorkingSetSelection, Annotation, DraftEdit, AppMode } from '@/lib/types';
+import type { Manifest, ViewMode } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
 import { filterVisibleManifest } from '@/lib/filterManifest';
-import { ViewerTopbar } from './ViewerTopbar';
 import { HtmlFrame, type HtmlFrameHandle } from './HtmlFrame';
 import { NavigationGrid } from './NavigationGrid';
-import { GridView } from './GridView';
 import { CanvasView, type CanvasViewHandle } from './CanvasView';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
-import { AnnotationOverlay } from './AnnotationOverlay';
 import { CommandPalette } from './CommandPalette';
 import { toast, ToastContainer } from './Toast';
 import { useKeyboardNav, type ZoomLevel } from '@/lib/hooks/useKeyboardNav';
@@ -20,6 +17,8 @@ import { computeCanvasLayout, getCardBounds } from '@/lib/hooks/useCanvasLayout'
 import { useFlash } from '@/lib/hooks/useFlash';
 import { useUIVisibility } from '@/lib/hooks/useUIVisibility';
 import { useUndoManager } from '@/lib/hooks/useUndoManager';
+import { AnnotationOverlay } from './AnnotationOverlay';
+import type { Annotation } from '@/lib/types';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -37,32 +36,23 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const [conceptIndex, setConceptIndex] = useState(0);
   const [versionIndex, setVersionIndex] = useState(0);
-  const [viewMode, setViewMode] = useState<'frame' | 'grid'>('grid');
+  const [viewMode, setViewMode] = useState<'frame' | 'grid'>(mode === 'client' ? 'frame' : 'grid');
   const [selections, setSelections] = useState<Map<string, string>>(new Map());
-  const [activeWorkingSetId, setActiveWorkingSetId] = useState<string | null>(null);
   const flash = useFlash();
   const ui = useUIVisibility();
-  // Unified mode state machine
-  const [appMode, setAppMode] = useState<AppMode>('navigate');
-  const isEditing = appMode === 'edit' || appMode === 'edit-pin';
-  const isPlacingPin = appMode === 'edit-pin';
-  const isReviewing = appMode === 'review';
-  const isPresenting = appMode === 'present';
+  // Presentation mode state
+  const [isPresenting, setIsPresenting] = useState(false);
+  // Annotations — simple pin mode
+  const [annotationMode, setAnnotationMode] = useState(false);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
 
-  const [inSelectsRow, setInSelectsRow] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('overview');
-  // Feature 1: Smooth zoom transition state
+  // Smooth zoom transition state
   const canvasRef = useRef<CanvasViewHandle>(null);
   const frameWrapperRef = useRef<HTMLDivElement>(null);
   const [transitionCardBounds, setTransitionCardBounds] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  // Feature 3: Hot reload state — frame version counter for forcing iframe refresh
-  const [frameVersion, setFrameVersion] = useState(0);
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
-
-  // Edit mode draft state
-  const [draftEdits, setDraftEdits] = useState<DraftEdit[]>([]);
 
   // Undo manager
   const undo = useUndoManager(manifest, client, project, mutate, setConceptIndex, setVersionIndex, versionIndex);
@@ -74,13 +64,12 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   // Clear transition card bounds after the grid has mounted and consumed it
   useEffect(() => {
     if (viewMode === 'grid' && transitionCardBounds) {
-      // Allow one render cycle for CanvasView to read the bounds
       const timer = setTimeout(() => setTransitionCardBounds(null), 50);
       return () => clearTimeout(timer);
     }
   }, [viewMode, transitionCardBounds]);
 
-  // ? key to toggle shortcuts panel
+  // ? key to toggle shortcuts panel, Cmd+K command palette, H for HUD toggle
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (
@@ -101,34 +90,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         e.preventDefault();
         ui.setNavGridHidden(v => !v);
       }
-      if (e.key === 'n' || e.key === 'N') {
-        e.preventDefault();
-        ui.setTopbarHidden(v => !v);
-      }
-      if (e.key === 'r' || e.key === 'R') {
-        e.preventDefault();
-        setAppMode(prev => prev === 'review' ? 'navigate' : 'review');
-      }
-      if (mode !== 'client') {
-        if (e.key === 'e' || e.key === 'E') {
+      if (e.key === 'a' || e.key === 'A') {
+        if (viewMode === 'frame') {
           e.preventDefault();
-          setAppMode(prev => {
-            if (prev === 'edit' || prev === 'edit-pin') {
-              // Exiting edit mode — discard
-              setDraftEdits([]);
-              return 'navigate';
-            }
-            return 'edit';
-          });
-        }
-        if (e.key === 'a' || e.key === 'A') {
-          e.preventDefault();
-          // In unified edit mode: toggle pin placement. Outside: dispatch legacy copy-feedback
-          setAppMode(prev => prev === 'edit-pin' ? 'edit' : 'edit-pin');
-        }
-        if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey) {
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('drift:copy-feedback', { detail: { json: e.shiftKey } }));
+          setAnnotationMode(v => !v);
         }
       }
     };
@@ -159,66 +124,59 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     return playlist;
   }, [concepts, selections]);
 
-  // When entering review mode, jump to the first select at z4
+  // Fetch annotations when viewing a frame
   useEffect(() => {
-    if (!isReviewing || selections.size === 0) {
-      if (isReviewing) setAppMode('navigate'); // no selects — exit
+    if (!currentConcept || !currentVersion || viewMode !== 'frame') {
+      setAnnotations([]);
       return;
     }
-    if (viewMode !== 'grid') setViewMode('grid');
-    // Navigate to first select
-    const firstEntry = Array.from(selections.entries())[0];
-    if (firstEntry) {
-      const [cid, vid] = firstEntry;
-      const ci = concepts.findIndex(c => c.id === cid);
-      if (ci >= 0) {
-        const vi = concepts[ci].versions.findIndex(v => v.id === vid);
-        if (vi >= 0) {
-          setConceptIndex(ci);
-          setVersionIndex(vi);
-          setZoomLevel('z4');
-        }
-      }
+    fetch(`/api/annotations?client=${client}&project=${project}&conceptId=${currentConcept.id}&versionId=${currentVersion.id}`)
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setAnnotations(data); })
+      .catch(() => {});
+  }, [client, project, currentConcept?.id, currentVersion?.id, viewMode]);
+
+  const handleAddAnnotation = useCallback(async (x: number, y: number, text: string) => {
+    if (!currentConcept || !currentVersion) return;
+    const res = await fetch('/api/annotations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId: currentConcept.id,
+        versionId: currentVersion.id,
+        x, y, text,
+        author: 'designer',
+        isClient: false,
+      }),
+    });
+    if (res.ok) {
+      const annotation = await res.json();
+      setAnnotations(prev => [...prev, annotation]);
+      setAnnotationMode(false);
+      toast('Annotation added');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps — intentionally only fires on isReviewing toggle, reads current selections/concepts at call time
-  }, [isReviewing]);
+  }, [client, project, currentConcept, currentVersion]);
 
-  // Review mode: R enters, Esc exits, arrows cycle through selects at z4
+  const handleDeleteAnnotation = useCallback(async (id: string) => {
+    if (!currentConcept || !currentVersion) return;
+    await fetch('/api/annotations', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId: currentConcept.id,
+        versionId: currentVersion.id,
+        annotationId: id,
+      }),
+    });
+    setAnnotations(prev => prev.filter(a => a.id !== id));
+  }, [client, project, currentConcept, currentVersion]);
+
+  // Clear annotation mode when leaving frame
   useEffect(() => {
-    if (!isReviewing || viewMode !== 'grid') return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        setAppMode('navigate');
-        return;
-      }
-
-      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-        e.preventDefault();
-        e.stopPropagation();
-        const currentIdx = presentationPlaylist.findIndex(
-          p => p.ci === conceptIndex && p.vi === versionIndex
-        );
-        let nextIdx: number;
-        if (e.key === 'ArrowRight') {
-          nextIdx = currentIdx < presentationPlaylist.length - 1 ? currentIdx + 1 : 0;
-        } else {
-          nextIdx = currentIdx > 0 ? currentIdx - 1 : presentationPlaylist.length - 1;
-        }
-        const next = presentationPlaylist[nextIdx];
-        if (next) {
-          setConceptIndex(next.ci);
-          setVersionIndex(next.vi);
-          setZoomLevel('z4');
-        }
-      }
-    };
-    window.addEventListener('keydown', handler, true);
-    return () => window.removeEventListener('keydown', handler, true);
-  }, [isReviewing, viewMode, presentationPlaylist, conceptIndex, versionIndex]);
+    if (viewMode !== 'frame') setAnnotationMode(false);
+  }, [viewMode]);
 
   // Broadcast current view to /api/current for agent integration
   useEffect(() => {
@@ -270,14 +228,13 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     setConceptIndex(ci);
     setVersionIndex(vi);
     setViewMode('frame');
-  // eslint-disable-next-line react-hooks/exhaustive-deps — runs once when concepts first load, reads hash at call time
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [concepts.length]);
 
   const handleNavigate = useCallback(
     (ci: number, vi: number) => {
       setConceptIndex(ci);
       setVersionIndex(vi);
-      // Update hash to enable deep-linking
       const concept = concepts[ci];
       const version = concept?.versions[vi];
       if (concept && version) {
@@ -291,7 +248,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     (ci: number, vi: number) => {
       setConceptIndex(ci);
       setVersionIndex(vi);
-      setInSelectsRow(false);
       const concept = concepts[ci];
       const version = concept?.versions[vi];
       if (concept && version) {
@@ -315,18 +271,16 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const handleToggleGridView = useCallback(() => {
     setViewMode(v => {
       if (v === 'frame') {
-        setAppMode('navigate');
-        setDraftEdits([]);
+        setIsPresenting(false);
         setZoomLevel('z2');
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
         return 'grid';
       }
-      // Grid → Frame: switch directly (thumbnail placeholder handles the visual)
       return 'frame';
     });
   }, [conceptIndex, versionIndex, getTransitionCardBounds]);
 
-  // Pinch zoom out from frame → exit to grid (passive:false to block browser gesture)
+  // Pinch zoom out from frame -> exit to grid
   useEffect(() => {
     const el = frameWrapperRef.current;
     if (!el || viewMode !== 'frame') return;
@@ -342,16 +296,13 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const handleGridSelect = useCallback(
     (ci: number, vi: number) => {
-      // Cell click always navigates to fullscreen — starring is handled by the star button
       setConceptIndex(ci);
       setVersionIndex(vi);
-      setAppMode('navigate');
       const concept = concepts[ci];
       const version = concept?.versions[vi];
       if (concept && version) {
         window.history.replaceState(null, '', `#${concept.id}/v${version.number}`);
       }
-
       setViewMode('frame');
     },
     [concepts]
@@ -368,25 +319,23 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       }
       return next;
     });
-    setActiveWorkingSetId(null);
+
   }, [currentConcept, currentVersion]);
 
   const handleDeleteVersion = useCallback(async (conceptId: string, versionId: string) => {
     if (!manifest) return;
-    // Remove version from manifest
     const updated: Manifest = {
       ...manifest,
       concepts: manifest.concepts.map(c => {
         if (c.id !== conceptId) return c;
         return { ...c, versions: c.versions.filter(v => v.id !== versionId) };
-      }).filter(c => c.versions.length > 0), // Remove concept if no versions left
+      }).filter(c => c.versions.length > 0),
     };
     await fetch(`/api/manifest/${client}/${project}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updated),
     });
-    // Adjust indices if needed — use clamped value for both checks
     const clampedCi = Math.min(conceptIndex, Math.max(0, updated.concepts.length - 1));
     if (clampedCi !== conceptIndex) {
       setConceptIndex(clampedCi);
@@ -408,7 +357,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       conceptIndex,
     });
 
-    // Show delete flash
     flash.showDeleteFlash();
 
     const updated: Manifest = {
@@ -425,10 +373,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       body: JSON.stringify(updated),
     });
 
-    // Wait for flash animation
     await new Promise(r => setTimeout(r, 400));
 
-    // Navigate to the previous version (one above) in the same concept, stay in current viewMode
     const ci = Math.min(conceptIndex, updated.concepts.length - 1);
     if (updated.concepts.length === 0) {
       setViewMode('grid');
@@ -449,7 +395,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     const temp = newConcepts[ci];
     newConcepts[ci] = newConcepts[ci - 1];
     newConcepts[ci - 1] = temp;
-    // Update positions — create new objects to avoid mutating SWR cache
     const updated = { ...manifest, concepts: newConcepts.map((c, i) => ({ ...c, position: i + 1 })) };
     await fetch(`/api/manifest/${client}/${project}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -466,7 +411,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     const temp = newConcepts[ci];
     newConcepts[ci] = newConcepts[ci + 1];
     newConcepts[ci + 1] = temp;
-    // Update positions — create new objects to avoid mutating SWR cache
     const updated = { ...manifest, concepts: newConcepts.map((c, i) => ({ ...c, position: i + 1 })) };
     await fetch(`/api/manifest/${client}/${project}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -502,17 +446,14 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     }
   }, [currentConcept, currentVersion, skipDeleteConfirm, executeDelete]);
 
-
   const handleDriftVersion = useCallback(async (conceptId: string, versionId: string) => {
     try {
-      // Start the API call and flash simultaneously
       const resPromise = fetch('/api/iterate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ client, project, conceptId, versionId }),
       });
 
-      // Show flash immediately
       flash.showDriftFlash('DRIFTED');
 
       const res = await resPromise;
@@ -521,10 +462,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
       toast('Drifted \u2193 \u2014 path copied');
 
-      // Track for Cmd+Z undo
       undo.trackDrift({ conceptId, versionId: newVid });
 
-      // Navigate to the new version
       const updated = await mutate();
       if (updated) {
         const ci = updated.concepts.findIndex(c => c.id === conceptId);
@@ -533,7 +472,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           if (vi >= 0) {
             setConceptIndex(ci);
             setVersionIndex(vi);
-            // Stay in current view mode — don't force into frame
             window.history.replaceState(null, '', `#${updated.concepts[ci].id}/v${versionNumber}`);
           }
         }
@@ -555,10 +493,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
       toast('Drifted \u2192 \u2014 new concept, path copied');
 
-      // Wait for the white peak of the animation (~500ms) before swapping content
       await new Promise(r => setTimeout(r, 500));
 
-      // Refresh manifest and navigate to new concept
       const updated = await mutate();
       if (updated) {
         const ci = updated.concepts.findIndex(c => c.id === newConceptId);
@@ -573,236 +509,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     } catch { flash.hideDriftFlash(); toast('Branch failed', 'error'); }
   }, [client, project, mutate, viewMode, flash]);
 
-  // Unified edit mode: commit all draft edits (text + annotations) to a new version
-  const handleCommitEdits = useCallback(async () => {
-    if (!currentConcept || !currentVersion || draftEdits.length === 0) return;
-
-    // Get the modified HTML from iframe (contains text edits)
-    const html = htmlFrameRef.current?.getHtml();
-    if (!html) return;
-
-    // Create new version (drift)
-    const res = await fetch('/api/iterate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ client, project, conceptId: currentConcept.id, versionId: currentVersion.id }),
-    });
-    if (!res.ok) { toast('Save failed', 'error'); return; }
-    const { versionId: newVid, versionNumber } = await res.json();
-
-    // Refresh manifest to pick up the new version
-    const updated = await mutate();
-    if (!updated) { toast('Save failed', 'error'); return; }
-    const ci = updated.concepts.findIndex(c => c.id === currentConcept.id);
-    if (ci < 0) return;
-    const newVersion = updated.concepts[ci].versions.find(v => v.id === newVid);
-    if (!newVersion) return;
-
-    // Write modified HTML to new version
-    await fetch(`/api/html/${client}/${project}/${newVersion.file}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'text/html' },
-      body: html,
-    });
-
-    // Save draft annotations to the new version
-    const annotationEdits = draftEdits.filter(e => e.type === 'annotation');
-    for (const ann of annotationEdits) {
-      await fetch('/api/annotations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client, project,
-          conceptId: currentConcept.id,
-          versionId: newVid,
-          x: ann.x, y: ann.y,
-          text: ann.note,
-          author: 'designer',
-          isClient: false,
-        }),
-      });
-    }
-
-    // Navigate to new version
-    const vi = updated.concepts[ci].versions.findIndex(v => v.id === newVid);
-    if (vi >= 0) {
-      setConceptIndex(ci);
-      setVersionIndex(vi);
-      window.history.replaceState(null, '', `#${updated.concepts[ci].id}/v${versionNumber}`);
-    }
-
-    // Show drift flash
-    flash.showDriftFlash('COMMITTED');
-    toast('Changes saved to new version');
-
-    // Clear edit mode
-    setAppMode('navigate');
-    setDraftEdits([]);
-  }, [client, project, currentConcept, currentVersion, draftEdits, mutate]);
-
-  // Listen for text-edit messages from iframe (targeted edit mode)
-  useEffect(() => {
-    const handler = (e: MessageEvent) => {
-      if (e.data?.type === 'drift:text-edit') {
-        setDraftEdits(prev => [...prev, {
-          id: `edit-${Date.now()}`,
-          type: 'text',
-          element: e.data.element,
-          original: e.data.original,
-          modified: e.data.modified,
-        }]);
-      }
-    };
-    window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
-  }, []);
-
-  // Unified edit mode: Escape discards all edits and reloads iframe
-  useEffect(() => {
-    if (!isEditing) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        // Don't intercept if user is typing in an input
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-        e.preventDefault();
-        e.stopPropagation();
-        setAppMode('navigate');
-        setDraftEdits([]);
-        // Force iframe reload to discard text changes
-        setFrameVersion(v => v + 1);
-      }
-    };
-    // Capture phase to intercept before useKeyboardNav
-    window.addEventListener('keydown', handler, true);
-    return () => window.removeEventListener('keydown', handler, true);
-  }, [isEditing]);
-
-  // Fetch annotations when version changes
-  useEffect(() => {
-    if (!currentConcept || !currentVersion || viewMode !== 'frame') {
-      setAnnotations([]);
-      return;
-    }
-    fetch(`/api/annotations?client=${client}&project=${project}&conceptId=${currentConcept.id}&versionId=${currentVersion.id}`)
-      .then(r => r.json())
-      .then(data => { if (Array.isArray(data)) setAnnotations(data); })
-      .catch(() => {});
-  }, [client, project, currentConcept?.id, currentVersion?.id, viewMode]);
-
-  const handleAddAnnotation = useCallback(async (x: number, y: number, text: string) => {
-    if (!currentConcept || !currentVersion) return;
-
-    if (isEditing) {
-      // In unified edit mode: add to draft edits (saved on commit)
-      setDraftEdits(prev => [...prev, {
-        id: `pin-${Date.now()}`,
-        type: 'annotation',
-        x, y,
-        note: text,
-      }]);
-      setAppMode('edit');
-      return;
-    }
-
-    // Save immediately
-    const res = await fetch('/api/annotations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client, project,
-        conceptId: currentConcept.id,
-        versionId: currentVersion.id,
-        x, y, text,
-        author: mode === 'client' ? 'client' : 'designer',
-        isClient: mode === 'client',
-      }),
-    });
-    if (res.ok) {
-      const annotation = await res.json();
-      setAnnotations(prev => [...prev, annotation]);
-    }
-  }, [client, project, currentConcept, currentVersion, isEditing, mode]);
-
-  const handleResolveAnnotation = useCallback(async (id: string) => {
-    if (!currentConcept || !currentVersion) return;
-    const res = await fetch('/api/annotations', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client, project,
-        conceptId: currentConcept.id,
-        versionId: currentVersion.id,
-        annotationId: id,
-      }),
-    });
-    if (res.ok) {
-      const updated = await res.json();
-      setAnnotations(prev => prev.map(a => a.id === id ? updated : a));
-    }
-  }, [client, project, currentConcept, currentVersion]);
-
-  const handleDeleteAnnotation = useCallback(async (id: string) => {
-    if (!currentConcept || !currentVersion) return;
-    await fetch('/api/annotations', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client, project,
-        conceptId: currentConcept.id,
-        versionId: currentVersion.id,
-        annotationId: id,
-      }),
-    });
-    setAnnotations(prev => prev.filter(a => a.id !== id));
-  }, [client, project, currentConcept, currentVersion]);
-
-  // Copy feedback handler (F key / Shift+F)
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (!currentConcept || !currentVersion) return;
-      const filePath = `~/drift/projects/${client}/${project}/${currentVersion.file}`;
-
-      // In unified edit mode: copy draft edits
-      if (isEditing && draftEdits.length > 0) {
-        const lines = [`Edits on ${filePath}:`, ''];
-        draftEdits.forEach((edit, i) => {
-          if (edit.type === 'text') {
-            lines.push(`${i + 1}. "${edit.original}" -> "${edit.modified}"`);
-          } else {
-            lines.push(`${i + 1}. [pin] ${edit.note}`);
-          }
-        });
-        navigator.clipboard.writeText(lines.join('\n'));
-        return;
-      }
-
-      // Legacy: copy annotations
-      if (annotations.length === 0) return;
-
-      if (detail?.json) {
-        // Shift+F: JSON format
-        navigator.clipboard.writeText(JSON.stringify({
-          file: filePath,
-          annotations: annotations.map(a => ({
-            x: a.x, y: a.y, element: a.element, text: a.text, resolved: a.resolved,
-          })),
-        }, null, 2));
-      } else {
-        // F: human-readable
-        const lines = [`Feedback on ${filePath}:`, ''];
-        annotations.forEach((a, i) => {
-          const loc = a.element ? `near ${a.element}` : 'general';
-          const resolved = a.resolved ? ' (resolved)' : '';
-          lines.push(`${i + 1}. (${loc}) — ${a.text}${resolved}`);
-        });
-        navigator.clipboard.writeText(lines.join('\n'));
-      }
-    };
-    window.addEventListener('drift:copy-feedback', handler);
-    return () => window.removeEventListener('drift:copy-feedback', handler);
-  }, [annotations, client, project, currentConcept, currentVersion, isEditing, draftEdits]);
-
   const handleStarVersion = useCallback((conceptId: string, versionId: string) => {
     setSelections(prev => {
       const next = new Map(prev);
@@ -813,65 +519,12 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       }
       return next;
     });
-    setActiveWorkingSetId(null);
-  }, []);
 
-  const handleSaveWorkingSet = useCallback(async () => {
-    if (!manifest || selections.size === 0) return;
-    const name = window.prompt('Working set name:');
-    if (!name) return;
-
-    const entries: WorkingSetSelection[] = [];
-    selections.forEach((versionId, conceptId) => {
-      entries.push({ conceptId, versionId });
-    });
-
-    const ws: WorkingSet = {
-      id: crypto.randomUUID(),
-      name,
-      selections: entries,
-      created: new Date().toISOString(),
-    };
-
-    const updated: Manifest = {
-      ...manifest,
-      workingSets: [...manifest.workingSets, ws],
-    };
-
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
-    mutate(updated);
-    setActiveWorkingSetId(ws.id);
-  }, [manifest, selections, client, project, mutate]);
-
-  const handleLoadWorkingSet = useCallback(
-    (id: string) => {
-      if (!manifest) return;
-      const ws = manifest.workingSets.find(s => s.id === id);
-      if (!ws) return;
-      const next = new Map<string, string>();
-      ws.selections.forEach(({ conceptId, versionId }) => {
-        next.set(conceptId, versionId);
-      });
-      setSelections(next);
-      setActiveWorkingSetId(id);
-    },
-    [manifest]
-  );
-
-  const handleClearSelections = useCallback(() => {
-    setSelections(new Map());
-    setActiveWorkingSetId(null);
-    setAppMode('navigate');
   }, []);
 
   // Presentation mode — enter fullscreen cycling through selects only
   const handlePresent = useCallback(() => {
     if (selections.size === 0) return;
-    // Navigate to the first selected version
     const firstEntry = Array.from(selections.entries())[0];
     if (!firstEntry) return;
     const [conceptId, versionId] = firstEntry;
@@ -882,7 +535,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     setConceptIndex(ci);
     setVersionIndex(vi);
     setViewMode('frame');
-    setAppMode('present');
+    setIsPresenting(true);
     const concept = concepts[ci];
     const version = concept?.versions[vi];
     if (concept && version) {
@@ -903,7 +556,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault();
         e.stopPropagation();
-        // Find current position in playlist
         const currentIdx = presentationPlaylist.findIndex(
           p => p.ci === conceptIndex && p.vi === versionIndex
         );
@@ -927,19 +579,18 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
       if (e.key === 'Escape') {
         e.preventDefault();
-        setAppMode('navigate');
+        setIsPresenting(false);
         setViewMode('grid');
       }
     };
-    // Use capture phase to intercept before useKeyboardNav
     window.addEventListener('keydown', handler, true);
     return () => window.removeEventListener('keydown', handler, true);
   }, [isPresenting, viewMode, presentationPlaylist, conceptIndex, versionIndex, concepts]);
 
-  // Feature 3: SSE hot reload — listen for file changes in fullscreen mode
-  // Use a ref so the SSE handler always sees the latest version without reconnecting
+  // SSE hot reload — listen for file changes in fullscreen mode
   const currentVersionRef = useRef(currentVersion);
   currentVersionRef.current = currentVersion;
+  const [frameVersion, setFrameVersion] = useState(0);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'development') return;
@@ -956,13 +607,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           if (data.type === 'file-changed' && data.client === client && data.project === project) {
             const cv = currentVersionRef.current;
             if (!cv) return;
-            // Check if the changed file matches the current version's file path
-            // Both use forward-slash relative paths like "concept-1/v2.html"
             const changedFile = (data.file as string).replace(/\\/g, '/');
             const versionFile = cv.file.replace(/\\/g, '/');
             if (versionFile === changedFile || versionFile.endsWith('/' + changedFile) || changedFile.endsWith('/' + versionFile)) {
               setFrameVersion(v => v + 1);
-              // Show subtle reload flash
             }
           }
         } catch { /* ignore */ }
@@ -981,7 +629,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     enabled: isClientMode,
   });
   const htmlFrameRef = useRef<HtmlFrameHandle>(null);
-  const [frameWidth, setFrameWidth] = useState<number | undefined>();
   const showEdits = clientEdits.viewEdited && clientEdits.hasEdits && !clientEdits.editMode;
 
   const selectsConceptIndices = useMemo(() => {
@@ -1002,11 +649,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const handleDrift = useMemo(() => {
     if (!currentConcept || !currentVersion) return undefined;
-    if (isEditing) {
-      return handleCommitEdits; // D in edit mode = commit all edits to new version
-    }
     return () => handleDriftVersion(currentConcept.id, currentVersion.id);
-  }, [currentConcept, currentVersion, handleDriftVersion, isEditing, handleCommitEdits]);
+  }, [currentConcept, currentVersion, handleDriftVersion]);
 
   const handleBranch = useMemo(() => {
     return currentConcept && currentVersion
@@ -1030,8 +674,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     onMoveConceptRight: handleMoveConceptRight,
     onUndo: undo.handleUndo,
     onPresent: handlePresent,
-    inSelectsRow,
-    onSetSelectsRow: setInSelectsRow,
     selectsConceptIndices,
     getSelectedVersionIndex,
     viewMode,
@@ -1040,7 +682,26 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     client,
   });
 
-  // Drift overlay — subtle toast, not fullscreen takeover
+  // Export PNG handler
+  const handleExportPng = useCallback(async () => {
+    if (!currentVersion || !currentConcept) return;
+    const res = await fetch('/api/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client, project, format: 'png', versionId: currentVersion.id }),
+    });
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentConcept.label}-v${currentVersion.number}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  }, [client, project, currentVersion, currentConcept]);
+
+  // Drift overlay toast
   const driftOverlay = flash.driftFlash ? (
     <div
       className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none flex items-center gap-2 px-4 py-2 rounded-full"
@@ -1083,7 +744,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     </div>
   ) : null;
 
-  // Custom delete confirmation dialog
+  // Delete confirmation dialog
   const deleteDialog = confirmDelete && currentConcept && currentVersion ? (
     <div className="fixed inset-0 z-[200] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)' }}>
       <div className="bg-[var(--background)] rounded-lg border border-[var(--border)] p-6 max-w-sm w-full mx-4 shadow-lg" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
@@ -1120,30 +781,14 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     </div>
   ) : null;
 
-
   const commandPalette = (
     <CommandPalette
       open={ui.commandPaletteOpen}
       onClose={() => ui.setCommandPaletteOpen(false)}
       onFitAll={() => { setZoomLevel('overview'); ui.setCommandPaletteOpen(false); }}
-      onZoomColumn={() => { setZoomLevel('z1'); ui.setCommandPaletteOpen(false); }}
       onZoomCard={() => { setZoomLevel('z4'); ui.setCommandPaletteOpen(false); }}
       onToggleStar={() => { handleToggleSelect(); ui.setCommandPaletteOpen(false); }}
       onPresent={() => { handlePresent(); ui.setCommandPaletteOpen(false); }}
-      onGoToLatest={() => {
-        if (currentConcept) {
-          const lastVi = currentConcept.versions.length - 1;
-          if (lastVi >= 0) {
-            setVersionIndex(lastVi);
-            const version = currentConcept.versions[lastVi];
-            if (version) {
-              window.history.replaceState(null, '', `#${currentConcept.id}/v${version.number}`);
-            }
-          }
-        }
-        ui.setCommandPaletteOpen(false);
-      }}
-      onClearSelections={() => { handleClearSelections(); ui.setCommandPaletteOpen(false); }}
       onToggleTheme={() => {
         const html = document.documentElement;
         const isDark = html.classList.contains('dark');
@@ -1156,57 +801,18 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         }
         ui.setCommandPaletteOpen(false);
       }}
-      onToggleHud={() => { ui.setNavGridHidden(v => !v); ui.setCommandPaletteOpen(false); }}
-      onToggleNavbar={() => { ui.setTopbarHidden(v => !v); ui.setCommandPaletteOpen(false); }}
       onToggleGridFrame={() => { handleToggleGridView(); ui.setCommandPaletteOpen(false); }}
       onDrift={() => { if (handleDrift) { handleDrift(); ui.setCommandPaletteOpen(false); } }}
       onBranch={() => { if (handleBranch) { handleBranch(); ui.setCommandPaletteOpen(false); } }}
       onDelete={() => { handleDeleteCurrent(); ui.setCommandPaletteOpen(false); }}
       onUndo={() => { undo.handleUndo(); ui.setCommandPaletteOpen(false); }}
-      onEditMode={() => { setAppMode(prev => prev === 'edit' || prev === 'edit-pin' ? 'navigate' : 'edit'); ui.setCommandPaletteOpen(false); }}
-      onCopyFeedback={() => {
-        window.dispatchEvent(new CustomEvent('drift:copy-feedback', { detail: { json: false } }));
-        ui.setCommandPaletteOpen(false);
-      }}
       onExportPng={async () => {
-        if (currentVersion) {
-          const res = await fetch('/api/export', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ client, project, format: 'png', versionId: currentVersion.id }),
-          });
-          if (res.ok) {
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${currentConcept?.label}-v${currentVersion.number}.png`;
-            a.click();
-            URL.revokeObjectURL(url);
-          }
-        }
+        await handleExportPng();
         ui.setCommandPaletteOpen(false);
-      }}
-      onExportDoc={async () => {
-        ui.setCommandPaletteOpen(false);
-        const params = new URLSearchParams({ client, project });
-        if (currentConcept && currentVersion) {
-          params.set('conceptId', currentConcept.id);
-          params.set('versionId', currentVersion.id);
-        }
-        const res = await fetch(`/api/export-doc?${params}`);
-        if (res.ok) {
-          const text = await res.text();
-          await navigator.clipboard.writeText(text);
-          toast('Doc text copied to clipboard');
-        } else {
-          toast('Export failed', 'error');
-        }
       }}
       onCloseRound={async () => {
         ui.setCommandPaletteOpen(false);
         const name = window.prompt('Round name (or leave blank for default):');
-        // Pass current selects as the approved baseline for this round
         const roundSelects = Array.from(selections.entries()).map(([conceptId, versionId]) => ({
           conceptId,
           versionId,
@@ -1220,10 +826,9 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           const data = await res.json();
           await mutate();
           const selectCount = data.selects?.length ?? 0;
-          // Clear selections — they're now saved in the round
           setSelections(new Map());
-          setActiveWorkingSetId(null);
-          toast(`Round "${data.name}" closed — ${data.stamped} stamped, ${selectCount} selects saved`);
+      
+          toast(`Round "${data.name}" closed \u2014 ${data.stamped} stamped, ${selectCount} selects saved`);
         }
       }}
     />
@@ -1256,115 +861,55 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const thumbFilename = currentVersion.thumbnail?.replace('.thumbs/', '') || null;
   const thumbSrc = thumbFilename ? `/api/thumbs/${client}/${project}/${thumbFilename}` : null;
 
-  const clientName = client
-    .split('-')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+  // Shared action bar renderer — used in both grid and frame views
+  const isCurrentStarred = selections.get(currentConcept.id) === currentVersion.id;
+  const actionBarBtn = "p-1.5 rounded-full hover:bg-white/10 transition-colors";
 
-  // Presentation mode indicator for the topbar
-  const presentationLabel = isPresenting
-    ? `Presenting ${presentationPlaylist.findIndex(p => p.ci === conceptIndex && p.vi === versionIndex) + 1}/${presentationPlaylist.length}`
-    : undefined;
-
-  const topbar = (
-    <ViewerTopbar
-      client={clientName}
-      clientSlug={client}
-      project={project}
-      projectName={filtered.project.name}
-      conceptLabel={currentConcept.label}
-      versionNumber={currentVersion.number}
-      versionId={currentVersion.id}
-      viewMode={viewMode}
-      workingSets={filtered.workingSets}
-      canvasLabel={presentationLabel || resolved.label}
-      isClientMode={isClientMode}
-      editMode={clientEdits.editMode}
-      onToggleEdit={() => {
-        const entering = !clientEdits.editMode;
-        clientEdits.setEditMode(entering);
-        if (entering) clientEdits.setViewEdited(true);
-      }}
-      editCount={clientEdits.editCount}
-      hasEdits={clientEdits.hasEdits}
-      viewEdited={clientEdits.viewEdited}
-      onToggleView={clientEdits.setViewEdited}
-      onExportPdf={async () => { await htmlFrameRef.current?.exportPdf(`${project}-alt.pdf`, client, project); }}
-      onExportHtml={async () => { await htmlFrameRef.current?.exportHtml(`${project}.html`); }}
-      onGoToGrid={() => { setViewMode('grid'); setAppMode('navigate'); }}
-      onGoToOverview={() => { setViewMode('grid'); setAppMode('navigate'); setZoomLevel('overview'); }}
-      onGoToConceptColumn={() => { setViewMode('grid'); setAppMode('navigate'); setZoomLevel('z1'); }}
-      onClearEdits={clientEdits.clearEdits}
-      onApplyEdits={async () => {
-        if (!currentConcept || !currentVersion || !clientEdits.hasEdits) return;
-        const res = await fetch('/api/bake-edits', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client,
-            project,
-            conceptId: currentConcept.id,
-            versionId: currentVersion.id,
-            edits: clientEdits.edits,
-          }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => null);
-          toast(data?.error || 'Failed to apply edits', 'error');
-          return;
-        }
-        clientEdits.clearEdits();
-        setFrameVersion(v => v + 1);
-        toast('Edits applied to HTML');
-      }}
-      frameWidth={frameWidth}
-      versionFile={currentVersion?.file}
-      conceptId={currentConcept?.id}
-      onIterated={async (newVersionId, newVersionNumber) => {
-        // Refresh manifest to pick up the new version
-        const updated = await mutate();
-        if (updated && currentConcept) {
-          // Find the new version index and navigate to it
-          const ci = updated.concepts.findIndex(c => c.id === currentConcept.id);
-          if (ci >= 0) {
-            const vi = updated.concepts[ci].versions.findIndex(v => v.id === newVersionId);
-            if (vi >= 0) {
-              setConceptIndex(ci);
-              setVersionIndex(vi);
-              window.history.replaceState(null, '', `#${updated.concepts[ci].id}/v${newVersionNumber}`);
-            }
-          }
-        }
-      }}
-    />
+  const actionBar = (toggleAction: () => void, toggleIcon: React.ReactNode, toggleTitle: string) => (
+    <div
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-full"
+      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)' }}
+    >
+      <button onClick={() => handleStarVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="Star (S)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill={isCurrentStarred ? '#facc15' : 'none'} stroke={isCurrentStarred ? '#facc15' : 'white'} strokeWidth="2">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      </button>
+      <button onClick={() => handleDriftVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="Drift (D)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+          <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
+        </svg>
+      </button>
+      <button onClick={() => { navigator.clipboard.writeText(`~/drift/projects/${client}/${project}/${currentVersion.file}`); toast('Path copied'); }} className={actionBarBtn} title="Copy path">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      </button>
+      <button onClick={handleExportPng} className={actionBarBtn} title="Export PNG">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+      </button>
+      <button onClick={toggleAction} className={actionBarBtn} title={toggleTitle}>
+        {toggleIcon}
+      </button>
+      <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.15)' }} />
+      <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.4)', padding: '0 4px' }}>
+        {currentConcept.label} · v{currentVersion.number}
+      </span>
+    </div>
   );
 
+  const enterFrameIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="9 10 4 15 9 20" /><path d="M20 4v7a4 4 0 0 1-4 4H4" /></svg>;
+  const gridIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>;
+
+  // --- GRID VIEW ---
   if (viewMode === 'grid') {
     return (
       <div className="h-screen flex flex-col bg-[var(--background)]">
-
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
-        {/* Floating project label — top-left */}
-        {!ui.topbarHidden && (
-          <div className="fixed top-4 left-4 z-30 pointer-events-auto">
-            <a
-              href="/"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all hover:bg-[var(--card-bg)]"
-              style={{
-                fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                fontSize: 12,
-                fontWeight: 500,
-                color: 'var(--foreground)',
-                opacity: 0.5,
-                textDecoration: 'none',
-              }}
-            >
-              {filtered?.project.name}
-            </a>
-          </div>
-        )}
         <div className="flex-1 min-h-0">
           <CanvasView
             ref={canvasRef}
@@ -1391,170 +936,44 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             initialCardBounds={transitionCardBounds}
           />
         </div>
-        {/* Fixed action bar — bottom center, always visible when a card is selected */}
-        {currentConcept && currentVersion && !isReviewing && (
-          <div
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-full"
-            style={{
-              background: 'rgba(0,0,0,0.6)',
-              backdropFilter: 'blur(12px)',
-            }}
-          >
-            <button
-              onClick={() => handleStarVersion(currentConcept.id, currentVersion.id)}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Star (S)"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill={selections.get(currentConcept.id) === currentVersion.id ? '#facc15' : 'none'} stroke={selections.get(currentConcept.id) === currentVersion.id ? '#facc15' : 'white'} strokeWidth="2">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
-            </button>
-            <button
-              onClick={() => handleDriftVersion(currentConcept.id, currentVersion.id)}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Drift ↓ (D)"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
-              </svg>
-            </button>
-            <button
-              onClick={() => {
-                const path = `~/drift/projects/${client}/${project}/${currentVersion.file}`;
-                navigator.clipboard.writeText(path);
-                toast('Path copied');
-              }}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Copy path"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-            </button>
-            <button
-              onClick={async () => {
-                const res = await fetch('/api/export', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    client,
-                    project,
-                    format: 'png',
-                    versionId: currentVersion.id,
-                  }),
-                });
-                if (res.ok) {
-                  const blob = await res.blob();
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `${currentConcept.label}-v${currentVersion.number}.png`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }
-              }}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Export PNG"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-            </button>
-            <button
-              onClick={() => handleGridSelect(conceptIndex, versionIndex)}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Enter frame"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <polyline points="9 10 4 15 9 20" /><path d="M20 4v7a4 4 0 0 1-4 4H4" />
-              </svg>
-            </button>
-            <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.15)' }} />
-            <span style={{
-              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-              fontSize: 10,
-              color: 'rgba(255,255,255,0.4)',
-              padding: '0 4px',
-            }}>
-              {currentConcept.label} · v{currentVersion.number}
-            </span>
-          </div>
-        )}
-        {isReviewing && (
-          <div
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-full z-30"
-            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
-          >
-            <span className="text-[10px] tracking-wide text-white/70" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
-              Review {presentationPlaylist.findIndex(p => p.ci === conceptIndex && p.vi === versionIndex) + 1} / {presentationPlaylist.length}
-            </span>
-            <div className="w-px h-3 bg-white/20" />
-            <button
-              onClick={() => setAppMode('navigate')}
-              className="text-[10px] tracking-wide text-white/50 hover:text-white transition-colors"
-              style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}
-            >
-              Exit (Esc)
-            </button>
-          </div>
-        )}
-        <KeyboardShortcuts
-          visible={ui.shortcutsVisible}
-          onClose={() => ui.setShortcutsVisible(false)}
-        />
+        {actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame')}
+        <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />
         {commandPalette}
         <ToastContainer />
       </div>
     );
   }
 
-  // Fullscreen view — check if current version is starred for the star button
-  const isCurrentStarred = currentConcept && currentVersion
-    ? selections.get(currentConcept.id) === currentVersion.id
-    : false;
-
+  // --- FRAME VIEW ---
   return (
     <div className="h-screen flex flex-col" style={{ background: 'var(--background)' }}>
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
       {/* Floating frame info — top-left */}
-      {!ui.topbarHidden && (
-        <div className="fixed top-4 left-4 z-30 flex items-center gap-2">
-          <a
-            href="/"
-            style={{
-              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-              fontSize: 11,
-              color: 'var(--muted)',
-              textDecoration: 'none',
-              opacity: 0.6,
-            }}
-          >
-            {filtered?.project.name}
-          </a>
-          <span style={{ color: 'var(--border)', fontSize: 10 }}>/</span>
-          <button
-            onClick={() => handleToggleGridView()}
-            style={{
-              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-              fontSize: 11,
-              fontWeight: 500,
-              color: 'var(--foreground)',
-              opacity: 0.7,
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            {currentConcept?.label} · v{currentVersion?.number}
-          </button>
-        </div>
-      )}
-      <div
-        ref={frameWrapperRef}
-        className="flex-1 min-h-0 relative"
-      >
+      <div className="fixed top-4 left-4 z-30 flex items-center gap-2">
+        <a
+          href="/"
+          style={{
+            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+            fontSize: 11, color: 'var(--muted)', textDecoration: 'none', opacity: 0.6,
+          }}
+        >
+          {filtered?.project.name}
+        </a>
+        <span style={{ color: 'var(--border)', fontSize: 10 }}>/</span>
+        <button
+          onClick={() => handleToggleGridView()}
+          style={{
+            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+            fontSize: 11, fontWeight: 500, color: 'var(--foreground)', opacity: 0.7,
+            background: 'none', border: 'none', cursor: 'pointer',
+          }}
+        >
+          {currentConcept?.label} · v{currentVersion?.number}
+        </button>
+      </div>
+      <div ref={frameWrapperRef} className="flex-1 min-h-0 relative">
         <div className="h-full p-4 relative">
           <HtmlFrame
             ref={htmlFrameRef}
@@ -1567,218 +986,36 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             hasEdits={clientEdits.hasEdits}
             savedEdits={clientEdits.edits}
             onEditsChange={clientEdits.handleEditsChange}
-            onScaledWidth={setFrameWidth}
-            targetedEditMode={isEditing}
           />
           <AnnotationOverlay
-            annotations={[
-              ...annotations,
-              // Include draft annotation pins so they're visible during edit mode
-              ...draftEdits
-                .filter(e => e.type === 'annotation')
-                .map(e => ({
-                  id: e.id,
-                  x: e.x ?? null,
-                  y: e.y ?? null,
-                  element: null,
-                  text: e.note || '',
-                  author: 'designer',
-                  isClient: false,
-                  created: new Date().toISOString(),
-                  resolved: false,
-                } as Annotation)),
-            ]}
-            editMode={isEditing}
-            placingPin={isPlacingPin}
-            annotationMode={isClientMode}
+            annotations={annotations}
+            annotationMode={annotationMode}
             onAdd={handleAddAnnotation}
-            onResolve={handleResolveAnnotation}
             onDelete={handleDeleteAnnotation}
+            onResolve={() => {}}
           />
         </div>
-
-        {/* Unified edit mode indicator — designer only */}
-        {isEditing && !isClientMode && (
-          <div
-            className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full"
-            style={{
-              background: 'color-mix(in srgb, var(--accent-teal) 90%, transparent)',
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                fontSize: 11,
-                color: '#fff',
-                fontWeight: 500,
-              }}
-            >
-              Edit Mode — {draftEdits.length} change{draftEdits.length !== 1 ? 's' : ''}
-            </span>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: 10,
-                color: 'rgba(255,255,255,0.6)',
-              }}
-            >
-              A pin · D save · F copy · Esc discard
-            </span>
-          </div>
-        )}
-
         {/* Branding */}
         <div
           className="fixed bottom-3 left-3 z-10 pointer-events-none"
-          style={{
-            fontSize: 9,
-            fontFamily: 'var(--font-mono, monospace)',
-            color: 'var(--foreground)',
-            opacity: 0.1,
-            letterSpacing: '0.06em',
-          }}
+          style={{ fontSize: 9, fontFamily: 'var(--font-mono, monospace)', color: 'var(--foreground)', opacity: 0.1, letterSpacing: '0.06em' }}
         >
           DriftGrid
         </div>
-
-        {/* Frame action bar — bottom center, matches grid action bar */}
-        {mode !== 'client' && currentConcept && currentVersion && !ui.navGridHidden && !isPresenting && (
-          <div
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-full"
-            style={{
-              background: 'rgba(0,0,0,0.6)',
-              backdropFilter: 'blur(12px)',
-            }}
-          >
-            <button
-              onClick={() => handleStarVersion(currentConcept.id, currentVersion.id)}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Star (S)"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill={isCurrentStarred ? '#facc15' : 'none'} stroke={isCurrentStarred ? '#facc15' : 'white'} strokeWidth="2">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
-            </button>
-            <button
-              onClick={() => handleDriftVersion(currentConcept.id, currentVersion.id)}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Drift ↓ (D)"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
-              </svg>
-            </button>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(`~/drift/projects/${client}/${project}/${currentVersion.file}`);
-                toast('Path copied');
-              }}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Copy path"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-            </button>
-            <button
-              onClick={async () => {
-                const res = await fetch('/api/export', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    client,
-                    project,
-                    format: 'png',
-                    versionId: currentVersion.id,
-                  }),
-                });
-                if (res.ok) {
-                  const blob = await res.blob();
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `${currentConcept.label}-v${currentVersion.number}.png`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }
-              }}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Export PNG"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-            </button>
-            <button
-              onClick={async () => {
-                if (currentVersion) {
-                  toast('Exporting PPTX...');
-                  const res = await fetch('/api/export', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ client, project, format: 'pptx', versionId: currentVersion.id }),
-                  });
-                  if (res.ok) {
-                    const blob = await res.blob();
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${currentConcept?.label}-v${currentVersion.number}.pptx`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    toast('PPTX downloaded');
-                  } else {
-                    toast('PPTX export failed', 'error');
-                  }
-                }
-              }}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Export PPTX"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 17v4" />
-              </svg>
-            </button>
-            <button
-              onClick={() => handleToggleGridView()}
-              className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-              title="Back to grid (G)"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-              </svg>
-            </button>
-            <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.15)' }} />
-            <span style={{
-              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-              fontSize: 10,
-              color: 'rgba(255,255,255,0.4)',
-              padding: '0 4px',
-            }}>
-              {currentConcept.label} · v{currentVersion.number}
-            </span>
-          </div>
-        )}
-
+        {/* Frame action bar */}
+        {mode !== 'client' && !ui.navGridHidden && !isPresenting && actionBar(() => handleToggleGridView(), gridIcon, 'Back to grid (G)')}
         {/* Presentation mode indicator */}
         {isPresenting && (
           <div
             className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-full z-10"
-            style={{
-              background: 'rgba(0,0,0,0.6)',
-              backdropFilter: 'blur(8px)',
-            }}
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
           >
-            <span
-              className="text-[10px] tracking-wide text-white/70"
-              style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}
-            >
+            <span className="text-[10px] tracking-wide text-white/70" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
               {presentationPlaylist.findIndex(p => p.ci === conceptIndex && p.vi === versionIndex) + 1} / {presentationPlaylist.length}
             </span>
             <div className="w-px h-3 bg-white/20" />
             <button
-              onClick={() => { setAppMode('navigate'); setViewMode('grid'); }}
+              onClick={() => { setIsPresenting(false); setViewMode('grid'); }}
               className="text-[10px] tracking-wide text-white/50 hover:text-white transition-colors"
               style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}
             >
@@ -1795,13 +1032,9 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           selections={selections}
           conceptIds={navGridConceptIds}
           versionIds={navGridVersionIds}
-          inSelectsRow={inSelectsRow}
         />
       )}
-      <KeyboardShortcuts
-        visible={ui.shortcutsVisible}
-        onClose={() => ui.setShortcutsVisible(false)}
-      />
+      <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />
       {commandPalette}
       <ToastContainer />
     </div>

@@ -2,7 +2,6 @@
 
 export type ViewMode = 'designer' | 'client';
 
-export type AppMode = 'navigate' | 'edit' | 'edit-pin' | 'review' | 'present';
 
 export interface CanvasPreset {
   slug: string;
@@ -135,13 +134,3 @@ export interface ProjectInfo {
   versionCount: number;
 }
 
-export interface DraftEdit {
-  id: string;
-  type: 'text' | 'annotation';
-  element?: string;
-  original?: string;
-  modified?: string;
-  x?: number | null;
-  y?: number | null;
-  note?: string;
-}

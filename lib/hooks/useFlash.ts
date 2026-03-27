@@ -5,7 +5,6 @@ export function useFlash() {
   const [driftFlash, setDriftFlash] = useState(false);
   const [flashLabel, setFlashLabel] = useState('DRIFTED');
   const [deleteFlash, setDeleteFlash] = useState(false);
-  const [transitionFade, setTransitionFade] = useState(false);
 
   // Track drift flash timer so error paths can cancel
   const driftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -33,19 +32,12 @@ export function useFlash() {
     setTimeout(() => setDeleteFlash(false), 400);
   }, []);
 
-  const showTransitionFade = useCallback(() => {
-    setTransitionFade(true);
-    setTimeout(() => setTransitionFade(false), 50);
-  }, []);
-
   return {
     driftFlash,
     flashLabel,
     deleteFlash,
-    transitionFade,
     showDriftFlash,
     hideDriftFlash,
     showDeleteFlash,
-    showTransitionFade,
   };
 }
