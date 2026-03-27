@@ -171,7 +171,7 @@ server.tool(
         text: JSON.stringify({
           round: round.name,
           roundNumber: round.number,
-          closedAt: round.closedAt,
+          savedAt: round.savedAt,
           note: round.note,
           selects,
         }, null, 2),

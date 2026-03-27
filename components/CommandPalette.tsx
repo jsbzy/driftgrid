@@ -23,6 +23,7 @@ interface CommandPaletteProps {
   onDelete?: () => void;
   onUndo?: () => void;
   onExportPng?: () => void;
+  onToggleShowHidden?: () => void;
 }
 
 export function CommandPalette({
@@ -40,6 +41,7 @@ export function CommandPalette({
   onDelete,
   onUndo,
   onExportPng,
+  onToggleShowHidden,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -52,13 +54,14 @@ export function CommandPalette({
     { label: 'Star / unstar', shortcut: 'S', action: onToggleStar },
     { label: 'Present selects', shortcut: 'P', action: onPresent },
     { label: 'Toggle theme', shortcut: '', action: onToggleTheme },
-    { label: 'Close round', shortcut: '', action: onCloseRound },
+    { label: 'Save round', shortcut: '', action: onCloseRound },
     ...(onToggleGridFrame ? [{ label: 'Toggle grid / frame', shortcut: 'G', action: onToggleGridFrame }] : []),
     ...(onDrift ? [{ label: 'Drift \u2193 new version', shortcut: 'D', action: onDrift }] : []),
     ...(onBranch ? [{ label: 'Drift \u2192 new concept', shortcut: '\u21e7D', action: onBranch }] : []),
     ...(onDelete ? [{ label: 'Delete version', shortcut: 'Del', action: onDelete }] : []),
     ...(onUndo ? [{ label: 'Undo', shortcut: '\u2318Z', action: onUndo }] : []),
     ...(onExportPng ? [{ label: 'Export PNG', shortcut: '', action: onExportPng }] : []),
+    ...(onToggleShowHidden ? [{ label: 'Show / hide hidden versions', shortcut: '', action: onToggleShowHidden }] : []),
   ];
 
   // Fuzzy match: every character in the query must appear in order in the label

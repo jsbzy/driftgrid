@@ -48,6 +48,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('overview');
   // Smooth zoom transition state
   const canvasRef = useRef<CanvasViewHandle>(null);
@@ -346,6 +347,29 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     }
     mutate(updated);
   }, [manifest, client, project, conceptIndex, versionIndex, mutate]);
+
+  const handleHideVersion = useCallback(async (conceptId: string, versionId: string) => {
+    if (!manifest) return;
+    const updated: Manifest = {
+      ...manifest,
+      concepts: manifest.concepts.map(c => {
+        if (c.id !== conceptId) return c;
+        return {
+          ...c,
+          versions: c.versions.map(v =>
+            v.id === versionId ? { ...v, visible: false } : v
+          ),
+        };
+      }),
+    };
+    await fetch(`/api/manifest/${client}/${project}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated),
+    });
+    mutate(updated);
+    toast('Version hidden');
+  }, [manifest, client, project, mutate]);
 
   const executeDelete = useCallback(async () => {
     if (!manifest || !currentConcept || !currentVersion) return;
@@ -810,9 +834,14 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         await handleExportPng();
         ui.setCommandPaletteOpen(false);
       }}
+      onToggleShowHidden={() => { setShowHidden(v => !v); ui.setCommandPaletteOpen(false); }}
       onCloseRound={async () => {
         ui.setCommandPaletteOpen(false);
-        const name = window.prompt('Round name (or leave blank for default):');
+        if (selections.size === 0) {
+          toast('No selects to save', 'error');
+          return;
+        }
+        const name = window.prompt('Round name (optional):');
         const roundSelects = Array.from(selections.entries()).map(([conceptId, versionId]) => ({
           conceptId,
           versionId,
@@ -824,11 +853,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         });
         if (res.ok) {
           const data = await res.json();
+          toast(`Round ${data.roundNumber} saved \u00b7 ${data.selectCount} selects`);
           await mutate();
-          const selectCount = data.selects?.length ?? 0;
-          setSelections(new Map());
-      
-          toast(`Round "${data.name}" closed \u2014 ${data.stamped} stamped, ${selectCount} selects saved`);
         }
       }}
     />
@@ -914,7 +940,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           <CanvasView
             ref={canvasRef}
             concepts={concepts}
-            rounds={filtered?.rounds ?? []}
             conceptIndex={conceptIndex}
             versionIndex={versionIndex}
             onSelect={handleGridSelect}
@@ -925,6 +950,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             selections={selections}
             onStarVersion={handleStarVersion}
             onDeleteVersion={handleDeleteVersion}
+            onHideVersion={handleHideVersion}
             onDriftVersion={handleDriftVersion}
             onBranchVersion={handleBranchVersion}
             onMoveConceptLeft={handleMoveConceptLeft}
@@ -933,6 +959,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             mode={mode}
             zoomLevel={zoomLevel}
             onZoomLevelChange={setZoomLevel}
+            showHidden={showHidden}
             initialCardBounds={transitionCardBounds}
           />
         </div>

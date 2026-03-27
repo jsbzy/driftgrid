@@ -9,6 +9,7 @@ interface ContextMenuProps {
   onDrift: () => void;
   onBranch: () => void;
   onCopyPath: () => void;
+  onHide: () => void;
   onDelete: () => void;
   onZoomToCard: () => void;
   onClose: () => void;
@@ -36,6 +37,7 @@ export function ContextMenu({
   onDrift,
   onBranch,
   onCopyPath,
+  onHide,
   onDelete,
   onZoomToCard,
   onClose,
@@ -50,6 +52,7 @@ export function ContextMenu({
     { label: 'Drift \u2193 new version', shortcut: 'D', action: onDrift },
     { label: 'Drift \u2192 new concept', shortcut: '\u21e7D', action: onBranch },
     { label: 'Copy path', shortcut: '\u2318C', action: onCopyPath },
+    { label: 'Hide', shortcut: '', action: onHide },
     { label: 'Delete', shortcut: 'Del', action: onDelete, danger: true },
     { separator: true },
     { label: 'Zoom to card', shortcut: '4', action: onZoomToCard },

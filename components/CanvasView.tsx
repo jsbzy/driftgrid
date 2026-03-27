@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback, useMemo, memo, forwardRef, useImperativeHandle } from 'react';
-import type { Concept, Round, ViewMode } from '@/lib/types';
+import type { Concept, ViewMode } from '@/lib/types';
 import { computeCanvasLayout, getColumnBounds, getCardBounds } from '@/lib/hooks/useCanvasLayout';
 import { useCanvasTransform } from '@/lib/hooks/useCanvasTransform';
 import { CanvasCard } from './CanvasCard';
@@ -15,7 +15,6 @@ export interface CanvasViewHandle {
 
 interface CanvasViewProps {
   concepts: Concept[];
-  rounds: Round[];
   conceptIndex: number;
   versionIndex: number;
   onSelect: (conceptIndex: number, versionIndex: number) => void;
@@ -26,6 +25,7 @@ interface CanvasViewProps {
   selections: Map<string, string>;
   onStarVersion: (conceptId: string, versionId: string) => void;
   onDeleteVersion: (conceptId: string, versionId: string) => void;
+  onHideVersion?: (conceptId: string, versionId: string) => void;
   onDriftVersion: (conceptId: string, versionId: string) => void;
   onBranchVersion: (conceptId: string, versionId: string) => void;
   onMoveConceptLeft: (conceptIdx?: number) => void;
@@ -34,13 +34,13 @@ interface CanvasViewProps {
   mode?: ViewMode;
   zoomLevel: ZoomLevel;
   onZoomLevelChange: (level: ZoomLevel) => void;
+  showHidden?: boolean;
   /** If set, canvas starts zoomed to this card rect (for smooth transition from frame) */
   initialCardBounds?: { x: number; y: number; w: number; h: number } | null;
 }
 
 export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function CanvasView({
   concepts,
-  rounds,
   conceptIndex,
   versionIndex,
   onSelect,
@@ -51,6 +51,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   selections,
   onStarVersion,
   onDeleteVersion,
+  onHideVersion,
   onDriftVersion,
   onBranchVersion,
   onMoveConceptLeft,
@@ -59,40 +60,16 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   mode,
   zoomLevel,
   onZoomLevelChange,
+  showHidden,
   initialCardBounds,
 }, ref) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
   const [thumbVersion, setThumbVersion] = useState(0);
 
-  // Collapsed rounds state — all rounds collapsed by default, auto-collapse new rounds
-  const [collapsedRounds, setCollapsedRounds] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    if (!concepts.length) return;
-    // Collect all roundIds that appear in versions
-    const allRoundIds = new Set<string>();
-    for (const c of concepts) {
-      for (const v of c.versions) {
-        if (v.roundId) allRoundIds.add(v.roundId);
-      }
-    }
-    // Auto-collapse any new round IDs we haven't seen yet
-    setCollapsedRounds(prev => {
-      const next = new Set(prev);
-      let changed = false;
-      for (const id of allRoundIds) {
-        if (!next.has(id)) {
-          next.add(id);
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
-  }, [concepts]);
-
   const layout = useMemo(
-    () => computeCanvasLayout(concepts, aspectRatio, rounds, collapsedRounds),
-    [concepts, aspectRatio, rounds, collapsedRounds]
+    () => computeCanvasLayout(concepts, aspectRatio),
+    [concepts, aspectRatio]
   );
   const {
     transform,
@@ -424,25 +401,11 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             willChange: 'transform',
           }}
         >
-          {/* Selects rows — per-round slots */}
+          {/* Selects row */}
           {layout.selectsSlots.map(slot => {
             const concept = concepts[slot.conceptIndex];
-            let selectedVersion = null;
-            let selectedVid: string | undefined;
-
-            if (slot.roundId === null) {
-              // Current round — live selections
-              selectedVid = selections.get(slot.conceptId);
-              selectedVersion = selectedVid ? concept?.versions.find(v => v.id === selectedVid) : null;
-            } else {
-              // Closed round — frozen selects from round data
-              const round = rounds.find(r => r.id === slot.roundId);
-              const roundSelect = round?.selects?.find(s => s.conceptId === slot.conceptId);
-              if (roundSelect) {
-                selectedVid = roundSelect.versionId;
-                selectedVersion = concept?.versions.find(v => v.id === roundSelect.versionId);
-              }
-            }
+            const selectedVid = selections.get(slot.conceptId);
+            const selectedVersion = selectedVid ? concept?.versions.find(v => v.id === selectedVid) : null;
 
             const thumbFilename = selectedVersion?.thumbnail?.replace('.thumbs/', '') || null;
             const thumbSrc = thumbFilename
@@ -451,7 +414,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
 
             return (
               <div
-                key={`sel-${slot.conceptId}-${slot.roundId ?? 'current'}`}
+                key={`sel-${slot.conceptId}`}
                 className="absolute"
                 style={{
                   left: slot.x,
@@ -569,83 +532,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             </div>
           ))}
 
-          {/* Round dividers — full-width, one per round */}
-          {layout.dividers.map(div => (
-            <div
-              key={`divider-${div.roundId}`}
-              data-card
-              className="absolute cursor-pointer"
-              style={{
-                left: div.x,
-                top: div.y,
-                width: div.width,
-                height: 24,
-                zIndex: 10,
-              }}
-              onClick={() => {
-                setCollapsedRounds(prev => {
-                  const next = new Set(prev);
-                  if (next.has(div.roundId)) {
-                    next.delete(div.roundId);
-                  } else {
-                    next.add(div.roundId);
-                  }
-                  return next;
-                });
-              }}
-            >
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                height: '100%',
-              }}>
-                <div style={{
-                  flex: 1,
-                  height: 1,
-                  background: 'var(--border)',
-                }} />
-                <span style={{
-                  fontSize: 9,
-                  fontFamily: 'var(--font-mono, monospace)',
-                  letterSpacing: '0.06em',
-                  color: 'var(--muted)',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {div.roundName}
-                  {collapsedRounds.has(div.roundId) && ` (${div.versionCount})`}
-                </span>
-                <div style={{
-                  flex: 1,
-                  height: 1,
-                  background: 'var(--border)',
-                }} />
-              </div>
-            </div>
-          ))}
-
-          {/* Round labels — left margin */}
-          {layout.roundLabels.map(rl => (
-            <div
-              key={`round-label-${rl.roundId ?? 'current'}`}
-              className="absolute pointer-events-none"
-              style={{
-                left: rl.x,
-                top: rl.y,
-                width: 50,
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: 10,
-                fontWeight: 600,
-                letterSpacing: '0.06em',
-                color: 'var(--foreground)',
-                opacity: 0.15,
-                textAlign: 'right',
-              }}
-            >
-              {rl.roundName}
-            </div>
-          ))}
-
           <CardLayer
             layout={layout}
             concepts={concepts}
@@ -655,6 +541,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             project={project}
             thumbVersion={thumbVersion}
             selections={selections}
+            showHidden={showHidden}
             onStarVersion={onStarVersion}
             onDeleteVersion={onDeleteVersion}
             onDriftVersion={onDriftVersion}
@@ -682,6 +569,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
               navigator.clipboard.writeText(`~/drift/projects/${client}/${project}/${version.file}`);
               closeContextMenu();
             }}
+            onHide={() => { onHideVersion?.(concept.id, version.id); closeContextMenu(); }}
             onDelete={() => { onDeleteVersion(concept.id, version.id); closeContextMenu(); }}
             onZoomToCard={() => {
               const bounds = getCardBounds(layout, contextMenu.ci, contextMenu.vi);
@@ -714,6 +602,7 @@ const CardLayer = memo(function CardLayer({
   project,
   thumbVersion,
   selections,
+  showHidden,
   onStarVersion,
   onDeleteVersion,
   onDriftVersion,
@@ -729,6 +618,7 @@ const CardLayer = memo(function CardLayer({
   project: string;
   thumbVersion: number;
   selections: Map<string, string>;
+  showHidden?: boolean;
   onStarVersion: (conceptId: string, versionId: string) => void;
   onDeleteVersion: (conceptId: string, versionId: string) => void;
   onDriftVersion: (conceptId: string, versionId: string) => void;
@@ -741,6 +631,9 @@ const CardLayer = memo(function CardLayer({
       {layout.cards.map(pos => {
         const concept = concepts[pos.conceptIndex];
         const version = concept.versions[pos.versionIndex];
+        const isHidden = version.visible === false;
+        // Skip hidden versions unless showHidden is enabled
+        if (isHidden && !showHidden) return null;
         // Always compute a thumb URL — the API will auto-generate on first request
         const thumbFilename = version.thumbnail?.replace('.thumbs/', '')
           || `${concept.id}-${version.id}.png`;
@@ -749,26 +642,30 @@ const CardLayer = memo(function CardLayer({
         const isLatest = pos.versionIndex === concept.versions.length - 1;
 
         return (
-          <CanvasCard
+          <div
             key={`${pos.conceptId}-${pos.versionId}`}
-            thumbnail={thumbSrc}
-            conceptLabel={concept.label}
-            versionNumber={version.number}
-            isCurrent={pos.conceptIndex === conceptIndex && pos.versionIndex === versionIndex}
-            isSelected={isStarred}
-            isLatest={isLatest}
-            filePath={`~/drift/projects/${client}/${project}/${version.file}`}
-            onStar={() => onStarVersion(concept.id, version.id)}
-            onDelete={() => onDeleteVersion(concept.id, version.id)}
-            onDrift={() => onDriftVersion(concept.id, version.id)}
-            onClick={(shiftKey) => onThumbnailClick(pos.conceptIndex, pos.versionIndex, shiftKey)}
-            onDoubleClick={() => onThumbnailDoubleClick(pos.conceptIndex, pos.versionIndex)}
-            onContextMenu={(e) => onCardContextMenu(pos.conceptIndex, pos.versionIndex, e)}
-            x={pos.x}
-            y={pos.y}
-            width={layout.cardWidth}
-            height={layout.cardHeight}
-          />
+            style={{ opacity: isHidden ? 0.3 : 1, transition: 'opacity 0.15s ease' }}
+          >
+            <CanvasCard
+              thumbnail={thumbSrc}
+              conceptLabel={concept.label}
+              versionNumber={version.number}
+              isCurrent={pos.conceptIndex === conceptIndex && pos.versionIndex === versionIndex}
+              isSelected={isStarred}
+              isLatest={isLatest}
+              filePath={`~/drift/projects/${client}/${project}/${version.file}`}
+              onStar={() => onStarVersion(concept.id, version.id)}
+              onDelete={() => onDeleteVersion(concept.id, version.id)}
+              onDrift={() => onDriftVersion(concept.id, version.id)}
+              onClick={(shiftKey) => onThumbnailClick(pos.conceptIndex, pos.versionIndex, shiftKey)}
+              onDoubleClick={() => onThumbnailDoubleClick(pos.conceptIndex, pos.versionIndex)}
+              onContextMenu={(e) => onCardContextMenu(pos.conceptIndex, pos.versionIndex, e)}
+              x={pos.x}
+              y={pos.y}
+              width={layout.cardWidth}
+              height={layout.cardHeight}
+            />
+          </div>
         );
       })}
     </div>

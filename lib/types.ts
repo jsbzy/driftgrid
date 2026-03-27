@@ -36,7 +36,6 @@ export interface Version {
   starred: boolean;
   created: string;
   thumbnail: string;
-  roundId?: string;
   annotations?: Annotation[];
 }
 
@@ -52,18 +51,13 @@ export interface Annotation {
   resolved: boolean;
 }
 
-export interface RoundSelect {
-  conceptId: string;
-  versionId: string;
-}
-
 export interface Round {
   id: string;
   number: number;
   name: string;
-  closedAt: string;
+  savedAt: string;
   note?: string;
-  selects?: RoundSelect[];
+  selects: { conceptId: string; versionId: string }[];
 }
 
 export interface Concept {
