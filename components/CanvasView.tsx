@@ -121,22 +121,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
       // After a brief frame, animate to the target zoom level
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (zoomLevel === 'overview') {
-            // Compute fitAll transform but apply with animation
-            const fitPad = 40;
-            const fitScale = Math.min(
-              (el.clientWidth - fitPad * 2) / layout.totalWidth,
-              (el.clientHeight - fitPad * 2) / layout.totalHeight,
-              1,
-            );
-            const fitTx = (el.clientWidth - layout.totalWidth * fitScale) / 2;
-            const fitTy = (el.clientHeight - layout.totalHeight * fitScale) / 2;
-            setTransform({ scale: fitScale, tx: fitTx, ty: fitTy }, true);
-          } else {
-            const bounds = zoomLevel === 'z1' ? getColumnBounds(layout, conceptIndex) : getCardBounds(layout, conceptIndex, versionIndex);
-            const pad = zoomLevel === 'z1' ? 40 : zoomLevel === 'z2' ? 30 : zoomLevel === 'z3' ? 20 : 40;
-            zoomToRect(bounds, pad);
-          }
+          handleZoomToLevel(zoomLevel);
         });
       });
     } else {
