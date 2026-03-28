@@ -211,6 +211,30 @@ For locked formats (`landscape-16-9`, `a4-portrait`):
 4. If working set: export the multi-page PDF and verify all pages
 5. Generate thumbnails: `npm run generate-thumbs`
 
+## Design Review — MANDATORY
+
+Before presenting ANY design version to Jeff, run a minimum 3-pass internal design review as an Apple lead designer. Do NOT present work without completing this.
+
+**Pass 1 — Structure & Layout:**
+- Does the phone shell fill completely? (No body background bleeding through)
+- Does flex:1 actually fill? Do containers extend where they should?
+- Is the home indicator inside the visual frame?
+- Does content distribute well vertically?
+
+**Pass 2 — Spacing & Alignment:**
+- Consistent gaps, no cramped areas, no unintentional empty zones
+- Elements that should align actually do — check the padding math
+- Typography: readable sizes, clear hierarchy, proper line-height
+- Contrast: text readable on backgrounds, elements don't blend
+
+**Pass 3 — Visual Fidelity:**
+- If there's a Figma screenshot, side-by-side compare EVERY element
+- Check: colors, border-radius, font sizes, weights, padding, margins
+- Verify interactive elements look correct (buttons, sliders, inputs)
+- Check for clipping, overflow, or content cutoff at container edges
+
+Only present after you would sign off on it yourself. If something looks off, fix it before showing.
+
 ## Brand Guidelines
 
 Each client has `projects/{client}/brand/guidelines.md` with colors, fonts, voice, and reference links. Always read this before creating or modifying designs for that client.
