@@ -33,10 +33,8 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
     const needsEditScript = editMode || hasEdits;
     const editSrc = needsEditScript ? `${src}${src.includes('?') ? '&' : '?'}mode=edit` : src;
 
-    // Reset ready state when src changes
-    useEffect(() => {
-      setIframeReady(false);
-    }, [editSrc]);
+    // Don't reset iframeReady on src change — keep old content visible
+    // while new content loads to prevent white flash
 
     useEffect(() => {
       if (iframeRef.current) {
