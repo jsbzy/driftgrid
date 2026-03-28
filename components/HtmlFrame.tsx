@@ -310,6 +310,7 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
                 width: canvasWidth,
                 height: canvasHeight,
                 border: 'none',
+                background: 'var(--canvas)',
                 position: 'relative',
                 zIndex: 2,
                 opacity: iframeReady ? 1 : 0,
@@ -342,6 +343,7 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
           className="w-full h-full relative"
           style={{
             border: 'none',
+            background: 'var(--canvas)',
             transition: 'opacity 0.15s ease',
             zIndex: 2,
             opacity: iframeReady ? 1 : 0,

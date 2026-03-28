@@ -1040,7 +1040,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         </button>
       </div>
       <div ref={frameWrapperRef} className="flex-1 min-h-0 relative">
-        <div className="h-full p-4 relative">
+        <div className="h-full p-4 relative" style={{ background: 'var(--canvas)' }}>
           <HtmlFrame
             ref={htmlFrameRef}
             src={htmlSrc}
