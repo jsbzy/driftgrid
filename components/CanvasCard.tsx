@@ -42,91 +42,14 @@ export const CanvasCard = memo(function CanvasCard({
   height,
 }: CanvasCardProps) {
   const [imgError, setImgError] = useState(false);
-  const [isStale, setIsStale] = useState(false);
   const [thumbSrc, setThumbSrc] = useState(thumbnail);
-  const [isFading, setIsFading] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
 
-  // Sync thumbSrc when thumbnail prop changes
   useEffect(() => {
     setThumbSrc(thumbnail);
-    setIsStale(false);
-    setIsFading(false);
     setImgError(false);
   }, [thumbnail]);
 
-  // Stop polling on unmount or when thumbnail changes
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-      if (abortRef.current) abortRef.current.abort();
-    };
-  }, [thumbnail]);
-
-  const handleImageLoad = useCallback(async (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const src = (e.target as HTMLImageElement).src;
-    if (!src) return;
-
-    try {
-      // Abort any previous in-flight request
-      if (abortRef.current) abortRef.current.abort();
-      abortRef.current = new AbortController();
-      const resp = await fetch(src, {
-        method: 'HEAD',
-        signal: abortRef.current.signal,
-      });
-      const stale = resp.headers.get('X-Thumbnail-Stale') === 'true';
-      setIsStale(stale);
-
-      if (stale) {
-        // Poll every 3 seconds until the fresh thumbnail is ready (max 20 attempts = 60s)
-        if (pollRef.current) clearInterval(pollRef.current);
-        let pollCount = 0;
-        const maxPolls = 20;
-        pollRef.current = setInterval(async () => {
-          pollCount++;
-          if (pollCount > maxPolls) {
-            // Give up after max attempts
-            if (pollRef.current) {
-              clearInterval(pollRef.current);
-              pollRef.current = null;
-            }
-            return;
-          }
-          try {
-            const pollAbort = new AbortController();
-            // Auto-abort after 5 seconds to avoid hanging requests
-            const timeoutId = setTimeout(() => pollAbort.abort(), 5000);
-            const check = await fetch(src, { method: 'HEAD', signal: pollAbort.signal });
-            clearTimeout(timeoutId);
-            const stillStale = check.headers.get('X-Thumbnail-Stale') === 'true';
-
-            if (!stillStale) {
-              if (pollRef.current) {
-                clearInterval(pollRef.current);
-                pollRef.current = null;
-              }
-              // Fade transition: briefly dim, swap image, then fade in
-              setIsFading(true);
-              const bustUrl = src.includes('?')
-                ? `${src.split('?')[0]}?v=${Date.now()}`
-                : `${src}?v=${Date.now()}`;
-              setThumbSrc(bustUrl);
-              setTimeout(() => {
-                setIsStale(false);
-                setIsFading(false);
-              }, 500);
-            }
-          } catch {
-            // Network error during poll — will retry next interval
-          }
-        }, 3000);
-      }
-    } catch {
-      // Fetch aborted or network error — ignore
-    }
-  }, []);
+  // No per-card stale checking — SSE file watcher handles cache busting via thumbVersion
 
   return (
     <div
@@ -137,11 +60,8 @@ export const CanvasCard = memo(function CanvasCard({
         top: y,
         width,
         height,
-        transition: 'transform 150ms ease-out',
       }}
       onContextMenu={onContextMenu}
-      onMouseEnter={(e) => { if (!isCurrent) (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = ''; }}
     >
       <button
         onClick={(e) => onClick(e.shiftKey)}
@@ -169,28 +89,12 @@ export const CanvasCard = memo(function CanvasCard({
                 className="w-full h-full object-cover object-top"
                 draggable={false}
                 loading="lazy"
-                onLoad={handleImageLoad}
+                decoding="async"
                 onError={() => {
                   setImgError(true);
-                  // Retry after 3s in case thumbnail is being generated
                   setTimeout(() => setImgError(false), 3000);
                 }}
-                style={{
-                  imageRendering: 'auto' as const,
-                  transition: isFading ? 'opacity 0.4s ease' : 'none',
-                  opacity: isFading ? 0.6 : 1,
-                }}
               />
-              {/* Updated indicator — small dot in top-left */}
-              {isStale && (
-                <div
-                  className="absolute top-2 left-2 pointer-events-none flex items-center gap-1.5 px-1.5 py-0.5 rounded"
-                  style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
-                >
-                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-gold)' }} />
-                  <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-mono, monospace)', letterSpacing: '0.05em' }}>UPDATING</span>
-                </div>
-              )}
             </>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[var(--background)]">
