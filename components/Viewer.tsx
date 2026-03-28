@@ -273,7 +273,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     setViewMode(v => {
       if (v === 'frame') {
         setIsPresenting(false);
-        setZoomLevel('z3');
+        setZoomLevel('z2');
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
         return 'grid';
       }
