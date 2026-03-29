@@ -288,6 +288,7 @@ DriftGrid has two types of annotations on frames:
 - List the annotations and ask: "I see N feedback items on this version. Want me to apply them?"
 - Wait for confirmation before making changes
 - After applying, create a new version (drift) with the changes — don't overwrite
+- **Reply to each annotation you addressed** using `add_feedback` with `parentId` set to the original annotation's ID. Example: annotation says "Make headline bigger" → after fixing, reply with "Done — increased from 32px to 48px". This creates a threaded conversation visible in DriftGrid.
 
 **When client feedback exists (isClient: true):**
 - Mention it: "There's also client feedback on this version — want me to review it?"

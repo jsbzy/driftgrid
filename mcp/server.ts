@@ -197,13 +197,14 @@ server.tool(
 
 server.tool(
   'add_feedback',
-  'Add a feedback annotation to a version. Use this to document changes you made.',
+  'Add a feedback annotation to a version. Use this to document changes you made or reply to specific feedback. Set parentId to reply to an existing annotation.',
   {
     client: z.string(),
     project: z.string(),
     conceptId: z.string(),
     versionId: z.string(),
-    text: z.string().describe('The feedback note'),
+    text: z.string().describe('The feedback note or reply'),
+    parentId: z.string().optional().describe('ID of the annotation to reply to (for threaded replies)'),
     x: z.number().optional().describe('Relative X position (0-1), omit for general note'),
     y: z.number().optional().describe('Relative Y position (0-1), omit for general note'),
   },
@@ -221,6 +222,8 @@ server.tool(
         text: input.text,
         author: 'agent',
         isClient: false,
+        isAgent: true,
+        parentId: input.parentId ?? null,
       }),
     });
     return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };

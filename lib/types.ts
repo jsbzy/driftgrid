@@ -47,8 +47,10 @@ export interface Annotation {
   text: string;
   author: string;
   isClient: boolean;
+  isAgent: boolean;
   created: string;
   resolved: boolean;
+  parentId?: string | null;
 }
 
 export interface Round {
