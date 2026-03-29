@@ -678,22 +678,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       {deleteDialog}
       <div ref={frameWrapperRef} className="flex-1 min-h-0 relative">
         <div className="h-full p-4 relative" style={{ background: 'var(--canvas)' }}>
-          {/* Grid coordinate — inside the frame area */}
-          {!ui.navGridHidden && !presentation.isPresenting && (
-            <div
-              className="absolute top-6 right-6 z-20 pointer-events-none"
-              style={{
-                fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                fontSize: 32,
-                fontWeight: 700,
-                color: 'var(--foreground)',
-                opacity: 0.08,
-                letterSpacing: '-0.02em',
-              }}
-            >
-              {conceptIndex + 1}.{currentVersion?.number}
-            </div>
-          )}
           <HtmlFrame
             ref={htmlFrameRef}
             src={htmlSrc}

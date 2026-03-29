@@ -184,13 +184,7 @@ export function useKeyboardNav({
           }
           e.preventDefault();
           if (viewMode === 'grid') {
-            const levels: ZoomLevel[] = ['overview', 'z1', 'z2', 'z3', 'z4'];
-            const idx = levels.indexOf(zoomLevel);
-            if (idx < levels.length - 1) {
-              onZoomToLevel?.(levels[idx + 1]);
-            } else {
-              onToggleGridView?.(); // z4 → fullscreen
-            }
+            onToggleGridView?.(); // Enter = open frame directly
           }
           break;
         }
