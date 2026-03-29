@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     await fs.mkdir(thumbsDir, { recursive: true });
 
     const thumbName = `${conceptId}-${versionId}`;
-    const outputPath = path.join(thumbsDir, `${thumbName}.png`);
+    const outputPath = path.join(thumbsDir, `${thumbName}.webp`);
     const htmlPath = path.resolve(projectDir, version.file);
 
     // Verify HTML file exists
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     await generateThumbnail(htmlPath, outputPath, width, height);
 
     // Update manifest with thumbnail path
-    version.thumbnail = `.thumbs/${thumbName}.png`;
+    version.thumbnail = `.thumbs/${thumbName}.webp`;
     await writeManifest(client, project, manifest);
 
     // Read and return the generated thumbnail
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
     return new NextResponse(thumbData, {
       headers: {
-        'Content-Type': 'image/png',
+        'Content-Type': 'image/webp',
         'X-Thumbnail-Generated': 'true',
         'Cache-Control': 'no-cache',
       },

@@ -25,6 +25,7 @@ interface CanvasViewProps {
   selections: Map<string, string>;
   onStarVersion: (conceptId: string, versionId: string) => void;
   onDeleteVersion: (conceptId: string, versionId: string) => void;
+  onDeleteConcept?: (conceptId: string) => void;
   onHideVersion?: (conceptId: string, versionId: string) => void;
   onDriftToProject?: (conceptId: string, versionId: string) => void;
   onDriftVersion: (conceptId: string, versionId: string) => void;
@@ -52,6 +53,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   selections,
   onStarVersion,
   onDeleteVersion,
+  onDeleteConcept,
   onHideVersion,
   onDriftToProject,
   onDriftVersion,
@@ -188,8 +190,9 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     const zoomLevelChanged = prevZoomLevel.current !== zoomLevel;
     prevZoomLevel.current = zoomLevel;
 
-    // Only re-zoom when the zoom level itself changes, not on card navigation
-    if (!zoomLevelChanged) return;
+    // At z2/z3/z4: follow the selected card on navigation
+    // At overview/z1: only re-zoom when zoom level changes
+    if (!zoomLevelChanged && zoomLevel !== 'z2' && zoomLevel !== 'z3' && zoomLevel !== 'z4') return;
 
     handleZoomToLevel(zoomLevel);
   }, [zoomLevel, conceptIndex, versionIndex, handleZoomToLevel]);
@@ -516,6 +519,20 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
                   </span>
                 );
               })()}
+              {selectedColumn === label.conceptIndex && onDeleteConcept && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteConcept(label.conceptId);
+                  }}
+                  className="ml-auto p-1 rounded hover:bg-[rgba(255,0,0,0.08)] transition-colors group/trash"
+                  title="Delete concept"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" className="group-hover/trash:stroke-red-500 transition-colors">
+                    <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </button>
+              )}
             </div>
           ))}
 
@@ -529,6 +546,8 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             thumbVersion={thumbVersion}
             selections={selections}
             showHidden={showHidden}
+            transform={transform}
+            viewportRef={viewportRef}
             onStarVersion={onStarVersion}
             onDeleteVersion={onDeleteVersion}
             onDriftVersion={onDriftVersion}
@@ -576,10 +595,9 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
 import type { CanvasLayout } from '@/lib/hooks/useCanvasLayout';
 
 /**
- * Extracted card layer component. Memoized so that transform changes
- * (which only affect the parent's CSS transform) don't re-render cards.
- * Each card gets stable callbacks via useCallback with the concept/version ids
- * captured in the closure, so CanvasCard's React.memo can bail out properly.
+ * Extracted card layer with viewport culling. Only renders cards visible
+ * in the current viewport + a 1-card buffer for smooth panning.
+ * Individual CanvasCards use React.memo to bail out on stable props.
  */
 const CardLayer = memo(function CardLayer({
   layout,
@@ -591,6 +609,8 @@ const CardLayer = memo(function CardLayer({
   thumbVersion,
   selections,
   showHidden,
+  transform,
+  viewportRef,
   onStarVersion,
   onDeleteVersion,
   onDriftVersion,
@@ -607,6 +627,8 @@ const CardLayer = memo(function CardLayer({
   thumbVersion: number;
   selections: Map<string, string>;
   showHidden?: boolean;
+  transform: { scale: number; tx: number; ty: number };
+  viewportRef: React.RefObject<HTMLDivElement | null>;
   onStarVersion: (conceptId: string, versionId: string) => void;
   onDeleteVersion: (conceptId: string, versionId: string) => void;
   onDriftVersion: (conceptId: string, versionId: string) => void;
@@ -614,9 +636,26 @@ const CardLayer = memo(function CardLayer({
   onThumbnailDoubleClick: (ci: number, vi: number) => void;
   onCardContextMenu: (ci: number, vi: number, e: React.MouseEvent) => void;
 }) {
+  // Viewport culling: only render cards visible in the current view + buffer
+  const vpW = viewportRef.current?.clientWidth ?? 2000;
+  const vpH = viewportRef.current?.clientHeight ?? 2000;
+  const buffer = layout.cardWidth;
+  const left = -transform.tx / transform.scale - buffer;
+  const top = -transform.ty / transform.scale - buffer;
+  const right = left + vpW / transform.scale + buffer * 2;
+  const bottom = top + vpH / transform.scale + buffer * 2;
+
   return (
     <div>
       {layout.cards.map(pos => {
+        // Cull cards outside visible region
+        if (
+          pos.x + layout.cardWidth < left ||
+          pos.x > right ||
+          pos.y + layout.cardHeight < top ||
+          pos.y > bottom
+        ) return null;
+
         const concept = concepts[pos.conceptIndex];
         const version = concept.versions[pos.versionIndex];
         const isHidden = version.visible === false;
@@ -624,7 +663,7 @@ const CardLayer = memo(function CardLayer({
         if (isHidden && !showHidden) return null;
         // Always compute a thumb URL — the API will auto-generate on first request
         const thumbFilename = version.thumbnail?.replace('.thumbs/', '')
-          || `${concept.id}-${version.id}.png`;
+          || `${concept.id}-${version.id}.webp`;
         const thumbSrc = `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}`;
         const isStarred = selections.get(concept.id) === version.id;
         const isLatest = pos.versionIndex === concept.versions.length - 1;
@@ -638,6 +677,7 @@ const CardLayer = memo(function CardLayer({
               thumbnail={thumbSrc}
               conceptLabel={concept.label}
               versionNumber={version.number}
+              coordinate={`${pos.conceptIndex + 1}.${version.number}`}
               isCurrent={pos.conceptIndex === conceptIndex && pos.versionIndex === versionIndex}
               isSelected={isStarred}
               isLatest={isLatest}

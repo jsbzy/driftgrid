@@ -6,6 +6,7 @@ interface CanvasCardProps {
   thumbnail: string | null;
   conceptLabel: string;
   versionNumber: number;
+  coordinate?: string;
   isCurrent: boolean;
   isSelected?: boolean;
   isLatest?: boolean;
@@ -26,6 +27,7 @@ export const CanvasCard = memo(function CanvasCard({
   thumbnail,
   conceptLabel,
   versionNumber,
+  coordinate,
   isCurrent,
   isSelected,
   isLatest,
@@ -104,6 +106,20 @@ export const CanvasCard = memo(function CanvasCard({
           )}
         </div>
       </button>
+
+      {/* Grid coordinate — top-left */}
+      {coordinate && (
+        <div
+          className="absolute top-1.5 left-2 text-[10px] font-semibold px-1 rounded pointer-events-none"
+          style={{
+            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+            color: 'var(--foreground)',
+            opacity: 0.15,
+          }}
+        >
+          {coordinate}
+        </div>
+      )}
 
       {/* Version label */}
       <div

@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import sharp from 'sharp';
 
 export async function generateThumbnail(
   htmlPath: string,
@@ -13,6 +14,7 @@ export async function generateThumbnail(
     deviceScaleFactor: 3,
   });
   await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle' });
-  await page.screenshot({ path: outputPath, type: 'png' });
+  const pngBuffer = await page.screenshot({ type: 'png' });
   await browser.close();
+  await sharp(pngBuffer).webp({ quality: 85 }).toFile(outputPath);
 }

@@ -17,8 +17,11 @@ import { computeCanvasLayout, getCardBounds } from '@/lib/hooks/useCanvasLayout'
 import { useFlash } from '@/lib/hooks/useFlash';
 import { useUIVisibility } from '@/lib/hooks/useUIVisibility';
 import { useUndoManager } from '@/lib/hooks/useUndoManager';
+import { useHotReload } from '@/lib/hooks/useHotReload';
+import { useAnnotationState } from '@/lib/hooks/useAnnotationState';
+import { usePresentationMode } from '@/lib/hooks/usePresentationMode';
+import { useManifestMutations } from '@/lib/hooks/useManifestMutations';
 import { AnnotationOverlay } from './AnnotationOverlay';
-import type { Annotation } from '@/lib/types';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -40,11 +43,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [selections, setSelections] = useState<Map<string, string>>(new Map());
   const flash = useFlash();
   const ui = useUIVisibility();
-  // Presentation mode state
-  const [isPresenting, setIsPresenting] = useState(false);
-  // Annotations — simple pin mode
-  const [annotationMode, setAnnotationMode] = useState(false);
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
@@ -94,7 +92,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       if (e.key === 'a' || e.key === 'A') {
         if (viewMode === 'frame') {
           e.preventDefault();
-          setAnnotationMode(v => !v);
+          annotationState.setAnnotationMode(v => !v);
         }
       }
     };
@@ -110,74 +108,19 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const versions = currentConcept?.versions ?? [];
   const currentVersion = versions[versionIndex];
 
-  // Build presentation playlist — ordered list of {conceptIndex, versionIndex} for selected versions
-  const presentationPlaylist = useMemo(() => {
-    if (selections.size === 0) return [];
-    const playlist: { ci: number; vi: number }[] = [];
-    concepts.forEach((concept, ci) => {
-      const selectedVersionId = selections.get(concept.id);
-      if (!selectedVersionId) return;
-      const vi = concept.versions.findIndex(v => v.id === selectedVersionId);
-      if (vi >= 0) {
-        playlist.push({ ci, vi });
-      }
-    });
-    return playlist;
-  }, [concepts, selections]);
-
-  // Fetch annotations when viewing a frame
-  useEffect(() => {
-    if (!currentConcept || !currentVersion || viewMode !== 'frame') {
-      setAnnotations([]);
-      return;
-    }
-    fetch(`/api/annotations?client=${client}&project=${project}&conceptId=${currentConcept.id}&versionId=${currentVersion.id}`)
-      .then(r => r.json())
-      .then(data => { if (Array.isArray(data)) setAnnotations(data); })
-      .catch(() => {});
-  }, [client, project, currentConcept?.id, currentVersion?.id, viewMode]);
-
-  const handleAddAnnotation = useCallback(async (x: number, y: number, text: string) => {
-    if (!currentConcept || !currentVersion) return;
-    const res = await fetch('/api/annotations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client, project,
-        conceptId: currentConcept.id,
-        versionId: currentVersion.id,
-        x, y, text,
-        author: 'designer',
-        isClient: false,
-      }),
-    });
-    if (res.ok) {
-      const annotation = await res.json();
-      setAnnotations(prev => [...prev, annotation]);
-      setAnnotationMode(false);
-      toast('Annotation added');
-    }
-  }, [client, project, currentConcept, currentVersion]);
-
-  const handleDeleteAnnotation = useCallback(async (id: string) => {
-    if (!currentConcept || !currentVersion) return;
-    await fetch('/api/annotations', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client, project,
-        conceptId: currentConcept.id,
-        versionId: currentVersion.id,
-        annotationId: id,
-      }),
-    });
-    setAnnotations(prev => prev.filter(a => a.id !== id));
-  }, [client, project, currentConcept, currentVersion]);
-
-  // Clear annotation mode when leaving frame
-  useEffect(() => {
-    if (viewMode !== 'frame') setAnnotationMode(false);
-  }, [viewMode]);
+  // Extracted hooks
+  const annotationState = useAnnotationState(client, project, currentConcept?.id, currentVersion?.id, viewMode);
+  const presentation = usePresentationMode(
+    concepts, selections, conceptIndex, versionIndex, viewMode,
+    setConceptIndex, setVersionIndex, setViewMode,
+  );
+  const frameVersion = useHotReload(viewMode, client, project, currentVersion);
+  const mutations = useManifestMutations({
+    manifest, client, project, mutate,
+    conceptIndex, versionIndex, setConceptIndex, setVersionIndex,
+    currentConcept, currentVersion,
+    undo, flash, viewMode, setViewMode, setZoomLevel,
+  });
 
   // Broadcast current view to /api/current for agent integration
   useEffect(() => {
@@ -272,14 +215,14 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const handleToggleGridView = useCallback(() => {
     setViewMode(v => {
       if (v === 'frame') {
-        setIsPresenting(false);
+        presentation.setIsPresenting(false);
         setZoomLevel('z2');
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
         return 'grid';
       }
       return 'frame';
     });
-  }, [conceptIndex, versionIndex, getTransitionCardBounds]);
+  }, [conceptIndex, versionIndex, getTransitionCardBounds, presentation.setIsPresenting]);
 
   // Pinch zoom out from frame -> exit to grid
   useEffect(() => {
@@ -323,215 +266,14 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   }, [currentConcept, currentVersion]);
 
-  const handleDeleteVersion = useCallback(async (conceptId: string, versionId: string) => {
-    if (!manifest) return;
-    const updated: Manifest = {
-      ...manifest,
-      concepts: manifest.concepts.map(c => {
-        if (c.id !== conceptId) return c;
-        return { ...c, versions: c.versions.filter(v => v.id !== versionId) };
-      }).filter(c => c.versions.length > 0),
-    };
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
-    const clampedCi = Math.min(conceptIndex, Math.max(0, updated.concepts.length - 1));
-    if (clampedCi !== conceptIndex) {
-      setConceptIndex(clampedCi);
-    }
-    const newVersionCount = updated.concepts[clampedCi]?.versions.length ?? 0;
-    if (versionIndex >= newVersionCount) {
-      setVersionIndex(Math.max(0, newVersionCount - 1));
-    }
-    mutate(updated);
-  }, [manifest, client, project, conceptIndex, versionIndex, mutate]);
-
-  const handleHideVersion = useCallback(async (conceptId: string, versionId: string) => {
-    if (!manifest) return;
-    const updated: Manifest = {
-      ...manifest,
-      concepts: manifest.concepts.map(c => {
-        if (c.id !== conceptId) return c;
-        return {
-          ...c,
-          versions: c.versions.map(v =>
-            v.id === versionId ? { ...v, visible: false } : v
-          ),
-        };
-      }),
-    };
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
-    mutate(updated);
-    toast('Version hidden');
-  }, [manifest, client, project, mutate]);
-
-  const executeDelete = useCallback(async () => {
-    if (!manifest || !currentConcept || !currentVersion) return;
-
-    undo.trackDelete({
-      conceptId: currentConcept.id,
-      versionId: currentVersion.id,
-      version: currentVersion,
-      conceptIndex,
-    });
-
-    flash.showDeleteFlash();
-
-    const updated: Manifest = {
-      ...manifest,
-      concepts: manifest.concepts.map(c => {
-        if (c.id !== currentConcept.id) return c;
-        return { ...c, versions: c.versions.filter(v => v.id !== currentVersion.id) };
-      }).filter(c => c.versions.length > 0),
-    };
-
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
-
-    await new Promise(r => setTimeout(r, 400));
-
-    const ci = Math.min(conceptIndex, updated.concepts.length - 1);
-    if (updated.concepts.length === 0) {
-      setViewMode('grid');
-      mutate(updated);
-      return;
-    }
-    const newCount = updated.concepts[ci]?.versions.length ?? 0;
-    const newVi = Math.min(versionIndex, Math.max(0, newCount - 1));
-    setConceptIndex(ci);
-    setVersionIndex(newVi);
-    mutate(updated);
-  }, [manifest, currentConcept, currentVersion, conceptIndex, versionIndex, client, project, mutate]);
-
-  const handleMoveConceptLeft = useCallback(async (targetCi?: number) => {
-    const ci = targetCi ?? conceptIndex;
-    if (!manifest || ci <= 0) return;
-    const newConcepts = [...manifest.concepts];
-    const temp = newConcepts[ci];
-    newConcepts[ci] = newConcepts[ci - 1];
-    newConcepts[ci - 1] = temp;
-    const updated = { ...manifest, concepts: newConcepts.map((c, i) => ({ ...c, position: i + 1 })) };
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
-    setConceptIndex(ci - 1);
-    mutate(updated);
-  }, [manifest, conceptIndex, client, project, mutate]);
-
-  const handleMoveConceptRight = useCallback(async (targetCi?: number) => {
-    const ci = targetCi ?? conceptIndex;
-    if (!manifest || ci >= manifest.concepts.length - 1) return;
-    const newConcepts = [...manifest.concepts];
-    const temp = newConcepts[ci];
-    newConcepts[ci] = newConcepts[ci + 1];
-    newConcepts[ci + 1] = temp;
-    const updated = { ...manifest, concepts: newConcepts.map((c, i) => ({ ...c, position: i + 1 })) };
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
-    setConceptIndex(ci + 1);
-    mutate(updated);
-  }, [manifest, conceptIndex, client, project, mutate]);
-
-  const handleReorderConcepts = useCallback(async (newOrder: string[]) => {
-    if (!manifest) return;
-    const conceptMap = new Map(manifest.concepts.map(c => [c.id, c]));
-    const reordered = newOrder
-      .map(id => conceptMap.get(id))
-      .filter((c): c is NonNullable<typeof c> => !!c)
-      .map((c, i) => ({ ...c, position: i + 1 }));
-    const updated = { ...manifest, concepts: reordered };
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
-    setConceptIndex(0);
-    setVersionIndex(0);
-    mutate(updated);
-  }, [manifest, client, project, mutate]);
-
   const handleDeleteCurrent = useCallback(() => {
     if (!currentConcept || !currentVersion) return;
     if (skipDeleteConfirm) {
-      executeDelete();
+      mutations.executeDelete();
     } else {
       setConfirmDelete(true);
     }
-  }, [currentConcept, currentVersion, skipDeleteConfirm, executeDelete]);
-
-  const handleDriftVersion = useCallback(async (conceptId: string, versionId: string) => {
-    try {
-      const resPromise = fetch('/api/iterate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client, project, conceptId, versionId }),
-      });
-
-      flash.showDriftFlash('DRIFTED');
-
-      const res = await resPromise;
-      if (!res.ok) { flash.hideDriftFlash(); toast('Drift failed', 'error'); return; }
-      const { absolutePath, versionId: newVid, versionNumber } = await res.json();
-      try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
-      toast('Drifted \u2193 \u2014 path copied');
-
-      undo.trackDrift({ conceptId, versionId: newVid });
-
-      const updated = await mutate();
-      if (updated) {
-        const ci = updated.concepts.findIndex(c => c.id === conceptId);
-        if (ci >= 0) {
-          const vi = updated.concepts[ci].versions.findIndex(v => v.id === newVid);
-          if (vi >= 0) {
-            setConceptIndex(ci);
-            setVersionIndex(vi);
-            window.history.replaceState(null, '', `#${updated.concepts[ci].id}/v${versionNumber}`);
-          }
-        }
-      }
-    } catch { flash.hideDriftFlash(); toast('Drift failed', 'error'); }
-  }, [client, project, mutate]);
-
-  const handleBranchVersion = useCallback(async (conceptId: string, versionId: string) => {
-    try {
-      flash.showDriftFlash('DRIFTED \u2192');
-
-      const res = await fetch('/api/branch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client, project, conceptId, versionId }),
-      });
-      if (!res.ok) { flash.hideDriftFlash(); toast('Branch failed', 'error'); return; }
-      const { conceptId: newConceptId, absolutePath } = await res.json();
-      try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
-      toast('Drifted \u2192 \u2014 new concept, path copied');
-
-      await new Promise(r => setTimeout(r, 500));
-
-      const updated = await mutate();
-      if (updated) {
-        const ci = updated.concepts.findIndex(c => c.id === newConceptId);
-        if (ci >= 0) {
-          setConceptIndex(ci);
-          setVersionIndex(0);
-          if (viewMode === 'frame') setViewMode('grid');
-          setZoomLevel('z1');
-          window.history.replaceState(null, '', `#${newConceptId}/v1`);
-        }
-      }
-    } catch { flash.hideDriftFlash(); toast('Branch failed', 'error'); }
-  }, [client, project, mutate, viewMode, flash]);
+  }, [currentConcept, currentVersion, skipDeleteConfirm, mutations.executeDelete]);
 
   const handleStarVersion = useCallback((conceptId: string, versionId: string) => {
     setSelections(prev => {
@@ -545,105 +287,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     });
 
   }, []);
-
-  // Presentation mode — enter fullscreen cycling through selects only
-  const handlePresent = useCallback(() => {
-    if (selections.size === 0) return;
-    const firstEntry = Array.from(selections.entries())[0];
-    if (!firstEntry) return;
-    const [conceptId, versionId] = firstEntry;
-    const ci = concepts.findIndex(c => c.id === conceptId);
-    if (ci < 0) return;
-    const vi = concepts[ci].versions.findIndex(v => v.id === versionId);
-    if (vi < 0) return;
-    setConceptIndex(ci);
-    setVersionIndex(vi);
-    setViewMode('frame');
-    setIsPresenting(true);
-    const concept = concepts[ci];
-    const version = concept?.versions[vi];
-    if (concept && version) {
-      window.history.replaceState(null, '', `#${concept.id}/v${version.number}`);
-    }
-  }, [selections, concepts]);
-
-  // Presentation mode navigation — left/right through selects only
-  useEffect(() => {
-    if (!isPresenting || viewMode !== 'frame') return;
-    const handler = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        (e.target instanceof HTMLElement && e.target.isContentEditable)
-      ) return;
-
-      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-        e.preventDefault();
-        e.stopPropagation();
-        const currentIdx = presentationPlaylist.findIndex(
-          p => p.ci === conceptIndex && p.vi === versionIndex
-        );
-        let nextIdx: number;
-        if (e.key === 'ArrowRight') {
-          nextIdx = currentIdx < presentationPlaylist.length - 1 ? currentIdx + 1 : 0;
-        } else {
-          nextIdx = currentIdx > 0 ? currentIdx - 1 : presentationPlaylist.length - 1;
-        }
-        const next = presentationPlaylist[nextIdx];
-        if (next) {
-          setConceptIndex(next.ci);
-          setVersionIndex(next.vi);
-          const concept = concepts[next.ci];
-          const version = concept?.versions[next.vi];
-          if (concept && version) {
-            window.history.replaceState(null, '', `#${concept.id}/v${version.number}`);
-          }
-        }
-      }
-
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setIsPresenting(false);
-        setViewMode('grid');
-      }
-    };
-    window.addEventListener('keydown', handler, true);
-    return () => window.removeEventListener('keydown', handler, true);
-  }, [isPresenting, viewMode, presentationPlaylist, conceptIndex, versionIndex, concepts]);
-
-  // SSE hot reload — listen for file changes in fullscreen mode
-  const currentVersionRef = useRef(currentVersion);
-  currentVersionRef.current = currentVersion;
-  const [frameVersion, setFrameVersion] = useState(0);
-
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return;
-    if (viewMode !== 'frame') return;
-
-    let es: EventSource | null = null;
-    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    function connect() {
-      es = new EventSource('/api/watch');
-      es.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'file-changed' && data.client === client && data.project === project) {
-            const cv = currentVersionRef.current;
-            if (!cv) return;
-            const changedFile = (data.file as string).replace(/\\/g, '/');
-            const versionFile = cv.file.replace(/\\/g, '/');
-            if (versionFile === changedFile || versionFile.endsWith('/' + changedFile) || changedFile.endsWith('/' + versionFile)) {
-              setFrameVersion(v => v + 1);
-            }
-          }
-        } catch { /* ignore */ }
-      };
-      es.onerror = () => { es?.close(); reconnectTimeout = setTimeout(connect, 5000); };
-    }
-    connect();
-    return () => { es?.close(); if (reconnectTimeout) clearTimeout(reconnectTimeout); };
-  }, [viewMode, client, project]);
 
   const isClientMode = mode === 'client';
   const clientEdits = useClientEdits({
@@ -673,14 +316,14 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const handleDrift = useMemo(() => {
     if (!currentConcept || !currentVersion) return undefined;
-    return () => handleDriftVersion(currentConcept.id, currentVersion.id);
-  }, [currentConcept, currentVersion, handleDriftVersion]);
+    return () => mutations.handleDriftVersion(currentConcept.id, currentVersion.id);
+  }, [currentConcept, currentVersion, mutations.handleDriftVersion]);
 
   const handleBranch = useMemo(() => {
     return currentConcept && currentVersion
-      ? () => handleBranchVersion(currentConcept.id, currentVersion.id)
+      ? () => mutations.handleBranchVersion(currentConcept.id, currentVersion.id)
       : undefined;
-  }, [currentConcept, currentVersion, handleBranchVersion]);
+  }, [currentConcept, currentVersion, mutations.handleBranchVersion]);
 
   useKeyboardNav({
     conceptIndex,
@@ -694,10 +337,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     onDrift: handleDrift,
     onBranch: handleBranch,
     onDelete: handleDeleteCurrent,
-    onMoveConceptLeft: handleMoveConceptLeft,
-    onMoveConceptRight: handleMoveConceptRight,
+    onMoveConceptLeft: mutations.handleMoveConceptLeft,
+    onMoveConceptRight: mutations.handleMoveConceptRight,
     onUndo: undo.handleUndo,
-    onPresent: handlePresent,
+    onPresent: presentation.handlePresent,
     selectsConceptIndices,
     getSelectedVersionIndex,
     viewMode,
@@ -794,7 +437,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
               Cancel
             </button>
             <button
-              onClick={() => { setConfirmDelete(false); executeDelete(); }}
+              onClick={() => { setConfirmDelete(false); mutations.executeDelete(); }}
               className="text-xs px-3 py-1.5 rounded bg-[var(--foreground)] text-[var(--background)] hover:opacity-80 transition-opacity"
             >
               Delete
@@ -812,7 +455,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       onFitAll={() => { setZoomLevel('overview'); ui.setCommandPaletteOpen(false); }}
       onZoomCard={() => { setZoomLevel('z4'); ui.setCommandPaletteOpen(false); }}
       onToggleStar={() => { handleToggleSelect(); ui.setCommandPaletteOpen(false); }}
-      onPresent={() => { handlePresent(); ui.setCommandPaletteOpen(false); }}
+      onPresent={() => { presentation.handlePresent(); ui.setCommandPaletteOpen(false); }}
       onToggleTheme={() => {
         const html = document.documentElement;
         const isDark = html.classList.contains('dark');
@@ -924,7 +567,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
       </button>
-      <button onClick={() => handleDriftVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="Drift (D)">
+      <button onClick={() => mutations.handleDriftVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="Drift (D)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
           <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
         </svg>
@@ -959,6 +602,22 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
+        {/* Home — top-right */}
+        <a
+          href="/"
+          className="fixed top-4 right-4 z-30 flex items-center gap-1.5 no-underline hover:opacity-80 transition-opacity"
+          style={{
+            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+            fontSize: 11,
+            color: 'var(--muted)',
+            opacity: 0.6,
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          {filtered?.project.name}
+        </a>
         <div className="flex-1 min-h-0">
           <CanvasView
             ref={canvasRef}
@@ -972,8 +631,9 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             aspectRatio={aspectRatio}
             selections={selections}
             onStarVersion={handleStarVersion}
-            onDeleteVersion={handleDeleteVersion}
-            onHideVersion={handleHideVersion}
+            onDeleteVersion={mutations.handleDeleteVersion}
+            onDeleteConcept={mutations.handleDeleteConcept}
+            onHideVersion={mutations.handleHideVersion}
             onDriftToProject={async (conceptId: string, versionId: string) => {
               const name = window.prompt('New project name:');
               if (!name) return;
@@ -990,11 +650,11 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
                 toast('Failed to create project', 'error');
               }
             }}
-            onDriftVersion={handleDriftVersion}
-            onBranchVersion={handleBranchVersion}
-            onMoveConceptLeft={handleMoveConceptLeft}
-            onMoveConceptRight={handleMoveConceptRight}
-            onReorderConcepts={handleReorderConcepts}
+            onDriftVersion={mutations.handleDriftVersion}
+            onBranchVersion={mutations.handleBranchVersion}
+            onMoveConceptLeft={mutations.handleMoveConceptLeft}
+            onMoveConceptRight={mutations.handleMoveConceptRight}
+            onReorderConcepts={mutations.handleReorderConcepts}
             mode={mode}
             zoomLevel={zoomLevel}
             onZoomLevelChange={setZoomLevel}
@@ -1016,31 +676,24 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
-      {/* Floating frame info — top-left */}
-      <div className="fixed top-4 left-4 z-30 flex items-center gap-2">
-        <a
-          href="/"
-          style={{
-            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-            fontSize: 11, color: 'var(--muted)', textDecoration: 'none', opacity: 0.6,
-          }}
-        >
-          {filtered?.project.name}
-        </a>
-        <span style={{ color: 'var(--border)', fontSize: 10 }}>/</span>
-        <button
-          onClick={() => handleToggleGridView()}
-          style={{
-            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-            fontSize: 11, fontWeight: 500, color: 'var(--foreground)', opacity: 0.7,
-            background: 'none', border: 'none', cursor: 'pointer',
-          }}
-        >
-          {currentConcept?.label} · v{currentVersion?.number}
-        </button>
-      </div>
       <div ref={frameWrapperRef} className="flex-1 min-h-0 relative">
         <div className="h-full p-4 relative" style={{ background: 'var(--canvas)' }}>
+          {/* Grid coordinate — inside the frame area */}
+          {!ui.navGridHidden && !presentation.isPresenting && (
+            <div
+              className="absolute top-6 right-6 z-20 pointer-events-none"
+              style={{
+                fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+                fontSize: 32,
+                fontWeight: 700,
+                color: 'var(--foreground)',
+                opacity: 0.08,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              {conceptIndex + 1}.{currentVersion?.number}
+            </div>
+          )}
           <HtmlFrame
             ref={htmlFrameRef}
             src={htmlSrc}
@@ -1054,10 +707,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             onEditsChange={clientEdits.handleEditsChange}
           />
           <AnnotationOverlay
-            annotations={annotations}
-            annotationMode={annotationMode}
-            onAdd={handleAddAnnotation}
-            onDelete={handleDeleteAnnotation}
+            annotations={annotationState.annotations}
+            annotationMode={annotationState.annotationMode}
+            onAdd={annotationState.handleAddAnnotation}
+            onDelete={annotationState.handleDeleteAnnotation}
             onResolve={() => {}}
           />
         </div>
@@ -1069,19 +722,19 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           DriftGrid
         </div>
         {/* Frame action bar */}
-        {mode !== 'client' && !ui.navGridHidden && !isPresenting && actionBar(() => handleToggleGridView(), gridIcon, 'Back to grid (G)')}
+        {mode !== 'client' && !ui.navGridHidden && !presentation.isPresenting && actionBar(() => handleToggleGridView(), gridIcon, 'Back to grid (G)')}
         {/* Presentation mode indicator */}
-        {isPresenting && (
+        {presentation.isPresenting && (
           <div
             className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-full z-10"
             style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
           >
             <span className="text-[10px] tracking-wide text-white/70" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
-              {presentationPlaylist.findIndex(p => p.ci === conceptIndex && p.vi === versionIndex) + 1} / {presentationPlaylist.length}
+              {presentation.presentationPlaylist.findIndex(p => p.ci === conceptIndex && p.vi === versionIndex) + 1} / {presentation.presentationPlaylist.length}
             </span>
             <div className="w-px h-3 bg-white/20" />
             <button
-              onClick={() => { setIsPresenting(false); setViewMode('grid'); }}
+              onClick={() => { presentation.setIsPresenting(false); setViewMode('grid'); }}
               className="text-[10px] tracking-wide text-white/50 hover:text-white transition-colors"
               style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}
             >
@@ -1090,7 +743,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           </div>
         )}
       </div>
-      {!isPresenting && !ui.navGridHidden && (
+      {!presentation.isPresenting && !ui.navGridHidden && (
         <NavigationGrid
           conceptIndex={conceptIndex}
           versionIndex={versionIndex}

@@ -10,8 +10,12 @@ const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 // Track in-flight regenerations to avoid duplicate work
 const regenerating = new Set<string>();
 
+function contentTypeForThumb(filename: string): string {
+  return filename.endsWith('.png') ? 'image/png' : 'image/webp';
+}
+
 /**
- * Given a thumbnail filename like "concept-1-v1.png",
+ * Given a thumbnail filename like "concept-1-v1.webp",
  * find the matching HTML file by looking up the manifest.
  */
 async function findHtmlPathForThumb(
@@ -22,8 +26,8 @@ async function findHtmlPathForThumb(
   const manifest = await getManifest(client, project);
   if (!manifest) return null;
 
-  // Thumbnail filename is "{conceptId}-{versionId}.png"
-  const baseName = thumbFilename.replace(/\.png$/, '');
+  // Thumbnail filename is "{conceptId}-{versionId}.webp" (or legacy .png)
+  const baseName = thumbFilename.replace(/\.(webp|png)$/, '');
 
   for (const concept of manifest.concepts) {
     for (const version of concept.versions) {
@@ -107,7 +111,7 @@ export async function GET(
     }
 
     const headers: Record<string, string> = {
-      'Content-Type': 'image/png',
+      'Content-Type': contentTypeForThumb(thumbFilename),
       'Cache-Control': isStale ? 'no-cache' : 'public, max-age=60',
     };
 
@@ -148,7 +152,7 @@ export async function GET(
         for (const concept of manifest.concepts) {
           for (const version of concept.versions) {
             const expectedName = `${concept.id}-${version.id}`;
-            if (expectedName === thumbFilename.replace(/\.png$/, '')) {
+            if (expectedName === thumbFilename.replace(/\.(webp|png)$/, '')) {
               if (!version.thumbnail) {
                 version.thumbnail = `.thumbs/${thumbFilename}`;
                 updated = true;
@@ -164,7 +168,7 @@ export async function GET(
 
       const data = await fs.readFile(resolved);
       return new NextResponse(data, {
-        headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=60' },
+        headers: { 'Content-Type': contentTypeForThumb(thumbFilename), 'Cache-Control': 'public, max-age=60' },
       });
     } catch (err) {
       console.error(`Thumbnail generation failed for ${resolved}:`, err);
@@ -217,7 +221,7 @@ export async function HEAD(
     }
 
     const headers: Record<string, string> = {
-      'Content-Type': 'image/png',
+      'Content-Type': contentTypeForThumb(thumbFilename),
       'Content-Length': String(thumbStat.size),
     };
 
