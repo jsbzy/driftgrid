@@ -190,12 +190,44 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     const zoomLevelChanged = prevZoomLevel.current !== zoomLevel;
     prevZoomLevel.current = zoomLevel;
 
-    // At z2/z3/z4: follow the selected card on navigation
-    // At overview/z1: only re-zoom when zoom level changes
-    if (!zoomLevelChanged && zoomLevel !== 'z2' && zoomLevel !== 'z3' && zoomLevel !== 'z4') return;
+    // Zoom level changed → apply the new zoom level (e.g., ` 1 2 3 4 keys, trackpad)
+    if (zoomLevelChanged) {
+      handleZoomToLevel(zoomLevel);
+      return;
+    }
 
-    handleZoomToLevel(zoomLevel);
-  }, [zoomLevel, conceptIndex, versionIndex, handleZoomToLevel]);
+    // Navigation at z2/z3/z4: pan to keep selected card visible (don't change scale)
+    if (zoomLevel !== 'z2' && zoomLevel !== 'z3' && zoomLevel !== 'z4') return;
+
+    const el = viewportRef.current;
+    if (!el) return;
+
+    const cardBounds = getCardBounds(layout, conceptIndex, versionIndex);
+    if (cardBounds.w === 0) return;
+
+    // Card position in screen coordinates
+    const screenX = cardBounds.x * transform.scale + transform.tx;
+    const screenY = cardBounds.y * transform.scale + transform.ty;
+    const screenW = cardBounds.w * transform.scale;
+    const screenH = cardBounds.h * transform.scale;
+
+    const vpW = el.clientWidth;
+    const vpH = el.clientHeight;
+    const pad = 40;
+
+    // If card is fully visible, don't move
+    if (
+      screenX >= pad &&
+      screenY >= pad &&
+      screenX + screenW <= vpW - pad &&
+      screenY + screenH <= vpH - pad
+    ) return;
+
+    // Pan to center the card (keep current scale)
+    const targetTx = vpW / 2 - (cardBounds.x + cardBounds.w / 2) * transform.scale;
+    const targetTy = vpH / 2 - (cardBounds.y + cardBounds.h / 2) * transform.scale;
+    setTransform({ scale: transform.scale, tx: targetTx, ty: targetTy }, true);
+  }, [zoomLevel, conceptIndex, versionIndex, handleZoomToLevel, layout, transform, setTransform]);
 
   // Column selection: arrow keys to reorder, Escape to deselect
   useEffect(() => {

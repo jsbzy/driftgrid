@@ -698,6 +698,22 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             onResolve={() => {}}
           />
         </div>
+        {/* Grid coordinate — top-left, inside frame area */}
+        {!ui.navGridHidden && !presentation.isPresenting && (
+          <div
+            className="absolute top-7 left-7 z-20 pointer-events-none"
+            style={{
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 32,
+              fontWeight: 700,
+              color: 'var(--foreground)',
+              opacity: 0.08,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {conceptIndex + 1}.{currentVersion?.number}
+          </div>
+        )}
         {/* Branding */}
         <div
           className="fixed bottom-3 left-3 z-10 pointer-events-none"
