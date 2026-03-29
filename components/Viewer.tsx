@@ -47,6 +47,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
+  const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set());
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('overview');
   // Smooth zoom transition state
   const canvasRef = useRef<CanvasViewHandle>(null);
@@ -623,6 +624,58 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const enterFrameIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="9 10 4 15 9 20" /><path d="M20 4v7a4 4 0 0 1-4 4H4" /></svg>;
   const gridIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>;
 
+  // Multi-select action bar (replaces normal action bar when items are multi-selected)
+  const multiSelectBar = multiSelected.size > 0 ? (
+    <div
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-full"
+      style={{ background: 'rgba(45, 212, 191, 0.85)', backdropFilter: 'blur(12px)' }}
+    >
+      <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11, color: 'white', fontWeight: 500, padding: '0 4px' }}>
+        {multiSelected.size} selected
+      </span>
+      <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.3)' }} />
+      <button
+        onClick={() => {
+          // Copy all file paths
+          const paths = Array.from(multiSelected).map(key => {
+            const [cid, vid] = key.split(':');
+            const concept = concepts.find(c => c.id === cid);
+            const version = concept?.versions.find(v => v.id === vid);
+            return version ? `~/drift/projects/${client}/${project}/${version.file}` : '';
+          }).filter(Boolean);
+          navigator.clipboard.writeText(paths.join('\n'));
+          toast(`${paths.length} paths copied`);
+        }}
+        className="px-2 py-1 rounded-lg hover:bg-white/20 transition-colors text-white"
+        style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11 }}
+      >
+        Copy paths
+      </button>
+      <button
+        onClick={() => {
+          // Star all selected
+          for (const key of multiSelected) {
+            const [cid, vid] = key.split(':');
+            handleStarVersion(cid, vid);
+          }
+          setMultiSelected(new Set());
+          toast(`${multiSelected.size} starred`);
+        }}
+        className="px-2 py-1 rounded-lg hover:bg-white/20 transition-colors text-white"
+        style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11 }}
+      >
+        Star all
+      </button>
+      <button
+        onClick={() => setMultiSelected(new Set())}
+        className="px-2 py-1 rounded-lg hover:bg-white/20 transition-colors text-white/60"
+        style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 10 }}
+      >
+        Clear
+      </button>
+    </div>
+  ) : null;
+
   // --- GRID VIEW ---
   if (viewMode === 'grid') {
     return (
@@ -662,6 +715,15 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             onDeleteVersion={mutations.handleDeleteVersion}
             onDeleteConcept={mutations.handleDeleteConcept}
             onHideVersion={mutations.handleHideVersion}
+            multiSelected={multiSelected}
+            onMultiSelectToggle={(key) => {
+              setMultiSelected(prev => {
+                const next = new Set(prev);
+                if (next.has(key)) next.delete(key); else next.add(key);
+                return next;
+              });
+            }}
+            onMultiSelectClear={() => setMultiSelected(new Set())}
             onDriftToProject={async (conceptId: string, versionId: string) => {
               const name = window.prompt('New project name:');
               if (!name) return;
@@ -690,7 +752,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             initialCardBounds={transitionCardBounds}
           />
         </div>
-        {actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame', '↵')}
+        {multiSelectBar || actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame', '↵')}
         <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />
         {commandPalette}
         <ToastContainer />

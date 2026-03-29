@@ -9,12 +9,13 @@ interface CanvasCardProps {
   coordinate?: string;
   isCurrent: boolean;
   isSelected?: boolean;
+  isMultiSelected?: boolean;
   isLatest?: boolean;
   filePath?: string;
   onStar?: () => void;
   onDelete?: () => void;
   onDrift?: () => void;
-  onClick: (shiftKey?: boolean) => void;
+  onClick: (shiftKey?: boolean, metaKey?: boolean) => void;
   onDoubleClick?: () => void;
   onContextMenu?: (e: React.MouseEvent) => void;
   x: number;
@@ -30,6 +31,7 @@ export const CanvasCard = memo(function CanvasCard({
   coordinate,
   isCurrent,
   isSelected,
+  isMultiSelected,
   isLatest,
   filePath,
   onStar,
@@ -66,17 +68,21 @@ export const CanvasCard = memo(function CanvasCard({
       onContextMenu={onContextMenu}
     >
       <button
-        onClick={(e) => onClick(e.shiftKey)}
+        onClick={(e) => onClick(e.shiftKey, e.metaKey || e.ctrlKey)}
         onDoubleClick={onDoubleClick}
         className="w-full h-full text-left outline-none"
       >
         <div
           className="w-full h-full overflow-hidden rounded transition-all"
           style={{
-            border: isCurrent
-              ? '2px solid var(--foreground)'
-              : '1px solid var(--card-border)',
-            boxShadow: isCurrent
+            border: isMultiSelected
+              ? '2px solid var(--accent-teal)'
+              : isCurrent
+                ? '2px solid var(--foreground)'
+                : '1px solid var(--card-border)',
+            boxShadow: isMultiSelected
+              ? '0 0 0 2px rgba(45, 212, 191, 0.2)'
+              : isCurrent
               ? 'var(--card-shadow-active)'
               : 'var(--card-shadow)',
             background: 'var(--card-bg)',

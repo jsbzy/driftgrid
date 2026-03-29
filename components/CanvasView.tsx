@@ -28,6 +28,9 @@ interface CanvasViewProps {
   onDeleteConcept?: (conceptId: string) => void;
   onHideVersion?: (conceptId: string, versionId: string) => void;
   onDriftToProject?: (conceptId: string, versionId: string) => void;
+  multiSelected: Set<string>;
+  onMultiSelectToggle: (key: string) => void;
+  onMultiSelectClear: () => void;
   onDriftVersion: (conceptId: string, versionId: string) => void;
   onBranchVersion: (conceptId: string, versionId: string) => void;
   onMoveConceptLeft: (conceptIdx?: number) => void;
@@ -56,6 +59,9 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   onDeleteConcept,
   onHideVersion,
   onDriftToProject,
+  multiSelected,
+  onMultiSelectToggle,
+  onMultiSelectClear,
   onDriftVersion,
   onBranchVersion,
   onMoveConceptLeft,
@@ -303,22 +309,25 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     return () => { es?.close(); if (reconnectTimeout) clearTimeout(reconnectTimeout); };
   }, [client, project]);
 
-  const handleThumbnailClick = useCallback((ci: number, vi: number, shiftKey?: boolean) => {
+  const handleThumbnailClick = useCallback((ci: number, vi: number, shiftKey?: boolean, metaKey?: boolean) => {
     if (isPanning || spaceHeld || recentlyPanned.current) return;
-    if (shiftKey) {
-      // Shift+click: toggle star without changing highlight
+    if (shiftKey || metaKey) {
+      // Shift/Cmd+click: toggle multi-select
       const concept = concepts[ci];
       const version = concept?.versions[vi];
-      if (concept && version) onStarVersion(concept.id, version.id);
+      if (concept && version) {
+        onMultiSelectToggle(`${concept.id}:${version.id}`);
+      }
       return;
     }
+    // Clear multi-select on regular click
+    if (multiSelected.size > 0) onMultiSelectClear();
     if (ci === conceptIndex && vi === versionIndex) {
-      // Already selected — zoom to this card
       onZoomLevelChange('z4');
     } else {
       onHighlight(ci, vi);
     }
-  }, [isPanning, spaceHeld, conceptIndex, versionIndex, onHighlight, onZoomLevelChange, concepts, onStarVersion]);
+  }, [isPanning, spaceHeld, conceptIndex, versionIndex, onHighlight, onZoomLevelChange, concepts, multiSelected]);
 
   const handleThumbnailDoubleClick = useCallback((ci: number, vi: number) => {
     if (isPanning || spaceHeld || recentlyPanned.current) return;
@@ -605,6 +614,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             onThumbnailClick={handleThumbnailClick}
             onThumbnailDoubleClick={handleThumbnailDoubleClick}
             onCardContextMenu={handleCardContextMenu}
+            multiSelected={multiSelected}
           />
         </div>
       </div>
@@ -666,6 +676,7 @@ const CardLayer = memo(function CardLayer({
   onDeleteVersion,
   onDriftVersion,
   onThumbnailClick,
+  multiSelected,
   onThumbnailDoubleClick,
   onCardContextMenu,
 }: {
@@ -683,7 +694,8 @@ const CardLayer = memo(function CardLayer({
   onStarVersion: (conceptId: string, versionId: string) => void;
   onDeleteVersion: (conceptId: string, versionId: string) => void;
   onDriftVersion: (conceptId: string, versionId: string) => void;
-  onThumbnailClick: (ci: number, vi: number, shiftKey?: boolean) => void;
+  onThumbnailClick: (ci: number, vi: number, shiftKey?: boolean, metaKey?: boolean) => void;
+  multiSelected: Set<string>;
   onThumbnailDoubleClick: (ci: number, vi: number) => void;
   onCardContextMenu: (ci: number, vi: number, e: React.MouseEvent) => void;
 }) {
@@ -732,11 +744,12 @@ const CardLayer = memo(function CardLayer({
               isCurrent={pos.conceptIndex === conceptIndex && pos.versionIndex === versionIndex}
               isSelected={isStarred}
               isLatest={isLatest}
+              isMultiSelected={multiSelected.has(`${concept.id}:${version.id}`)}
               filePath={`~/drift/projects/${client}/${project}/${version.file}`}
               onStar={() => onStarVersion(concept.id, version.id)}
               onDelete={() => onDeleteVersion(concept.id, version.id)}
               onDrift={() => onDriftVersion(concept.id, version.id)}
-              onClick={(shiftKey) => onThumbnailClick(pos.conceptIndex, pos.versionIndex, shiftKey)}
+              onClick={(shiftKey, metaKey) => onThumbnailClick(pos.conceptIndex, pos.versionIndex, shiftKey, metaKey)}
               onDoubleClick={() => onThumbnailDoubleClick(pos.conceptIndex, pos.versionIndex)}
               onContextMenu={(e) => onCardContextMenu(pos.conceptIndex, pos.versionIndex, e)}
               x={pos.x}
