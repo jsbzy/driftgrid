@@ -58,10 +58,6 @@ export function useKeyboardNav({
   client,
 }: UseKeyboardNavProps) {
   const router = useRouter();
-  // Track preferred version index so horizontal nav doesn't lose your row
-  const preferredVi = useRef(versionIndex);
-  const wasHorizontalNav = useRef(false);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (
@@ -117,9 +113,8 @@ export function useKeyboardNav({
           } else {
             const nextConcept = Math.min(conceptIndex + 1, conceptCount - 1);
             if (nextConcept !== conceptIndex) {
-              wasHorizontalNav.current = true;
               const maxVi = getVersionCount(nextConcept) - 1;
-              const targetVi = Math.min(preferredVi.current, maxVi);
+              const targetVi = Math.min(versionIndex, maxVi);
               onNavigate(nextConcept, targetVi);
             }
           }
@@ -140,9 +135,8 @@ export function useKeyboardNav({
           } else {
             const prevConcept = Math.max(conceptIndex - 1, 0);
             if (prevConcept !== conceptIndex) {
-              wasHorizontalNav.current = true;
               const maxVi = getVersionCount(prevConcept) - 1;
-              const targetVi = Math.min(preferredVi.current, maxVi);
+              const targetVi = Math.min(versionIndex, maxVi);
               onNavigate(prevConcept, targetVi);
             }
           }
@@ -155,7 +149,6 @@ export function useKeyboardNav({
           } else {
             const olderVersion = Math.max(versionIndex - 1, 0);
             if (olderVersion !== versionIndex) {
-              preferredVi.current = olderVersion;
               onNavigate(conceptIndex, olderVersion);
             }
           }
@@ -165,11 +158,7 @@ export function useKeyboardNav({
           e.preventDefault();
           const maxVersion = getVersionCount(conceptIndex) - 1;
           const newerVersion = Math.min(versionIndex + 1, maxVersion);
-          if (newerVersion === versionIndex && selectsConceptIndices.length > 0 && !inSelectsRow) {
-            // At the top — enter selects row
-            onSetSelectsRow?.(true);
-          } else if (!inSelectsRow && newerVersion !== versionIndex) {
-            preferredVi.current = newerVersion;
+          if (!inSelectsRow && newerVersion !== versionIndex) {
             onNavigate(conceptIndex, newerVersion);
           }
           break;
@@ -276,14 +265,6 @@ export function useKeyboardNav({
 
   // Sync preferred row when versionIndex changes via click or vertical nav
   // Skip when the change came from horizontal nav (clamped value)
-  useEffect(() => {
-    if (wasHorizontalNav.current) {
-      wasHorizontalNav.current = false;
-      return;
-    }
-    preferredVi.current = versionIndex;
-  }, [versionIndex]);
-
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
