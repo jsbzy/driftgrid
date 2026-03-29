@@ -572,7 +572,23 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
         </svg>
       </button>
-      <button onClick={() => { navigator.clipboard.writeText(`~/drift/projects/${client}/${project}/${currentVersion.file}`); toast('Path copied'); }} className={actionBarBtn} title="Copy path">
+      <button onClick={async () => {
+        const filePath = `~/drift/projects/${client}/${project}/${currentVersion.file}`;
+        let text = filePath;
+        try {
+          const res = await fetch(`/api/annotations?client=${client}&project=${project}&conceptId=${currentConcept.id}&versionId=${currentVersion.id}`);
+          if (res.ok) {
+            const anns = await res.json();
+            if (Array.isArray(anns) && anns.length > 0) {
+              const lines = [filePath, '', 'Feedback:'];
+              anns.forEach((a: { text: string }, i: number) => lines.push(`${i + 1}. ${a.text}`));
+              text = lines.join('\n');
+            }
+          }
+        } catch {}
+        navigator.clipboard.writeText(text);
+        toast('Copied');
+      }} className={actionBarBtn} title="Copy path + feedback">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
           <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
         </svg>
@@ -580,38 +596,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       <button onClick={handleExportPng} className={actionBarBtn} title="Export PNG">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
-      </button>
-      <button
-        onClick={async () => {
-          const filePath = `~/drift/projects/${client}/${project}/${currentVersion.file}`;
-          const lines = [`Edit ${filePath}`, ''];
-
-          // Fetch annotations if any
-          try {
-            const res = await fetch(`/api/annotations?client=${client}&project=${project}&conceptId=${currentConcept.id}&versionId=${currentVersion.id}`);
-            if (res.ok) {
-              const anns = await res.json();
-              if (Array.isArray(anns) && anns.length > 0) {
-                lines.push('Feedback:');
-                anns.forEach((a: { text: string; element?: string }, i: number) => {
-                  const loc = a.element ? `(${a.element})` : '';
-                  lines.push(`${i + 1}. ${a.text} ${loc}`);
-                });
-                lines.push('');
-              }
-            }
-          } catch {}
-
-          lines.push('Create as a new version (drift).');
-          await navigator.clipboard.writeText(lines.join('\n'));
-          toast('Prompt copied — paste into Claude Code');
-        }}
-        className={actionBarBtn}
-        title="Send to Claude"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-          <path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" />
         </svg>
       </button>
       <button onClick={toggleAction} className={actionBarBtn} title={toggleTitle}>
