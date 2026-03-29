@@ -113,8 +113,11 @@ export function useKeyboardNav({
           } else {
             const nextConcept = Math.min(conceptIndex + 1, conceptCount - 1);
             if (nextConcept !== conceptIndex) {
-              const maxVi = getVersionCount(nextConcept) - 1;
-              const targetVi = Math.min(versionIndex, maxVi);
+              // Navigate by visual row (versions are reversed: latest=top, row 0)
+              const currentCount = getVersionCount(conceptIndex);
+              const visualRow = currentCount - 1 - versionIndex; // 0 = top
+              const nextCount = getVersionCount(nextConcept);
+              const targetVi = Math.max(0, nextCount - 1 - Math.min(visualRow, nextCount - 1));
               onNavigate(nextConcept, targetVi);
             }
           }
@@ -135,8 +138,10 @@ export function useKeyboardNav({
           } else {
             const prevConcept = Math.max(conceptIndex - 1, 0);
             if (prevConcept !== conceptIndex) {
-              const maxVi = getVersionCount(prevConcept) - 1;
-              const targetVi = Math.min(versionIndex, maxVi);
+              const currentCount = getVersionCount(conceptIndex);
+              const visualRow = currentCount - 1 - versionIndex;
+              const prevCount = getVersionCount(prevConcept);
+              const targetVi = Math.max(0, prevCount - 1 - Math.min(visualRow, prevCount - 1));
               onNavigate(prevConcept, targetVi);
             }
           }
@@ -147,6 +152,7 @@ export function useKeyboardNav({
           if (inSelectsRow) {
             onSetSelectsRow?.(false);
           } else {
+            // Down = visually down = older version = lower index
             const olderVersion = Math.max(versionIndex - 1, 0);
             if (olderVersion !== versionIndex) {
               onNavigate(conceptIndex, olderVersion);
