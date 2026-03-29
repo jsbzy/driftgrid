@@ -69,6 +69,17 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   }, [viewMode, transitionCardBounds]);
 
   // ? key to toggle shortcuts panel, Cmd+K command palette, H for HUD toggle
+  const filtered = manifest && mode === 'client'
+    ? filterVisibleManifest(manifest)
+    : manifest;
+  const concepts = filtered?.concepts ?? [];
+  const currentConcept = concepts[conceptIndex];
+  const versions = currentConcept?.versions ?? [];
+  const currentVersion = versions[versionIndex];
+
+  // Extracted hooks
+  const annotationState = useAnnotationState(client, project, currentConcept?.id, currentVersion?.id, viewMode);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (
@@ -98,18 +109,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
-
-  const filtered = manifest && mode === 'client'
-    ? filterVisibleManifest(manifest)
-    : manifest;
-  const concepts = filtered?.concepts ?? [];
-  const currentConcept = concepts[conceptIndex];
-  const versions = currentConcept?.versions ?? [];
-  const currentVersion = versions[versionIndex];
-
-  // Extracted hooks
-  const annotationState = useAnnotationState(client, project, currentConcept?.id, currentVersion?.id, viewMode);
+  }, [viewMode, annotationState, ui]);
   const presentation = usePresentationMode(
     concepts, selections, conceptIndex, versionIndex, viewMode,
     setConceptIndex, setVersionIndex, setViewMode,
@@ -555,22 +555,31 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   // Shared action bar renderer — used in both grid and frame views
   const isCurrentStarred = selections.get(currentConcept.id) === currentVersion.id;
-  const actionBarBtn = "p-1.5 rounded-full hover:bg-white/10 transition-colors";
+  const actionBarBtn = "flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-white/10 transition-colors";
+  const actionBarKey = { fontFamily: 'var(--font-mono, monospace)', fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em' } as const;
 
-  const actionBar = (toggleAction: () => void, toggleIcon: React.ReactNode, toggleTitle: string) => (
+  const actionBar = (toggleAction: () => void, toggleIcon: React.ReactNode, toggleTitle: string, toggleKey: string) => (
     <div
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-full"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 px-2 py-1.5 rounded-full"
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)' }}
     >
       <button onClick={() => handleStarVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="Star (S)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill={isCurrentStarred ? '#facc15' : 'none'} stroke={isCurrentStarred ? '#facc15' : 'white'} strokeWidth="2">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
+        <span style={actionBarKey}>S</span>
       </button>
       <button onClick={() => mutations.handleDriftVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="Drift (D)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
           <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
         </svg>
+        <span style={actionBarKey}>D</span>
+      </button>
+      <button onClick={() => annotationState.setAnnotationMode(v => !v)} className={actionBarBtn} title="Comment (A)" style={{ opacity: annotationState.annotationMode ? 1 : undefined }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill={annotationState.annotationMode ? 'white' : 'none'} stroke="white" strokeWidth="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        <span style={actionBarKey}>A</span>
       </button>
       <button onClick={async () => {
         const filePath = `~/drift/projects/${client}/${project}/${currentVersion.file}`;
@@ -592,17 +601,20 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
           <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
         </svg>
+        <span style={actionBarKey}>⌘C</span>
       </button>
       <button onClick={handleExportPng} className={actionBarBtn} title="Export PNG">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
         </svg>
+        <span style={actionBarKey}>↓</span>
       </button>
       <button onClick={toggleAction} className={actionBarBtn} title={toggleTitle}>
         {toggleIcon}
+        <span style={actionBarKey}>{toggleKey}</span>
       </button>
-      <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.15)' }} />
-      <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.4)', padding: '0 4px' }}>
+      <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.12)' }} />
+      <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.35)', padding: '0 4px' }}>
         {currentConcept.label} · v{currentVersion.number}
       </span>
     </div>
@@ -678,7 +690,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             initialCardBounds={transitionCardBounds}
           />
         </div>
-        {actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame')}
+        {actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame', '↵')}
         <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />
         {commandPalette}
         <ToastContainer />
@@ -738,7 +750,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           DriftGrid
         </div>
         {/* Frame action bar */}
-        {mode !== 'client' && !ui.navGridHidden && !presentation.isPresenting && actionBar(() => handleToggleGridView(), gridIcon, 'Back to grid (G)')}
+        {mode !== 'client' && !ui.navGridHidden && !presentation.isPresenting && actionBar(() => handleToggleGridView(), gridIcon, 'Back to grid (G)', 'G')}
         {/* Presentation mode indicator */}
         {presentation.isPresenting && (
           <div
