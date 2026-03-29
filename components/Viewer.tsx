@@ -582,6 +582,38 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
         </svg>
       </button>
+      <button
+        onClick={async () => {
+          const filePath = `~/drift/projects/${client}/${project}/${currentVersion.file}`;
+          const lines = [`Edit ${filePath}`, ''];
+
+          // Fetch annotations if any
+          try {
+            const res = await fetch(`/api/annotations?client=${client}&project=${project}&conceptId=${currentConcept.id}&versionId=${currentVersion.id}`);
+            if (res.ok) {
+              const anns = await res.json();
+              if (Array.isArray(anns) && anns.length > 0) {
+                lines.push('Feedback:');
+                anns.forEach((a: { text: string; element?: string }, i: number) => {
+                  const loc = a.element ? `(${a.element})` : '';
+                  lines.push(`${i + 1}. ${a.text} ${loc}`);
+                });
+                lines.push('');
+              }
+            }
+          } catch {}
+
+          lines.push('Create as a new version (drift).');
+          await navigator.clipboard.writeText(lines.join('\n'));
+          toast('Prompt copied — paste into Claude Code');
+        }}
+        className={actionBarBtn}
+        title="Send to Claude"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+          <path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" />
+        </svg>
+      </button>
       <button onClick={toggleAction} className={actionBarBtn} title={toggleTitle}>
         {toggleIcon}
       </button>
