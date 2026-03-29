@@ -85,7 +85,9 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     fitAll,
     zoomToRect,
     setTransform,
+    setPanTransform,
     isPanning,
+    panAnimating,
     spaceHeld,
     recentlyPanned,
   } = useCanvasTransform(viewportRef);
@@ -223,11 +225,24 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
       screenY + screenH <= vpH - pad
     ) return;
 
-    // Pan to center the card (keep current scale)
-    const targetTx = vpW / 2 - (cardBounds.x + cardBounds.w / 2) * transform.scale;
-    const targetTy = vpH / 2 - (cardBounds.y + cardBounds.h / 2) * transform.scale;
-    setTransform({ scale: transform.scale, tx: targetTx, ty: targetTy }, true);
-  }, [zoomLevel, conceptIndex, versionIndex, handleZoomToLevel, layout, transform, setTransform]);
+    // Pan minimum distance to bring card into view (not centering)
+    let newTx = transform.tx;
+    let newTy = transform.ty;
+
+    if (screenX < pad) {
+      newTx = pad - cardBounds.x * transform.scale;
+    } else if (screenX + screenW > vpW - pad) {
+      newTx = (vpW - pad) - (cardBounds.x + cardBounds.w) * transform.scale;
+    }
+
+    if (screenY < pad) {
+      newTy = pad - cardBounds.y * transform.scale;
+    } else if (screenY + screenH > vpH - pad) {
+      newTy = (vpH - pad) - (cardBounds.y + cardBounds.h) * transform.scale;
+    }
+
+    setPanTransform({ scale: transform.scale, tx: newTx, ty: newTy });
+  }, [zoomLevel, conceptIndex, versionIndex, handleZoomToLevel, layout, transform, setPanTransform]);
 
   // Column selection: arrow keys to reorder, Escape to deselect
   useEffect(() => {
@@ -419,7 +434,11 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
           className="absolute top-0 left-0 origin-top-left"
           style={{
             transform: `translate(${transform.tx}px, ${transform.ty}px) scale(${transform.scale})`,
-            transition: animating ? 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)' : 'none',
+            transition: animating
+              ? 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)'
+              : panAnimating
+                ? 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)'
+                : 'none',
             willChange: 'transform',
           }}
         >

@@ -18,7 +18,9 @@ interface UseCanvasTransformReturn {
   zoomToRect: (rect: { x: number; y: number; w: number; h: number }, padding?: number) => void;
   fitAll: (totalW: number, totalH: number, viewportW: number, viewportH: number) => void;
   setTransform: (t: Transform, animate?: boolean) => void;
+  setPanTransform: (t: Transform) => void;
   isPanning: boolean;
+  panAnimating: boolean;
   spaceHeld: boolean;
   recentlyPanned: React.RefObject<boolean>;
 }
@@ -35,6 +37,7 @@ const ZOOM_SPEED = 0.002;
 export function useCanvasTransform(viewportRef: React.RefObject<HTMLElement | null>): UseCanvasTransformReturn {
   const [transform, setTransformState] = useState<Transform>({ scale: 1, tx: 0, ty: 0 });
   const [animating, setAnimating] = useState(false);
+  const [panAnimating, setPanAnimating] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const recentlyPanned = useRef(false);
@@ -100,6 +103,13 @@ export function useCanvasTransform(viewportRef: React.RefObject<HTMLElement | nu
     } else {
       setTransformState(t);
     }
+  }, []);
+
+  // Gentle pan for card-to-card navigation (slower, smoother curve)
+  const setPanTransform = useCallback((t: Transform) => {
+    setPanAnimating(true);
+    setTransformState(t);
+    setTimeout(() => setPanAnimating(false), 350);
   }, []);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
@@ -281,7 +291,9 @@ export function useCanvasTransform(viewportRef: React.RefObject<HTMLElement | nu
     zoomToRect,
     fitAll,
     setTransform,
+    setPanTransform,
     isPanning,
+    panAnimating,
     spaceHeld,
     recentlyPanned,
   };
