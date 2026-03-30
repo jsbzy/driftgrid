@@ -1,0 +1,12 @@
+.next/
+node_modules/
+projects/*/
+!projects/demo/
+.thumbs/
+_archive/
+video/
+.env*
+!.env.local.example
+coverage/
+.DS_Store
+*.pem

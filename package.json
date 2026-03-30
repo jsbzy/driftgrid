@@ -5,7 +5,7 @@
   "description": "Local-first design iteration platform — version everything, compare anything, present to clients",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jsbzy/drift.git"
+    "url": "https://github.com/jsbzy/driftgrid.git"
   },
   "license": "MIT",
   "bin": {
