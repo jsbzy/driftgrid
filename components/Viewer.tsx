@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import type { Manifest, ViewMode } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
 import { filterVisibleManifest } from '@/lib/filterManifest';
+import { numberToLetter, letterToNumber, conceptSlug } from '@/lib/letters';
 import { HtmlFrame, type HtmlFrameHandle } from './HtmlFrame';
 import { NavigationGrid } from './NavigationGrid';
 import { CanvasView, type CanvasViewHandle } from './CanvasView';
@@ -155,21 +156,41 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const navGridVersionIds = useMemo(() => concepts.map(c => c.versions.map(v => v.id)), [concepts]);
 
   // On manifest load, apply hash to jump to the right concept/version (once only)
+  // Supports new format (#slug/letter) and legacy format (#concept-id/vN)
   const hashApplied = useRef(false);
   useEffect(() => {
     if (!concepts.length || hashApplied.current) return;
     hashApplied.current = true;
     const hash = window.location.hash.replace('#', '');
     if (!hash) return;
-    const [conceptId, vStr] = hash.split('/');
-    const ci = concepts.findIndex(c => c.id === conceptId);
-    if (ci < 0) return;
+    const [slugOrId, letterOrV] = hash.split('/');
+
+    // Try new slug-based format first
+    let ci = concepts.findIndex(c => c.slug === slugOrId || conceptSlug(c.label) === slugOrId);
     let vi = 0;
-    if (vStr) {
-      const vNum = parseInt(vStr.replace('v', ''), 10);
+
+    if (ci >= 0 && letterOrV && !letterOrV.startsWith('v')) {
+      // New format: letter-based version lookup
+      const vNum = letterToNumber(letterOrV);
       const found = concepts[ci].versions.findIndex(v => v.number === vNum);
       if (found >= 0) vi = found;
+    } else if (ci >= 0 && letterOrV) {
+      // Slug matched but version uses legacy vN format
+      const vNum = parseInt(letterOrV.replace('v', ''), 10);
+      const found = concepts[ci].versions.findIndex(v => v.number === vNum);
+      if (found >= 0) vi = found;
+    } else {
+      // Legacy format: #concept-id/vN
+      ci = concepts.findIndex(c => c.id === slugOrId);
+      if (ci < 0) return;
+      if (letterOrV) {
+        const vNum = parseInt(letterOrV.replace('v', ''), 10);
+        const found = concepts[ci].versions.findIndex(v => v.number === vNum);
+        if (found >= 0) vi = found;
+      }
     }
+
+    if (ci < 0) return;
     setConceptIndex(ci);
     setVersionIndex(vi);
     setViewMode('frame');
@@ -183,7 +204,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const concept = concepts[ci];
       const version = concept?.versions[vi];
       if (concept && version) {
-        window.history.replaceState(null, '', `#${concept.id}/v${version.number}`);
+        const slug = concept.slug || conceptSlug(concept.label);
+        window.history.replaceState(null, '', `#${slug}/${numberToLetter(version.number)}`);
       }
     },
     [concepts]
@@ -196,7 +218,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const concept = concepts[ci];
       const version = concept?.versions[vi];
       if (concept && version) {
-        window.history.replaceState(null, '', `#${concept.id}/v${version.number}`);
+        const slug = concept.slug || conceptSlug(concept.label);
+        window.history.replaceState(null, '', `#${slug}/${numberToLetter(version.number)}`);
       }
     },
     [concepts]
@@ -246,7 +269,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const concept = concepts[ci];
       const version = concept?.versions[vi];
       if (concept && version) {
-        window.history.replaceState(null, '', `#${concept.id}/v${version.number}`);
+        const slug = concept.slug || conceptSlug(concept.label);
+        window.history.replaceState(null, '', `#${slug}/${numberToLetter(version.number)}`);
       }
       setViewMode('frame');
     },
@@ -363,7 +387,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${currentConcept.label}-v${currentVersion.number}.png`;
+      a.download = `${currentConcept.label}-${numberToLetter(currentVersion.number)}.png`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -418,7 +442,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       <div className="bg-[var(--background)] rounded-lg border border-[var(--border)] p-6 max-w-sm w-full mx-4 shadow-lg" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
         <div className="text-sm font-medium mb-2">Delete version?</div>
         <div className="text-xs text-[var(--muted)] mb-5">
-          {currentConcept.label} · v{currentVersion.number} will be removed from the grid. You can undo with Cmd+Z.
+          {currentConcept.label} · {numberToLetter(currentVersion.number)} will be removed from the grid. You can undo with Cmd+Z.
         </div>
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 text-[10px] text-[var(--muted)] cursor-pointer">
@@ -564,19 +588,19 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 px-2 py-1.5 rounded-full"
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)' }}
     >
-      <button onClick={() => handleStarVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="Star (S)">
+      <button onClick={() => handleStarVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="Add to selects (S)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill={isCurrentStarred ? '#facc15' : 'none'} stroke={isCurrentStarred ? '#facc15' : 'white'} strokeWidth="2">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
         <span style={actionBarKey}>S</span>
       </button>
-      <button onClick={() => mutations.handleDriftVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="Drift (D)">
+      <button onClick={() => mutations.handleDriftVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="New iteration (D)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
           <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
         </svg>
         <span style={actionBarKey}>D</span>
       </button>
-      <button onClick={() => annotationState.setAnnotationMode(v => !v)} className={actionBarBtn} title="Comment (A)" style={{ opacity: annotationState.annotationMode ? 1 : undefined }}>
+      <button onClick={() => annotationState.setAnnotationMode(v => !v)} className={actionBarBtn} title="Add comment (A)" style={{ opacity: annotationState.annotationMode ? 1 : undefined }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill={annotationState.annotationMode ? 'white' : 'none'} stroke="white" strokeWidth="2">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
@@ -604,24 +628,37 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         </svg>
         <span style={actionBarKey}>⌘C</span>
       </button>
-      <button onClick={handleExportPng} className={actionBarBtn} title="Export PNG">
+      <button onClick={handleExportPng} className={actionBarBtn} title="Export as PNG (↓)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
         </svg>
         <span style={actionBarKey}>↓</span>
       </button>
+      {selections.size > 0 && (
+        <button onClick={() => presentation.handlePresent()} className={actionBarBtn} title="Present selects fullscreen (P)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <polygon points="5 3 19 12 5 21 5 3" />
+          </svg>
+          <span style={actionBarKey}>P</span>
+        </button>
+      )}
       <button onClick={toggleAction} className={actionBarBtn} title={toggleTitle}>
         {toggleIcon}
         <span style={actionBarKey}>{toggleKey}</span>
       </button>
       <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.12)' }} />
       <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.35)', padding: '0 4px' }}>
-        {currentConcept.label} · v{currentVersion.number}
+        {currentConcept.label} · {numberToLetter(currentVersion.number)}
       </span>
+      <a href="/" className={actionBarBtn} title="Back to all projects" style={{ marginLeft: -2 }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ opacity: 0.5 }}>
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+      </a>
     </div>
   );
 
-  const enterFrameIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="9 10 4 15 9 20" /><path d="M20 4v7a4 4 0 0 1-4 4H4" /></svg>;
+  const enterFrameIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></svg>;
   const gridIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>;
 
   // Multi-select action bar (replaces normal action bar when items are multi-selected)
@@ -752,7 +789,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             initialCardBounds={transitionCardBounds}
           />
         </div>
-        {multiSelectBar || actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame', '↵')}
+        {multiSelectBar || actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame (Enter)', '↵')}
         <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />
         {commandPalette}
         <ToastContainer />
@@ -788,22 +825,6 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             onResolve={() => {}}
           />
         </div>
-        {/* Grid coordinate — top-left, inside frame area */}
-        {!ui.navGridHidden && !presentation.isPresenting && (
-          <div
-            className="absolute top-7 left-7 z-20 pointer-events-none"
-            style={{
-              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-              fontSize: 32,
-              fontWeight: 700,
-              color: 'var(--foreground)',
-              opacity: 0.08,
-              letterSpacing: '-0.02em',
-            }}
-          >
-            {conceptIndex + 1}.{currentVersion?.number}
-          </div>
-        )}
         {/* Branding */}
         <div
           className="fixed bottom-3 left-3 z-10 pointer-events-none"
@@ -841,6 +862,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           selections={selections}
           conceptIds={navGridConceptIds}
           versionIds={navGridVersionIds}
+          currentVersionNumber={currentVersion?.number}
         />
       )}
       <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />

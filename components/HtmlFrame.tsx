@@ -98,6 +98,7 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
           if (e.key === 'a' || e.key === 'A' ||
               e.key === 'd' || e.key === 'D' ||
               e.key === 'g' || e.key === 'G' || e.key === 'Escape' ||
+              e.key === 'h' || e.key === 'H' ||
               e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
               e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
               e.key === 'p' || e.key === 'P' ||

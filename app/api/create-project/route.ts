@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { CANVAS_PRESETS } from '@/lib/constants';
+import { conceptSlug } from '@/lib/letters';
 import type { Manifest } from '@/lib/types';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
     },
     concepts: [{
       id: conceptId,
+      slug: conceptSlug('Concept 1'),
       label: 'Concept 1',
       description: '',
       position: 0,

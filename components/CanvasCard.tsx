@@ -7,6 +7,7 @@ interface CanvasCardProps {
   conceptLabel: string;
   versionNumber: number;
   coordinate?: string;
+  iterationLetter?: string;
   isCurrent: boolean;
   isSelected?: boolean;
   isMultiSelected?: boolean;
@@ -29,6 +30,7 @@ export const CanvasCard = memo(function CanvasCard({
   conceptLabel,
   versionNumber,
   coordinate,
+  iterationLetter,
   isCurrent,
   isSelected,
   isMultiSelected,
@@ -70,7 +72,7 @@ export const CanvasCard = memo(function CanvasCard({
       <button
         onClick={(e) => onClick(e.shiftKey, e.metaKey || e.ctrlKey)}
         onDoubleClick={onDoubleClick}
-        className="w-full h-full text-left outline-none"
+        className="w-full h-full text-left outline-none transition-transform duration-150 hover:-translate-y-0.5"
       >
         <div
           className="w-full h-full overflow-hidden rounded transition-all"
@@ -96,8 +98,6 @@ export const CanvasCard = memo(function CanvasCard({
                 alt={`${conceptLabel} v${versionNumber}`}
                 className="w-full h-full object-cover object-top"
                 draggable={false}
-                loading="lazy"
-                decoding="async"
                 onError={() => {
                   setImgError(true);
                   setTimeout(() => setImgError(false), 3000);
@@ -127,17 +127,18 @@ export const CanvasCard = memo(function CanvasCard({
         </div>
       )}
 
-      {/* Version label */}
+      {/* Iteration letter — bottom-right */}
       <div
-        className="absolute bottom-1.5 left-2 text-[10px] font-medium px-1 rounded"
+        className="absolute bottom-1.5 right-2 text-[10px] font-medium px-1 rounded"
         style={{
+          fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
           color: 'var(--foreground)',
           opacity: 0.4,
           background: 'rgba(255,255,255,0.7)',
           backdropFilter: 'blur(4px)',
         }}
       >
-        v{versionNumber}
+        {iterationLetter || `v${versionNumber}`}
         {isLatest && (
           <span style={{
             display: 'inline-block', width: 5, height: 5, borderRadius: '50%',

@@ -64,6 +64,7 @@ export interface Round {
 
 export interface Concept {
   id: string;
+  slug?: string;
   label: string;
   description: string;
   position: number;

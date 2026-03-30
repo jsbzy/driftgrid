@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { WorkingSet } from '@/lib/types';
+import { numberToLetter } from '@/lib/letters';
 import { ExportButton } from './ExportButton';
 import { EditToggle } from './EditToggle';
 
@@ -104,7 +105,7 @@ export function ViewerTopbar({
           {conceptLabel}
         </button>
         <span className="text-[var(--border)]">&middot;</span>
-        <span className="text-[var(--muted)]">v{versionNumber}</span>
+        <span className="text-[var(--muted)]">{numberToLetter(versionNumber)}</span>
         {canvasLabel && (
           <>
             <span className="text-[var(--border)]">&middot;</span>

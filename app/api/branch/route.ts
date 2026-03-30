@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { getManifest, writeManifest } from '@/lib/manifest';
+import { conceptSlug } from '@/lib/letters';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -69,9 +70,11 @@ export async function POST(request: Request) {
   const newVersionId = `version-${generateId()}`;
 
   // Build the new concept entry
+  const newLabel = label || `Concept ${nextN}`;
   const newConcept = {
     id: newConceptId,
-    label: label || `Concept ${nextN}`,
+    slug: conceptSlug(newLabel),
+    label: newLabel,
     description: `Branched from ${sourceConceptLabel} v${sourceVersionNumber}`,
     position: manifest.concepts.length,
     visible: true,

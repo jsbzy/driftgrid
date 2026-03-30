@@ -32,6 +32,18 @@ export async function POST(request: Request) {
   const nextNumber = maxNumber + 1;
   const nextId = `v${nextNumber}`;
 
+  // Idempotency guard: prevent duplicate version creation (double-click race condition)
+  if (concept.versions.some(v => v.id === nextId)) {
+    const existing = concept.versions.find(v => v.id === nextId)!;
+    const existingPath = path.resolve(path.join(PROJECTS_DIR, client, project, existing.file));
+    return NextResponse.json({
+      versionId: existing.id,
+      versionNumber: existing.number,
+      file: existing.file,
+      absolutePath: existingPath,
+    });
+  }
+
   // Determine new file path (same concept folder, next version)
   const conceptFolder = path.dirname(version.file);
   const newFile = `${conceptFolder}/v${nextNumber}.html`;

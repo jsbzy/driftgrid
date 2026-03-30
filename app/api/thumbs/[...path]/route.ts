@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import sharp from 'sharp';
 import { getManifest } from '@/lib/manifest';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { generateThumbnail } from '@/lib/thumbnails';
@@ -57,6 +58,43 @@ async function findHtmlPathForThumb(
   return null;
 }
 
+/**
+ * Resize a thumbnail to the requested width, caching the result.
+ * Returns the resized buffer, or the original if no resize needed.
+ */
+async function getResized(
+  fullPath: string,
+  data: Buffer,
+  requestedWidth: number,
+): Promise<Buffer> {
+  // Build cached path: foo.webp → foo-440w.webp
+  const ext = path.extname(fullPath);
+  const cachedPath = fullPath.replace(ext, `-${requestedWidth}w${ext}`);
+
+  // Check if cached resize exists and is newer than the full-res file
+  try {
+    const [cachedStat, fullStat] = await Promise.all([
+      fs.stat(cachedPath),
+      fs.stat(fullPath),
+    ]);
+    if (cachedStat.mtimeMs >= fullStat.mtimeMs) {
+      return await fs.readFile(cachedPath);
+    }
+  } catch {
+    // No cached file — generate it
+  }
+
+  const resized = await sharp(data)
+    .resize({ width: requestedWidth, withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+
+  // Cache to disk (fire and forget)
+  fs.writeFile(cachedPath, resized).catch(() => {});
+
+  return resized;
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ path: string[] }> }
@@ -70,6 +108,10 @@ export async function GET(
   const client = pathParts[0];
   const project = pathParts[1];
   const thumbFilename = pathParts.slice(2).join('/');
+
+  // Parse optional resize width: ?w=440
+  const url = new URL(_request.url);
+  const requestedWidth = parseInt(url.searchParams.get('w') || '0', 10) || 0;
 
   const filePath = path.join(
     PROJECTS_DIR,
@@ -119,7 +161,12 @@ export async function GET(
       headers['X-Thumbnail-Stale'] = 'true';
     }
 
-    return new NextResponse(data, { headers });
+    // Serve resized version if ?w= is specified
+    const responseData = requestedWidth > 0
+      ? await getResized(resolved, data, requestedWidth)
+      : data;
+
+    return new NextResponse(new Uint8Array(responseData), { headers });
   } catch {
     // Thumbnail doesn't exist yet — generate it on first view
     const info = await findHtmlPathForThumb(client, project, thumbFilename);

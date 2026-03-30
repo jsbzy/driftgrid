@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import type { Manifest, ClientInfo, ProjectInfo } from './types';
+import { conceptSlug } from './letters';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -11,6 +12,21 @@ export async function getManifest(client: string, project: string): Promise<Mani
     const manifest = JSON.parse(data) as Manifest;
     // Backward compat: ensure rounds array exists
     if (!manifest.rounds) manifest.rounds = [];
+    // Deduplicate versions within each concept (guard against double-write race conditions)
+    for (const concept of manifest.concepts) {
+      const seen = new Set<string>();
+      concept.versions = concept.versions.filter(v => {
+        if (seen.has(v.id)) return false;
+        seen.add(v.id);
+        return true;
+      });
+    }
+    // Backfill concept slugs for existing projects
+    for (const concept of manifest.concepts) {
+      if (!concept.slug) {
+        concept.slug = conceptSlug(concept.label);
+      }
+    }
     return manifest;
   } catch {
     return null;

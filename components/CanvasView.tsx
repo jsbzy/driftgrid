@@ -6,6 +6,7 @@ import { computeCanvasLayout, getColumnBounds, getCardBounds } from '@/lib/hooks
 import { useCanvasTransform } from '@/lib/hooks/useCanvasTransform';
 import { CanvasCard } from './CanvasCard';
 import { ContextMenu } from './ContextMenu';
+import { numberToLetter } from '@/lib/letters';
 import type { ZoomLevel } from '@/lib/hooks/useKeyboardNav';
 
 export interface CanvasViewHandle {
@@ -459,7 +460,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
 
             const thumbFilename = selectedVersion?.thumbnail?.replace('.thumbs/', '') || null;
             const thumbSrc = thumbFilename
-              ? `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}`
+              ? `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}&w=880`
               : null;
 
             return (
@@ -500,7 +501,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <span className="text-[10px] font-medium" style={{ color: 'var(--foreground)', opacity: 0.4 }}>
-                          v{selectedVersion.number}
+                          {numberToLetter(selectedVersion.number)}
                         </span>
                       </div>
                     )}
@@ -543,9 +544,9 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
               <span
                 className="font-semibold tracking-[0.08em] uppercase truncate flex-1 transition-all"
                 style={{
-                  fontSize: selectedColumn === label.conceptIndex ? 13 : 11,
+                  fontSize: selectedColumn === label.conceptIndex ? 14 : 13,
                   color: 'var(--foreground)',
-                  opacity: selectedColumn === label.conceptIndex ? 1 : 0.5,
+                  opacity: selectedColumn === label.conceptIndex ? 1 : 0.7,
                   padding: '4px 8px',
                   borderRadius: 4,
                   border: selectedColumn === label.conceptIndex ? '1px solid var(--foreground)' : '1px solid transparent',
@@ -575,7 +576,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
                       marginLeft: 4,
                     }}
                   >
-                    ← {sourceConcept.label}{sourceVersion ? ` v${sourceVersion.number}` : ''}
+                    ← {sourceConcept.label}{sourceVersion ? ` ${numberToLetter(sourceVersion.number)}` : ''}
                   </span>
                 );
               })()}
@@ -727,20 +728,23 @@ const CardLayer = memo(function CardLayer({
         // Always compute a thumb URL — the API will auto-generate on first request
         const thumbFilename = version.thumbnail?.replace('.thumbs/', '')
           || `${concept.id}-${version.id}.webp`;
-        const thumbSrc = `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}`;
+        // Use small thumbnails at low zoom, full-res at high zoom (z3/z4)
+        const thumbW = transform.scale < 0.5 ? '&w=880' : '';
+        const thumbSrc = `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}${thumbW}`;
         const isStarred = selections.get(concept.id) === version.id;
         const isLatest = pos.versionIndex === concept.versions.length - 1;
 
         return (
           <div
-            key={`${pos.conceptId}-${pos.versionId}`}
+            key={`${pos.conceptIndex}-${pos.versionIndex}`}
             style={{ opacity: isHidden ? 0.3 : 1, transition: 'opacity 0.15s ease' }}
           >
             <CanvasCard
               thumbnail={thumbSrc}
               conceptLabel={concept.label}
               versionNumber={version.number}
-              coordinate={`${pos.conceptIndex + 1}.${version.number}`}
+              coordinate={`${pos.conceptIndex + 1}.${concept.versions.length - pos.versionIndex}`}
+              iterationLetter={numberToLetter(version.number)}
               isCurrent={pos.conceptIndex === conceptIndex && pos.versionIndex === versionIndex}
               isSelected={isStarred}
               isLatest={isLatest}

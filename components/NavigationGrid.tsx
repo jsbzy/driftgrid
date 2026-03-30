@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useCallback } from 'react';
+import { numberToLetter } from '@/lib/letters';
 
 interface NavigationGridProps {
   conceptIndex: number;
@@ -13,6 +14,8 @@ interface NavigationGridProps {
   inSelectsRow?: boolean;
   /** Number of versions hidden in collapsed rounds */
   collapsedCount?: number;
+  /** The version.number of the currently selected version */
+  currentVersionNumber?: number;
 }
 
 const MAX_VISIBLE_ROWS = 8;
@@ -26,6 +29,7 @@ export const NavigationGrid = memo(function NavigationGrid({
   versionIds,
   inSelectsRow = false,
   collapsedCount = 0,
+  currentVersionNumber,
 }: NavigationGridProps) {
   const conceptCount = versionCounts.length;
   const maxVersions = versionCounts.length > 0 ? Math.max(...versionCounts) : 0;
@@ -57,11 +61,24 @@ export const NavigationGrid = memo(function NavigationGrid({
     return vid === selectedVid;
   }, [selections, conceptIds, versionIds]);
 
+  const gridLabel = `${conceptIndex + 1}.${versionCounts[conceptIndex] - versionIndex}`;
+
   return (
     <div
       className="fixed bottom-14 right-14 z-50"
       style={{ opacity: 0.45 }}
     >
+      <div style={{
+        fontFamily: 'var(--font-mono, monospace)',
+        fontSize: 18,
+        fontWeight: 900,
+        color: 'rgba(0,0,0,0.25)',
+        textAlign: 'left',
+        marginBottom: 8,
+        letterSpacing: '0.02em',
+      }}>
+        {gridLabel}
+      </div>
       {/* Selects row at top */}
       {hasSelections && conceptIds && (
         <>
