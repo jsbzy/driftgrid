@@ -5,8 +5,8 @@ Thanks for your interest in DriftGrid. Here's how to get started.
 ## Setup
 
 ```bash
-git clone https://github.com/jsbzy/drift.git
-cd drift
+git clone https://github.com/jsbzy/driftgrid.git
+cd driftgrid
 npm install
 npm run dev
 ```
