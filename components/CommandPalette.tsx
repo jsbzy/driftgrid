@@ -25,6 +25,7 @@ interface CommandPaletteProps {
   onExportPng?: () => void;
   onToggleShowHidden?: () => void;
   onDriftToProject?: () => void;
+  onNewRound?: () => void;
 }
 
 export function CommandPalette({
@@ -44,6 +45,7 @@ export function CommandPalette({
   onExportPng,
   onToggleShowHidden,
   onDriftToProject,
+  onNewRound,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -56,7 +58,8 @@ export function CommandPalette({
     { label: 'Star / unstar', shortcut: 'S', action: onToggleStar },
     { label: 'Present selects', shortcut: 'P', action: onPresent },
     { label: 'Toggle theme', shortcut: '', action: onToggleTheme },
-    { label: 'Save round', shortcut: '', action: onCloseRound },
+    { label: 'Close round', shortcut: '', action: onCloseRound },
+    ...(onNewRound ? [{ label: 'New round from selection', shortcut: '', action: onNewRound }] : []),
     ...(onToggleGridFrame ? [{ label: 'Toggle grid / frame', shortcut: 'G', action: onToggleGridFrame }] : []),
     ...(onDrift ? [{ label: 'Drift \u2193 new version', shortcut: 'D', action: onDrift }] : []),
     ...(onBranch ? [{ label: 'Drift \u2192 new concept', shortcut: '\u21e7D', action: onBranch }] : []),

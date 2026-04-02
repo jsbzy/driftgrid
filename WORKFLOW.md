@@ -3,7 +3,7 @@
 ## Starting a project
 
 ```bash
-cd ~/drift
+cd ~/driftgrid
 ```
 
 Tell Claude Code:
@@ -44,7 +44,7 @@ Open `localhost:3000` — the dashboard shows all projects. Click into any proje
 
 3. Vercel auto-deploys. Client reviews at:
    ```
-   driftlab.io/review/{client}/{project}
+   yourdomain.com/review/{client}/{project}
    ```
 
 **Note:** The production site is password-protected. Set `DRIFT_PASSWORD` in Vercel environment variables and share the password with your client.

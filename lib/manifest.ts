@@ -10,32 +10,95 @@ export async function getManifest(client: string, project: string): Promise<Mani
     const manifestPath = path.join(PROJECTS_DIR, client, project, 'manifest.json');
     const data = await fs.readFile(manifestPath, 'utf-8');
     const manifest = JSON.parse(data) as Manifest;
+
     // Backward compat: ensure rounds array exists
     if (!manifest.rounds) manifest.rounds = [];
-    // Deduplicate versions within each concept (guard against double-write race conditions)
-    for (const concept of manifest.concepts) {
-      const seen = new Set<string>();
-      concept.versions = concept.versions.filter(v => {
-        if (seen.has(v.id)) return false;
-        seen.add(v.id);
-        return true;
-      });
-    }
-    // Backfill concept slugs for existing projects
-    for (const concept of manifest.concepts) {
-      if (!concept.slug) {
-        concept.slug = conceptSlug(concept.label);
+
+    // --- Legacy migration: move top-level concepts into rounds ---
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const topConcepts = (manifest as any).concepts as Manifest['concepts'] | undefined;
+    if (topConcepts && topConcepts.length > 0) {
+      if (manifest.rounds.length === 0) {
+        // No rounds — wrap everything into Round 1
+        manifest.rounds = [{
+          id: 'round-1',
+          number: 1,
+          name: 'Round 1',
+          createdAt: manifest.project.created || new Date().toISOString(),
+          selects: [],
+          concepts: topConcepts,
+        }];
+      } else {
+        // Has round metadata but concepts still top-level — merge into rounds
+        for (const round of manifest.rounds) {
+          if (!round.concepts || round.concepts.length === 0) {
+            round.concepts = topConcepts;
+          }
+          // Backfill createdAt from savedAt/closedAt
+          if (!round.createdAt) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            round.createdAt = (round as any).savedAt as string
+              || round.closedAt as string
+              || manifest.project.created
+              || new Date().toISOString();
+          }
+        }
       }
     }
+
+    // Ensure every round has a concepts array and createdAt
+    for (const round of manifest.rounds) {
+      if (!round.concepts) round.concepts = [];
+      if (!round.createdAt) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        round.createdAt = (round as any).savedAt as string
+          || round.closedAt as string
+          || new Date().toISOString();
+      }
+    }
+
+    // Deduplicate versions + backfill slugs within each round's concepts
+    for (const round of manifest.rounds) {
+      for (const concept of round.concepts) {
+        const seen = new Set<string>();
+        concept.versions = concept.versions.filter(v => {
+          if (seen.has(v.id)) return false;
+          seen.add(v.id);
+          return true;
+        });
+        if (!concept.slug) {
+          concept.slug = conceptSlug(concept.label);
+        }
+      }
+    }
+
+    // Set manifest.concepts as alias to the latest round's concepts
+    // This keeps all existing API routes and components working unchanged
+    const latestRound = manifest.rounds[manifest.rounds.length - 1];
+    manifest.concepts = latestRound ? latestRound.concepts : [];
+
     return manifest;
   } catch {
     return null;
   }
 }
 
+/** Get concepts for a specific round (or the latest round if no roundId given) */
+export function getRoundConcepts(manifest: Manifest, roundId?: string): { round: Manifest['rounds'][number]; concepts: Manifest['rounds'][number]['concepts'] } | null {
+  if (manifest.rounds.length === 0) return null;
+  const round = roundId
+    ? manifest.rounds.find(r => r.id === roundId)
+    : manifest.rounds[manifest.rounds.length - 1];
+  if (!round) return null;
+  return { round, concepts: round.concepts };
+}
+
 export async function writeManifest(client: string, project: string, manifest: Manifest): Promise<void> {
   const manifestPath = path.join(PROJECTS_DIR, client, project, 'manifest.json');
-  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
+  // Strip top-level concepts alias before writing — rounds own the concepts
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { concepts: _alias, ...rest } = manifest;
+  await fs.writeFile(manifestPath, JSON.stringify(rest, null, 2), 'utf-8');
 }
 
 export async function getClients(): Promise<ClientInfo[]> {
@@ -62,12 +125,16 @@ export async function getClients(): Promise<ClientInfo[]> {
         try {
           const data = await fs.readFile(manifestPath, 'utf-8');
           const manifest = JSON.parse(data) as Manifest;
-          const versionCount = manifest.concepts.reduce((sum, c) => sum + c.versions.length, 0);
+          // Gather concepts from all rounds (or legacy top-level)
+          const allConcepts = manifest.rounds?.length
+            ? manifest.rounds.flatMap(r => r.concepts || [])
+            : manifest.concepts || [];
+          const versionCount = allConcepts.reduce((sum, c) => sum + c.versions.length, 0);
           projects.push({
             slug: projectSlug,
             name: manifest.project.name,
             canvas: manifest.project.canvas,
-            conceptCount: manifest.concepts.length,
+            conceptCount: allConcepts.length,
             versionCount,
           });
         } catch {

@@ -57,9 +57,11 @@ export interface Round {
   id: string;
   number: number;
   name: string;
-  savedAt: string;
+  createdAt: string;
+  closedAt?: string;
   note?: string;
   selects: { conceptId: string; versionId: string }[];
+  concepts: Concept[];
 }
 
 export interface Concept {
@@ -110,7 +112,7 @@ export interface ClientEdit {
 
 export interface Manifest {
   project: ProjectMeta;
-  concepts: Concept[];
+  concepts: Concept[];  // convenience alias — always points to the active round's concepts
   rounds: Round[];
   workingSets: WorkingSet[];
   comments: Comment[];

@@ -42,6 +42,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [versionIndex, setVersionIndex] = useState(0);
   const [viewMode, setViewMode] = useState<'frame' | 'grid'>(mode === 'client' ? 'frame' : 'grid');
   const [selections, setSelections] = useState<Map<string, string>>(new Map());
+  const [activeRoundId, setActiveRoundId] = useState<string | null>(null);
   const flash = useFlash();
   const ui = useUIVisibility();
 
@@ -70,10 +71,26 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     }
   }, [viewMode, transitionCardBounds]);
 
-  // ? key to toggle shortcuts panel, Cmd+K command palette, H for HUD toggle
-  const filtered = manifest && mode === 'client'
-    ? filterVisibleManifest(manifest)
-    : manifest;
+  // Resolve active round — default to latest round on first load
+  const rounds = useMemo(() => manifest?.rounds ?? [], [manifest?.rounds]);
+  useEffect(() => {
+    if (rounds.length > 0 && activeRoundId === null) {
+      setActiveRoundId(rounds[rounds.length - 1].id);
+    }
+  }, [rounds, activeRoundId]);
+
+  const activeRound = rounds.find(r => r.id === activeRoundId) || rounds[rounds.length - 1];
+
+  // Override manifest.concepts with the active round's concepts before filtering
+  const roundScopedManifest = useMemo(() => {
+    if (!manifest) return null;
+    if (!activeRound) return manifest;
+    return { ...manifest, concepts: activeRound.concepts };
+  }, [manifest, activeRound]);
+
+  const filtered = roundScopedManifest && mode === 'client'
+    ? filterVisibleManifest(roundScopedManifest)
+    : roundScopedManifest;
   const concepts = filtered?.concepts ?? [];
   const currentConcept = concepts[conceptIndex];
   const versions = currentConcept?.versions ?? [];
@@ -139,7 +156,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         versionId: currentVersion.id,
         versionNumber: currentVersion.number,
         file: currentVersion.file,
-        absolutePath: `~/drift/${path}`,
+        absolutePath: `~/driftgrid/${path}`,
         viewMode,
       }),
     }).catch(() => {}); // fire and forget
@@ -374,6 +391,49 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     client,
   });
 
+  // New round handler — extracted for use in both command palette and multi-select bar
+  const handleNewRound = useCallback(async () => {
+    // Use multi-selected cards, or fall back to selects
+    let cardSelections: { conceptId: string; versionId: string }[];
+    if (multiSelected.size > 0) {
+      cardSelections = Array.from(multiSelected).map(key => {
+        const [conceptId, versionId] = key.split(':');
+        return { conceptId, versionId };
+      });
+    } else if (selections.size > 0) {
+      cardSelections = Array.from(selections.entries()).map(([conceptId, versionId]) => ({
+        conceptId, versionId,
+      }));
+    } else {
+      toast('Select cards to send to the new round', 'error');
+      return;
+    }
+    const name = window.prompt('Round name (optional):');
+    const res = await fetch('/api/rounds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project, action: 'create',
+        name: name || undefined,
+        selections: cardSelections,
+        sourceRoundId: activeRound?.id,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      toast(`${data.name} created \u00b7 ${data.conceptCount} concepts`);
+      setMultiSelected(new Set());
+      setSelections(new Map());
+      setConceptIndex(0);
+      setVersionIndex(0);
+      setActiveRoundId(data.roundId);
+      await mutate();
+    } else {
+      const err = await res.json().catch(() => null);
+      toast(err?.error || 'Failed to create round', 'error');
+    }
+  }, [client, project, multiSelected, selections, activeRound, mutate]);
+
   // Export PNG handler
   const handleExportPng = useCallback(async () => {
     if (!currentVersion || !currentConcept) return;
@@ -540,14 +600,20 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         const res = await fetch('/api/rounds', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ client, project, name: name || undefined, selects: roundSelects }),
+          body: JSON.stringify({
+            client, project, action: 'close',
+            name: name || undefined,
+            selects: roundSelects,
+            roundId: activeRound?.id,
+          }),
         });
         if (res.ok) {
           const data = await res.json();
-          toast(`Round ${data.roundNumber} saved \u00b7 ${data.selectCount} selects`);
+          toast(`Round ${data.roundNumber} closed \u00b7 ${data.selectCount} selects`);
           await mutate();
         }
       }}
+      onNewRound={() => { ui.setCommandPaletteOpen(false); handleNewRound(); }}
     />
   );
 
@@ -607,7 +673,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         <span style={actionBarKey}>A</span>
       </button>
       <button onClick={async () => {
-        const filePath = `~/drift/projects/${client}/${project}/${currentVersion.file}`;
+        const filePath = `~/driftgrid/projects/${client}/${project}/${currentVersion.file}`;
         let text = filePath;
         try {
           const res = await fetch(`/api/annotations?client=${client}&project=${project}&conceptId=${currentConcept.id}&versionId=${currentVersion.id}`);
@@ -678,7 +744,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             const [cid, vid] = key.split(':');
             const concept = concepts.find(c => c.id === cid);
             const version = concept?.versions.find(v => v.id === vid);
-            return version ? `~/drift/projects/${client}/${project}/${version.file}` : '';
+            return version ? `~/driftgrid/projects/${client}/${project}/${version.file}` : '';
           }).filter(Boolean);
           navigator.clipboard.writeText(paths.join('\n'));
           toast(`${paths.length} paths copied`);
@@ -704,6 +770,13 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         Star all
       </button>
       <button
+        onClick={handleNewRound}
+        className="px-2 py-1 rounded-lg hover:bg-white/20 transition-colors text-white"
+        style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11 }}
+      >
+        New round
+      </button>
+      <button
         onClick={() => setMultiSelected(new Set())}
         className="px-2 py-1 rounded-lg hover:bg-white/20 transition-colors text-white/60"
         style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 10 }}
@@ -720,22 +793,48 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
-        {/* Home — top-right */}
-        <a
-          href="/"
-          className="fixed top-4 right-4 z-30 flex items-center gap-1.5 no-underline hover:opacity-80 transition-opacity"
-          style={{
-            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-            fontSize: 11,
-            color: 'var(--muted)',
-            opacity: 0.6,
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
-          </svg>
-          {filtered?.project.name}
-        </a>
+        {/* Top-right: project name + round switcher */}
+        <div className="fixed top-4 right-4 z-30 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
+          {/* Round switcher — hidden when only 1 round */}
+          {rounds.length > 1 && (
+            <div className="flex items-center gap-1.5">
+              {rounds.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => {
+                    setActiveRoundId(r.id);
+                    setConceptIndex(0);
+                    setVersionIndex(0);
+                    setSelections(new Map());
+                  }}
+                  className="transition-all"
+                  style={{
+                    fontSize: 9,
+                    letterSpacing: '0.06em',
+                    fontWeight: r.id === activeRoundId ? 600 : 400,
+                    color: r.id === activeRoundId ? 'var(--foreground)' : 'var(--muted)',
+                    opacity: r.id === activeRoundId ? 0.8 : 0.35,
+                    padding: '2px 4px',
+                    textTransform: 'uppercase',
+                  }}
+                  title={r.name + (r.closedAt ? ' (closed)' : '')}
+                >
+                  R{r.number}{r.closedAt ? '' : '\u00b7'}
+                </button>
+              ))}
+            </div>
+          )}
+          <a
+            href="/"
+            className="flex items-center gap-1.5 no-underline hover:opacity-80 transition-opacity"
+            style={{ fontSize: 11, color: 'var(--muted)', opacity: 0.6 }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            {filtered?.project.name}
+          </a>
+        </div>
         <div className="flex-1 min-h-0">
           <CanvasView
             ref={canvasRef}

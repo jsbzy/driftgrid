@@ -117,13 +117,13 @@ export function ViewerTopbar({
             <span className="text-[var(--border)]">&middot;</span>
             <button
               onClick={() => {
-                const fullPath = `~/drift/projects/${clientSlug}/${project}/${versionFile}`;
+                const fullPath = `~/driftgrid/projects/${clientSlug}/${project}/${versionFile}`;
                 navigator.clipboard.writeText(fullPath);
                 const el = document.activeElement as HTMLElement;
                 el?.blur();
               }}
               className="text-[10px] text-[var(--border)] hover:text-[var(--muted)] transition-colors cursor-pointer truncate max-w-[200px]"
-              title={`~/drift/projects/${clientSlug}/${project}/${versionFile} — click to copy`}
+              title={`~/driftgrid/projects/${clientSlug}/${project}/${versionFile} — click to copy`}
               style={{ fontFamily: 'var(--font-mono, monospace)' }}
             >
               {versionFile}

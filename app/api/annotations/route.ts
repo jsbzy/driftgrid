@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   const manifest = await getManifest(client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-  const concept = manifest.concepts.find(c => c.id === conceptId);
+  const concept = manifest.concepts?.find(c => c.id === conceptId);
   const version = concept?.versions.find(v => v.id === versionId);
   if (!version) return NextResponse.json({ error: 'Version not found' }, { status: 404 });
 
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   const manifest = await getManifest(client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-  const concept = manifest.concepts.find(c => c.id === conceptId);
+  const concept = manifest.concepts?.find(c => c.id === conceptId);
   const version = concept?.versions.find(v => v.id === versionId);
   if (!version) return NextResponse.json({ error: 'Version not found' }, { status: 404 });
 
@@ -92,7 +92,7 @@ export async function DELETE(request: Request) {
   const manifest = await getManifest(client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-  const concept = manifest.concepts.find(c => c.id === conceptId);
+  const concept = manifest.concepts?.find(c => c.id === conceptId);
   const version = concept?.versions.find(v => v.id === versionId);
   if (!version?.annotations) return NextResponse.json({ error: 'No annotations' }, { status: 404 });
 
@@ -117,7 +117,7 @@ export async function PATCH(request: Request) {
   const manifest = await getManifest(client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-  const concept = manifest.concepts.find(c => c.id === conceptId);
+  const concept = manifest.concepts?.find(c => c.id === conceptId);
   const version = concept?.versions.find(v => v.id === versionId);
   const annotation = version?.annotations?.find(a => a.id === annotationId);
   if (!annotation) return NextResponse.json({ error: 'Annotation not found' }, { status: 404 });
@@ -149,7 +149,7 @@ async function writeFeedbackSidecar(
     lines.push(`${i + 1}. **${location}**${who} — ${a.text}${resolved}`);
   });
   lines.push('', '---');
-  lines.push(`File: ~/drift/projects/${client}/${project}/${version.file}`);
+  lines.push(`File: ~/driftgrid/projects/${client}/${project}/${version.file}`);
 
   const htmlPath = version.file;
   const feedbackPath = htmlPath.replace(/\.html$/, '.feedback.md');

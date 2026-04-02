@@ -634,7 +634,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             onDrift={() => { onDriftVersion(concept.id, version.id); closeContextMenu(); }}
             onBranch={() => { onBranchVersion(concept.id, version.id); closeContextMenu(); }}
             onCopyPath={() => {
-              navigator.clipboard.writeText(`~/drift/projects/${client}/${project}/${version.file}`);
+              navigator.clipboard.writeText(`~/driftgrid/projects/${client}/${project}/${version.file}`);
               closeContextMenu();
             }}
             onHide={() => { onHideVersion?.(concept.id, version.id); closeContextMenu(); }}
@@ -749,7 +749,7 @@ const CardLayer = memo(function CardLayer({
               isSelected={isStarred}
               isLatest={isLatest}
               isMultiSelected={multiSelected.has(`${concept.id}:${version.id}`)}
-              filePath={`~/drift/projects/${client}/${project}/${version.file}`}
+              filePath={`~/driftgrid/projects/${client}/${project}/${version.file}`}
               onStar={() => onStarVersion(concept.id, version.id)}
               onDelete={() => onDeleteVersion(concept.id, version.id)}
               onDrift={() => onDriftVersion(concept.id, version.id)}

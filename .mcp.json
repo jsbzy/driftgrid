@@ -3,7 +3,7 @@
     "driftgrid": {
       "command": "npx",
       "args": ["tsx", "mcp/server.ts"],
-      "cwd": "/Users/jeffbzy/drift"
+      "cwd": "."
     }
   }
 }

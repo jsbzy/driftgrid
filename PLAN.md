@@ -63,8 +63,8 @@
 | Working set → multi-page PDF (one page per concept) | DONE |
 | Working set → PPTX (PNG screenshots as slides) | DONE |
 | Raw HTML download | DONE |
-| CLI: `npx tsx scripts/export-pdf.ts recovryai one-pager --set round-1` | DONE |
-| CLI: `npx tsx scripts/export-png.ts recovryai one-pager` | DONE |
+| CLI: `npx tsx scripts/export-pdf.ts demo getting-started --set round-1` | DONE |
+| CLI: `npx tsx scripts/export-png.ts demo getting-started` | DONE |
 
 ---
 
@@ -85,7 +85,7 @@
 - Brand panel: UI to view guidelines.md, logo, and assets
 - Selects UX polish: borders, empty placeholders, Edit/Done placement
 - Visibility toggles: eye icon per concept/version in designer mode
-- Subdomain routing: `{client}.bzy.design/{project}` via middleware
+- Subdomain routing: `{client}.yourdomain.com/{project}` via middleware
 - Drift wordmark in client view
 - Comments system: slide-out panel per concept/version
 - Editable text: `data-drift-editable` elements in client view

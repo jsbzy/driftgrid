@@ -119,17 +119,41 @@ server.tool(
 
 server.tool(
   'close_round',
-  'Close the current iteration round — stamps all unstamped versions and creates a divider on the grid.',
+  'Close the current iteration round — saves selects as the approved baseline and marks the round as closed.',
   {
     client: z.string(),
     project: z.string(),
     name: z.string().optional().describe('Optional round name (defaults to "Round N")'),
+    selects: z.array(z.object({ conceptId: z.string(), versionId: z.string() })).optional()
+      .describe('The approved concept/version pairs. Omit to close without changing selects.'),
+    roundId: z.string().optional().describe('Round ID to close. Omit for the latest round.'),
   },
   async (input) => {
     const data = await apiFetch('/api/rounds', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
+      body: JSON.stringify({ ...input, action: 'close' }),
+    });
+    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+server.tool(
+  'create_round',
+  'Create a new round from selected cards — copies concepts/versions into a fresh board for the next iteration.',
+  {
+    client: z.string(),
+    project: z.string(),
+    name: z.string().optional().describe('Optional round name'),
+    selections: z.array(z.object({ conceptId: z.string(), versionId: z.string() }))
+      .describe('The concept/version pairs to bring into the new round'),
+    sourceRoundId: z.string().optional().describe('Round to copy from. Omit for the latest round.'),
+  },
+  async (input) => {
+    const data = await apiFetch('/api/rounds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...input, action: 'create' }),
     });
     return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
   },
@@ -155,14 +179,16 @@ server.tool(
     if (!round) {
       return { content: [{ type: 'text', text: `Round ${roundNumber} not found.` }] };
     }
+    // Look up selects in the round's own concepts
+    const roundConcepts = round.concepts ?? [];
     const selects = (round.selects ?? []).map((s: { conceptId: string; versionId: string }) => {
-      const concept = manifest.concepts.find((c: { id: string }) => c.id === s.conceptId);
+      const concept = roundConcepts.find((c: { id: string }) => c.id === s.conceptId);
       const version = concept?.versions.find((v: { id: string }) => v.id === s.versionId);
       return {
         concept: concept?.label ?? s.conceptId,
         versionNumber: version?.number,
         file: version?.file,
-        absolutePath: `~/drift/projects/${client}/${project}/${version?.file}`,
+        absolutePath: `~/driftgrid/projects/${client}/${project}/${version?.file}`,
       };
     });
     return {
@@ -171,7 +197,7 @@ server.tool(
         text: JSON.stringify({
           round: round.name,
           roundNumber: round.number,
-          savedAt: round.savedAt,
+          closedAt: round.closedAt,
           note: round.note,
           selects,
         }, null, 2),

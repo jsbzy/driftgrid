@@ -94,7 +94,7 @@ Local-first design iteration platform for the AI coding era. BYO AI generates HT
 - Self-review via screenshots and TypeScript compilation
 - Update STATUS.md with progress
 
-### What requires Jeff's approval:
+### What requires user approval:
 - Changing the visual design language (colors, fonts, spacing)
 - Adding new dependencies
 - Modifying the manifest schema (breaking change)
@@ -102,7 +102,7 @@ Local-first design iteration platform for the AI coding era. BYO AI generates HT
 - Anything user-facing that changes the workflow
 
 ### Context management:
-- If context gets full, Claude tells Jeff to start a new conversation
+- If context gets full, Claude tells the user to start a new conversation
 - New conversations read DRIFTGRID.md + STATUS.md to resume
 - Git commits after each sub-task for clean rollback
 

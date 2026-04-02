@@ -237,7 +237,7 @@ Rather than a full minimap (which is heavy to implement), add a **position indic
 4. **Quick-review mode (new):**
    - Press R to enter "review mode" — cycles through only starred selects in grid view at z4 zoom level
    - Arrow left/right jumps between selects (skipping non-selected cards)
-   - This is useful for Jeff reviewing picks before presenting to clients
+   - This is useful for reviewing picks before presenting to clients
    - Implementation: filter navigation to only `selections` entries
 
 ---
@@ -323,32 +323,32 @@ This makes card-level actions discoverable without hovering. Currently, action b
 ### Tier 1: Quick Wins (< 30 min each, big feel improvement)
 
 **7.1 — Faster animation curve**
-- File: `/Users/jeffbzy/drift/components/CanvasView.tsx` line 333
+- File: `./components/CanvasView.tsx` line 333
 - Change: `transition: animating ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none'`
 - To: `transition: animating ? 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)' : 'none'`
 - Also update `setTimeout` in `useCanvasTransform.ts` from 350ms to 280ms
 - **Why:** 80ms faster + better curve = canvas feels twice as responsive
 
 **7.2 — Card hover lift**
-- File: `/Users/jeffbzy/drift/components/CanvasCard.tsx`
+- File: `./components/CanvasCard.tsx`
 - Add to the outer `div[data-card]`: CSS hover state with `translateY(-2px)` and shadow increase
 - Use `transition: transform 150ms ease-out, box-shadow 150ms ease-out`
 - **Why:** Instantly communicates "this is interactive" without any extra UI
 
 **7.3 — Double-click to enter fullscreen**
-- File: `/Users/jeffbzy/drift/components/CanvasView.tsx` — `handleThumbnailClick`
+- File: `./components/CanvasView.tsx` — `handleThumbnailClick`
 - Add `onDoubleClick` handler to `CanvasCard` that calls `onSelect` directly
 - Change single click to always highlight (remove the "click again to enter" logic)
 - **Why:** Matches Figma/Miro mental model. Eliminates the awkward two-click-to-enter pattern.
 
 **7.4 — Zoom percentage indicator**
-- File: `/Users/jeffbzy/drift/components/CanvasView.tsx`
+- File: `./components/CanvasView.tsx`
 - Add a small `<span>` in the bottom-right corner: `{Math.round(transform.scale * 100)}%`
 - Style: 9px mono, opacity 0.3, same as existing hint text
 - **Why:** Orientation cue. Users always want to know their zoom level.
 
 **7.5 — Snap zoom to 100%**
-- File: `/Users/jeffbzy/drift/lib/hooks/useCanvasTransform.ts` — `onWheel`
+- File: `./lib/hooks/useCanvasTransform.ts` — `onWheel`
 - After computing `newScale`: `if (Math.abs(newScale - 1) < 0.03) newScale = 1;`
 - **Why:** "Pixel perfect" zoom level is a quality signal
 

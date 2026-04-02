@@ -1,12 +1,12 @@
 ---
 name: drift
 description: |
-  Use this skill whenever you're doing any work in Drift — Jeff's design iteration and client presentation platform. Trigger for: creating new client projects or design files, adding new concepts or versions to existing projects, importing existing HTML designs into Drift, editing or updating design files, managing manifests, troubleshooting exports. Also trigger when Jeff says things like "start a project for [client]", "new version", "new concept", "import this into Drift", "add a design for [client]", or when working with files in drift/projects/. If Drift is involved in any way, use this skill.
+  Use this skill whenever you're doing any work in Drift — the design iteration and client presentation platform. Trigger for: creating new client projects or design files, adding new concepts or versions to existing projects, importing existing HTML designs into Drift, editing or updating design files, managing manifests, troubleshooting exports. Also trigger when the user says things like "start a project for [client]", "new version", "new concept", "import this into Drift", "add a design for [client]", or when working with files in drift/projects/. If Drift is involved in any way, use this skill.
 ---
 
 # Drift
 
-Drift is Jeff's design platform. Agents create HTML design files; clients review them in the same app. Every project lives at `drift/projects/{client-slug}/{project-slug}/`.
+Drift is a design iteration platform. Agents create HTML design files; clients review them in the same app. Every project lives at `drift/projects/{client-slug}/{project-slug}/`.
 
 Before creating or editing any design, read the client's brand guidelines: `drift/projects/{client-slug}/brand/guidelines.md`.
 
@@ -14,7 +14,7 @@ Before creating or editing any design, read the client's brand guidelines: `drif
 
 ## New Project Workflow
 
-When Jeff says "start a new project for [client] called [name], [format]":
+When the user says "start a new project for [client] called [name], [format]":
 
 1. **Check client folder** — if `projects/{client-slug}/` doesn't exist, create it with a `brand/` folder and a starter `guidelines.md`
 2. **Create project folder** — `projects/{client-slug}/{project-slug}/`

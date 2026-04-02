@@ -2,12 +2,12 @@
 
 ## What is DriftGrid?
 
-DriftGrid is Jeff's design iteration and client presentation platform. Every design project lives here — Claude Code creates the work, and clients review it in the same place. The repo contains both the Next.js app and all project files.
+DriftGrid is a design iteration and client presentation platform. Every design project lives here — AI tools create the work, and clients review it in the same place. The repo contains both the Next.js app and all project files.
 
 ## Project Structure
 
 ```
-~/drift/
+~/driftgrid/
 ├── app/                              # Next.js app
 ├── projects/
 │   └── {client-slug}/
@@ -29,7 +29,7 @@ DriftGrid is Jeff's design iteration and client presentation platform. Every des
 
 ## Starting a New Project
 
-When Jeff says something like "Start a new project for [client] called [name], [format]":
+When the user says something like "Start a new project for [client] called [name], [format]":
 
 1. **Check client folder:** If `projects/{client-slug}/` doesn't exist, create it with `brand/` folder and starter `guidelines.md`
 2. **Create project folder:** `projects/{client-slug}/{project-slug}/`
@@ -213,7 +213,7 @@ For locked formats (`landscape-16-9`, `a4-portrait`):
 
 ## Design Review — MANDATORY
 
-Before presenting ANY design version to Jeff, run a minimum 3-pass internal design review as an Apple lead designer. Do NOT present work without completing this.
+Before presenting ANY design version, run a minimum 3-pass internal design review as an Apple lead designer. Do NOT present work without completing this.
 
 **Pass 1 — Structure & Layout:**
 - Does the phone shell fill completely? (No body background bleeding through)
@@ -264,14 +264,24 @@ This project uses DriftGrid for design iteration. Key rules:
 - `GET /api/annotations?client=X&project=Y&conceptId=Z&versionId=W` — get feedback annotations
 - `POST /api/rounds` — close current round (stamps versions, saves selects as baseline)
 
-### Rounds & Baseline
+### Rounds (Pages)
 
-When the designer says "close this round" or "move to the next round":
-1. The current round is closed — all versions get stamped, selects are saved as the **approved baseline**
-2. The next round starts fresh — new versions will be unstamped
-3. Use MCP `get_round_baseline` (or `GET /api/manifest`) to read the selects from the last round
-4. The selects are the **approved state** — don't modify them. Build new versions that evolve from them.
-5. When the designer says "use the selects as the baseline", read the select files and create improved versions as new iterations
+Rounds work like **Figma pages** — each round is its own board with its own concepts and versions. Switching between rounds changes the entire canvas view.
+
+**Data model:** `manifest.rounds[]` — each round has its own `concepts[]` array. The top-level `manifest.concepts` is a convenience alias that always points to the latest round's concepts.
+
+**Closing a round:**
+1. `POST /api/rounds` with `action: "close"` — saves selects as the approved baseline, sets `closedAt`
+2. MCP: `close_round(client, project, selects, roundId?)`
+
+**Creating a new round:**
+1. `POST /api/rounds` with `action: "create"` — copies selected concepts/versions into a fresh round
+2. MCP: `create_round(client, project, selections, sourceRoundId?)`
+3. HTML files are duplicated into `concept-slug/round-N/v1.html`
+
+**Reading the baseline:**
+1. MCP: `get_round_baseline(client, project, roundNumber?)` — returns the selects from a closed round
+2. The selects are the **approved state** — build new versions that evolve from them
 
 ### Feedback & Annotations
 
