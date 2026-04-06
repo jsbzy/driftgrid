@@ -23,6 +23,12 @@ import { useAnnotationState } from '@/lib/hooks/useAnnotationState';
 import { usePresentationMode } from '@/lib/hooks/usePresentationMode';
 import { useManifestMutations } from '@/lib/hooks/useManifestMutations';
 import { AnnotationOverlay } from './AnnotationOverlay';
+import { MobileNav, type MobileTab } from './MobileNav';
+import { MobileActions } from './MobileActions';
+import { MobileMenuSheet } from './MobileMenuSheet';
+import { MobileAnnotationList } from './MobileAnnotationList';
+import { MobileBottomSheet } from './MobileBottomSheet';
+import { useSwipeNav } from '@/lib/hooks/useSwipeNav';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -51,6 +57,11 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [showHidden, setShowHidden] = useState(false);
   const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set());
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('overview');
+  // Mobile state
+  const [mobileTab, setMobileTab] = useState<MobileTab>(mode === 'client' ? 'frame' : 'grid');
+  const [menuSheetOpen, setMenuSheetOpen] = useState(false);
+  const [feedbackSheetOpen, setFeedbackSheetOpen] = useState(false);
+
   // Smooth zoom transition state
   const canvasRef = useRef<CanvasViewHandle>(null);
   const frameWrapperRef = useRef<HTMLDivElement>(null);
@@ -98,6 +109,15 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   // Extracted hooks
   const annotationState = useAnnotationState(client, project, currentConcept?.id, currentVersion?.id, viewMode);
+
+  // Mobile tab handler — sync viewMode with mobile tab
+  const handleMobileTabChange = useCallback((tab: MobileTab) => {
+    setMobileTab(tab);
+    if (tab === 'grid') setViewMode('grid');
+    else if (tab === 'frame') setViewMode('frame');
+    else if (tab === 'feedback') setFeedbackSheetOpen(true);
+    else if (tab === 'menu') setMenuSheetOpen(true);
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -252,6 +272,33 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     const layout = computeCanvasLayout(concepts, ar);
     return getCardBounds(layout, ci, vi);
   }, [concepts, filtered]);
+
+  // Swipe navigation for frame view on mobile
+  useSwipeNav({
+    enabled: viewMode === 'frame',
+    containerRef: frameWrapperRef,
+    onSwipeLeft: useCallback(() => {
+      const nextCi = Math.min(conceptIndex + 1, concepts.length - 1);
+      if (nextCi !== conceptIndex) handleNavigate(nextCi, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [conceptIndex, concepts.length, handleNavigate]),
+    onSwipeRight: useCallback(() => {
+      const prevCi = Math.max(conceptIndex - 1, 0);
+      if (prevCi !== conceptIndex) handleNavigate(prevCi, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [conceptIndex, handleNavigate]),
+    onSwipeUp: useCallback(() => {
+      const maxVi = (currentConcept?.versions.length ?? 1) - 1;
+      const nextVi = Math.min(versionIndex + 1, maxVi);
+      if (nextVi !== versionIndex) handleNavigate(conceptIndex, nextVi);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [versionIndex, conceptIndex, currentConcept?.versions.length, handleNavigate]),
+    onSwipeDown: useCallback(() => {
+      const prevVi = Math.max(versionIndex - 1, 0);
+      if (prevVi !== versionIndex) handleNavigate(conceptIndex, prevVi);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [versionIndex, conceptIndex, handleNavigate]),
+  });
 
   const handleToggleGridView = useCallback(() => {
     setViewMode(v => {
@@ -888,7 +935,68 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             initialCardBounds={transitionCardBounds}
           />
         </div>
-        {multiSelectBar || actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame (Enter)', '↵')}
+        {/* Desktop action bar — hidden on mobile */}
+        <div className="hidden md:block">
+          {multiSelectBar || actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame (Enter)', '↵')}
+        </div>
+        {/* Mobile: FAB + bottom nav */}
+        <MobileActions
+          onStar={handleToggleSelect}
+          onDrift={handleDrift}
+          onAnnotate={() => {
+            setViewMode('frame');
+            setMobileTab('frame');
+            setTimeout(() => annotationState.setAnnotationMode(true), 100);
+          }}
+          onBranch={handleBranch}
+          isStarred={isCurrentStarred}
+          isDesigner={!isClientMode}
+        />
+        <MobileNav
+          activeTab={mobileTab}
+          onTabChange={handleMobileTabChange}
+          annotationCount={annotationState.annotations.length}
+          isDesigner={!isClientMode}
+        />
+        <MobileMenuSheet
+          open={menuSheetOpen}
+          onClose={() => setMenuSheetOpen(false)}
+          projectName={filtered?.project.name}
+          client={filtered?.project.client}
+          clientSlug={client}
+          rounds={rounds}
+          activeRoundId={activeRoundId}
+          onSwitchRound={(id) => {
+            setActiveRoundId(id);
+            setConceptIndex(0);
+            setVersionIndex(0);
+            setSelections(new Map());
+          }}
+          onNewRound={handleNewRound}
+          onExportPng={handleExportPng}
+          onToggleTheme={() => {
+            const html = document.documentElement;
+            const isDark = html.classList.contains('dark');
+            html.classList.toggle('dark', !isDark);
+            localStorage.setItem('driftgrid-theme', isDark ? 'light' : 'dark');
+          }}
+          onToggleShowHidden={() => setShowHidden(v => !v)}
+          showHidden={showHidden}
+          isDesigner={!isClientMode}
+        />
+        <MobileBottomSheet
+          open={feedbackSheetOpen}
+          onClose={() => setFeedbackSheetOpen(false)}
+          title="Feedback"
+        >
+          <MobileAnnotationList
+            annotations={annotationState.annotations}
+            onResolve={() => {}}
+            onDelete={annotationState.handleDeleteAnnotation}
+            conceptLabel={currentConcept?.label}
+            versionLabel={currentVersion ? numberToLetter(currentVersion.number) : undefined}
+          />
+        </MobileBottomSheet>
         <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />
         {commandPalette}
         <ToastContainer />
@@ -903,7 +1011,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       {deleteOverlay}
       {deleteDialog}
       <div ref={frameWrapperRef} className="flex-1 min-h-0 relative">
-        <div className="h-full p-4 relative" style={{ background: 'var(--canvas)' }}>
+        <div className="h-full p-4 pb-4 md:pb-4 relative" style={{ background: 'var(--canvas)' }}>
           <HtmlFrame
             ref={htmlFrameRef}
             src={htmlSrc}
@@ -931,8 +1039,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         >
           DriftGrid
         </div>
-        {/* Frame action bar */}
-        {mode !== 'client' && !ui.navGridHidden && !presentation.isPresenting && actionBar(() => handleToggleGridView(), gridIcon, 'Back to grid (G)', 'G')}
+        {/* Frame action bar — desktop only */}
+        <div className="hidden md:block">
+          {mode !== 'client' && !ui.navGridHidden && !presentation.isPresenting && actionBar(() => handleToggleGridView(), gridIcon, 'Back to grid (G)', 'G')}
+        </div>
         {/* Presentation mode indicator */}
         {presentation.isPresenting && (
           <div
@@ -953,16 +1063,99 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           </div>
         )}
       </div>
-      {!presentation.isPresenting && !ui.navGridHidden && (
-        <NavigationGrid
-          conceptIndex={conceptIndex}
-          versionIndex={versionIndex}
-          versionCounts={navGridVersionCounts}
-          selections={selections}
-          conceptIds={navGridConceptIds}
-          versionIds={navGridVersionIds}
-          currentVersionNumber={currentVersion?.number}
-        />
+      {/* Navigation grid — desktop only */}
+      <div className="hidden md:block">
+        {!presentation.isPresenting && !ui.navGridHidden && (
+          <NavigationGrid
+            conceptIndex={conceptIndex}
+            versionIndex={versionIndex}
+            versionCounts={navGridVersionCounts}
+            selections={selections}
+            conceptIds={navGridConceptIds}
+            versionIds={navGridVersionIds}
+            currentVersionNumber={currentVersion?.number}
+          />
+        )}
+      </div>
+      {/* Mobile: swipe indicators */}
+      <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 pointer-events-none">
+        {concepts.length > 1 && (
+          <div className="flex items-center gap-1">
+            {concepts.map((c, i) => (
+              <div
+                key={c.id}
+                className="rounded-full transition-all"
+                style={{
+                  width: i === conceptIndex ? 12 : 4,
+                  height: 4,
+                  background: i === conceptIndex ? 'var(--foreground)' : 'var(--muted)',
+                  opacity: i === conceptIndex ? 0.6 : 0.25,
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Mobile: FAB + bottom nav + sheets */}
+      {!presentation.isPresenting && (
+        <>
+          <MobileActions
+            onStar={handleToggleSelect}
+            onDrift={handleDrift}
+            onAnnotate={() => annotationState.setAnnotationMode(v => !v)}
+            onBranch={handleBranch}
+            isStarred={isCurrentStarred}
+            isAnnotating={annotationState.annotationMode}
+            isDesigner={!isClientMode}
+          />
+          <MobileNav
+            activeTab={mobileTab}
+            onTabChange={handleMobileTabChange}
+            annotationCount={annotationState.annotations.length}
+            isDesigner={!isClientMode}
+          />
+          <MobileMenuSheet
+            open={menuSheetOpen}
+            onClose={() => setMenuSheetOpen(false)}
+            projectName={filtered?.project.name}
+            client={filtered?.project.client}
+            clientSlug={client}
+            canvasLabel={typeof canvasConfig === 'string' ? canvasConfig : canvasConfig?.type}
+            versionFile={currentVersion?.file}
+            rounds={rounds}
+            activeRoundId={activeRoundId}
+            onSwitchRound={(id) => {
+              setActiveRoundId(id);
+              setConceptIndex(0);
+              setVersionIndex(0);
+              setSelections(new Map());
+            }}
+            onNewRound={handleNewRound}
+            onExportPng={handleExportPng}
+            onToggleTheme={() => {
+              const html = document.documentElement;
+              const isDark = html.classList.contains('dark');
+              html.classList.toggle('dark', !isDark);
+              localStorage.setItem('driftgrid-theme', isDark ? 'light' : 'dark');
+            }}
+            onToggleShowHidden={() => setShowHidden(v => !v)}
+            showHidden={showHidden}
+            isDesigner={!isClientMode}
+          />
+          <MobileBottomSheet
+            open={feedbackSheetOpen}
+            onClose={() => setFeedbackSheetOpen(false)}
+            title="Feedback"
+          >
+            <MobileAnnotationList
+              annotations={annotationState.annotations}
+              onResolve={() => {}}
+              onDelete={annotationState.handleDeleteAnnotation}
+              conceptLabel={currentConcept?.label}
+              versionLabel={currentVersion ? numberToLetter(currentVersion.number) : undefined}
+            />
+          </MobileBottomSheet>
+        </>
       )}
       <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />
       {commandPalette}

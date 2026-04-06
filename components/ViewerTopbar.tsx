@@ -83,20 +83,23 @@ export function ViewerTopbar({
         >
           ≡
         </Link>
-        <span className="text-[var(--border)]">&middot;</span>
-        <Link
-          href={isClientMode ? `/review/${clientSlug}` : '/'}
-          className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
-        >
-          {client}
-        </Link>
-        <span className="text-[var(--border)]">&middot;</span>
-        <button
-          onClick={viewMode === 'frame' && onGoToOverview ? onGoToOverview : onGoToGrid}
-          className="font-medium hover:text-[var(--muted)] transition-colors cursor-pointer"
-        >
-          {projectName}
-        </button>
+        {/* Full breadcrumb — desktop only */}
+        <span className="hidden md:contents">
+          <span className="text-[var(--border)]">&middot;</span>
+          <Link
+            href={isClientMode ? `/review/${clientSlug}` : '/'}
+            className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+          >
+            {client}
+          </Link>
+          <span className="text-[var(--border)]">&middot;</span>
+          <button
+            onClick={viewMode === 'frame' && onGoToOverview ? onGoToOverview : onGoToGrid}
+            className="font-medium hover:text-[var(--muted)] transition-colors cursor-pointer"
+          >
+            {projectName}
+          </button>
+        </span>
         <span className="text-[var(--border)]">&middot;</span>
         <button
           onClick={viewMode === 'frame' && onGoToConceptColumn ? onGoToConceptColumn : onGoToGrid}
@@ -107,13 +110,13 @@ export function ViewerTopbar({
         <span className="text-[var(--border)]">&middot;</span>
         <span className="text-[var(--muted)]">{numberToLetter(versionNumber)}</span>
         {canvasLabel && (
-          <>
+          <span className="hidden md:contents">
             <span className="text-[var(--border)]">&middot;</span>
             <span className="text-[10px] text-[var(--border)]">{canvasLabel}</span>
-          </>
+          </span>
         )}
         {viewMode === 'frame' && versionFile && (
-          <>
+          <span className="hidden md:contents">
             <span className="text-[var(--border)]">&middot;</span>
             <button
               onClick={() => {
@@ -128,12 +131,12 @@ export function ViewerTopbar({
             >
               {versionFile}
             </button>
-          </>
+          </span>
         )}
       </div>
 
-      {/* Right: edit controls */}
-      <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
+      {/* Right: edit controls — hidden on mobile (moved to MobileMenuSheet / MobileActions) */}
+      <div className="hidden md:flex items-center gap-3 text-xs text-[var(--muted)]">
         {isClientMode && (
           <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.05em' }}>
             Click anywhere to comment

@@ -21,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <script dangerouslySetInnerHTML={{ __html: `
           try {
             if (localStorage.getItem('driftgrid-theme') === 'dark') {
@@ -30,14 +31,6 @@ export default function RootLayout({
         `}} />
       </head>
       <body className={`${jetbrainsMono.variable} antialiased`}>
-        <div className="hidden max-md:flex fixed inset-0 z-[9999] items-center justify-center p-8" style={{ background: 'var(--background)' }}>
-          <div style={{ textAlign: 'center', fontFamily: 'var(--font-mono, monospace)', maxWidth: 320 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--foreground)' }}>DriftGrid</div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
-              DriftGrid is designed for desktop with keyboard shortcuts. Open this on a laptop or desktop for the best experience.
-            </div>
-          </div>
-        </div>
         {children}
       </body>
     </html>

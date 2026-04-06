@@ -161,6 +161,7 @@ export function AnnotationOverlay({
             Add Comment
           </span>
           <span
+            className="hidden md:inline"
             style={{
               fontFamily: 'var(--font-mono, monospace)',
               fontSize: 10,
@@ -168,6 +169,16 @@ export function AnnotationOverlay({
             }}
           >
             click to pin · Esc to cancel
+          </span>
+          <span
+            className="md:hidden"
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: 10,
+              color: 'rgba(255,255,255,0.35)',
+            }}
+          >
+            tap to pin
           </span>
         </div>
       )}
@@ -195,8 +206,8 @@ export function AnnotationOverlay({
             <button
               onClick={(e) => handlePinClick(e, annotation.id)}
               style={{
-                width: 16,
-                height: 16,
+                width: 24,
+                height: 24,
                 borderRadius: '50%',
                 border: 'none',
                 cursor: 'pointer',

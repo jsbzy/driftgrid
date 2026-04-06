@@ -80,10 +80,16 @@ body {
   font-family: var(--font-mono), ui-monospace, monospace;
 }
 
-/* Mobile: prevent overflow, hide action bars that don't work without keyboard */
+/* Mobile: prevent overflow, safe areas, bottom nav spacing */
 @media (max-width: 768px) {
   body {
     overflow-x: hidden;
+    /* Prevent iOS double-tap zoom on buttons */
+    touch-action: manipulation;
+  }
+  /* Add bottom padding to account for mobile nav bar */
+  .h-screen {
+    height: 100dvh;
   }
 }
 

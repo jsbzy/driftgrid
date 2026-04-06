@@ -174,8 +174,8 @@ export function SelectsBar({
         </div>
       )}
 
-      {/* Actions bar — always visible */}
-      <div className="flex items-center gap-3 px-4 h-[36px]">
+      {/* Actions bar — always visible, wraps on mobile */}
+      <div className="flex items-center gap-3 px-4 h-[36px] overflow-x-auto">
         <span
           className="text-[10px] tracking-wide shrink-0"
           style={{ color: 'var(--foreground)', opacity: 0.4, fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}

@@ -53,6 +53,84 @@ export function useCanvasTransform(viewportRef: React.RefObject<HTMLElement | nu
   const velocitySamples = useRef<{ x: number; y: number; t: number }[]>([]);
   const momentumRaf = useRef<number | null>(null);
 
+  // Pinch-to-zoom and two-finger pan for touch devices
+  const lastTouchDist = useRef<number | null>(null);
+  const lastTouchCenter = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+
+    const getTouchDist = (t1: Touch, t2: Touch) =>
+      Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    const getTouchCenter = (t1: Touch, t2: Touch) => ({
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2,
+    });
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const [t1, t2] = [e.touches[0], e.touches[1]];
+        lastTouchDist.current = getTouchDist(t1, t2);
+        lastTouchCenter.current = getTouchCenter(t1, t2);
+        // Cancel momentum
+        if (momentumRaf.current !== null) {
+          cancelAnimationFrame(momentumRaf.current);
+          momentumRaf.current = null;
+        }
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && lastTouchDist.current !== null && lastTouchCenter.current !== null) {
+        e.preventDefault();
+        const [t1, t2] = [e.touches[0], e.touches[1]];
+        const dist = getTouchDist(t1, t2);
+        const center = getTouchCenter(t1, t2);
+        const rect = el.getBoundingClientRect();
+        const cursorX = center.x - rect.left;
+        const cursorY = center.y - rect.top;
+
+        // Pinch zoom
+        const scaleFactor = dist / lastTouchDist.current;
+
+        // Two-finger pan
+        const panDx = center.x - lastTouchCenter.current.x;
+        const panDy = center.y - lastTouchCenter.current.y;
+
+        setTransformState(prev => {
+          let newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev.scale * scaleFactor));
+          if (Math.abs(newScale - 1) < 0.03) newScale = 1;
+
+          const canvasX = (cursorX - prev.tx) / prev.scale;
+          const canvasY = (cursorY - prev.ty) / prev.scale;
+          const newTx = cursorX - canvasX * newScale + panDx;
+          const newTy = cursorY - canvasY * newScale + panDy;
+
+          return { scale: newScale, tx: newTx, ty: newTy };
+        });
+
+        lastTouchDist.current = dist;
+        lastTouchCenter.current = center;
+      }
+    };
+
+    const onTouchEnd = () => {
+      lastTouchDist.current = null;
+      lastTouchCenter.current = null;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [viewportRef]);
+
   // Track spacebar for drag mode
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
