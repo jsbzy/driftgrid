@@ -32,7 +32,9 @@
     "export-pdf": "npx tsx scripts/export-pdf.ts",
     "export-png": "npx tsx scripts/export-png.ts",
     "build-exports": "npx tsx scripts/build-exports.ts",
-    "mcp": "npx tsx mcp/server.ts"
+    "mcp": "npx tsx mcp/server.ts",
+    "cloud:login": "npx tsx scripts/cloud-login.ts",
+    "cloud:push": "npx tsx scripts/cloud-push.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1025.0",
