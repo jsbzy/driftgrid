@@ -1,7 +1,17 @@
 # DriftGrid Cloud — Hosted Platform Plan
 
 > Deep architectural plan for the paid, hosted version of DriftGrid.
-> Local-first stays free (MIT). Cloud adds sharing, teams, and persistence.
+> Local-first stays free (MIT). Cloud is a feature you turn on — not a separate product.
+
+---
+
+## Strategic Decisions (Locked In)
+
+1. **Beachhead customer:** Freelance designers and small studios (1-5 people) using AI coding tools. Agencies and enterprise are expansion segments, not launch targets.
+2. **Launch strategy:** Open-source + cloud ship simultaneously as one story. Cloud is visible from the first `npx driftgrid` experience.
+3. **Monetization gate:** Review links (sharing with clients). Not exports, not storage, not features that work locally.
+4. **BYO infrastructure:** Supported at launch. Documented path for self-hosting with your own Supabase + R2. Signals "no lock-in" to developer audience.
+5. **Upgrade UX:** Seamless in-context upgrade when hitting review link limit. One-click Stripe checkout, not a settings page redirect.
 
 ---
 
@@ -10,53 +20,47 @@
 **Local DriftGrid (free, open-source):**
 - `npx driftgrid` — runs on your machine
 - Filesystem storage, single-user, localhost only
-- Full feature set for solo designers using AI tools
+- Full feature set including export (PDF/PPTX/HTML)
+- "Share" button in UI prompts cloud connection
 
-**DriftGrid Cloud (paid, hosted):**
-- `app.driftgrid.com` — runs in the browser
-- Cloud storage, multi-user, shareable review links
-- Same UI, same concepts × versions grid, same AI workflow
-- Value add: sharing, teams, client access, persistence, analytics
+**DriftGrid Cloud (paid, cloud-enabled):**
+- Same local tool + cloud sharing layer
+- Shareable review links, client annotations, team workspaces
+- Push local designs to cloud for client presentation
+- Managed (`app.driftgrid.com`) or BYO Supabase + R2
 
-**Tagline:** *"Your designs in the cloud. Share with anyone. Iterate with AI."*
+**Tagline:** *"Built for the speed of AI design. Share with anyone."*
 
 ---
 
-## Pricing Model: Freemium + Project Limits
+## Pricing Model: Freemium — Gate is Sharing
 
 ### Free Tier
+- Full local product (unlimited projects, export, everything)
 - 1 workspace
-- 3 active projects (archive unlimited)
-- 500MB storage
-- Shareable review links (with DriftGrid branding)
+- 1 active review link (with DriftGrid branding)
+- 500MB cloud storage
 - 1 designer seat
-- Unlimited client reviewers
+- Unlimited client reviewers (no client accounts needed)
 
-### Pro ($19/mo per designer)
-- Unlimited projects
-- 10GB storage
-- Custom review link slugs (e.g., `app.driftgrid.com/r/acme/rebrand`)
+### Pro ($14/mo or $140/year)
+- Unlimited review links
+- Custom review link slugs (`app.driftgrid.com/r/acme/rebrand`)
 - Remove DriftGrid branding from review pages
+- 10GB cloud storage
 - Priority thumbnail generation
-- Export to PDF/PPTX/HTML
-- 5 designer seats included, $9/mo per additional
+- Up to 3 designer seats, $9/mo per additional
 
-### Team ($49/mo)
+### Team ($12/designer/mo, 3-seat minimum = $36/mo floor)
 - Everything in Pro
-- 50GB storage
-- Unlimited designer seats
+- 50GB cloud storage
 - Custom domain (`reviews.youragency.com`)
 - SSO (Google, SAML)
 - Workspace-level brand defaults
 - Analytics (view counts, time-on-page, feedback heatmaps)
 - API access for CI/CD integration
 
-### Enterprise (custom)
-- Unlimited storage
-- SLA, dedicated support
-- On-premise deployment option
-- Custom integrations
-- White-label (fully branded)
+> **Enterprise:** Not listed at launch. "Contact us" link appears for teams >20 seats. Added when inbound demand warrants it.
 
 ---
 
@@ -490,7 +494,19 @@ This is the "best of both worlds" — local AI speed, cloud sharing.
 
 ## Review Link System
 
-The core monetization driver. Designers pay to share with clients.
+The core monetization driver. The gate is the **second review link.**
+
+### Upgrade Trigger Flow
+
+```
+1. Designer clicks "Share" on a project → first review link (free, branded)
+2. Designer clicks "Share" on a second project → paywall
+3. In-context upgrade modal: "Upgrade to Pro for unlimited sharing — $14/mo"
+4. One-click Stripe Checkout (stays in DriftGrid UI, no redirect to settings)
+5. Instant activation → second review link created
+```
+
+The upgrade moment must feel like unlocking, not blocking. Show the review link preview, let them see what the client will see, then gate the "Generate Link" button.
 
 ### URL Structure
 
@@ -502,15 +518,17 @@ Team:    reviews.youragency.com/{custom-slug}        (custom domain)
 
 ### Review Page Features
 
-| Feature | Free | Pro | Team |
-|---------|------|-----|------|
+All review links include the full experience — the gate is quantity, not quality:
+
+| Feature | Free (1 link) | Pro | Team |
+|---------|---------------|-----|------|
 | View designs | Yes | Yes | Yes |
 | Navigate concepts/versions | Yes | Yes | Yes |
 | Leave annotations | Yes | Yes | Yes |
 | Client text edits | Yes | Yes | Yes |
-| Password protection | No | Yes | Yes |
-| Expiring links | No | Yes | Yes |
-| Remove DriftGrid watermark | No | Yes | Yes |
+| Password protection | Yes | Yes | Yes |
+| Expiring links | Yes | Yes | Yes |
+| DriftGrid watermark | Yes | No | No |
 | Custom domain | No | No | Yes |
 | View analytics | No | Yes | Yes |
 | Round-specific links | No | Yes | Yes |
@@ -527,80 +545,83 @@ Visible to designers when a client views a review link:
 
 ---
 
-## Migration Strategy
+## Build Sequence
 
-### Phase A: Storage Adapter (Week 1-2)
+Ordered by market signal, not engineering difficulty. Everything ships together at launch.
 
-**Goal:** Abstract filesystem operations without changing any UI.
+### 1. Storage Adapter + Database
+
+**Why first:** Foundation layer. Everything cloud depends on this.
 
 1. Define `StorageAdapter` interface
 2. Implement `LocalStorageAdapter` wrapping current `fs` calls
 3. Implement `CloudStorageAdapter` wrapping Supabase + R2
 4. Refactor all API routes to use `getStorageAdapter()` instead of direct `fs`
 5. Feature flag: `DRIFTGRID_MODE=local|cloud`
+6. Set up Supabase project, run migrations (all tables)
+7. Set up Cloudflare R2 bucket
 
-**Files to change:** All 15+ API routes in `app/api/`
-**Files to create:** `lib/storage/adapter.ts`, `lib/storage/local.ts`, `lib/storage/cloud.ts`
+### 2. Auth + Workspaces
 
-### Phase B: Auth + Workspace (Week 2-3)
+**Why second:** Need user identity before anything cloud-facing.
 
-**Goal:** User accounts and workspace isolation.
+1. Add Supabase Auth client (`@supabase/ssr`)
+2. Create auth pages: `/signup`, `/login`, `/workspace/new`
+3. Middleware: validate JWT, inject workspace context
+4. Workspace settings page: members, plan, usage meter
+5. API key generation for MCP auth
 
-1. Set up Supabase project (auth + Postgres)
-2. Run database migrations (create all tables)
-3. Add Supabase Auth client (`@supabase/ssr`)
-4. Create auth pages: `/signup`, `/login`, `/workspace/new`
-5. Add middleware: validate JWT, inject workspace context
-6. Create workspace settings page: members, plan, usage meter
+### 3. Cloud Storage + Push
 
-**Files to create:** Auth pages, workspace pages, Supabase client setup
-**Files to modify:** `middleware.ts`, layout.tsx
+**Why third:** Enables the core flow — local designs pushed to cloud.
 
-### Phase C: Cloud Storage (Week 3-4)
+1. Implement `CloudStorageAdapter` file operations (R2)
+2. `npx driftgrid push` — uploads local project to cloud
+3. `npx driftgrid login` — authenticates with cloud account
+4. Signed URL generation for direct R2 uploads
+5. Thumbnail generation strategy for cloud (queue-based)
 
-**Goal:** HTML files and thumbnails in R2.
+### 4. Review Links + Sharing (The Money Feature)
 
-1. Set up Cloudflare R2 bucket
-2. Implement `CloudStorageAdapter` file operations
-3. Migrate thumbnail generation to cloud (background job vs on-demand)
-4. Implement upload flow for MCP + direct upload
-5. Signed URL generation for direct R2 uploads
+**Why fourth:** This is the conversion trigger. Must ship at launch.
 
-**Files to create:** R2 client setup, upload routes, thumbnail worker
-**Key risk:** Thumbnail generation needs headless Chrome — use Cloudflare Browser Rendering or a separate worker
+1. "Share" button in local UI → prompts cloud connection if not connected
+2. Review link generation (slug, password, expiry)
+3. Public review page route (`/r/[slug]`)
+4. Client annotations (no account required, name prompt on first comment)
+5. Client text edits (`data-drift-editable`)
+6. DriftGrid watermark (conditional on plan)
 
-### Phase D: Review Links + Sharing (Week 4-5)
+### 5. Billing + Upgrade Flow
 
-**Goal:** The core paid feature — shareable client review links.
+**Why fifth:** Gate the second review link. Seamless in-context upgrade.
 
-1. Review link generation UI (in designer view)
-2. Public review page route (`/r/[slug]`)
-3. Password protection + expiry
-4. Client annotation saving (no auth required)
-5. DriftGrid watermark (conditional on plan)
+1. Stripe products: Free, Pro ($14/mo), Team ($12/designer/mo)
+2. In-context upgrade modal at paywall moment (not settings redirect)
+3. Stripe Checkout (embedded or hosted)
+4. Webhook handler for subscription lifecycle
+5. Limit enforcement: review link count, storage, seats
+6. Workspace billing settings: portal link, usage meter
 
-**This is the MVP monetization feature.** Everything before this is infrastructure.
+### 6. Analytics + Team Features
 
-### Phase E: Billing + Limits (Week 5-6)
-
-**Goal:** Stripe integration and plan enforcement.
-
-1. Stripe product + price setup (Free, Pro, Team)
-2. Checkout flow (Stripe Checkout hosted page)
-3. Webhook handler for subscription lifecycle
-4. Limit enforcement across API routes
-5. Upgrade prompts in UI when limits hit
-6. Workspace settings: billing portal link, usage dashboard
-
-### Phase F: Analytics + Polish (Week 6-8)
-
-**Goal:** Analytics dashboard and premium features.
+**Why last:** Upsell features, not conversion features.
 
 1. View tracking on review pages
-2. Analytics dashboard for designers
-3. Custom domain support (CNAME + SSL via Cloudflare)
-4. SSO integration (Google, SAML)
-5. White-label / branding options
+2. Analytics dashboard (views, time-on-page, annotation density)
+3. Custom domain support (CNAME + Cloudflare SSL)
+4. SSO (Google, SAML for Team tier)
+5. BYO Supabase documentation + setup guide
+
+### 7. Open-Source Launch (Simultaneous)
+
+**Ships alongside cloud.** One launch story, not two.
+
+1. Demo project showcasing the workflow
+2. Landing page with "Try locally" + "Share with cloud" CTAs
+3. Launch assets (hero GIF, workflow video)
+4. README + getting started guide
+5. Product Hunt, Hacker News, Twitter/X launch posts
 
 ---
 
@@ -635,26 +656,21 @@ Revenue at 100 users (mix of Pro + Team): **~$2,500-4,000/mo**
 
 ---
 
+## Resolved Questions
+
+1. **Local ↔ Cloud sync:** Yes. `npx driftgrid push` uploads local project to cloud. One-way push for now (local is source of truth). Pull/sync comes later if needed.
+
+2. **AI tool integration:** Local-first. AI edits files on disk. MCP server with cloud API key handles push to cloud. No cloud-only editing required at launch.
+
+3. **BYO infrastructure:** Supported at launch via documentation. Same codebase, different env vars. BYO users configure their own Supabase + R2 credentials.
+
 ## Open Questions
 
-1. **Local ↔ Cloud sync:** Should local DriftGrid be able to push/pull to cloud? This is powerful but complex (conflict resolution, auth token management). Could be a Phase 2 feature.
+1. **Thumbnail generation at scale:** Puppeteer is expensive. Options: Cloudflare Browser Rendering, dedicated worker (Lambda/Cloud Run), or client-side (html2canvas). Decision can be made during build.
 
-2. **AI tool integration:** In cloud mode, how does Claude Code / Cursor / etc. edit HTML? Options:
-   - MCP server with cloud API key (already planned)
-   - Local temp directory + upload on save
-   - In-browser code editor (CodeMirror / Monaco) for quick fixes
+2. **Export at scale:** Same Puppeteer concern. Job queue (Inngest, BullMQ) with dedicated workers is likely the answer.
 
-3. **Thumbnail generation at scale:** Puppeteer is expensive. Options:
-   - Cloudflare Browser Rendering (best for edge, limited)
-   - Dedicated thumbnail worker (Lambda / Cloud Run)
-   - Client-side generation (html2canvas) — lower quality but free
-
-4. **Export at scale:** PDF/PPTX generation uses Puppeteer. Same scaling concern as thumbnails. Could use a job queue (Inngest, BullMQ) with dedicated workers.
-
-5. **Realtime collaboration:** Not in MVP, but the architecture should support it later. Supabase Realtime (Postgres LISTEN/NOTIFY) + presence API could power:
-   - Live cursors on review pages
-   - Real-time annotation updates
-   - "Designer is viewing" indicators
+3. **Realtime collaboration:** Not at launch. Architecture supports it later via Supabase Realtime (LISTEN/NOTIFY) + presence API. Good upsell for Team tier.
 
 ---
 
@@ -664,10 +680,10 @@ Revenue at 100 users (mix of Pro + Team): **~$2,500-4,000/mo**
 |--------|-------------------------------|
 | Sign-ups | 1,000 |
 | Active projects | 500 |
-| Paid conversions | 5-8% (50-80 paying users) |
-| MRR | $1,500-3,000 |
 | Review links created | 2,000+ |
+| Paid conversions | 5-8% (50-80 paying users) |
+| MRR | $1,000-2,000 |
 | Client annotations | 10,000+ |
 | Churn (monthly) | < 5% |
 
-The key conversion trigger is the **review link.** A designer tries DriftGrid locally → needs to share with a client → creates account → generates review link → hits free tier limit → upgrades. The funnel is: **local usage → sharing need → cloud account → upgrade.**
+The conversion funnel: **`npx driftgrid` → local usage → "Share" button → cloud account → 1st review link (free) → 2nd review link → upgrade to Pro ($14/mo).** The upgrade moment is in-context, seamless, and feels like unlocking — not blocking.
