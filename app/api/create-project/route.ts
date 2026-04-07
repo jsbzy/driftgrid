@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
 import path from 'path';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { conceptSlug } from '@/lib/letters';
 import type { Manifest } from '@/lib/types';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getStorage } from '@/lib/storage';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
@@ -33,33 +31,26 @@ export async function POST(request: Request) {
     );
   }
 
-  const projectDir = path.join(PROJECTS_DIR, client, project);
-  const conceptDir = path.join(projectDir, 'concept-1');
-  const thumbsDir = path.join(projectDir, '.thumbs');
-  const brandDir = path.join(PROJECTS_DIR, client, 'brand');
+  const storage = getStorage();
+  const projectDir = path.join(client, project);
 
   // Check if project already exists
-  try {
-    await fs.stat(projectDir);
+  if (await storage.exists(projectDir)) {
     return NextResponse.json({ error: `Project already exists: ${client}/${project}` }, { status: 409 });
-  } catch {
-    // Doesn't exist — good
   }
 
   // Create directories
-  await fs.mkdir(conceptDir, { recursive: true });
-  await fs.mkdir(thumbsDir, { recursive: true });
+  await storage.mkdir(path.join(projectDir, 'concept-1'));
+  await storage.mkdir(path.join(projectDir, '.thumbs'));
 
   // Create brand dir if needed
-  try {
-    await fs.stat(brandDir);
-  } catch {
-    await fs.mkdir(path.join(brandDir, 'assets'), { recursive: true });
+  const brandDir = path.join(client, 'brand');
+  if (!(await storage.exists(brandDir))) {
+    await storage.mkdir(path.join(brandDir, 'assets'));
     const clientName = client.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    await fs.writeFile(
+    await storage.writeTextFile(
       path.join(brandDir, 'guidelines.md'),
       `# ${clientName} Brand Guidelines\n\n## Colors\n- Primary: #000000\n- Secondary: #666666\n- Background: #FFFFFF\n\n## Typography\n- Heading: Inter\n- Body: Inter\n`,
-      'utf-8',
     );
   }
 
@@ -107,16 +98,19 @@ export async function POST(request: Request) {
     clientEdits: [],
   };
 
-  await fs.writeFile(path.join(projectDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf-8');
+  await storage.writeTextFile(
+    path.join(projectDir, 'manifest.json'),
+    JSON.stringify(manifest, null, 2),
+  );
 
   // Create starter HTML
   const starterHtml = isLocked
     ? `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>${projectName}</title>\n    <style>\n        * { margin: 0; padding: 0; box-sizing: border-box; }\n        html, body { width: 100%; height: 100vh; overflow: hidden; }\n        body { font-family: system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; display: flex; align-items: center; justify-content: center; background: #ffffff; color: #111111; }\n    </style>\n</head>\n<body>\n    <h1 style="font-size: 2rem; font-weight: 300; letter-spacing: 0.05em;">${projectName}</h1>\n</body>\n</html>`
     : `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>${projectName}</title>\n    <style>\n        * { margin: 0; padding: 0; box-sizing: border-box; }\n        html, body { width: 100%; }\n        body { max-width: ${widthPx}px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; padding: 4rem 2rem; background: #ffffff; color: #111111; }\n    </style>\n</head>\n<body>\n    <h1 style="font-size: 2rem; font-weight: 300; letter-spacing: 0.05em;">${projectName}</h1>\n</body>\n</html>`;
 
-  await fs.writeFile(path.join(conceptDir, 'v1.html'), starterHtml, 'utf-8');
+  await storage.writeTextFile(path.join(projectDir, 'concept-1', 'v1.html'), starterHtml);
 
-  const absolutePath = path.resolve(conceptDir, 'v1.html');
+  const absolutePath = storage.resolvePath(path.join(projectDir, 'concept-1', 'v1.html'));
 
   return NextResponse.json({
     client,

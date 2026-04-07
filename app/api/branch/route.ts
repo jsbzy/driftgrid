@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
 import path from 'path';
 import { getManifest, writeManifest } from '@/lib/manifest';
 import { conceptSlug } from '@/lib/letters';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getStorage } from '@/lib/storage';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
@@ -32,10 +30,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Version not found' }, { status: 404 });
   }
 
-  const projectDir = path.join(PROJECTS_DIR, client, project);
+  const storage = getStorage();
+  const projectDir = path.join(client, project);
 
   // Determine next concept folder number by scanning existing concept-N folders
-  const entries = await fs.readdir(projectDir);
+  const entries = await storage.listDir(projectDir);
   let maxN = 0;
   for (const entry of entries) {
     const match = entry.match(/^concept-(\d+)$/);
@@ -48,7 +47,7 @@ export async function POST(request: Request) {
   const newFolder = `concept-${nextN}`;
 
   // Create the new concept folder
-  await fs.mkdir(path.join(projectDir, newFolder), { recursive: true });
+  await storage.mkdir(path.join(projectDir, newFolder));
 
   // Copy the source HTML file to the new concept folder as v1.html
   const srcPath = path.join(projectDir, sourceVersion.file);
@@ -56,7 +55,7 @@ export async function POST(request: Request) {
   const destPath = path.join(projectDir, newFile);
 
   try {
-    await fs.copyFile(srcPath, destPath);
+    await storage.copyFile(srcPath, destPath);
   } catch {
     return NextResponse.json({ error: 'Failed to copy file' }, { status: 500 });
   }
@@ -95,7 +94,7 @@ export async function POST(request: Request) {
   manifest.concepts.push(newConcept);
   await writeManifest(client, project, manifest);
 
-  const absolutePath = path.resolve(destPath);
+  const absolutePath = storage.resolvePath(path.join(projectDir, newFile));
 
   return NextResponse.json({
     conceptId: newConceptId,

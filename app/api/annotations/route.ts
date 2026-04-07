@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getManifest, writeManifest } from '@/lib/manifest';
-import { promises as fs } from 'fs';
 import path from 'path';
+import { getManifest, writeManifest } from '@/lib/manifest';
 import type { Annotation } from '@/lib/types';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getStorage } from '@/lib/storage';
 
 function generateId(): string {
   return 'a-' + Math.random().toString(36).substring(2, 10);
@@ -151,9 +149,7 @@ async function writeFeedbackSidecar(
   lines.push('', '---');
   lines.push(`File: ~/driftgrid/projects/${client}/${project}/${version.file}`);
 
-  const htmlPath = version.file;
-  const feedbackPath = htmlPath.replace(/\.html$/, '.feedback.md');
-  const fullPath = path.join(PROJECTS_DIR, client, project, feedbackPath);
-
-  await fs.writeFile(fullPath, lines.join('\n'), 'utf-8');
+  const feedbackPath = version.file.replace(/\.html$/, '.feedback.md');
+  const storage = getStorage();
+  await storage.writeTextFile(path.join(client, project, feedbackPath), lines.join('\n'));
 }

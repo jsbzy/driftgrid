@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
-import { promises as fs } from 'fs';
 import { getManifest } from '@/lib/manifest';
 import { resolveCanvas } from '@/lib/constants';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getStorage } from '@/lib/storage';
 
 /**
  * GET /api/export-doc?client=x&project=y&conceptId=z&versionId=w
@@ -31,7 +29,7 @@ export async function GET(request: Request) {
   }
 
   const resolved = resolveCanvas(manifest.project.canvas);
-  const projectDir = path.join(PROJECTS_DIR, client, project);
+  const storage = getStorage();
 
   // Determine which versions to export
   let versionsToExport: { concept: string; version: string; file: string }[] = [];
@@ -60,9 +58,8 @@ export async function GET(request: Request) {
   sections.push('');
 
   for (const item of versionsToExport) {
-    const htmlPath = path.join(projectDir, item.file);
     try {
-      const html = await fs.readFile(htmlPath, 'utf-8');
+      const html = await storage.readTextFile(path.join(client, project, item.file));
       const text = extractTextFromHtml(html);
 
       sections.push(`---`);

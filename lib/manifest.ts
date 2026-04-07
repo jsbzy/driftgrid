@@ -1,14 +1,12 @@
-import { promises as fs } from 'fs';
 import path from 'path';
 import type { Manifest, ClientInfo, ProjectInfo } from './types';
 import { conceptSlug } from './letters';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getStorage } from './storage';
 
 export async function getManifest(client: string, project: string): Promise<Manifest | null> {
   try {
-    const manifestPath = path.join(PROJECTS_DIR, client, project, 'manifest.json');
-    const data = await fs.readFile(manifestPath, 'utf-8');
+    const storage = getStorage();
+    const data = await storage.readTextFile(path.join(client, project, 'manifest.json'));
     const manifest = JSON.parse(data) as Manifest;
 
     // Backward compat: ensure rounds array exists
@@ -94,36 +92,37 @@ export function getRoundConcepts(manifest: Manifest, roundId?: string): { round:
 }
 
 export async function writeManifest(client: string, project: string, manifest: Manifest): Promise<void> {
-  const manifestPath = path.join(PROJECTS_DIR, client, project, 'manifest.json');
+  const storage = getStorage();
   // Strip top-level concepts alias before writing — rounds own the concepts
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { concepts: _alias, ...rest } = manifest;
-  await fs.writeFile(manifestPath, JSON.stringify(rest, null, 2), 'utf-8');
+  await storage.writeTextFile(
+    path.join(client, project, 'manifest.json'),
+    JSON.stringify(rest, null, 2),
+  );
 }
 
 export async function getClients(): Promise<ClientInfo[]> {
+  const storage = getStorage();
   const clients: ClientInfo[] = [];
 
   try {
-    const clientDirs = await fs.readdir(PROJECTS_DIR);
+    const clientDirs = await storage.listDir('.');
 
     for (const clientSlug of clientDirs) {
-      const clientPath = path.join(PROJECTS_DIR, clientSlug);
-      const stat = await fs.stat(clientPath);
-      if (!stat.isDirectory()) continue;
+      const clientStat = await storage.stat(clientSlug);
+      if (!clientStat?.isDirectory) continue;
 
       const projects: ProjectInfo[] = [];
-      const projectDirs = await fs.readdir(clientPath);
+      const projectDirs = await storage.listDir(clientSlug);
 
       for (const projectSlug of projectDirs) {
         if (projectSlug === 'brand') continue;
-        const projectPath = path.join(clientPath, projectSlug);
-        const projectStat = await fs.stat(projectPath);
-        if (!projectStat.isDirectory()) continue;
+        const projectStat = await storage.stat(path.join(clientSlug, projectSlug));
+        if (!projectStat?.isDirectory) continue;
 
-        const manifestPath = path.join(projectPath, 'manifest.json');
         try {
-          const data = await fs.readFile(manifestPath, 'utf-8');
+          const data = await storage.readTextFile(path.join(clientSlug, projectSlug, 'manifest.json'));
           const manifest = JSON.parse(data) as Manifest;
           // Gather concepts from all rounds (or legacy top-level)
           const allConcepts = manifest.rounds?.length
@@ -150,8 +149,7 @@ export async function getClients(): Promise<ClientInfo[]> {
           .join(' ');
 
         try {
-          const guidelinesPath = path.join(clientPath, 'brand', 'guidelines.md');
-          const guidelines = await fs.readFile(guidelinesPath, 'utf-8');
+          const guidelines = await storage.readTextFile(path.join(clientSlug, 'brand', 'guidelines.md'));
           const heading = guidelines.match(/^#\s+(.+?)(?:\s+Brand)?\s+(?:Guidelines|Guide)/m);
           if (heading) name = heading[1].trim();
         } catch {
@@ -170,11 +168,10 @@ export async function getClients(): Promise<ClientInfo[]> {
 
 export async function getHtmlFile(client: string, project: string, filePath: string): Promise<string | null> {
   try {
-    const fullPath = path.join(PROJECTS_DIR, client, project, filePath);
-    // Security: ensure path doesn't escape projects dir
-    const resolved = path.resolve(fullPath);
-    if (!resolved.startsWith(path.resolve(PROJECTS_DIR))) return null;
-    return await fs.readFile(resolved, 'utf-8');
+    const storage = getStorage();
+    const relativePath = path.join(client, project, filePath);
+    if (!storage.validatePath(relativePath)) return null;
+    return await storage.readTextFile(relativePath);
   } catch {
     return null;
   }

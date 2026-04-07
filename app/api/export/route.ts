@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
-import { promises as fs } from 'fs';
 import { getManifest } from '@/lib/manifest';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { exportPdf, exportPdfFromHtml, exportPng, mergePdfs } from '@/lib/export-pdf';
 import { injectViewportLock } from '@/lib/viewport-lock';
+import { getStorage } from '@/lib/storage';
 
 // Allow up to 30s for PDF generation with headless Chrome
 export const maxDuration = 30;
@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
   }
 
   // Resolve canvas dimensions — check concept-level override first, then project-level
-  // Find which concept this version belongs to (for concept-level canvas override)
   let canvas: string | { type?: string; width?: number; height?: number | 'auto' } = manifest.project.canvas;
   if (versionId) {
     for (const concept of manifest.concepts) {
@@ -46,7 +45,9 @@ export async function POST(request: NextRequest) {
     width = typeof preset?.width === 'number' ? preset.width : 1440;
     height = typeof preset?.height === 'number' ? preset.height : 'auto';
   }
-  const projectDir = path.join(process.cwd(), 'projects', client, project);
+
+  const storage = getStorage();
+  const projectRelative = path.join(client, project);
 
   // Raw HTML download
   if (format === 'html') {
@@ -57,11 +58,9 @@ export async function POST(request: NextRequest) {
     if (!version) {
       return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     }
-    const htmlPath = path.resolve(projectDir, version.file);
-    let htmlContent = await fs.readFile(htmlPath, 'utf-8');
-    // For locked canvases, inject viewport-lock so the design scales to fit any browser window
-    htmlContent = injectViewportLock(htmlContent, width, height);
-    return new NextResponse(htmlContent, {
+    let content = await storage.readTextFile(path.join(projectRelative, version.file));
+    content = injectViewportLock(content, width, height);
+    return new NextResponse(content, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'Content-Disposition': `attachment; filename="${version.id}.html"`,
@@ -69,7 +68,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // PNG export
+  // PNG export — requires absolute path for Puppeteer
   if (format === 'png') {
     if (!versionId) {
       return NextResponse.json({ error: 'versionId required for PNG export' }, { status: 400 });
@@ -78,8 +77,11 @@ export async function POST(request: NextRequest) {
     if (!version) {
       return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     }
-    const htmlPath = path.resolve(projectDir, version.file);
-    const buffer = await exportPng(htmlPath, width, height);
+    const htmlAbsolute = storage.resolvePath(path.join(projectRelative, version.file));
+    if (!htmlAbsolute) {
+      return NextResponse.json({ error: 'PNG export requires local mode' }, { status: 501 });
+    }
+    const buffer = await exportPng(htmlAbsolute, width, height);
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'image/png',
@@ -93,11 +95,13 @@ export async function POST(request: NextRequest) {
     // Edited HTML content — write to temp file so relative image paths resolve
     if (htmlContent) {
       try {
-        // Use first concept dir as source dir (relative paths like ../assets/ resolve from here)
         const firstVersion = manifest.concepts.flatMap(c => c.versions)[0];
         const sourceDir = firstVersion
-          ? path.resolve(projectDir, path.dirname(firstVersion.file))
-          : projectDir;
+          ? storage.resolvePath(path.join(projectRelative, path.dirname(firstVersion.file)))
+          : storage.resolvePath(projectRelative);
+        if (!sourceDir) {
+          return NextResponse.json({ error: 'PDF export requires local mode' }, { status: 501 });
+        }
         const buffer = await exportPdfFromHtml(htmlContent, width, height, sourceDir);
         return new NextResponse(new Uint8Array(buffer), {
           headers: {
@@ -122,32 +126,36 @@ export async function POST(request: NextRequest) {
       }
 
       // Try pre-built PDF first (works on Vercel)
-      const prebuiltPath = path.join(projectDir, '.exports', `${version.id}.pdf`);
-      try {
-        const data = await fs.readFile(prebuiltPath);
-        return new NextResponse(data, {
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="${version.id}.pdf"`,
-          },
-        });
-      } catch {
-        // No pre-built PDF — generate live (local only)
-        if (process.env.VERCEL) {
-          return NextResponse.json(
-            { error: 'PDF not available. Run `npm run build-exports` locally and push.' },
-            { status: 404 }
-          );
-        }
-        const htmlPath = path.resolve(projectDir, version.file);
-        const buffer = await exportPdf(htmlPath, width, height);
-        return new NextResponse(new Uint8Array(buffer), {
+      const prebuiltRelative = path.join(projectRelative, '.exports', `${version.id}.pdf`);
+      if (await storage.exists(prebuiltRelative)) {
+        const data = await storage.readFile(prebuiltRelative);
+        return new NextResponse(new Uint8Array(data), {
           headers: {
             'Content-Type': 'application/pdf',
             'Content-Disposition': `attachment; filename="${version.id}.pdf"`,
           },
         });
       }
+
+      // No pre-built PDF — generate live (local only)
+      if (process.env.VERCEL) {
+        return NextResponse.json(
+          { error: 'PDF not available. Run `npm run build-exports` locally and push.' },
+          { status: 404 }
+        );
+      }
+
+      const htmlAbsolute = storage.resolvePath(path.join(projectRelative, version.file));
+      if (!htmlAbsolute) {
+        return NextResponse.json({ error: 'PDF export requires local mode' }, { status: 501 });
+      }
+      const buffer = await exportPdf(htmlAbsolute, width, height);
+      return new NextResponse(new Uint8Array(buffer), {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${version.id}.pdf"`,
+        },
+      });
     }
 
     // Working set PDF
@@ -164,10 +172,10 @@ export async function POST(request: NextRequest) {
           const concept = manifest.concepts.find(c => c.id === sel.conceptId);
           const version = concept?.versions.find(v => v.id === sel.versionId);
           if (!version) continue;
-          const prebuiltPath = path.join(projectDir, '.exports', `${version.id}.pdf`);
-          try {
-            pdfBuffers.push(await fs.readFile(prebuiltPath));
-          } catch {
+          const prebuiltRelative = path.join(projectRelative, '.exports', `${version.id}.pdf`);
+          if (await storage.exists(prebuiltRelative)) {
+            pdfBuffers.push(Buffer.from(await storage.readFile(prebuiltRelative)));
+          } else {
             return NextResponse.json(
               { error: `PDF for ${version.id} not found. Run build-exports locally.` },
               { status: 404 }
@@ -184,17 +192,16 @@ export async function POST(request: NextRequest) {
       }
 
       // Local: generate live
-      const slides: string[] = [];
+      const pdfBuffers: Buffer[] = [];
       for (const sel of ws.selections) {
         const concept = manifest.concepts.find(c => c.id === sel.conceptId);
         const version = concept?.versions.find(v => v.id === sel.versionId);
         if (concept && version) {
-          slides.push(path.resolve(projectDir, version.file));
+          const htmlAbsolute = storage.resolvePath(path.join(projectRelative, version.file));
+          if (htmlAbsolute) {
+            pdfBuffers.push(await exportPdf(htmlAbsolute, width, height));
+          }
         }
-      }
-      const pdfBuffers: Buffer[] = [];
-      for (const htmlPath of slides) {
-        pdfBuffers.push(await exportPdf(htmlPath, width, height));
       }
       const merged = await mergePdfs(pdfBuffers);
       return new NextResponse(new Uint8Array(merged), {
@@ -217,8 +224,11 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const htmlPath = path.resolve(projectDir, version.file);
-      const pngBuffer = await exportPng(htmlPath, width, height);
+      const htmlAbsolute = storage.resolvePath(path.join(projectRelative, version.file));
+      if (!htmlAbsolute) {
+        return NextResponse.json({ error: 'PPTX export requires local mode' }, { status: 501 });
+      }
+      const pngBuffer = await exportPng(htmlAbsolute, width, height);
       const base64 = Buffer.from(pngBuffer).toString('base64');
 
       const PptxGenJS = (await import('pptxgenjs')).default;

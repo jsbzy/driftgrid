@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
 import path from 'path';
 import { getManifest, writeManifest } from '@/lib/manifest';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { generateThumbnail } from '@/lib/thumbnails';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getStorage } from '@/lib/storage';
 
 export async function POST(request: Request) {
   try {
@@ -49,19 +47,27 @@ export async function POST(request: Request) {
     const width = typeof preset?.width === 'number' ? preset.width : 1440;
     const height: number | 'auto' = typeof preset?.height === 'number' ? preset.height : 'auto';
 
-    // Set up paths
-    const projectDir = path.join(PROJECTS_DIR, client, project);
-    const thumbsDir = path.join(projectDir, '.thumbs');
-    await fs.mkdir(thumbsDir, { recursive: true });
+    const storage = getStorage();
+    const thumbsRelative = path.join(client, project, '.thumbs');
+    await storage.mkdir(thumbsRelative);
 
     const thumbName = `${conceptId}-${versionId}`;
-    const outputPath = path.join(thumbsDir, `${thumbName}.webp`);
-    const htmlPath = path.resolve(projectDir, version.file);
+    const thumbRelative = path.join(thumbsRelative, `${thumbName}.webp`);
+    const htmlRelative = path.join(client, project, version.file);
+
+    // Thumbnail generation requires absolute paths (Puppeteer needs filesystem access)
+    const htmlAbsolute = storage.resolvePath(htmlRelative);
+    const thumbAbsolute = storage.resolvePath(thumbRelative);
+
+    if (!htmlAbsolute || !thumbAbsolute) {
+      return NextResponse.json(
+        { error: 'Cannot resolve file paths (cloud mode requires different thumbnail strategy)' },
+        { status: 501 }
+      );
+    }
 
     // Verify HTML file exists
-    try {
-      await fs.access(htmlPath);
-    } catch {
+    if (!(await storage.exists(htmlRelative))) {
       return NextResponse.json(
         { error: `HTML file not found: ${version.file}` },
         { status: 404 }
@@ -69,16 +75,16 @@ export async function POST(request: Request) {
     }
 
     // Generate the thumbnail
-    await generateThumbnail(htmlPath, outputPath, width, height);
+    await generateThumbnail(htmlAbsolute, thumbAbsolute, width, height);
 
     // Update manifest with thumbnail path
     version.thumbnail = `.thumbs/${thumbName}.webp`;
     await writeManifest(client, project, manifest);
 
     // Read and return the generated thumbnail
-    const thumbData = await fs.readFile(outputPath);
+    const thumbData = await storage.readFile(thumbRelative);
 
-    return new NextResponse(thumbData, {
+    return new NextResponse(new Uint8Array(thumbData), {
       headers: {
         'Content-Type': 'image/webp',
         'X-Thumbnail-Generated': 'true',

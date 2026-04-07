@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
-import { promises as fs } from 'fs';
 import { getHtmlFile } from '@/lib/manifest';
 import { getEditScript } from '@/lib/editScript';
+import { getStorage } from '@/lib/storage';
 
 export async function PUT(
   request: NextRequest,
@@ -10,9 +10,9 @@ export async function PUT(
 ) {
   const { client, project, path: pathParts } = await params;
   const filePath = pathParts.join('/');
-  const fullPath = path.join(process.cwd(), 'projects', client, project, filePath);
+  const storage = getStorage();
   const html = await request.text();
-  await fs.writeFile(fullPath, html, 'utf-8');
+  await storage.writeTextFile(path.join(client, project, filePath), html);
   return new NextResponse('OK', { status: 200 });
 }
 
@@ -43,10 +43,14 @@ export async function GET(
     if (!mime) {
       return new NextResponse('Unsupported file type', { status: 415 });
     }
-    const fullPath = path.join(process.cwd(), 'projects', client, project, filePath);
+    const storage = getStorage();
+    const relativePath = path.join(client, project, filePath);
+    if (!storage.validatePath(relativePath)) {
+      return new NextResponse('Not found', { status: 404 });
+    }
     try {
-      const data = await fs.readFile(fullPath);
-      return new NextResponse(data, {
+      const data = await storage.readFile(relativePath);
+      return new NextResponse(new Uint8Array(data), {
         headers: {
           'Content-Type': mime,
           'Cache-Control': 'public, max-age=31536000, immutable',

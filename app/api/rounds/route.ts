@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
 import path from 'path';
 import { getManifest, writeManifest } from '@/lib/manifest';
 import type { Concept, Manifest, Round } from '@/lib/types';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getStorage } from '@/lib/storage';
 
 /**
  * POST /api/rounds
@@ -102,10 +100,11 @@ async function createRound(
     return NextResponse.json({ error: 'Source round not found' }, { status: 400 });
   }
 
+  const storage = getStorage();
   const roundNumber = manifest.rounds.length + 1;
   const roundId = `round-${Math.random().toString(36).substring(2, 10)}`;
   const roundSlug = `round-${roundNumber}`;
-  const projectDir = path.join(PROJECTS_DIR, client, project);
+  const projectDir = path.join(client, project);
 
   // Group selections by concept
   const selectionsByConceptId = new Map<string, string[]>();
@@ -142,12 +141,10 @@ async function createRound(
 
       // Copy HTML file
       try {
-        await fs.mkdir(path.dirname(destFile), { recursive: true });
-        await fs.copyFile(sourceFile, destFile);
+        await storage.copyFile(sourceFile, destFile);
       } catch {
         // Source file might not exist — create an empty placeholder
-        await fs.mkdir(path.dirname(destFile), { recursive: true });
-        await fs.writeFile(destFile, '<!-- copied from previous round -->', 'utf-8');
+        await storage.writeTextFile(destFile, '<!-- copied from previous round -->');
       }
 
       newVersions.push({

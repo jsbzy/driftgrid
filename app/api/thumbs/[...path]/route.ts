@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import { getManifest } from '@/lib/manifest';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { generateThumbnail } from '@/lib/thumbnails';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getStorage } from '@/lib/storage';
 
 // Track in-flight regenerations to avoid duplicate work
 const regenerating = new Set<string>();
@@ -23,7 +21,7 @@ async function findHtmlPathForThumb(
   client: string,
   project: string,
   thumbFilename: string
-): Promise<{ htmlPath: string; conceptId: string; versionId: string; width: number; height: number | 'auto' } | null> {
+): Promise<{ htmlRelative: string; conceptId: string; versionId: string; width: number; height: number | 'auto' } | null> {
   const manifest = await getManifest(client, project);
   if (!manifest) return null;
 
@@ -34,8 +32,7 @@ async function findHtmlPathForThumb(
     for (const version of concept.versions) {
       const expectedName = `${concept.id}-${version.id}`;
       if (expectedName === baseName) {
-        const projectDir = path.join(PROJECTS_DIR, client, project);
-        const htmlPath = path.resolve(projectDir, version.file);
+        const htmlRelative = path.join(client, project, version.file);
 
         // Use concept-level canvas override if set
         const canvasConfig = concept.canvas ?? manifest.project.canvas;
@@ -50,7 +47,7 @@ async function findHtmlPathForThumb(
           height = typeof preset?.height === 'number' ? preset.height : 'auto';
         }
 
-        return { htmlPath, conceptId: concept.id, versionId: version.id, width, height };
+        return { htmlRelative, conceptId: concept.id, versionId: version.id, width, height };
       }
     }
   }
@@ -63,22 +60,23 @@ async function findHtmlPathForThumb(
  * Returns the resized buffer, or the original if no resize needed.
  */
 async function getResized(
-  fullPath: string,
+  thumbRelative: string,
   data: Buffer,
   requestedWidth: number,
 ): Promise<Buffer> {
+  const storage = getStorage();
   // Build cached path: foo.webp → foo-440w.webp
-  const ext = path.extname(fullPath);
-  const cachedPath = fullPath.replace(ext, `-${requestedWidth}w${ext}`);
+  const ext = path.extname(thumbRelative);
+  const cachedRelative = thumbRelative.replace(ext, `-${requestedWidth}w${ext}`);
 
   // Check if cached resize exists and is newer than the full-res file
   try {
     const [cachedStat, fullStat] = await Promise.all([
-      fs.stat(cachedPath),
-      fs.stat(fullPath),
+      storage.stat(cachedRelative),
+      storage.stat(thumbRelative),
     ]);
-    if (cachedStat.mtimeMs >= fullStat.mtimeMs) {
-      return await fs.readFile(cachedPath);
+    if (cachedStat && fullStat && cachedStat.mtimeMs >= fullStat.mtimeMs) {
+      return await storage.readFile(cachedRelative);
     }
   } catch {
     // No cached file — generate it
@@ -90,7 +88,7 @@ async function getResized(
     .toBuffer();
 
   // Cache to disk (fire and forget)
-  fs.writeFile(cachedPath, resized).catch(() => {});
+  storage.writeFile(cachedRelative, resized).catch(() => {});
 
   return resized;
 }
@@ -108,47 +106,43 @@ export async function GET(
   const client = pathParts[0];
   const project = pathParts[1];
   const thumbFilename = pathParts.slice(2).join('/');
+  const storage = getStorage();
+  const thumbRelative = path.join(client, project, '.thumbs', thumbFilename);
+
+  // Security: validate path
+  if (!storage.validatePath(thumbRelative)) {
+    return new NextResponse('Not found', { status: 404 });
+  }
 
   // Parse optional resize width: ?w=440
   const url = new URL(_request.url);
   const requestedWidth = parseInt(url.searchParams.get('w') || '0', 10) || 0;
 
-  const filePath = path.join(
-    PROJECTS_DIR,
-    client,
-    project,
-    '.thumbs',
-    thumbFilename
-  );
-
-  // Security: ensure path doesn't escape projects dir
-  const resolved = path.resolve(filePath);
-  if (!resolved.startsWith(path.resolve(PROJECTS_DIR))) {
-    return new NextResponse('Not found', { status: 404 });
-  }
-
   try {
-    const data = await fs.readFile(resolved);
-    const thumbStat = await fs.stat(resolved);
+    const data = await storage.readFile(thumbRelative);
+    const thumbStat = await storage.stat(thumbRelative);
 
     // Check staleness: compare HTML mtime vs thumbnail mtime
     let isStale = false;
     const info = await findHtmlPathForThumb(client, project, thumbFilename);
 
-    if (info) {
-      try {
-        const htmlStat = await fs.stat(info.htmlPath);
+    if (info && thumbStat) {
+      const htmlStat = await storage.stat(info.htmlRelative);
+      if (htmlStat) {
         isStale = htmlStat.mtimeMs > thumbStat.mtimeMs;
-      } catch {
-        // HTML file missing — not stale, just orphaned
       }
 
       // Kick off background regeneration if stale and not already in progress
-      if (isStale && !regenerating.has(resolved)) {
-        regenerating.add(resolved);
-        generateThumbnail(info.htmlPath, resolved, info.width, info.height)
-          .catch(err => console.error(`Background thumbnail regen failed for ${resolved}:`, err))
-          .finally(() => regenerating.delete(resolved));
+      const thumbKey = `${client}/${project}/${thumbFilename}`;
+      if (isStale && !regenerating.has(thumbKey)) {
+        const htmlAbsolute = storage.resolvePath(info.htmlRelative);
+        const thumbAbsolute = storage.resolvePath(thumbRelative);
+        if (htmlAbsolute && thumbAbsolute) {
+          regenerating.add(thumbKey);
+          generateThumbnail(htmlAbsolute, thumbAbsolute, info.width, info.height)
+            .catch(err => console.error(`Background thumbnail regen failed for ${thumbKey}:`, err))
+            .finally(() => regenerating.delete(thumbKey));
+        }
       }
     }
 
@@ -163,7 +157,7 @@ export async function GET(
 
     // Serve resized version if ?w= is specified
     const responseData = requestedWidth > 0
-      ? await getResized(resolved, data, requestedWidth)
+      ? await getResized(thumbRelative, data, requestedWidth)
       : data;
 
     return new NextResponse(new Uint8Array(responseData), { headers });
@@ -174,23 +168,28 @@ export async function GET(
       return new NextResponse('Not found', { status: 404 });
     }
 
+    const thumbKey = `${client}/${project}/${thumbFilename}`;
+
     // Check if already generating
-    if (regenerating.has(resolved)) {
-      // Return a transparent 1x1 PNG placeholder while generating
+    if (regenerating.has(thumbKey)) {
       return new NextResponse(null, {
         status: 202,
         headers: { 'X-Thumbnail-Generating': 'true', 'Retry-After': '3' },
       });
     }
 
-    regenerating.add(resolved);
+    // Thumbnail generation requires absolute paths (Puppeteer)
+    const htmlAbsolute = storage.resolvePath(info.htmlRelative);
+    const thumbAbsolute = storage.resolvePath(thumbRelative);
+    if (!htmlAbsolute || !thumbAbsolute) {
+      return new NextResponse('Thumbnail generation not available in cloud mode', { status: 501 });
+    }
+
+    regenerating.add(thumbKey);
 
     try {
-      // Ensure .thumbs directory exists
-      const thumbsDir = path.dirname(resolved);
-      await fs.mkdir(thumbsDir, { recursive: true });
-
-      await generateThumbnail(info.htmlPath, resolved, info.width, info.height);
+      await storage.mkdir(path.join(client, project, '.thumbs'));
+      await generateThumbnail(htmlAbsolute, thumbAbsolute, info.width, info.height);
 
       // Update manifest with thumbnail path
       const manifest = await getManifest(client, project);
@@ -213,15 +212,15 @@ export async function GET(
         }
       }
 
-      const data = await fs.readFile(resolved);
-      return new NextResponse(data, {
+      const data = await storage.readFile(thumbRelative);
+      return new NextResponse(new Uint8Array(data), {
         headers: { 'Content-Type': contentTypeForThumb(thumbFilename), 'Cache-Control': 'public, max-age=60' },
       });
     } catch (err) {
-      console.error(`Thumbnail generation failed for ${resolved}:`, err);
+      console.error(`Thumbnail generation failed for ${thumbKey}:`, err);
       return new NextResponse('Generation failed', { status: 500 });
     } finally {
-      regenerating.delete(resolved);
+      regenerating.delete(thumbKey);
     }
   }
 }
@@ -238,46 +237,36 @@ export async function HEAD(
   const client = pathParts[0];
   const project = pathParts[1];
   const thumbFilename = pathParts.slice(2).join('/');
+  const storage = getStorage();
+  const thumbRelative = path.join(client, project, '.thumbs', thumbFilename);
 
-  const filePath = path.join(
-    PROJECTS_DIR,
-    client,
-    project,
-    '.thumbs',
-    thumbFilename
-  );
-
-  const resolved = path.resolve(filePath);
-  if (!resolved.startsWith(path.resolve(PROJECTS_DIR))) {
+  if (!storage.validatePath(thumbRelative)) {
     return new NextResponse(null, { status: 404 });
   }
 
-  try {
-    const thumbStat = await fs.stat(resolved);
-
-    let isStale = false;
-    const info = await findHtmlPathForThumb(client, project, thumbFilename);
-
-    if (info) {
-      try {
-        const htmlStat = await fs.stat(info.htmlPath);
-        isStale = htmlStat.mtimeMs > thumbStat.mtimeMs;
-      } catch {
-        // HTML file missing
-      }
-    }
-
-    const headers: Record<string, string> = {
-      'Content-Type': contentTypeForThumb(thumbFilename),
-      'Content-Length': String(thumbStat.size),
-    };
-
-    if (isStale) {
-      headers['X-Thumbnail-Stale'] = 'true';
-    }
-
-    return new NextResponse(null, { headers });
-  } catch {
+  const thumbStat = await storage.stat(thumbRelative);
+  if (!thumbStat) {
     return new NextResponse(null, { status: 404 });
   }
+
+  let isStale = false;
+  const info = await findHtmlPathForThumb(client, project, thumbFilename);
+
+  if (info) {
+    const htmlStat = await storage.stat(info.htmlRelative);
+    if (htmlStat) {
+      isStale = htmlStat.mtimeMs > thumbStat.mtimeMs;
+    }
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': contentTypeForThumb(thumbFilename),
+    'Content-Length': String(thumbStat.size),
+  };
+
+  if (isStale) {
+    headers['X-Thumbnail-Stale'] = 'true';
+  }
+
+  return new NextResponse(null, { headers });
 }

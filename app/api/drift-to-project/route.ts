@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
 import path from 'path';
 import { getManifest, writeManifest } from '@/lib/manifest';
 import type { Manifest } from '@/lib/types';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getStorage } from '@/lib/storage';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
@@ -33,17 +31,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Source project not found' }, { status: 404 });
   }
 
+  const storage = getStorage();
   const slug = newProject.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const newProjectDir = path.join(PROJECTS_DIR, client, slug);
+  const newProjectDir = path.join(client, slug);
 
-  try {
-    await fs.stat(newProjectDir);
+  if (await storage.exists(newProjectDir)) {
     return NextResponse.json({ error: `Project already exists: ${client}/${slug}` }, { status: 409 });
-  } catch {
-    // Good
   }
 
-  await fs.mkdir(path.join(newProjectDir, '.thumbs'), { recursive: true });
+  await storage.mkdir(path.join(newProjectDir, '.thumbs'));
 
   const canvas = newCanvas || sourceManifest.project.canvas;
   const now = new Date().toISOString();
@@ -58,13 +54,12 @@ export async function POST(request: Request) {
     if (!sourceConcept || !sourceVersion) continue;
 
     const conceptFolder = `concept-${i + 1}`;
-    const conceptDir = path.join(newProjectDir, conceptFolder);
-    await fs.mkdir(conceptDir, { recursive: true });
+    await storage.mkdir(path.join(newProjectDir, conceptFolder));
 
     // Copy HTML file
-    const sourceHtmlPath = path.join(PROJECTS_DIR, client, project, sourceVersion.file);
-    const destHtmlPath = path.join(conceptDir, 'v1.html');
-    await fs.copyFile(sourceHtmlPath, destHtmlPath);
+    const sourceHtmlPath = path.join(client, project, sourceVersion.file);
+    const destHtmlPath = path.join(newProjectDir, conceptFolder, 'v1.html');
+    await storage.copyFile(sourceHtmlPath, destHtmlPath);
 
     concepts.push({
       id: `concept-${generateId()}`,

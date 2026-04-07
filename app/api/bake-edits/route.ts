@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
 import path from 'path';
 import { getManifest } from '@/lib/manifest';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getStorage } from '@/lib/storage';
 
 export async function POST(request: Request) {
   const { client, project, conceptId, versionId, edits } = await request.json();
@@ -31,17 +29,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Version not found' }, { status: 404 });
   }
 
-  const filePath = path.join(PROJECTS_DIR, client, project, version.file);
+  const storage = getStorage();
+  const relativePath = path.join(client, project, version.file);
 
-  // Validate path stays within projects dir
-  const resolved = path.resolve(filePath);
-  if (!resolved.startsWith(path.resolve(PROJECTS_DIR))) {
+  if (!storage.validatePath(relativePath)) {
     return NextResponse.json({ error: 'Invalid file path' }, { status: 400 });
   }
 
   let html: string;
   try {
-    html = await fs.readFile(filePath, 'utf-8');
+    html = await storage.readTextFile(relativePath);
   } catch {
     return NextResponse.json({ error: 'Failed to read HTML file' }, { status: 500 });
   }
@@ -62,7 +59,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await fs.writeFile(filePath, html, 'utf-8');
+    await storage.writeTextFile(relativePath, html);
   } catch {
     return NextResponse.json({ error: 'Failed to write HTML file' }, { status: 500 });
   }
