@@ -1,0 +1,17 @@
+[project]
+id = "driftgrid"
+name = "DriftGrid"
+
+[db]
+port = 54322
+major_version = 15
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+
+[auth.external.google]
+enabled = true
+
+[auth.external.github]
+enabled = true
