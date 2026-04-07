@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseMiddlewareClient } from '@/lib/supabase/middleware';
 
-const PUBLIC_PATHS = ['/_next', '/favicon.ico', '/login', '/api/auth'];
+const PUBLIC_PATHS = [
+  '/_next',
+  '/favicon.ico',
+  '/login',
+  '/signup',
+  '/api/auth',
+  '/auth/callback',
+  '/r/',           // Review links are always public
+];
 
 async function sha256(str: string): Promise<string> {
   const buf = await crypto.subtle.digest(
@@ -15,14 +24,39 @@ async function sha256(str: string): Promise<string> {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // No password configured → pass through (local dev)
-  const password = process.env.DRIFT_PASSWORD;
-  if (!password) {
+  // Allow public paths
+  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // Allow public paths
-  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+  const isCloudMode = process.env.DRIFTGRID_MODE === 'cloud';
+
+  // ─── Cloud Mode: Supabase Auth ────────────────────────
+  if (isCloudMode) {
+    const result = createSupabaseMiddlewareClient(request);
+    if (!result) {
+      // Supabase not configured but cloud mode set — let through (misconfiguration)
+      return NextResponse.next();
+    }
+
+    const { supabase, response } = result;
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      // Not authenticated — redirect to login
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Authenticated — refresh session cookies and continue
+    return response;
+  }
+
+  // ─── Local Mode: Password Auth ────────────────────────
+  const password = process.env.DRIFT_PASSWORD;
+  if (!password) {
+    // No password configured → pass through (local dev)
     return NextResponse.next();
   }
 

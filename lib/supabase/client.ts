@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
 
 /**
  * Supabase client for server-side usage (API routes, server components).
@@ -12,7 +11,7 @@ export function getSupabaseAdmin() {
 
   if (!url || !key) return null;
 
-  return createClient<Database>(url, key, {
+  return createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
@@ -28,7 +27,7 @@ export function getSupabaseClient() {
 
   if (!url || !key) return null;
 
-  return createClient<Database>(url, key);
+  return createClient(url, key);
 }
 
 /**

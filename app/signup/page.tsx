@@ -1,63 +1,38 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isCloudMode, setIsCloudMode] = useState(false);
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
 
-  useEffect(() => {
-    // Detect cloud mode from a meta tag or env check
-    fetch('/api/auth/mode').then(r => r.json()).then(d => {
-      setIsCloudMode(d.mode === 'cloud');
-    }).catch(() => {});
-  }, []);
-
-  // Local mode: password-only login
-  async function handleLocalLogin(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const res = await fetch('/api/auth', {
+    const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    });
-
-    if (res.ok) {
-      router.push(redirect);
-    } else {
-      setError('incorrect password');
-      setLoading(false);
-    }
-  }
-
-  // Cloud mode: email+password login
-  async function handleCloudLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, name }),
     });
 
     const data = await res.json();
 
     if (res.ok) {
-      router.push(redirect);
+      if (data.confirmEmail) {
+        setSuccess(true);
+      } else {
+        router.push('/');
+      }
     } else {
-      setError(data.error || 'Login failed');
+      setError(data.error || 'Failed to sign up');
       setLoading(false);
     }
   }
@@ -66,7 +41,7 @@ export default function LoginPage() {
     const res = await fetch('/api/auth/oauth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider, redirect }),
+      body: JSON.stringify({ provider }),
     });
     const data = await res.json();
     if (data.url) {
@@ -74,43 +49,21 @@ export default function LoginPage() {
     }
   }
 
-  // Local mode: simple password form
-  if (!isCloudMode) {
+  if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <form onSubmit={handleLocalLogin} className="w-full max-w-xs space-y-4">
+        <div className="w-full max-w-xs space-y-4 text-center">
           <div className="text-xs tracking-widest uppercase" style={{ color: 'var(--muted)' }}>
-            driftgrid
+            check your email
           </div>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="password"
-            autoFocus
-            className="w-full bg-transparent border-b outline-none py-2 text-sm font-mono"
-            style={{
-              borderColor: error ? '#e55' : 'var(--border)',
-              color: 'var(--foreground)',
-            }}
-          />
-          {error && (
-            <p className="text-xs" style={{ color: '#e55' }}>{error}</p>
-          )}
-          <button
-            type="submit"
-            disabled={loading || !password}
-            className="text-xs tracking-widest uppercase cursor-pointer disabled:opacity-30"
-            style={{ color: 'var(--muted)' }}
-          >
-            {loading ? '...' : 'enter'}
-          </button>
-        </form>
+          <p className="text-sm" style={{ color: 'var(--foreground)' }}>
+            We sent a confirmation link to <strong>{email}</strong>
+          </p>
+        </div>
       </div>
     );
   }
 
-  // Cloud mode: full auth form
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-full max-w-xs space-y-6">
@@ -143,14 +96,21 @@ export default function LoginPage() {
         </div>
 
         {/* Email form */}
-        <form onSubmit={handleCloudLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="name"
+            className="w-full bg-transparent border-b outline-none py-2 text-sm font-mono"
+            style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
+          />
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="email"
             required
-            autoFocus
             className="w-full bg-transparent border-b outline-none py-2 text-sm font-mono"
             style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}
           />
@@ -160,6 +120,7 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="password"
             required
+            minLength={8}
             className="w-full bg-transparent border-b outline-none py-2 text-sm font-mono"
             style={{ borderColor: error ? '#e55' : 'var(--border)', color: 'var(--foreground)' }}
           />
@@ -172,14 +133,14 @@ export default function LoginPage() {
             className="text-xs tracking-widest uppercase cursor-pointer disabled:opacity-30"
             style={{ color: 'var(--muted)' }}
           >
-            {loading ? '...' : 'log in'}
+            {loading ? '...' : 'create account'}
           </button>
         </form>
 
         <p className="text-xs" style={{ color: 'var(--muted)' }}>
-          Don&apos;t have an account?{' '}
-          <a href="/signup" className="underline" style={{ color: 'var(--foreground)' }}>
-            Sign up
+          Already have an account?{' '}
+          <a href="/login" className="underline" style={{ color: 'var(--foreground)' }}>
+            Log in
           </a>
         </p>
       </div>
