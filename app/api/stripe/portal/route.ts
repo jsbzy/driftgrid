@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { getUserId } from '@/lib/auth';
 import { getProfile } from '@/lib/subscription';
 
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-04-30.basil' });
-}
-
 export async function POST(request: Request) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: 'Stripe not configured' }, { status: 503 });
+  }
+
+  const Stripe = (await import('stripe')).default;
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-04-30.basil' });
+
   const userId = await getUserId();
   if (!userId) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
   }
 
   const { origin } = new URL(request.url);
-  const session = await getStripe().billingPortal.sessions.create({
+  const session = await stripe.billingPortal.sessions.create({
     customer: profile.stripe_customer_id,
     return_url: `${origin}/`,
   });

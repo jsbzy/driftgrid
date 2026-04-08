@@ -1,22 +1,24 @@
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-04-30.basil' });
-}
-
 export async function POST(request: Request) {
+  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+    return NextResponse.json({ error: 'Stripe not configured' }, { status: 503 });
+  }
+
+  const Stripe = (await import('stripe')).default;
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-04-30.basil' });
+
   const body = await request.text();
   const sig = request.headers.get('stripe-signature');
 
-  if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
-    return NextResponse.json({ error: 'Missing signature or webhook secret' }, { status: 400 });
+  if (!sig) {
+    return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
   }
 
-  let event: Stripe.Event;
+  let event: import('stripe').Stripe.Event;
   try {
-    event = getStripe().webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error('Webhook signature verification failed:', err);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
 
   switch (event.type) {
     case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object;
       const userId = session.client_reference_id || session.metadata?.userId;
       if (userId) {
         await supabase.from('profiles').update({
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
     }
 
     case 'customer.subscription.updated': {
-      const subscription = event.data.object as Stripe.Subscription;
+      const subscription = event.data.object;
       const status = subscription.status === 'active' ? 'active'
         : subscription.status === 'past_due' ? 'past_due'
         : 'canceled';
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
     }
 
     case 'customer.subscription.deleted': {
-      const subscription = event.data.object as Stripe.Subscription;
+      const subscription = event.data.object;
       await supabase.from('profiles').update({
         subscription_status: 'canceled',
       }).eq('stripe_subscription_id', subscription.id);
