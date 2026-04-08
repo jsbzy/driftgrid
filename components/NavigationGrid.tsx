@@ -169,7 +169,6 @@ export const NavigationGrid = memo(function NavigationGrid({
         gap: 8,
         opacity: 0.7,
       }}>
-        <span><strong>A</strong> Annotate</span>
         <span><strong>H</strong> Hide</span>
         <span><strong>G</strong> Grid</span>
       </div>

@@ -996,12 +996,12 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
 
   // --- FRAME VIEW ---
   return (
-    <div className="h-screen flex flex-col" style={{ background: 'var(--background)' }}>
+    <div className="h-screen flex flex-col" style={{ background: mode === 'client' ? '#fff' : 'var(--background)' }}>
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
       <div ref={frameWrapperRef} className="flex-1 min-h-0 relative">
-        <div className="h-full p-4 relative" style={{ background: 'var(--canvas)' }}>
+        <div className="h-full p-4 relative" style={{ background: mode === 'client' ? '#fff' : 'var(--canvas)' }}>
           <HtmlFrame
             ref={htmlFrameRef}
             src={htmlSrc}
