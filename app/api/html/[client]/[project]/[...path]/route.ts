@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { promises as fs } from 'fs';
-import { getHtmlFile } from '@/lib/manifest';
+import { getHtmlFile as getHtmlFileLocal } from '@/lib/manifest';
+import { getHtmlFile, getAsset, isCloudMode } from '@/lib/storage';
+import { getUserId } from '@/lib/auth';
 import { getEditScript } from '@/lib/editScript';
 
 export async function PUT(
@@ -41,29 +43,37 @@ export async function GET(
   const filePath = pathParts.join('/');
   const ext = path.extname(filePath).toLowerCase();
 
-  // Non-HTML assets: serve directly from project directory
+  const userId = isCloudMode() ? await getUserId() : null;
+
+  // Non-HTML assets
   if (ext && ext !== '.html') {
     const mime = MIME_TYPES[ext];
     if (!mime) {
       return new NextResponse('Unsupported file type', { status: 415 });
     }
-    const fullPath = path.join(process.cwd(), 'projects', client, project, filePath);
-    try {
-      const data = await fs.readFile(fullPath);
-      const isAudio = ext === '.mp3' || ext === '.wav' || ext === '.ogg';
-      return new NextResponse(data, {
-        headers: {
-          'Content-Type': mime,
-          'Cache-Control': isAudio ? 'no-cache' : 'public, max-age=31536000, immutable',
-        },
-      });
-    } catch {
+
+    const data = await getAsset(userId, client, project, filePath);
+    if (!data) {
       return new NextResponse('Not found', { status: 404 });
     }
+
+    const isAudio = ext === '.mp3' || ext === '.wav' || ext === '.ogg';
+    return new NextResponse(new Uint8Array(data), {
+      headers: {
+        'Content-Type': mime,
+        'Cache-Control': isAudio ? 'no-cache' : 'public, max-age=31536000, immutable',
+      },
+    });
   }
 
   // HTML files
-  let html = await getHtmlFile(client, project, filePath);
+  let html: string | null;
+  if (isCloudMode()) {
+    html = await getHtmlFile(userId, client, project, filePath);
+  } else {
+    html = await getHtmlFileLocal(client, project, filePath);
+  }
+
   if (!html) {
     return new NextResponse('Not found', { status: 404 });
   }

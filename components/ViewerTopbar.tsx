@@ -150,6 +150,9 @@ export function ViewerTopbar({
             workingSets={workingSets}
           />
         )}
+        {!isClientMode && (
+          <ShareButton client={clientSlug} project={project} />
+        )}
         <ThemeToggle />
       </div>
     </div>
@@ -206,6 +209,56 @@ function IterateButton({ clientSlug, project, versionFile, conceptId, versionId,
         <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
       </svg>
       <span>{state === 'working' ? 'DRIFTING...' : state === 'done' ? 'DRIFTED \u2713' : 'DRIFT'}</span>
+    </button>
+  );
+}
+
+function ShareButton({ client, project }: { client: string; project: string }) {
+  const [state, setState] = useState<'idle' | 'working' | 'copied'>('idle');
+
+  return (
+    <button
+      onClick={async () => {
+        if (state === 'working') return;
+        setState('working');
+        try {
+          const res = await fetch('/api/share', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client, project }),
+          });
+          if (res.ok) {
+            const { url } = await res.json();
+            await navigator.clipboard.writeText(url);
+            setState('copied');
+            setTimeout(() => setState('idle'), 2000);
+          } else {
+            // Fallback: generate base64url token for non-cloud mode
+            const token = btoa(`jeff/${client}/${project}`).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+            const url = `${window.location.origin}/s/${token}`;
+            await navigator.clipboard.writeText(url);
+            setState('copied');
+            setTimeout(() => setState('idle'), 2000);
+          }
+        } catch {
+          setState('idle');
+        }
+      }}
+      className="flex items-center gap-1.5 transition-colors"
+      style={{
+        color: state === 'copied' ? '#059669' : 'var(--muted)',
+        fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+        fontSize: 11,
+        letterSpacing: '0.06em',
+        opacity: state === 'working' ? 0.5 : 0.6,
+      }}
+      title="Create share link and copy to clipboard"
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+      </svg>
+      <span>{state === 'copied' ? 'COPIED' : 'SHARE'}</span>
     </button>
   );
 }
