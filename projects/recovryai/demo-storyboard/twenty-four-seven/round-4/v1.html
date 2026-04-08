@@ -275,23 +275,23 @@
 
             setTimeout(() => show('el-today'), 200);
             setTimeout(() => { show('el-patient-sender1'); show('el-patient-typing1'); }, 500);
-            setTimeout(() => { hide('el-patient-typing1'); show('el-patient-msg1'); }, 900);
-            setTimeout(() => { show('el-bot-sender1'); show('el-bot-typing1'); scroll(); }, 1400);
-            setTimeout(() => { hide('el-bot-typing1'); show('el-bot-msg1'); scroll(); }, 2400);
-            setTimeout(() => { show('el-bot-typing2'); scroll(); }, 2900);
-            setTimeout(() => { hide('el-bot-typing2'); show('el-bot-msg2'); scroll(); }, 4200);
-            setTimeout(() => { show('el-patient-sender2'); show('el-patient-typing2'); scroll(); }, 5200);
-            setTimeout(() => { hide('el-patient-typing2'); show('el-patient-msg2'); scroll(); }, 5600);
-            setTimeout(() => { show('el-bot-sender2'); show('el-bot-typing3'); scroll(); }, 6100);
-            setTimeout(() => { hide('el-bot-typing3'); show('el-bot-msg3'); scroll(); }, 7400);
+            setTimeout(() => { hide('el-patient-typing1'); show('el-patient-msg1'); }, 1200);
+            setTimeout(() => { show('el-bot-sender1'); show('el-bot-typing1'); scroll(); }, 1700);
+            setTimeout(() => { hide('el-bot-typing1'); show('el-bot-msg1'); scroll(); }, 2700);
+            setTimeout(() => { show('el-bot-typing2'); scroll(); }, 3200);
+            setTimeout(() => { hide('el-bot-typing2'); show('el-bot-msg2'); scroll(); }, 4500);
+            setTimeout(() => { show('el-patient-sender2'); show('el-patient-typing2'); scroll(); }, 5500);
+            setTimeout(() => { hide('el-patient-typing2'); show('el-patient-msg2'); scroll(); }, 6200);
+            setTimeout(() => { show('el-bot-sender2'); show('el-bot-typing3'); scroll(); }, 6700);
+            setTimeout(() => { hide('el-bot-typing3'); show('el-bot-msg3'); scroll(); }, 8000);
         }
 
         // Text fades in once on load
         showText();
 
-        // Phone animation runs once and holds
+        // Phone animation loops
         run();
-        setInterval(() => run(), 10400);
+        setInterval(() => run(), 11000);
     </script>
 </body>
 </html>

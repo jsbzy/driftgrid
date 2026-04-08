@@ -253,12 +253,12 @@
             [900,  () => { showEl('el-botrow1'); showEl('el-typing1'); scroll(); }],
             [2300, () => { hideEl('el-typing1'); showEl('el-msg1'); scroll(); }],
             [4300, () => { showEl('el-typing2'); scroll(); }],
-            [6000, () => { hideEl('el-typing2'); showEl('el-msg2'); scroll(); }],
-            [6800, () => { showEl('el-patient-typing'); scroll(); }],
-            [7300, () => { hideEl('el-patient-typing'); showEl('el-patient'); scroll(); }],
-            [8400, () => { showEl('el-sender3'); scroll(); }],
-            [8600, () => { showEl('el-botrow2'); showEl('el-typing3'); scroll(); }],
-            [10000, () => { hideEl('el-typing3'); showEl('el-msg4'); scroll(); }],
+            [5600, () => { hideEl('el-typing2'); showEl('el-msg2'); scroll(); }],
+            [6400, () => { showEl('el-patient-typing'); scroll(); }],
+            [7100, () => { hideEl('el-patient-typing'); showEl('el-patient'); scroll(); }],
+            [8000, () => { showEl('el-sender3'); scroll(); }],
+            [8200, () => { showEl('el-botrow2'); showEl('el-typing3'); scroll(); }],
+            [9600, () => { hideEl('el-typing3'); showEl('el-msg4'); scroll(); }],
         ];
 
         function run() {
@@ -271,7 +271,7 @@
 
         // Phone animation auto-loops on timer
         run();
-        setInterval(() => run(), 13000);
+        setInterval(() => run(), 12600);
     </script>
 </body>
 </html>

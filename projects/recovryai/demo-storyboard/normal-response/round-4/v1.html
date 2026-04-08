@@ -251,14 +251,14 @@
             [300,  () => { showEl('el-today'); }],
             [600,  () => { showEl('el-sender1'); scroll(); }],
             [900,  () => { showEl('el-botrow1'); showEl('el-typing1'); scroll(); }],
-            [2900, () => { hideEl('el-typing1'); showEl('el-msg1'); scroll(); }],
-            [5200, () => { showEl('el-typing2'); scroll(); }],
-            [7600, () => { hideEl('el-typing2'); showEl('el-msg2'); scroll(); }],
-            [9300, () => { showEl('el-patient-typing'); scroll(); }],
-            [9800, () => { hideEl('el-patient-typing'); showEl('el-patient'); scroll(); }],
-            [11200, () => { showEl('el-sender2'); scroll(); }],
-            [11400, () => { showEl('el-botrow2'); showEl('el-typing3'); scroll(); }],
-            [12500, () => { hideEl('el-typing3'); showEl('el-msg3'); scroll(); }],
+            [2100, () => { hideEl('el-typing1'); showEl('el-msg1'); scroll(); }],
+            [4400, () => { showEl('el-typing2'); scroll(); }],
+            [5700, () => { hideEl('el-typing2'); showEl('el-msg2'); scroll(); }],
+            [7400, () => { showEl('el-patient-typing'); scroll(); }],
+            [7900, () => { hideEl('el-patient-typing'); showEl('el-patient'); scroll(); }],
+            [9300, () => { showEl('el-sender2'); scroll(); }],
+            [9500, () => { showEl('el-botrow2'); showEl('el-typing3'); scroll(); }],
+            [10600, () => { hideEl('el-typing3'); showEl('el-msg3'); scroll(); }],
         ];
 
         function run() {
@@ -271,7 +271,7 @@
 
         // Phone animation auto-loops on timer
         run();
-        setInterval(() => run(), 15500);
+        setInterval(() => run(), 13600);
     </script>
 </body>
 </html>
