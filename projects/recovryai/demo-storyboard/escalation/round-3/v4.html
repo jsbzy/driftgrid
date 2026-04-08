@@ -19,7 +19,7 @@
         .right { width: 54%; display: flex; align-items: center; justify-content: center; padding-right: 60px; }
 
         /* === TEXT BLOCK (replaces .caption) === */
-        .text-block { width: 500px; }
+        .text-block { width: 600px; }
         .breadcrumb {
             font-size: 12px; font-weight: 500; color: #A3A3A0;
             text-transform: uppercase; letter-spacing: 0.08em;
@@ -132,16 +132,8 @@
         <div class="left">
             <div class="text-block">
                 <div class="type-badge" id="tb-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                <div class="breadcrumb" id="tb-breadcrumb">10 / ESCALATION</div>
-                <div class="escalation-icon" id="tb-icon" style="margin-bottom: 18px; opacity: 0; transform: translateY(10px); transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);">
-                    <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-                        <path d="M28 6L4 50h48L28 6z" fill="none" stroke="#33B6B0" stroke-width="2.5" stroke-linejoin="round"/>
-                        <path d="M28 22v14" stroke="#33B6B0" stroke-width="3" stroke-linecap="round"/>
-                        <circle cx="28" cy="42" r="2" fill="#33B6B0"/>
-                        <path d="M22 30l6-8 6 8" stroke="#33B6B0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
-                    </svg>
-                </div>
-                <div class="headline" id="tb-headline">If recovery deviates,<br>the VCA escalates<br>to the care team.</div>
+                <div class="breadcrumb" id="tb-breadcrumb">ESCALATION</div>
+                <div class="headline" id="tb-headline">If recovery deviates, the VCA<br>escalates to the care team.</div>
                 <div class="detail" id="tb-detail">If the VCA detects deviations from the expected recovery trajectory, including elevated pain, declining mobility, or missed medications, it follows up with the patient to gather more context. Once confirmed, it escalates with full clinical context to the care team. The provider receives the complete conversation, recovery data, and a recommended action, all in one place.</div>
             </div>
         </div>
@@ -251,9 +243,8 @@
         function showText() {
             setTimeout(() => document.getElementById('tb-badge').classList.add('show'), 200);
             setTimeout(() => document.getElementById('tb-breadcrumb').classList.add('show'), 350);
-            setTimeout(() => { const icon = document.getElementById('tb-icon'); icon.style.opacity = '1'; icon.style.transform = 'translateY(0)'; }, 450);
-            setTimeout(() => document.getElementById('tb-headline').classList.add('show'), 600);
-            setTimeout(() => document.getElementById('tb-detail').classList.add('show'), 900);
+            setTimeout(() => document.getElementById('tb-headline').classList.add('show'), 450);
+            setTimeout(() => document.getElementById('tb-detail').classList.add('show'), 750);
         }
 
         const timeline = [

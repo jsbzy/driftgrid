@@ -19,7 +19,7 @@
         .right { width: 54%; display: flex; align-items: center; justify-content: center; padding-right: 60px; }
 
         /* === TEXT BLOCK (replaces .caption) === */
-        .text-block { width: 500px; }
+        .text-block { width: 600px; }
         .breadcrumb {
             font-size: 12px; font-weight: 500; color: #A3A3A0;
             text-transform: uppercase; letter-spacing: 0.08em;
@@ -130,13 +130,7 @@
         <div class="left">
             <div class="text-block">
                 <div class="type-badge" id="tb-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-                <div class="breadcrumb" id="tb-breadcrumb">11 / EMERGENCY</div>
-                <div class="emergency-icon" id="tb-icon" style="margin-bottom: 18px; opacity: 0; transform: translateY(10px); transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);">
-                    <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-                        <rect x="4" y="4" width="48" height="48" rx="12" fill="none" stroke="#E55555" stroke-width="2.5"/>
-                        <path d="M28 16v24M16 28h24" stroke="#E55555" stroke-width="4" stroke-linecap="round"/>
-                    </svg>
-                </div>
+                <div class="breadcrumb" id="tb-breadcrumb">EMERGENCY</div>
                 <div class="headline" id="tb-headline">In an emergency,<br>the VCA directs patients<br>to call 911 immediately.</div>
                 <div class="detail" id="tb-detail">When a patient reports symptoms that could indicate a medical emergency, such as chest pain, difficulty breathing, or signs of blood clots, the VCA acts immediately. It directs the patient to call 911, provides interim safety guidance, and sends an urgent escalation to the care team with full clinical context. This happens any time of day or night.</div>
             </div>
@@ -303,9 +297,8 @@
         function showText() {
             setTimeout(() => document.getElementById('tb-badge').classList.add('show'), 200);
             setTimeout(() => document.getElementById('tb-breadcrumb').classList.add('show'), 350);
-            setTimeout(() => { const icon = document.getElementById('tb-icon'); icon.style.opacity = '1'; icon.style.transform = 'translateY(0)'; }, 450);
-            setTimeout(() => document.getElementById('tb-headline').classList.add('show'), 600);
-            setTimeout(() => document.getElementById('tb-detail').classList.add('show'), 900);
+            setTimeout(() => document.getElementById('tb-headline').classList.add('show'), 450);
+            setTimeout(() => document.getElementById('tb-detail').classList.add('show'), 750);
         }
 
         function run() {

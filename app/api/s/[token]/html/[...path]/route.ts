@@ -15,37 +15,57 @@ const MIME_TYPES: Record<string, string> = {
   '.js': 'application/javascript',
 };
 
-/** GET /api/s/{token}/html/{...path} — serve HTML/assets for a shared project */
+/** Resolve token to userId/client/project */
+async function resolveToken(token: string): Promise<{ userId: string; client: string; project: string } | null> {
+  const supabase = getSupabaseAdmin();
+
+  try {
+    const { data } = await supabase
+      .from('share_links')
+      .select('user_id, client, project, expires_at, is_active')
+      .eq('token', token)
+      .single();
+
+    if (data?.is_active && (!data.expires_at || new Date(data.expires_at) > new Date())) {
+      return { userId: data.user_id, client: data.client, project: data.project };
+    }
+  } catch {
+    // Fall through to base64url
+  }
+
+  try {
+    const decoded = Buffer.from(token, 'base64url').toString('utf-8');
+    const parts = decoded.split('/');
+    if (parts.length === 3) {
+      return { userId: parts[0], client: parts[1], project: parts[2] };
+    }
+  } catch {
+    // Invalid
+  }
+
+  return null;
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ token: string; path: string[] }> }
 ) {
   const { token, path: pathParts } = await params;
-  const supabase = getSupabaseAdmin();
-
-  // Resolve share token
-  const { data: link, error: linkErr } = await supabase
-    .from('share_links')
-    .select('user_id, client, project, expires_at, is_active')
-    .eq('token', token)
-    .single();
-
-  if (linkErr || !link || !link.is_active) {
+  const resolved = await resolveToken(token);
+  if (!resolved) {
     return new NextResponse('Not found', { status: 404 });
-  }
-  if (link.expires_at && new Date(link.expires_at) < new Date()) {
-    return new NextResponse('Expired', { status: 410 });
   }
 
   const filePath = pathParts.join('/');
-  const storagePath = `${link.user_id}/${link.client}/${link.project}/${filePath}`;
+  const storagePath = `${resolved.userId}/${resolved.client}/${resolved.project}/${filePath}`;
 
+  const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.storage.from(BUCKET).download(storagePath);
   if (error || !data) {
     return new NextResponse('Not found', { status: 404 });
   }
 
-  const ext = '.' + filePath.split('.').pop()?.toLowerCase();
+  const ext = '.' + (filePath.split('.').pop()?.toLowerCase() || '');
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
   const buffer = Buffer.from(await data.arrayBuffer());
