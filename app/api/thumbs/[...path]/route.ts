@@ -11,6 +11,19 @@ const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 // Track in-flight regenerations to avoid duplicate work
 const regenerating = new Set<string>();
 
+// Cache manifests briefly to avoid re-parsing per thumbnail request (76 thumbs = 76 manifest reads)
+const manifestCache = new Map<string, { data: Awaited<ReturnType<typeof getManifest>>; ts: number }>();
+const MANIFEST_CACHE_TTL = 5000; // 5 seconds
+
+async function getCachedManifest(client: string, project: string) {
+  const key = `${client}/${project}`;
+  const cached = manifestCache.get(key);
+  if (cached && Date.now() - cached.ts < MANIFEST_CACHE_TTL) return cached.data;
+  const data = await getManifest(client, project);
+  manifestCache.set(key, { data, ts: Date.now() });
+  return data;
+}
+
 function contentTypeForThumb(filename: string): string {
   return filename.endsWith('.png') ? 'image/png' : 'image/webp';
 }
@@ -24,7 +37,7 @@ async function findHtmlPathForThumb(
   project: string,
   thumbFilename: string
 ): Promise<{ htmlPath: string; conceptId: string; versionId: string; width: number; height: number | 'auto' } | null> {
-  const manifest = await getManifest(client, project);
+  const manifest = await getCachedManifest(client, project);
   if (!manifest) return null;
 
   // Thumbnail filename is "{conceptId}-{versionId}.webp" (or legacy .png)
@@ -193,7 +206,7 @@ export async function GET(
       await generateThumbnail(info.htmlPath, resolved, info.width, info.height);
 
       // Update manifest with thumbnail path
-      const manifest = await getManifest(client, project);
+      const manifest = await getCachedManifest(client, project);
       if (manifest) {
         let updated = false;
         for (const concept of manifest.concepts) {

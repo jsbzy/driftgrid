@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavelength</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #faf9f6;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr auto;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        /* Top left - oversized number + headline */
+        .hero-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 48px 0 120px;
+            position: relative;
+        }
+
+        .oversized-number {
+            font-family: 'Playfair Display', serif;
+            font-size: 280px;
+            font-weight: 900;
+            color: #f0ece4;
+            line-height: 0.85;
+            position: absolute;
+            top: 50%;
+            left: 80px;
+            transform: translateY(-55%);
+            user-select: none;
+        }
+
+        .hero-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        .eyebrow {
+            font-size: 12px;
+            font-weight: 600;
+            color: #a3937b;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 58px;
+            font-weight: 800;
+            line-height: 1.06;
+            letter-spacing: -0.02em;
+            color: #1a1a17;
+        }
+
+        /* Top right - pull quote + CTA */
+        .hero-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 120px 0 48px;
+            border-left: 1px solid #e8e4dc;
+        }
+
+        .pull-quote {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 500;
+            line-height: 1.5;
+            color: #1a1a17;
+            font-style: italic;
+            margin-bottom: 12px;
+        }
+
+        .pull-quote-attr {
+            font-size: 13px;
+            color: #a3937b;
+            margin-bottom: 40px;
+        }
+
+        .description {
+            font-size: 15px;
+            line-height: 1.75;
+            color: #78756e;
+            margin-bottom: 36px;
+            max-width: 380px;
+        }
+
+        .cta-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .cta-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            background: #1a1a17;
+            color: #faf9f6;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+
+        .cta-secondary {
+            font-size: 14px;
+            font-weight: 500;
+            color: #a3937b;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Bottom strip */
+        .strip {
+            grid-column: 1 / -1;
+            height: 180px;
+            border-top: 1px solid #e8e4dc;
+            display: flex;
+        }
+
+        .strip-item {
+            flex: 1;
+            padding: 32px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-right: 1px solid #e8e4dc;
+        }
+
+        .strip-item:first-child {
+            padding-left: 120px;
+        }
+
+        .strip-item:last-child {
+            border-right: none;
+            padding-right: 120px;
+        }
+
+        .strip-stat {
+            font-family: 'Playfair Display', serif;
+            font-size: 40px;
+            font-weight: 800;
+            color: #1a1a17;
+            margin-bottom: 4px;
+        }
+
+        .strip-label {
+            font-size: 13px;
+            color: #a09b93;
+        }
+
+        .strip-desc {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a17;
+            margin-bottom: 4px;
+        }
+
+        .strip-sub {
+            font-size: 12px;
+            line-height: 1.6;
+            color: #a09b93;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-left">
+        <div class="oversized-number">W</div>
+        <div class="hero-text">
+            <div class="eyebrow" data-drift-editable="eyebrow" data-drift-maxlen="30">Wavelength &mdash; 2026</div>
+            <h1 data-drift-editable="headline" data-drift-maxlen="80">Conversations designed with intention</h1>
+        </div>
+    </div>
+    <div class="hero-right">
+        <p class="pull-quote" data-drift-editable="pull-quote" data-drift-maxlen="120">"Wavelength changed how our team communicates. It's not just another chat tool -- it's how we think together."</p>
+        <p class="pull-quote-attr" data-drift-editable="pull-quote-attr" data-drift-maxlen="40">-- Elena Torres, Head of Product at Craft</p>
+        <p class="description" data-drift-editable="description" data-drift-maxlen="200">A communication platform built on the belief that how teams talk shapes what they build. Structured, searchable, and deliberately calm.</p>
+        <div class="cta-group">
+            <a class="cta-primary" href="#">
+                <span data-drift-editable="cta" data-drift-maxlen="30">Request access</span>
+                <span>&rarr;</span>
+            </a>
+            <a class="cta-secondary" href="#">
+                <span data-drift-editable="cta-secondary" data-drift-maxlen="30">Read our story</span>
+                <span>&rarr;</span>
+            </a>
+        </div>
+    </div>
+    <div class="strip">
+        <div class="strip-item">
+            <div class="strip-stat" data-drift-editable="stat1" data-drift-maxlen="10">2.4k</div>
+            <div class="strip-label" data-drift-editable="stat1-label" data-drift-maxlen="30">Teams using Wavelength</div>
+        </div>
+        <div class="strip-item">
+            <div class="strip-stat" data-drift-editable="stat2" data-drift-maxlen="10">40%</div>
+            <div class="strip-label" data-drift-editable="stat2-label" data-drift-maxlen="30">Fewer meetings reported</div>
+        </div>
+        <div class="strip-item">
+            <div class="strip-desc" data-drift-editable="feature-title" data-drift-maxlen="30">End-to-end encrypted</div>
+            <div class="strip-sub" data-drift-editable="feature-desc" data-drift-maxlen="80">Enterprise-grade security with SOC 2 compliance and SAML SSO built in.</div>
+        </div>
+        <div class="strip-item">
+            <div class="strip-desc" data-drift-editable="feature2-title" data-drift-maxlen="30">Works where you do</div>
+            <div class="strip-sub" data-drift-editable="feature2-desc" data-drift-maxlen="80">Native integrations with GitHub, Linear, Figma, and 40+ tools your team uses daily.</div>
+        </div>
+    </div>
+</body>
+</html>

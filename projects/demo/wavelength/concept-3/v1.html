@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavelength</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 40%, #2563eb 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .container {
+            text-align: center;
+            max-width: 720px;
+        }
+
+        h1 {
+            font-size: 76px;
+            font-weight: 800;
+            line-height: 1.04;
+            letter-spacing: -0.04em;
+            color: #ffffff;
+            margin-bottom: 24px;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.75);
+            max-width: 520px;
+            margin: 0 auto 48px;
+        }
+
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 40px;
+            background: #ffffff;
+            color: #4f46e5;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 12px;
+            text-decoration: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .cta-arrow {
+            font-size: 17px;
+        }
+
+        .trust {
+            margin-top: 48px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.45);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 data-drift-editable="headline" data-drift-maxlen="60">Team chat that actually works</h1>
+        <p class="subtitle" data-drift-editable="subtitle" data-drift-maxlen="140">Stop losing context in endless threads. Wavelength keeps your team's conversations organized, searchable, and always in sync.</p>
+        <a class="cta" href="#">
+            <span data-drift-editable="cta" data-drift-maxlen="30">Try Wavelength free</span>
+            <span class="cta-arrow">&rarr;</span>
+        </a>
+        <p class="trust" data-drift-editable="trust" data-drift-maxlen="60">Trusted by 2,400+ teams worldwide</p>
+    </div>
+</body>
+</html>

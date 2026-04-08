@@ -1,0 +1,269 @@
+{
+  "project": {
+    "name": "Wavelength Landing Page",
+    "slug": "wavelength",
+    "client": "demo",
+    "canvas": "landscape-16-9",
+    "created": "2026-04-01T00:00:00.000Z",
+    "links": {}
+  },
+  "rounds": [
+    {
+      "id": "round-1",
+      "number": 1,
+      "name": "Round 1",
+      "createdAt": "2026-04-01T00:00:00.000Z",
+      "selects": [],
+      "concepts": [
+        {
+          "id": "concept-2",
+          "label": "Dark Code",
+          "description": "Dark background, left-aligned, developer-oriented — JetBrains Mono, green accent",
+          "position": 1,
+          "visible": true,
+          "slug": "concept-2",
+          "versions": [
+            {
+              "id": "concept-2--v1",
+              "number": 1,
+              "file": "concept-2/v1.html",
+              "parentId": null,
+              "changelog": "Status dot + headline + description + terminal-style CTA on dark background",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-2-concept-2--v1.webp"
+            },
+            {
+              "id": "concept-2--v2",
+              "number": 2,
+              "file": "concept-2/v2.html",
+              "parentId": "concept-2--v1",
+              "changelog": "Split layout — left messaging, right code-block feature list with YAML-style config",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-2-concept-2--v2.webp"
+            },
+            {
+              "id": "concept-2--v3",
+              "number": 3,
+              "file": "concept-2/v3.html",
+              "parentId": "concept-2--v2",
+              "changelog": "Full split — left hero with stats, right code panel with syntax highlighting and output block",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-2-concept-2--v3.webp"
+            }
+          ]
+        },
+        {
+          "id": "concept-1",
+          "label": "Light Clean",
+          "description": "White background, centered content, Inter font, blue accent — clean and restrained",
+          "position": 2,
+          "visible": true,
+          "slug": "concept-1",
+          "versions": [
+            {
+              "id": "concept-1--v1",
+              "number": 1,
+              "file": "concept-1/v1.html",
+              "parentId": null,
+              "changelog": "Badge + centered headline + subtitle + single CTA on white",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-1-concept-1--v1.webp"
+            },
+            {
+              "id": "concept-1--v2",
+              "number": 2,
+              "file": "concept-1/v2.html",
+              "parentId": "concept-1--v1",
+              "changelog": "Bigger headline with blue accent, dot grid background, pill-shaped CTA, trust line",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-1-concept-1--v2.webp"
+            },
+            {
+              "id": "concept-1--v3",
+              "number": 3,
+              "file": "concept-1/v3.html",
+              "parentId": "concept-1--v2",
+              "changelog": "Split layout with CSS product mockup on right, dual CTAs, refined typography",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-1-concept-1--v3.webp"
+            }
+          ]
+        },
+        {
+          "id": "concept-3",
+          "label": "Violet Bold",
+          "description": "Purple-to-blue gradient, centered vibrant feel — DM Sans, white text",
+          "position": 3,
+          "visible": true,
+          "slug": "concept-3",
+          "versions": [
+            {
+              "id": "concept-3--v1",
+              "number": 1,
+              "file": "concept-3/v1.html",
+              "parentId": null,
+              "changelog": "Large centered headline on gradient, white text, single white CTA",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-concept-3--v1.webp"
+            },
+            {
+              "id": "concept-3--v2",
+              "number": 2,
+              "file": "concept-3/v2.html",
+              "parentId": "concept-3--v1",
+              "changelog": "Added floating glass-morphism UI cards around hero, pill badge, pill CTA",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-concept-3--v2.webp"
+            },
+            {
+              "id": "concept-3--v3",
+              "number": 3,
+              "file": "concept-3/v3.html",
+              "parentId": "concept-3--v2",
+              "changelog": "Dark gradient mesh background, split layout with glass-morphism feature cards, channel list, team presence",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-concept-3--v3.webp"
+            }
+          ]
+        },
+        {
+          "id": "concept-4",
+          "label": "Warm Editorial",
+          "description": "Asymmetric magazine layout, Playfair Display serif headline, warm neutrals",
+          "position": 4,
+          "visible": true,
+          "slug": "concept-4",
+          "versions": [
+            {
+              "id": "concept-4--v1",
+              "number": 1,
+              "file": "concept-4/v1.html",
+              "parentId": null,
+              "changelog": "Large left serif headline + right column with description and CTA on warm cream",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-4-concept-4--v1.webp"
+            },
+            {
+              "id": "concept-4--v2",
+              "number": 2,
+              "file": "concept-4/v2.html",
+              "parentId": "concept-4--v1",
+              "changelog": "Added horizontal feature strip with numbered items, vertical divider between columns",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-4-concept-4--v2.webp"
+            },
+            {
+              "id": "concept-4--v3",
+              "number": 3,
+              "file": "concept-4/v3.html",
+              "parentId": "concept-4--v2",
+              "changelog": "Full editorial spread — oversized W letterform, pull quote, stats strip, dual CTAs",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-01T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-4-concept-4--v3.webp"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "round-8pxhzget",
+      "number": 2,
+      "name": "22",
+      "createdAt": "2026-04-03T06:18:19.765Z",
+      "selects": [],
+      "concepts": [
+        {
+          "id": "concept-1-round-2",
+          "slug": "concept-1",
+          "label": "Light Clean",
+          "description": "White background, centered content, Inter font, blue accent — clean and restrained",
+          "position": 0,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-1/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 — Minimal v3",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-03T06:18:19.763Z",
+              "thumbnail": ".thumbs/concept-1-round-2-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-1/round-2/v2.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 — Minimal v2",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-03T06:18:19.764Z",
+              "thumbnail": ".thumbs/concept-1-round-2-v2.webp"
+            }
+          ]
+        },
+        {
+          "id": "concept-2-round-2",
+          "slug": "concept-2",
+          "label": "Dark Code",
+          "description": "Dark background, left-aligned, developer-oriented — JetBrains Mono, green accent",
+          "position": 1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-2/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 — Dark v3",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-03T06:18:19.764Z",
+              "thumbnail": ".thumbs/concept-2-round-2-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-2/round-2/v2.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 — Dark v2",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-03T06:18:19.765Z",
+              "thumbnail": ".thumbs/concept-2-round-2-v2.webp"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workingSets": [],
+  "comments": [],
+  "clientEdits": []
+}

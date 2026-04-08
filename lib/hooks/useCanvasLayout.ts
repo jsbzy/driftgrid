@@ -17,56 +17,49 @@ export interface LabelPosition {
   y: number;
 }
 
-export interface SelectsSlot {
-  conceptIndex: number;
-  conceptId: string;
-  x: number;
-  y: number;
-}
-
 export interface CanvasLayout {
   cards: CardPosition[];
   labels: LabelPosition[];
-  selectsSlots: SelectsSlot[];
   totalWidth: number;
   totalHeight: number;
   cardWidth: number;
   cardHeight: number;
-  selectsHeight: number;
+  columnGap: number;
+  rowGap: number;
+  canvasPadding: number;
 }
 
-const CARD_WIDTH = 440;
-const COLUMN_GAP = 24;
-const ROW_GAP = 20;
-const CANVAS_PADDING = 80;
-const LABEL_HEIGHT = 36;
-const SELECTS_HEIGHT_RATIO = 1; // selects slot is same size as card
-const SELECTS_GAP = 20; // gap between selects row and label
+// All constants are multiples of GRID_SIZE so cards align to the background grid
+export const GRID_SIZE = 20;
+const CARD_WIDTH = 440;    // 22 cells
+const COLUMN_GAP = 40;     // 2 cells
+const ROW_GAP = 20;        // 1 cell
+const CANVAS_PADDING = 80; // 4 cells
+const LABEL_HEIGHT = 40;   // 2 cells
 
 export function computeCanvasLayout(
   concepts: Concept[],
   aspectRatio: string, // e.g. "16 / 9" or "794 / 1123"
 ): CanvasLayout {
-  // Parse aspect ratio
+  // Parse aspect ratio, snap card height to grid
   const parts = aspectRatio.split('/').map(s => parseFloat(s.trim()));
   const ratio = parts.length === 2 ? parts[1] / parts[0] : 9 / 16;
-  const cardHeight = Math.round(CARD_WIDTH * ratio);
-  const selectsHeight = Math.round(cardHeight * SELECTS_HEIGHT_RATIO);
+  const cardHeight = Math.round(CARD_WIDTH * ratio / GRID_SIZE) * GRID_SIZE;
 
   const cards: CardPosition[] = [];
   const labels: LabelPosition[] = [];
-  const selectsSlots: SelectsSlot[] = [];
 
   if (concepts.length === 0) {
     return {
       cards,
       labels,
-      selectsSlots,
       totalWidth: CANVAS_PADDING * 2,
       totalHeight: CANVAS_PADDING * 2,
       cardWidth: CARD_WIDTH,
       cardHeight,
-      selectsHeight,
+      columnGap: COLUMN_GAP,
+      rowGap: ROW_GAP,
+      canvasPadding: CANVAS_PADDING,
     };
   }
 
@@ -83,24 +76,9 @@ export function computeCanvasLayout(
     });
   });
 
-  const cardsTop = labelTop + LABEL_HEIGHT;
-  let currentY = cardsTop;
-
-  // --- SELECTS ROW (one global row) ---
-  concepts.forEach((concept, col) => {
-    const x = CANVAS_PADDING + col * (CARD_WIDTH + COLUMN_GAP);
-    selectsSlots.push({
-      conceptIndex: col,
-      conceptId: concept.id,
-      x,
-      y: currentY,
-    });
-  });
-
-  currentY += selectsHeight + SELECTS_GAP;
-
-  // --- ALL VERSION CARDS (reverse order, latest first) ---
-  const versionStartY = currentY;
+  // --- ALL VERSION CARDS (directly below labels, latest first) ---
+  const versionStartY = labelTop + LABEL_HEIGHT;
+  let maxY = versionStartY;
   concepts.forEach((concept, col) => {
     const x = CANVAS_PADDING + col * (CARD_WIDTH + COLUMN_GAP);
     let colY = versionStartY;
@@ -120,19 +98,19 @@ export function computeCanvasLayout(
       colY += cardHeight + ROW_GAP;
     }
 
-    if (colY > currentY) currentY = colY;
+    if (colY > maxY) maxY = colY;
   });
 
   // If no versions, still leave some space
-  if (currentY === versionStartY) {
-    currentY += cardHeight + ROW_GAP;
+  if (maxY === versionStartY) {
+    maxY += cardHeight + ROW_GAP;
   }
 
   // Total dimensions
   const totalWidth = CANVAS_PADDING * 2 + concepts.length * CARD_WIDTH + (concepts.length - 1) * COLUMN_GAP;
-  const totalHeight = Math.max(currentY, CANVAS_PADDING * 2) + CANVAS_PADDING;
+  const totalHeight = Math.max(maxY, CANVAS_PADDING * 2) + CANVAS_PADDING;
 
-  return { cards, labels, selectsSlots, totalWidth, totalHeight, cardWidth: CARD_WIDTH, cardHeight, selectsHeight };
+  return { cards, labels, totalWidth, totalHeight, cardWidth: CARD_WIDTH, cardHeight, columnGap: COLUMN_GAP, rowGap: ROW_GAP, canvasPadding: CANVAS_PADDING };
 }
 
 /** Bounding box of an entire concept column (label + all cards) */

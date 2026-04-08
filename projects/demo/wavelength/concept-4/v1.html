@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavelength</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #faf9f6;
+            display: flex;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 40px 0 120px;
+        }
+
+        .right {
+            width: 520px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 120px 0 40px;
+        }
+
+        .eyebrow {
+            font-size: 12px;
+            font-weight: 600;
+            color: #a3937b;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 72px;
+            font-weight: 800;
+            line-height: 1.04;
+            letter-spacing: -0.02em;
+            color: #1a1a17;
+            margin-bottom: 0;
+        }
+
+        .right-content {
+            max-width: 340px;
+        }
+
+        .description {
+            font-size: 16px;
+            line-height: 1.75;
+            color: #78756e;
+            margin-bottom: 40px;
+        }
+
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            background: #1a1a17;
+            color: #faf9f6;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            letter-spacing: 0.01em;
+        }
+
+        .divider {
+            width: 48px;
+            height: 1px;
+            background: #d4cfc5;
+            margin-bottom: 32px;
+        }
+    </style>
+</head>
+<body>
+    <div class="left">
+        <div class="eyebrow" data-drift-editable="eyebrow" data-drift-maxlen="30">Introducing Wavelength</div>
+        <h1 data-drift-editable="headline" data-drift-maxlen="80">The art of team conversation</h1>
+    </div>
+    <div class="right">
+        <div class="right-content">
+            <div class="divider"></div>
+            <p class="description" data-drift-editable="description" data-drift-maxlen="200">Great teams communicate with intention. Wavelength gives every conversation a place, every decision a thread, and every team member a voice.</p>
+            <a class="cta" href="#">
+                <span data-drift-editable="cta" data-drift-maxlen="30">Request early access</span>
+                <span>&rarr;</span>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

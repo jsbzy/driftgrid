@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavelength</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #faf9f6;
+            display: flex;
+            flex-direction: column;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .top {
+            flex: 1;
+            display: flex;
+            padding: 0 120px;
+            align-items: center;
+        }
+
+        .left {
+            flex: 1;
+        }
+
+        .right {
+            width: 400px;
+        }
+
+        .eyebrow {
+            font-size: 12px;
+            font-weight: 600;
+            color: #a3937b;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            margin-bottom: 28px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 64px;
+            font-weight: 800;
+            line-height: 1.06;
+            letter-spacing: -0.02em;
+            color: #1a1a17;
+        }
+
+        .divider-vert {
+            width: 1px;
+            height: 100%;
+            background: #e8e4dc;
+            margin: 0 48px;
+            align-self: stretch;
+        }
+
+        .description {
+            font-size: 16px;
+            line-height: 1.75;
+            color: #78756e;
+            margin-bottom: 36px;
+        }
+
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            background: #1a1a17;
+            color: #faf9f6;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+
+        /* Feature strip */
+        .strip {
+            height: 220px;
+            border-top: 1px solid #e8e4dc;
+            display: flex;
+        }
+
+        .strip-item {
+            flex: 1;
+            padding: 36px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-right: 1px solid #e8e4dc;
+        }
+
+        .strip-item:last-child {
+            border-right: none;
+        }
+
+        .strip-item:first-child {
+            padding-left: 120px;
+        }
+
+        .strip-item:last-child {
+            padding-right: 120px;
+        }
+
+        .strip-number {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            font-weight: 800;
+            color: #d4cfc5;
+            margin-bottom: 8px;
+        }
+
+        .strip-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a17;
+            margin-bottom: 6px;
+        }
+
+        .strip-desc {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #a09b93;
+        }
+    </style>
+</head>
+<body>
+    <div class="top">
+        <div class="left">
+            <div class="eyebrow" data-drift-editable="eyebrow" data-drift-maxlen="30">Introducing Wavelength</div>
+            <h1 data-drift-editable="headline" data-drift-maxlen="80">Where every conversation finds its place</h1>
+        </div>
+        <div class="divider-vert"></div>
+        <div class="right">
+            <p class="description" data-drift-editable="description" data-drift-maxlen="200">Wavelength replaces scattered messages with structured conversations. Every thread has context, every decision has a record, and your team stays aligned.</p>
+            <a class="cta" href="#">
+                <span data-drift-editable="cta" data-drift-maxlen="30">Request early access</span>
+                <span>&rarr;</span>
+            </a>
+        </div>
+    </div>
+    <div class="strip">
+        <div class="strip-item">
+            <div class="strip-number">01</div>
+            <div class="strip-title" data-drift-editable="feature1-title" data-drift-maxlen="30">Structured Threads</div>
+            <div class="strip-desc" data-drift-editable="feature1-desc" data-drift-maxlen="80">Every conversation has its own space. No more context lost in a general channel.</div>
+        </div>
+        <div class="strip-item">
+            <div class="strip-number">02</div>
+            <div class="strip-title" data-drift-editable="feature2-title" data-drift-maxlen="30">Decision Tracking</div>
+            <div class="strip-desc" data-drift-editable="feature2-desc" data-drift-maxlen="80">Mark decisions inline. Build a searchable record of every choice your team makes.</div>
+        </div>
+        <div class="strip-item">
+            <div class="strip-number">03</div>
+            <div class="strip-title" data-drift-editable="feature3-title" data-drift-maxlen="30">Smart Presence</div>
+            <div class="strip-desc" data-drift-editable="feature3-desc" data-drift-maxlen="80">Know who's available without the noise. Presence that respects focus time.</div>
+        </div>
+    </div>
+</body>
+</html>

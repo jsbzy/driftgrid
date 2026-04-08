@@ -37,12 +37,15 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@sparticuz/chromium": "^143.0.4",
+    "@supabase/ssr": "^0.10.0",
+    "@supabase/supabase-js": "^2.102.1",
     "next": "16.1.6",
     "pdf-lib": "^1.17.1",
     "pptxgenjs": "^4.0.1",
     "puppeteer-core": "^24.39.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "stripe": "^22.0.0",
     "swr": "^2.4.1"
   },
   "devDependencies": {

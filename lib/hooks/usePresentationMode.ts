@@ -8,7 +8,7 @@ import type { Concept } from '@/lib/types';
  */
 export function usePresentationMode(
   concepts: Concept[],
-  selections: Map<string, string>,
+  selections: Set<string>,
   conceptIndex: number,
   versionIndex: number,
   viewMode: 'frame' | 'grid',
@@ -23,21 +23,20 @@ export function usePresentationMode(
     if (selections.size === 0) return [];
     const playlist: { ci: number; vi: number }[] = [];
     concepts.forEach((concept, ci) => {
-      const selectedVersionId = selections.get(concept.id);
-      if (!selectedVersionId) return;
-      const vi = concept.versions.findIndex(v => v.id === selectedVersionId);
-      if (vi >= 0) {
-        playlist.push({ ci, vi });
-      }
+      concept.versions.forEach((version, vi) => {
+        if (selections.has(`${concept.id}:${version.id}`)) {
+          playlist.push({ ci, vi });
+        }
+      });
     });
     return playlist;
   }, [concepts, selections]);
 
   const handlePresent = useCallback(() => {
     if (selections.size === 0) return;
-    const firstEntry = Array.from(selections.entries())[0];
-    if (!firstEntry) return;
-    const [conceptId, versionId] = firstEntry;
+    const firstKey = Array.from(selections)[0];
+    if (!firstKey) return;
+    const [conceptId, versionId] = firstKey.split(':');
     const ci = concepts.findIndex(c => c.id === conceptId);
     if (ci < 0) return;
     const vi = concepts[ci].versions.findIndex(v => v.id === versionId);

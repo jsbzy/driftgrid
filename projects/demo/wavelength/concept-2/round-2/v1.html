@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavelength</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #0a0a0a;
+            display: flex;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 80px 64px 80px 120px;
+        }
+
+        .right {
+            width: 680px;
+            background: #0d0d0d;
+            border-left: 1px solid #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            padding: 48px;
+            overflow: hidden;
+        }
+
+        /* Left side content */
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 36px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+        }
+
+        .status-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            color: #22c55e;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            color: #fafafa;
+            margin-bottom: 20px;
+        }
+
+        .description {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #737373;
+            max-width: 420px;
+            margin-bottom: 40px;
+        }
+
+        .cta-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .cta-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 28px;
+            background: #22c55e;
+            color: #0a0a0a;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            letter-spacing: 0.02em;
+        }
+
+        .cta-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 20px;
+            color: #737373;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .stats {
+            display: flex;
+            gap: 48px;
+            margin-top: 56px;
+            padding-top: 32px;
+            border-top: 1px solid #1a1a1a;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            color: #fafafa;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #525252;
+        }
+
+        /* Right panel - code snippets */
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .panel-tab {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: #525252;
+            padding: 6px 14px;
+            border-radius: 6px;
+            background: transparent;
+        }
+
+        .panel-tab.active {
+            color: #fafafa;
+            background: #1a1a1a;
+        }
+
+        .code-block {
+            background: #111111;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px;
+            line-height: 1.8;
+            margin-bottom: 16px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .code-line {
+            display: flex;
+        }
+
+        .line-num {
+            color: #333333;
+            width: 32px;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .line-content {
+            color: #a3a3a3;
+        }
+
+        .kw { color: #c084fc; }
+        .fn { color: #60a5fa; }
+        .str { color: #22c55e; }
+        .comment { color: #404040; font-style: italic; }
+        .type { color: #facc15; }
+        .prop { color: #f472b6; }
+        .num { color: #fb923c; }
+
+        .output-block {
+            background: #111111;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 20px 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .output-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #525252;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+        }
+
+        .output-line {
+            color: #525252;
+        }
+
+        .output-line .ok { color: #22c55e; }
+        .output-line .info { color: #a3a3a3; }
+    </style>
+</head>
+<body>
+    <div class="left">
+        <div class="status">
+            <span class="status-dot"></span>
+            <span class="status-text" data-drift-editable="status" data-drift-maxlen="30">All systems operational</span>
+        </div>
+        <h1 data-drift-editable="headline" data-drift-maxlen="60">The platform your engineering team deserves</h1>
+        <p class="description" data-drift-editable="description" data-drift-maxlen="200">Wavelength replaces fragmented tools with one focused workspace. Threads, code sharing, and CI/CD alerts where your team already works.</p>
+        <div class="cta-group">
+            <a class="cta-primary" href="#">
+                <span data-drift-editable="cta" data-drift-maxlen="30">Get started</span>
+                <span>&rarr;</span>
+            </a>
+            <a class="cta-ghost" href="#">
+                <span data-drift-editable="cta-docs" data-drift-maxlen="30">Read the docs</span>
+                <span>&rarr;</span>
+            </a>
+        </div>
+        <div class="stats">
+            <div>
+                <div class="stat-value" data-drift-editable="stat1-value" data-drift-maxlen="10">99.9%</div>
+                <div class="stat-label" data-drift-editable="stat1-label" data-drift-maxlen="20">Uptime SLA</div>
+            </div>
+            <div>
+                <div class="stat-value" data-drift-editable="stat2-value" data-drift-maxlen="10">&lt;50ms</div>
+                <div class="stat-label" data-drift-editable="stat2-label" data-drift-maxlen="20">Message latency</div>
+            </div>
+            <div>
+                <div class="stat-value" data-drift-editable="stat3-value" data-drift-maxlen="10">2.4k</div>
+                <div class="stat-label" data-drift-editable="stat3-label" data-drift-maxlen="20">Teams onboarded</div>
+            </div>
+        </div>
+    </div>
+    <div class="right">
+        <div class="panel-header">
+            <div class="panel-tab active">wavelength.config.ts</div>
+            <div class="panel-tab">channels.ts</div>
+            <div class="panel-tab">hooks.ts</div>
+        </div>
+        <div class="code-block">
+            <div class="code-line"><span class="line-num">1</span><span class="line-content"><span class="kw">import</span> { <span class="fn">createWorkspace</span> } <span class="kw">from</span> <span class="str">'@wavelength/sdk'</span></span></div>
+            <div class="code-line"><span class="line-num">2</span><span class="line-content"></span></div>
+            <div class="code-line"><span class="line-num">3</span><span class="line-content"><span class="kw">export const</span> <span class="fn">config</span> = <span class="fn">createWorkspace</span>({</span></div>
+            <div class="code-line"><span class="line-num">4</span><span class="line-content">  <span class="prop">name</span>: <span class="str">'Acme Engineering'</span>,</span></div>
+            <div class="code-line"><span class="line-num">5</span><span class="line-content">  <span class="prop">channels</span>: [</span></div>
+            <div class="code-line"><span class="line-num">6</span><span class="line-content">    { <span class="prop">id</span>: <span class="str">'general'</span>, <span class="prop">type</span>: <span class="str">'open'</span> },</span></div>
+            <div class="code-line"><span class="line-num">7</span><span class="line-content">    { <span class="prop">id</span>: <span class="str">'deploys'</span>, <span class="prop">type</span>: <span class="str">'feed'</span> },</span></div>
+            <div class="code-line"><span class="line-num">8</span><span class="line-content">    { <span class="prop">id</span>: <span class="str">'incidents'</span>, <span class="prop">type</span>: <span class="str">'alert'</span> },</span></div>
+            <div class="code-line"><span class="line-num">9</span><span class="line-content">  ],</span></div>
+            <div class="code-line"><span class="line-num">10</span><span class="line-content">  <span class="prop">integrations</span>: {</span></div>
+            <div class="code-line"><span class="line-num">11</span><span class="line-content">    <span class="prop">github</span>: { <span class="prop">org</span>: <span class="str">'acme-eng'</span> },</span></div>
+            <div class="code-line"><span class="line-num">12</span><span class="line-content">    <span class="prop">linear</span>: { <span class="prop">team</span>: <span class="str">'ENG'</span> },</span></div>
+            <div class="code-line"><span class="line-num">13</span><span class="line-content">    <span class="prop">pagerduty</span>: <span class="kw">true</span>,</span></div>
+            <div class="code-line"><span class="line-num">14</span><span class="line-content">  },</span></div>
+            <div class="code-line"><span class="line-num">15</span><span class="line-content">  <span class="prop">security</span>: {</span></div>
+            <div class="code-line"><span class="line-num">16</span><span class="line-content">    <span class="prop">encryption</span>: <span class="str">'e2e'</span>,</span></div>
+            <div class="code-line"><span class="line-num">17</span><span class="line-content">    <span class="prop">sso</span>: <span class="str">'saml'</span>,</span></div>
+            <div class="code-line"><span class="line-num">18</span><span class="line-content">    <span class="prop">auditLog</span>: <span class="kw">true</span>,</span></div>
+            <div class="code-line"><span class="line-num">19</span><span class="line-content">  },</span></div>
+            <div class="code-line"><span class="line-num">20</span><span class="line-content">})</span></div>
+        </div>
+        <div class="output-block">
+            <div class="output-label">Output</div>
+            <div class="output-line"><span class="ok">&check;</span> <span class="info">Workspace configured</span></div>
+            <div class="output-line"><span class="ok">&check;</span> <span class="info">3 channels synced</span></div>
+            <div class="output-line"><span class="ok">&check;</span> <span class="info">Integrations connected</span></div>
+            <div class="output-line"><span class="ok">&check;</span> <span class="info">E2E encryption active</span></div>
+        </div>
+    </div>
+</body>
+</html>

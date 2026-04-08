@@ -2,6 +2,12 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 
+interface RoundInfo {
+  id: string;
+  name: string;
+  number: number;
+}
+
 interface ContextMenuProps {
   x: number;
   y: number;
@@ -15,6 +21,10 @@ interface ContextMenuProps {
   onZoomToCard: () => void;
   onClose: () => void;
   isStarred: boolean;
+  rounds?: RoundInfo[];
+  activeRoundId?: string;
+  onSendToRound?: (roundId: string) => void;
+  onSendToNewRound?: () => void;
 }
 
 interface MenuItem {
@@ -44,6 +54,10 @@ export function ContextMenu({
   onZoomToCard,
   onClose,
   isStarred,
+  rounds,
+  activeRoundId,
+  onSendToRound,
+  onSendToNewRound,
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -56,6 +70,24 @@ export function ContextMenu({
     { label: 'Copy path', shortcut: '\u2318C', action: onCopyPath },
     { label: 'Hide', shortcut: '', action: onHide },
     { label: 'Drift to new project', shortcut: '', action: onDriftToProject },
+    ...(rounds && rounds.length > 1 && onSendToRound ? [
+      { separator: true } as SeparatorItem,
+      ...rounds
+        .filter(r => r.id !== activeRoundId)
+        .map(r => ({
+          label: `Send to ${r.name}`,
+          shortcut: '',
+          action: () => onSendToRound(r.id),
+        })),
+      ...(onSendToNewRound ? [{
+        label: 'Send to new round',
+        shortcut: '',
+        action: onSendToNewRound,
+      }] : []),
+    ] : (onSendToNewRound ? [
+      { separator: true } as SeparatorItem,
+      { label: 'Send to new round', shortcut: '', action: onSendToNewRound },
+    ] : [])),
     { label: 'Delete', shortcut: 'Del', action: onDelete, danger: true },
     { separator: true },
     { label: 'Zoom to card', shortcut: '4', action: onZoomToCard },
@@ -153,7 +185,8 @@ export function ContextMenu({
         zIndex: 9999,
         minWidth: 200,
         padding: '4px 0',
-        background: 'var(--background)',
+        background: 'var(--palette-bg)',
+        backdropFilter: 'blur(16px)',
         border: '1px solid var(--border)',
         borderRadius: 8,
         boxShadow: '0 8px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)',

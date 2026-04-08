@@ -11,6 +11,7 @@ export async function PUT(
   const { client, project, path: pathParts } = await params;
   const filePath = pathParts.join('/');
   const fullPath = path.join(process.cwd(), 'projects', client, project, filePath);
+  await fs.mkdir(path.dirname(fullPath), { recursive: true });
   const html = await request.text();
   await fs.writeFile(fullPath, html, 'utf-8');
   return new NextResponse('OK', { status: 200 });
@@ -27,6 +28,9 @@ const MIME_TYPES: Record<string, string> = {
   '.css': 'text/css',
   '.js': 'application/javascript',
   '.mp4': 'video/mp4',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
 };
 
 export async function GET(
@@ -46,10 +50,11 @@ export async function GET(
     const fullPath = path.join(process.cwd(), 'projects', client, project, filePath);
     try {
       const data = await fs.readFile(fullPath);
+      const isAudio = ext === '.mp3' || ext === '.wav' || ext === '.ogg';
       return new NextResponse(data, {
         headers: {
           'Content-Type': mime,
-          'Cache-Control': 'public, max-age=31536000, immutable',
+          'Cache-Control': isAudio ? 'no-cache' : 'public, max-age=31536000, immutable',
         },
       });
     } catch {

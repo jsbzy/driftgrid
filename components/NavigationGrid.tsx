@@ -1,13 +1,12 @@
 'use client';
 
 import { memo, useCallback } from 'react';
-import { numberToLetter } from '@/lib/letters';
 
 interface NavigationGridProps {
   conceptIndex: number;
   versionIndex: number;
   versionCounts: number[];
-  selections?: Map<string, string>;
+  selections?: Set<string>;
   conceptIds?: string[];
   /** versionIds[conceptIdx][versionIdx] = versionId */
   versionIds?: string[][];
@@ -55,10 +54,9 @@ export const NavigationGrid = memo(function NavigationGrid({
   const isSelectedVersion = useCallback((col: number, mappedIndex: number): boolean => {
     if (!selections || !conceptIds || !versionIds) return false;
     const cid = conceptIds[col];
-    const selectedVid = selections.get(cid);
-    if (!selectedVid) return false;
     const vid = versionIds[col]?.[mappedIndex];
-    return vid === selectedVid;
+    if (!cid || !vid) return false;
+    return selections.has(`${cid}:${vid}`);
   }, [selections, conceptIds, versionIds]);
 
   const gridLabel = `${conceptIndex + 1}.${versionCounts[conceptIndex] - versionIndex}`;
@@ -91,7 +89,7 @@ export const NavigationGrid = memo(function NavigationGrid({
             }}
           >
             {conceptIds.map((cid, col) => {
-              const hasSelect = selections.has(cid);
+              const hasSelect = versionIds?.[col]?.some(vid => selections.has(`${cid}:${vid}`)) ?? false;
               const isActive = inSelectsRow && col === conceptIndex;
               return (
                 <div

@@ -146,10 +146,34 @@ When porting an existing HTML file into a DriftGrid project:
 - **"New version"** → duplicate file as `concept-N/v{next}.html`, add to manifest with changelog
 - **"New concept"** → create new `concept-{next}/v1.html`, add to manifest with description
 
+**When the user provides a filepath with feedback, edit THAT exact file.** The filepath is the source of truth — never override it with your own sense of which version is "latest" or "current." If the user says `two-ways/round-3/v1.html`, edit v1, not v2.
+
 Always:
-- Auto-generate a one-liner description per concept
-- Add a changelog entry per version
 - Keep manifest.json in sync
+- Follow the naming conventions below
+
+## Naming Conventions
+
+### Concepts (columns)
+Concepts represent **design directions**. Always use 1–2 word descriptive labels that capture the style or mood — never "Concept 1", "Concept 2."
+
+**Format:** `{Style/Mood}` or `{Style} {Element}`
+**Examples:** "Bold Minimal", "Dark Editorial", "Gradient Hero", "Warm Split", "Clean Mono"
+
+The name describes the DIRECTION, not the content. Two concepts for the same page might be "Light Airy" and "Dark Cinematic" — you can tell them apart at a glance.
+
+### Versions (rows within a concept)
+Versions represent **iterations** of the same direction. They use auto-incremented `v{N}` numbers as permanent identity.
+
+- `v1`, `v2`, `v3` — sequential, permanent, never changes even if reordered on the grid
+- **Always include a changelog** describing what changed: "Larger hero image", "Client feedback applied", "Warmer palette"
+- The changelog is stored in `version.changelog` and surfaced on hover / in the UI
+- Version numbers are the primary way to refer to a specific design: "Bold Minimal v3"
+
+### Referring to designs
+- In conversation: `"{Concept} v{N}"` — e.g., "Dark Editorial v3"
+- In URLs: `#{concept-slug}/v{N}` — e.g., `#dark-editorial/v3`
+- In file paths: `concept-slug/v{N}.html`
 
 ## Manifest Schema
 
@@ -168,6 +192,15 @@ Key fields:
 - JetBrains Mono as the UI font
 - Minimal, monospace aesthetic — the designs are the hero, not the chrome
 - SWR for client-side data fetching
+
+## Structural Changes — Test Against Demo
+
+When modifying DriftGrid's code (not a specific client project), always validate against `projects/demo/` data:
+- `demo/reorder-test` — 3 concepts × 3 versions, good for grid/reorder/keyboard testing
+- `demo/wavelength` — multi-round (R1 + R2), good for round creation/switching
+- `demo/getting-started` — minimal (2 concepts, few versions)
+
+Reproduce the bug in demo data first, fix, verify against demo, then confirm the client case is also resolved. Never test structural changes only against client projects.
 
 ## Export-Safe Design Rules
 
@@ -246,6 +279,59 @@ Each client has `projects/{client}/brand/guidelines.md` with colors, fonts, voic
 - Review (client-facing): `localhost:3000/review/{client}/{project}`
 - Arrow keys navigate: left/right = concepts, up/down = versions
 
+## Keyboard Shortcuts (Grid View)
+
+| Key | Action |
+|-----|--------|
+| Arrow keys | Navigate between cards |
+| Shift+Arrow | Extend multi-selection |
+| Alt/⌥+Arrow | Reorder (move cards/columns) |
+| S | Toggle star on current card |
+| D | Drift (create new version) |
+| ⇧D | Branch (fork into new concept) |
+| Cmd+C | Copy card(s) to clipboard |
+| Cmd+V | Paste clipboard into current concept |
+| Cmd+K | Command palette |
+| Enter | Enter frame view |
+| Escape | Exit selection / deselect column |
+| P | Present starred versions fullscreen |
+
+### Reorder System (Alt+Arrow)
+- **Column reorder:** Click column label to select → ⌥←/⌥→ moves column. Click canvas to deselect.
+- **Card reorder within column:** ⌥↑/⌥↓ moves card up/down
+- **Card swap between columns:** ⌥←/⌥→ swaps card with adjacent column at same row
+- Animations: 500ms ease-out-expo. Viewport stays put during reorder.
+
+### Multi-Select (Shift+Arrow or Shift+Click)
+- Shift+Arrow extends selection from current card
+- Plain Arrow clears multi-select and navigates normally
+- Multi-selected cards show blue outline
+
+### Stars (Selects)
+- Stars are a `Set<string>` of `conceptId:versionId` keys — **multiple stars per column allowed**
+- Star any number of versions across any concepts
+- Starred versions can be presented (P), exported, or used to create new rounds
+- Gold star icon + gold dot on column label indicate starred versions
+
+### Clipboard (Cmd+C / Cmd+V)
+- Cmd+C copies current card or multi-selection to clipboard state
+- Cmd+V pastes as new version(s) in the current concept column
+- Works across rounds — switch round, navigate, paste
+- Uses `/api/paste` endpoint (copies HTML file + creates version entry)
+
+## Version Ordering
+
+- **Array position is the source of truth** — `getManifest()` does NOT sort versions. The order saved in `manifest.json` is the order used.
+- Layout `reverse()` puts last-in-array at visual top of column
+- `isLatest` = last element in the versions array (not timestamp-based)
+- Latest version shows a **gold left-edge bar** on the card
+- New versions from drift always append at end of array → appear at top
+- Alt+Arrow reorder persists because the saved array order is respected
+- Timestamps (`created`) are metadata only — never used for ordering or `isLatest`
+
+### URL Hashes
+- Format: `#concept-slug/v{N}` (e.g., `#dark-code/v3`)
+- Legacy letter format (`#slug/c`) still parses correctly but new URLs use `v{N}`
 
 ## DriftGrid Conventions
 
@@ -262,7 +348,9 @@ This project uses DriftGrid for design iteration. Key rules:
 - `POST /api/branch` — fork into a new concept
 - `POST /api/create-project` — create a new project
 - `GET /api/annotations?client=X&project=Y&conceptId=Z&versionId=W` — get feedback annotations
-- `POST /api/rounds` — close current round (stamps versions, saves selects as baseline)
+- `POST /api/paste` — paste a version into a target concept (copies HTML file)
+- `POST /api/rounds` — close/create/copy-to round
+- `PATCH /api/annotations` — resolve/unresolve an annotation
 
 ### Rounds (Pages)
 

@@ -49,6 +49,8 @@ export interface ResolvedCanvas {
   width: number;
   height: number | 'auto';
   label: string;
+  /** Display string for the canvas info badge, e.g. "16:9 · 1920×1080 · Fixed" */
+  displayLabel: string;
 }
 
 /**
@@ -62,25 +64,25 @@ export function resolveCanvas(
 ): ResolvedCanvas {
   // Handle object canvas configs (freeform)
   if (typeof canvas === 'object' && canvas !== null) {
-    return {
-      width: canvas.width ?? 1440,
-      height: canvas.height ?? 'auto',
-      label: canvas.type
-        ? canvas.type.charAt(0).toUpperCase() + canvas.type.slice(1)
-        : `${canvas.width ?? 1440}×${canvas.height ?? 'auto'}`,
-    };
+    const w = canvas.width ?? 1440;
+    const h = canvas.height ?? 'auto';
+    const label = canvas.type
+      ? canvas.type.charAt(0).toUpperCase() + canvas.type.slice(1)
+      : `${w}×${h}`;
+    const dims = h === 'auto' ? `${w}w` : `${w}×${h}`;
+    return { width: w, height: h, label, displayLabel: `${label} · ${dims}` };
   }
 
   // Handle string preset lookup
   const preset = CANVAS_PRESETS[canvas];
   if (preset) {
-    return {
-      width: typeof preset.width === 'number' ? preset.width : 1440,
-      height: typeof preset.height === 'number' ? preset.height : 'auto',
-      label: preset.label,
-    };
+    const w = typeof preset.width === 'number' ? preset.width : 1440;
+    const h = typeof preset.height === 'number' ? preset.height : 'auto';
+    const dims = h === 'auto' ? `${w}w` : `${w}×${h}`;
+    const mode = preset.responsive ? 'Responsive' : 'Fixed';
+    return { width: w, height: h, label: preset.label, displayLabel: `${preset.label} · ${dims} · ${mode}` };
   }
 
   // Unknown string — fall back to Desktop defaults
-  return { width: 1440, height: 'auto', label: canvas || 'Desktop' };
+  return { width: 1440, height: 'auto', label: canvas || 'Desktop', displayLabel: `Desktop · 1440w · Responsive` };
 }

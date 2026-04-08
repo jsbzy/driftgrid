@@ -2,11 +2,11 @@
 
 import { useRef, useEffect, useState, useCallback, useMemo, memo, forwardRef, useImperativeHandle } from 'react';
 import type { Concept, ViewMode } from '@/lib/types';
-import { computeCanvasLayout, getColumnBounds, getCardBounds } from '@/lib/hooks/useCanvasLayout';
+import { computeCanvasLayout, getColumnBounds, getCardBounds, GRID_SIZE } from '@/lib/hooks/useCanvasLayout';
+import type { CanvasLayout } from '@/lib/hooks/useCanvasLayout';
 import { useCanvasTransform } from '@/lib/hooks/useCanvasTransform';
 import { CanvasCard } from './CanvasCard';
 import { ContextMenu } from './ContextMenu';
-import { numberToLetter } from '@/lib/letters';
 import type { ZoomLevel } from '@/lib/hooks/useKeyboardNav';
 
 export interface CanvasViewHandle {
@@ -23,10 +23,12 @@ interface CanvasViewProps {
   client: string;
   project: string;
   aspectRatio: string;
-  selections: Map<string, string>;
+  selections: Set<string>;
   onStarVersion: (conceptId: string, versionId: string) => void;
   onDeleteVersion: (conceptId: string, versionId: string) => void;
   onDeleteConcept?: (conceptId: string) => void;
+  onInsertConcept?: (label: string, afterConceptIndex?: number) => void;
+  onRenameConcept?: (conceptId: string, newLabel: string) => void;
   onHideVersion?: (conceptId: string, versionId: string) => void;
   onDriftToProject?: (conceptId: string, versionId: string) => void;
   multiSelected: Set<string>;
@@ -37,6 +39,12 @@ interface CanvasViewProps {
   onMoveConceptLeft: (conceptIdx?: number) => void;
   onMoveConceptRight: (conceptIdx?: number) => void;
   onReorderConcepts: (newOrder: string[]) => void;
+  onReorderVersions: (conceptId: string, newVersionOrder: string[]) => void;
+  onMoveCardBetweenColumns: (fromCi: number, vi: number, toCi: number) => void;
+  rounds?: { id: string; name: string; number: number }[];
+  activeRoundId?: string | null;
+  onSendToRound?: (conceptId: string, versionId: string, targetRoundId: string) => void;
+  onSendToNewRound?: (conceptId: string, versionId: string) => void;
   mode?: ViewMode;
   zoomLevel: ZoomLevel;
   onZoomLevelChange: (level: ZoomLevel) => void;
@@ -58,6 +66,8 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   onStarVersion,
   onDeleteVersion,
   onDeleteConcept,
+  onInsertConcept,
+  onRenameConcept,
   onHideVersion,
   onDriftToProject,
   multiSelected,
@@ -68,6 +78,12 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   onMoveConceptLeft,
   onMoveConceptRight,
   onReorderConcepts,
+  onReorderVersions,
+  onMoveCardBetweenColumns,
+  rounds,
+  activeRoundId,
+  onSendToRound,
+  onSendToNewRound,
   mode,
   zoomLevel,
   onZoomLevelChange,
@@ -100,9 +116,12 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   } = useCanvasTransform(viewportRef);
 
   const [selectedColumn, setSelectedColumn] = useState<number | null>(null);
+  const [editingLabel, setEditingLabel] = useState<string | null>(null); // conceptId being edited
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; ci: number; vi: number } | null>(null);
   // Flag to prevent zoom level effect from firing during the initial card transition
   const skipNextZoomEffect = useRef(false);
+  // Flag to suppress auto-pan during reorder operations
+  const skipReorderPan = useRef(false);
 
   // Expose zoomToCard to parent (Viewer) for smooth enter transitions
   useImperativeHandle(ref, () => ({
@@ -195,6 +214,11 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
       skipNextZoomEffect.current = false;
       return;
     }
+    // Skip auto-pan during reorder — viewport should stay put
+    if (skipReorderPan.current) {
+      skipReorderPan.current = false;
+      return;
+    }
 
     const zoomLevelChanged = prevZoomLevel.current !== zoomLevel;
     prevZoomLevel.current = zoomLevel;
@@ -251,7 +275,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     setPanTransform({ scale: transform.scale, tx: newTx, ty: newTy });
   }, [zoomLevel, conceptIndex, versionIndex, handleZoomToLevel, layout, transform, setPanTransform]);
 
-  // Column selection: arrow keys to reorder, Escape to deselect
+  // Column selection: Escape to deselect
   useEffect(() => {
     if (selectedColumn === null) return;
     const handler = (e: KeyboardEvent) => {
@@ -261,24 +285,140 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
         setSelectedColumn(null);
         return;
       }
-      if (e.key === 'ArrowLeft' && selectedColumn > 0) {
-        e.preventDefault();
-        e.stopPropagation();
-        onMoveConceptLeft(selectedColumn);
-        setSelectedColumn(selectedColumn - 1);
-        return;
-      }
-      if (e.key === 'ArrowRight' && selectedColumn < concepts.length - 1) {
-        e.preventDefault();
-        e.stopPropagation();
-        onMoveConceptRight(selectedColumn);
-        setSelectedColumn(selectedColumn + 1);
-        return;
-      }
     };
     window.addEventListener('keydown', handler, true);
     return () => window.removeEventListener('keydown', handler, true);
-  }, [selectedColumn, concepts.length, onMoveConceptLeft, onMoveConceptRight]);
+  }, [selectedColumn]);
+
+  // Alt+Arrow reordering (columns left/right, cards up/down/between columns)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.altKey || !e.key.startsWith('Arrow')) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (contextMenu) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      skipReorderPan.current = true;
+
+      if (e.key === 'ArrowLeft') {
+        if (selectedColumn !== null) {
+          // Column selected: move column left
+          if (selectedColumn <= 0) return;
+          onMoveConceptLeft(selectedColumn);
+          setSelectedColumn(selectedColumn - 1);
+        } else {
+          // Card focused: move card to left column
+          onMoveCardBetweenColumns(conceptIndex, versionIndex, conceptIndex - 1);
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowRight') {
+        if (selectedColumn !== null) {
+          // Column selected: move column right
+          if (selectedColumn >= concepts.length - 1) return;
+          onMoveConceptRight(selectedColumn);
+          setSelectedColumn(selectedColumn + 1);
+        } else {
+          // Card focused: move card to right column
+          onMoveCardBetweenColumns(conceptIndex, versionIndex, conceptIndex + 1);
+        }
+        return;
+      }
+
+      // Up/Down only apply to cards, not columns
+      if (selectedColumn !== null) return;
+
+      if (e.key === 'ArrowUp') {
+        const concept = concepts[conceptIndex];
+        if (!concept || versionIndex >= concept.versions.length - 1) return;
+        const ids = concept.versions.map(v => v.id);
+        const [moved] = ids.splice(versionIndex, 1);
+        ids.splice(versionIndex + 1, 0, moved);
+        onReorderVersions(concept.id, ids);
+        onHighlight(conceptIndex, versionIndex + 1);
+        return;
+      }
+
+      if (e.key === 'ArrowDown') {
+        const concept = concepts[conceptIndex];
+        if (!concept || versionIndex <= 0) return;
+        const ids = concept.versions.map(v => v.id);
+        const [moved] = ids.splice(versionIndex, 1);
+        ids.splice(versionIndex - 1, 0, moved);
+        onReorderVersions(concept.id, ids);
+        onHighlight(conceptIndex, versionIndex - 1);
+        return;
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [conceptIndex, versionIndex, concepts, selectedColumn, contextMenu, onMoveConceptLeft, onMoveConceptRight, onReorderVersions, onMoveCardBetweenColumns, onHighlight]);
+
+  // Shift+Arrow multi-select (extend selection while navigating)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.shiftKey || !e.key.startsWith('Arrow')) return;
+      if (e.altKey) return; // Alt+Shift combo — ignore
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (contextMenu) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Add current card to selection (anchor on first Shift+Arrow)
+      const currentConcept = concepts[conceptIndex];
+      if (currentConcept) {
+        const currentVersion = currentConcept.versions[versionIndex];
+        if (currentVersion) {
+          const currentKey = `${currentConcept.id}:${currentVersion.id}`;
+          if (!multiSelected.has(currentKey)) {
+            onMultiSelectToggle(currentKey);
+          }
+        }
+      }
+
+      // Compute destination
+      let nextCi = conceptIndex;
+      let nextVi = versionIndex;
+
+      if (e.key === 'ArrowRight' && conceptIndex < concepts.length - 1) {
+        nextCi = conceptIndex + 1;
+        const currentCount = concepts[conceptIndex]?.versions.length ?? 0;
+        const visualRow = currentCount - 1 - versionIndex;
+        const nextCount = concepts[nextCi]?.versions.length ?? 0;
+        nextVi = Math.max(0, nextCount - 1 - Math.min(visualRow, nextCount - 1));
+      } else if (e.key === 'ArrowLeft' && conceptIndex > 0) {
+        nextCi = conceptIndex - 1;
+        const currentCount = concepts[conceptIndex]?.versions.length ?? 0;
+        const visualRow = currentCount - 1 - versionIndex;
+        const prevCount = concepts[nextCi]?.versions.length ?? 0;
+        nextVi = Math.max(0, prevCount - 1 - Math.min(visualRow, prevCount - 1));
+      } else if (e.key === 'ArrowUp') {
+        const maxVi = (concepts[conceptIndex]?.versions.length ?? 1) - 1;
+        nextVi = Math.min(versionIndex + 1, maxVi);
+      } else if (e.key === 'ArrowDown') {
+        nextVi = Math.max(versionIndex - 1, 0);
+      }
+
+      if (nextCi === conceptIndex && nextVi === versionIndex) return;
+
+      // Add destination card to selection
+      const destConcept = concepts[nextCi];
+      const destVersion = destConcept?.versions[nextVi];
+      if (destConcept && destVersion) {
+        const destKey = `${destConcept.id}:${destVersion.id}`;
+        if (!multiSelected.has(destKey)) {
+          onMultiSelectToggle(destKey);
+        }
+      }
+
+      onHighlight(nextCi, nextVi);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [conceptIndex, versionIndex, concepts, contextMenu, multiSelected, onMultiSelectToggle, onHighlight]);
 
   // Attach wheel listener with passive:false to prevent browser back/forward gestures
   useEffect(() => {
@@ -385,15 +525,18 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onDoubleClick={handleDoubleClick}
+        onClick={() => { if (selectedColumn !== null) setSelectedColumn(null); }}
       >
 
-        {/* Dot grid background */}
+        {/* Grid background */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: 'radial-gradient(circle, var(--canvas-dot) 1px, transparent 1px)',
-            backgroundSize: `${24 * transform.scale}px ${24 * transform.scale}px`,
-            backgroundPosition: `${transform.tx % (24 * transform.scale)}px ${transform.ty % (24 * transform.scale)}px`,
+            backgroundImage:
+              `linear-gradient(var(--grid-line) 0.5px, transparent 0.5px),
+               linear-gradient(90deg, var(--grid-line) 0.5px, transparent 0.5px)`,
+            backgroundSize: `${GRID_SIZE * transform.scale}px ${GRID_SIZE * transform.scale}px`,
+            backgroundPosition: `${transform.tx % (GRID_SIZE * transform.scale)}px ${transform.ty % (GRID_SIZE * transform.scale)}px`,
           }}
         />
 
@@ -452,150 +595,135 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             willChange: 'transform',
           }}
         >
-          {/* Selects row */}
-          {layout.selectsSlots.map(slot => {
-            const concept = concepts[slot.conceptIndex];
-            const selectedVid = selections.get(slot.conceptId);
-            const selectedVersion = selectedVid ? concept?.versions.find(v => v.id === selectedVid) : null;
 
-            const thumbFilename = selectedVersion?.thumbnail?.replace('.thumbs/', '') || null;
-            const thumbSrc = thumbFilename
-              ? `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}&w=880`
-              : null;
+          {/* Selected column highlight */}
+          {selectedColumn !== null && layout.labels[selectedColumn] && (() => {
+            const label = layout.labels[selectedColumn];
+            const columnCards = layout.cards.filter(c => c.conceptIndex === selectedColumn);
+            const lastCard = columnCards.length > 0 ? columnCards.reduce((a, b) => a.y > b.y ? a : b) : null;
+            const columnBottom = lastCard ? lastCard.y + layout.cardHeight : label.y + 40;
+            return (
+              <div className="absolute pointer-events-none transition-all duration-200"
+                style={{
+                  left: label.x - 12, top: label.y - 12,
+                  width: layout.cardWidth + 24, height: columnBottom - label.y + 24,
+                  border: '1.5px solid var(--column-accent)',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--column-tint)',
+                }}
+              />
+            );
+          })()}
 
+          {/* Concept labels */}
+          {layout.labels.map(label => {
+            const concept = concepts[label.conceptIndex];
+            const hasSelect = concept?.versions.some(v => selections.has(`${label.conceptId}:${v.id}`)) ?? false;
             return (
               <div
-                key={`sel-${slot.conceptId}`}
-                className="absolute"
+                key={label.conceptId}
+                data-card
+                className="absolute flex items-center gap-2 cursor-pointer"
                 style={{
-                  left: slot.x,
-                  top: slot.y,
+                  left: label.x,
+                  top: label.y,
                   width: layout.cardWidth,
-                  height: layout.selectsHeight,
+                  transition: 'left 0.5s cubic-bezier(0.16, 1, 0.3, 1), top 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedColumn(prev => prev === label.conceptIndex ? null : label.conceptIndex);
                 }}
               >
-                {selectedVersion ? (
-                  <div
-                    className="w-full h-full rounded overflow-hidden cursor-pointer transition-all"
-                    style={{
-                      border: '2px solid var(--selects-gold)',
-                      boxShadow: '0 0 0 1px rgba(250, 204, 21, 0.2)',
-                      background: 'var(--card-bg)',
+                <span className="font-semibold tracking-[0.08em] uppercase truncate flex-1 transition-all"
+                  style={{
+                    fontSize: 13,
+                    color: 'var(--foreground)',
+                    opacity: selectedColumn === label.conceptIndex ? 1 : 0.7,
+                    fontWeight: selectedColumn === label.conceptIndex ? 700 : 600,
+                    padding: '4px 8px',
+                    borderRadius: 4,
+                  }}
+                >
+                  {label.label}
+                  {hasSelect && (
+                    <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: 'var(--selects-gold)', marginLeft: 6, verticalAlign: 'middle' }} />
+                  )}
+                  {selectedColumn === label.conceptIndex && (
+                    <span style={{ fontSize: 9, opacity: 0.35, marginLeft: 8, fontWeight: 400, letterSpacing: '0.04em' }}>
+                      ⌥ arrows to reorder
+                    </span>
+                  )}
+                </span>
+                {/* Branch source indicator */}
+                {(() => {
+                  const concept = concepts[label.conceptIndex];
+                  if (!concept?.branchedFrom) return null;
+                  const sourceConcept = concepts.find(c => c.id === concept.branchedFrom?.conceptId);
+                  if (!sourceConcept) return null;
+                  const sourceVersion = sourceConcept.versions.find(v => v.id === concept.branchedFrom?.versionId);
+                  return (
+                    <span style={{ fontSize: 8, color: 'var(--muted)', opacity: 0.5, fontFamily: 'var(--font-mono, monospace)', marginLeft: 4 }}>
+                      ← {sourceConcept.label}{sourceVersion ? ` v${sourceVersion.number}` : ''}
+                    </span>
+                  );
+                })()}
+                {selectedColumn === label.conceptIndex && onDeleteConcept && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteConcept(label.conceptId);
                     }}
-                    onClick={() => {
-                      const vi = concept.versions.findIndex(v => v.id === selectedVid);
-                      if (vi >= 0) handleThumbnailClick(slot.conceptIndex, vi);
-                    }}
-                    onDoubleClick={() => {
-                      const vi = concept.versions.findIndex(v => v.id === selectedVid);
-                      if (vi >= 0) handleThumbnailDoubleClick(slot.conceptIndex, vi);
-                    }}
+                    className="ml-auto p-1 rounded hover:bg-[rgba(255,0,0,0.08)] transition-colors group/trash"
+                    title="Delete concept"
                   >
-                    {thumbSrc ? (
-                      <img
-                        src={thumbSrc}
-                        alt={`Select: ${concept.label}`}
-                        className="w-full h-full object-cover object-top"
-                        draggable={false}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-[10px] font-medium" style={{ color: 'var(--foreground)', opacity: 0.4 }}>
-                          {numberToLetter(selectedVersion.number)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div
-                    className="w-full h-full rounded flex items-center justify-center"
-                    style={{
-                      border: '2px dashed var(--muted)',
-                      opacity: 0.5,
-                    }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" style={{ opacity: 0.5 }}>
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" className="group-hover/trash:stroke-red-500 transition-colors">
+                      <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                     </svg>
-                  </div>
+                  </button>
                 )}
               </div>
             );
           })}
 
-          {layout.labels.map(label => (
-            <div
-              key={label.conceptId}
-              data-card
-              className="absolute flex items-center gap-2 cursor-pointer"
-              style={{
-                left: label.x,
-                top: label.y,
-                width: layout.cardWidth,
-                zIndex: selectedColumn === label.conceptIndex ? 10 : undefined,
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedColumn(prev =>
-                  prev === label.conceptIndex ? null : label.conceptIndex
-                );
-              }}
-            >
-              <span
-                className="font-semibold tracking-[0.08em] uppercase truncate flex-1 transition-all"
-                style={{
-                  fontSize: selectedColumn === label.conceptIndex ? 14 : 13,
-                  color: 'var(--foreground)',
-                  opacity: selectedColumn === label.conceptIndex ? 1 : 0.7,
-                  padding: '4px 8px',
-                  borderRadius: 4,
-                  border: selectedColumn === label.conceptIndex ? '1px solid var(--foreground)' : '1px solid transparent',
-                  background: selectedColumn === label.conceptIndex ? 'rgba(0,0,0,0.04)' : undefined,
-                }}
-              >
-                {label.label}
-                {selectedColumn === label.conceptIndex && (
-                  <span style={{ fontSize: 9, opacity: 0.4, marginLeft: 8, fontWeight: 400, letterSpacing: '0.04em' }}>
-                    ← → to move
-                  </span>
-                )}
-              </span>
-              {(() => {
-                const concept = concepts[label.conceptIndex];
-                if (!concept?.branchedFrom) return null;
-                const sourceConcept = concepts.find(c => c.id === concept.branchedFrom?.conceptId);
-                if (!sourceConcept) return null;
-                const sourceVersion = sourceConcept.versions.find(v => v.id === concept.branchedFrom?.versionId);
+          {/* Insert concept "+" zones between columns and at the end */}
+          {onInsertConcept && layout.labels.length > 0 && (
+            <>
+              {/* Between each pair of columns */}
+              {layout.labels.map((label, i) => {
+                if (i === 0) return null; // no zone before the first column
+                const prevLabel = layout.labels[i - 1];
+                const gapX = prevLabel.x + layout.cardWidth;
+                const gapWidth = label.x - gapX;
                 return (
-                  <span
-                    style={{
-                      fontSize: 8,
-                      color: 'var(--muted)',
-                      opacity: 0.5,
-                      fontFamily: 'var(--font-mono, monospace)',
-                      marginLeft: 4,
-                    }}
-                  >
-                    ← {sourceConcept.label}{sourceVersion ? ` ${numberToLetter(sourceVersion.number)}` : ''}
-                  </span>
+                  <InsertZone
+                    key={`insert-${i}`}
+                    x={gapX}
+                    y={label.y}
+                    width={gapWidth}
+                    height={layout.cardHeight + 40}
+                    afterIndex={i - 1}
+                    onInsert={onInsertConcept}
+                  />
+                );
+              })}
+              {/* After the last column */}
+              {(() => {
+                const last = layout.labels[layout.labels.length - 1];
+                return (
+                  <InsertZone
+                    key="insert-end"
+                    x={last.x + layout.cardWidth}
+                    y={last.y}
+                    width={layout.columnGap + 40}
+                    height={layout.cardHeight + 40}
+                    afterIndex={layout.labels.length - 1}
+                    onInsert={onInsertConcept}
+                  />
                 );
               })()}
-              {selectedColumn === label.conceptIndex && onDeleteConcept && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteConcept(label.conceptId);
-                  }}
-                  className="ml-auto p-1 rounded hover:bg-[rgba(255,0,0,0.08)] transition-colors group/trash"
-                  title="Delete concept"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" className="group-hover/trash:stroke-red-500 transition-colors">
-                    <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          ))}
+            </>
+          )}
 
           <CardLayer
             layout={layout}
@@ -624,7 +752,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
         const concept = concepts[contextMenu.ci];
         const version = concept?.versions[contextMenu.vi];
         if (!concept || !version) return null;
-        const isStarred = selections.get(concept.id) === version.id;
+        const isStarred = selections.has(`${concept.id}:${version.id}`);
         return (
           <ContextMenu
             x={contextMenu.x}
@@ -640,6 +768,10 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             onHide={() => { onHideVersion?.(concept.id, version.id); closeContextMenu(); }}
             onDriftToProject={() => { onDriftToProject?.(concept.id, version.id); closeContextMenu(); }}
             onDelete={() => { onDeleteVersion(concept.id, version.id); closeContextMenu(); }}
+            rounds={rounds}
+            activeRoundId={activeRoundId ?? undefined}
+            onSendToRound={onSendToRound ? (roundId) => { onSendToRound(concept.id, version.id, roundId); closeContextMenu(); } : undefined}
+            onSendToNewRound={onSendToNewRound ? () => { onSendToNewRound(concept.id, version.id); closeContextMenu(); } : undefined}
             onZoomToCard={() => {
               const bounds = getCardBounds(layout, contextMenu.ci, contextMenu.vi);
               zoomToRect(bounds, 40);
@@ -654,7 +786,65 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   );
 });
 
-import type { CanvasLayout } from '@/lib/hooks/useCanvasLayout';
+/**
+ * Hover "+" zone rendered in the gap between columns.
+ * Appears as a faint vertical line with a "+" circle on hover.
+ */
+function InsertZone({ x, y, width, height, afterIndex, onInsert }: {
+  x: number; y: number; width: number; height: number;
+  afterIndex: number;
+  onInsert: (label: string, afterConceptIndex?: number) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      data-card
+      className="absolute flex items-start justify-center"
+      style={{ left: x, top: y, width, height, cursor: 'pointer', zIndex: hovered ? 20 : 1 }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={(e) => {
+        e.stopPropagation();
+        const label = window.prompt('Concept name:');
+        if (label?.trim()) onInsert(label.trim(), afterIndex);
+      }}
+    >
+      {/* Vertical line */}
+      <div
+        style={{
+          width: 1,
+          height: '100%',
+          background: 'var(--foreground)',
+          opacity: hovered ? 0.15 : 0,
+          transition: 'opacity 0.15s ease',
+        }}
+      />
+      {/* "+" circle */}
+      <div
+        className="absolute flex items-center justify-center"
+        style={{
+          top: -4,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 20,
+          height: 20,
+          borderRadius: '50%',
+          background: hovered ? 'var(--foreground)' : 'transparent',
+          color: hovered ? 'var(--background)' : 'transparent',
+          fontSize: 14,
+          fontWeight: 300,
+          lineHeight: 1,
+          opacity: hovered ? 0.6 : 0,
+          transition: 'all 0.15s ease',
+          pointerEvents: 'none',
+        }}
+      >
+        +
+      </div>
+    </div>
+  );
+}
 
 /**
  * Extracted card layer with viewport culling. Only renders cards visible
@@ -688,7 +878,7 @@ const CardLayer = memo(function CardLayer({
   client: string;
   project: string;
   thumbVersion: number;
-  selections: Map<string, string>;
+  selections: Set<string>;
   showHidden?: boolean;
   transform: { scale: number; tx: number; ty: number };
   viewportRef: React.RefObject<HTMLDivElement | null>;
@@ -721,7 +911,9 @@ const CardLayer = memo(function CardLayer({
         ) return null;
 
         const concept = concepts[pos.conceptIndex];
+        if (!concept) return null;
         const version = concept.versions[pos.versionIndex];
+        if (!version) return null;
         const isHidden = version.visible === false;
         // Skip hidden versions unless showHidden is enabled
         if (isHidden && !showHidden) return null;
@@ -731,20 +923,18 @@ const CardLayer = memo(function CardLayer({
         // Use small thumbnails at low zoom, full-res at high zoom (z3/z4)
         const thumbW = transform.scale < 0.5 ? '&w=880' : '';
         const thumbSrc = `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}${thumbW}`;
-        const isStarred = selections.get(concept.id) === version.id;
+        const isStarred = selections.has(`${concept.id}:${version.id}`);
         const isLatest = pos.versionIndex === concept.versions.length - 1;
 
         return (
-          <div
-            key={`${pos.conceptIndex}-${pos.versionIndex}`}
+          <div key={`${pos.conceptIndex}-${pos.versionIndex}`}
             style={{ opacity: isHidden ? 0.3 : 1, transition: 'opacity 0.15s ease' }}
           >
             <CanvasCard
               thumbnail={thumbSrc}
               conceptLabel={concept.label}
               versionNumber={version.number}
-              coordinate={`${pos.conceptIndex + 1}.${concept.versions.length - pos.versionIndex}`}
-              iterationLetter={numberToLetter(version.number)}
+              iterationLetter={`v${version.number}`}
               isCurrent={pos.conceptIndex === conceptIndex && pos.versionIndex === versionIndex}
               isSelected={isStarred}
               isLatest={isLatest}

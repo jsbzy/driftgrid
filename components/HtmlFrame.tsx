@@ -80,49 +80,69 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       }
     }, [editMode, showEdits, hasEdits, iframeReady]);
 
-    // Forward navigation keys from iframe to parent window
+    // Forward navigation keys from iframe to parent window.
+    // Re-attaches whenever iframe loads new content (src changes trigger reload → handleLoad → iframeReady).
+    // Also polls to re-attach if the iframe document gets replaced without a full reload.
     useEffect(() => {
       if (!iframeReady || !iframeRef.current) return;
-      try {
-        const iframeDoc = iframeRef.current.contentDocument;
-        if (!iframeDoc) return;
-        const handler = (e: KeyboardEvent) => {
-          // Forward Cmd+K / Ctrl+K for command palette
-          if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
-            if (e.target instanceof iframeDoc.defaultView!.HTMLInputElement ||
-                e.target instanceof iframeDoc.defaultView!.HTMLTextAreaElement) return;
-            e.preventDefault();
-            window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
-            return;
-          }
-          if (e.key === 'a' || e.key === 'A' ||
-              e.key === 'd' || e.key === 'D' ||
-              e.key === 'g' || e.key === 'G' || e.key === 'Escape' ||
-              e.key === 'h' || e.key === 'H' ||
-              e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
-              e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
-              e.key === 'p' || e.key === 'P' ||
-              e.key === 's' || e.key === 'S' ||
-              e.key === '?') {
-            // Don't intercept if user is typing in an input inside the iframe
-            if (e.target instanceof iframeDoc.defaultView!.HTMLInputElement ||
-                e.target instanceof iframeDoc.defaultView!.HTMLTextAreaElement) return;
-            // Forward Cmd+S with modifier keys preserved (browser save intercept)
-            if ((e.key === 's' || e.key === 'S') && (e.metaKey || e.ctrlKey)) {
+
+      let currentDoc: Document | null = null;
+      let cleanup: (() => void) | null = null;
+
+      function attachListener() {
+        try {
+          const doc = iframeRef.current?.contentDocument;
+          if (!doc || doc === currentDoc) return; // already attached to this doc
+          // Detach from old doc
+          if (cleanup) cleanup();
+          currentDoc = doc;
+
+          const handler = (e: KeyboardEvent) => {
+            // Forward Cmd+K / Ctrl+K for command palette
+            if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+              if (e.target instanceof (doc.defaultView?.HTMLInputElement ?? HTMLInputElement) ||
+                  e.target instanceof (doc.defaultView?.HTMLTextAreaElement ?? HTMLTextAreaElement)) return;
               e.preventDefault();
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
               return;
             }
-            e.preventDefault();
-            // Re-dispatch on parent window (preserve modifier keys)
-            window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
-          }
-        };
-        iframeDoc.addEventListener('keydown', handler, true);
-        return () => iframeDoc.removeEventListener('keydown', handler, true);
-      } catch {
-        // Cross-origin iframe — can't attach listener
+            if (e.key === 'a' || e.key === 'A' ||
+                e.key === 'd' || e.key === 'D' ||
+                e.key === 'g' || e.key === 'G' || e.key === 'Escape' ||
+                e.key === 'h' || e.key === 'H' ||
+                e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+                e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
+                e.key === 'p' || e.key === 'P' ||
+                e.key === 's' || e.key === 'S' ||
+                e.key === '?') {
+              if (e.target instanceof (doc.defaultView?.HTMLInputElement ?? HTMLInputElement) ||
+                  e.target instanceof (doc.defaultView?.HTMLTextAreaElement ?? HTMLTextAreaElement)) return;
+              if ((e.key === 's' || e.key === 'S') && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                return;
+              }
+              e.preventDefault();
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
+            }
+          };
+          doc.addEventListener('keydown', handler, true);
+          cleanup = () => { try { doc.removeEventListener('keydown', handler, true); } catch {} };
+        } catch {
+          // Cross-origin iframe — can't attach listener
+        }
       }
-    }, [iframeReady]);
+
+      // Attach immediately
+      attachListener();
+
+      // Poll every 2s to re-attach if the iframe document changed (hot reload, SPA navigation)
+      const poll = setInterval(attachListener, 2000);
+
+      return () => {
+        clearInterval(poll);
+        if (cleanup) cleanup();
+      };
+    }, [iframeReady, src]);
 
     // Listen for edit-change messages from iframe
     useEffect(() => {
@@ -304,7 +324,7 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
             <iframe
               ref={iframeRef}
               src={editSrc}
-              sandbox="allow-same-origin allow-scripts allow-modals allow-forms allow-popups allow-fullscreen allow-pointer-lock allow-downloads"
+              sandbox="allow-same-origin allow-scripts allow-modals allow-forms allow-popups allow-fullscreen allow-pointer-lock allow-downloads" allow="autoplay"
               title="Design preview"
               onLoad={handleLoad}
               style={{
@@ -349,7 +369,7 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
             zIndex: 2,
             opacity: iframeReady ? 1 : 0,
           }}
-          sandbox="allow-same-origin allow-scripts allow-modals allow-forms allow-popups allow-fullscreen allow-pointer-lock allow-downloads"
+          sandbox="allow-same-origin allow-scripts allow-modals allow-forms allow-popups allow-fullscreen allow-pointer-lock allow-downloads" allow="autoplay"
           title="Design preview"
         onLoad={handleLoad}
       />

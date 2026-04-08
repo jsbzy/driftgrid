@@ -32,6 +32,8 @@ export async function POST(request: Request) {
     return closeRound(manifest, client, project, body);
   } else if (action === 'create') {
     return createRound(manifest, client, project, body);
+  } else if (action === 'copy-to') {
+    return copyToRound(manifest, client, project, body);
   }
 
   return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
@@ -127,7 +129,14 @@ async function createRound(
     const newVersions = [];
     let vNum = 0;
 
-    for (const versionId of versionIds) {
+    // Sort by creation time (oldest first) so newest ends up at visual top after reverse
+    const sortedVersionIds = [...versionIds].sort((a, b) => {
+      const va = sourceConcept.versions.find(v => v.id === a);
+      const vb = sourceConcept.versions.find(v => v.id === b);
+      return new Date(va?.created ?? 0).getTime() - new Date(vb?.created ?? 0).getTime();
+    });
+
+    for (const versionId of sortedVersionIds) {
       const sourceVersion = sourceConcept.versions.find(v => v.id === versionId);
       if (!sourceVersion) continue;
 
@@ -197,5 +206,97 @@ async function createRound(
     name: newRound.name,
     conceptCount: newConcepts.length,
     versionCount: newConcepts.reduce((sum, c) => sum + c.versions.length, 0),
+  });
+}
+
+/** Copy a version to an existing round */
+async function copyToRound(
+  manifest: Manifest,
+  client: string,
+  project: string,
+  body: { conceptId: string; versionId: string; sourceRoundId?: string; targetRoundId: string },
+) {
+  const { conceptId, versionId, sourceRoundId, targetRoundId } = body;
+  if (!conceptId || !versionId || !targetRoundId) {
+    return NextResponse.json({ error: 'Missing conceptId, versionId, or targetRoundId' }, { status: 400 });
+  }
+
+  // Find source round and version
+  const sourceRound = sourceRoundId
+    ? manifest.rounds.find(r => r.id === sourceRoundId)
+    : manifest.rounds[manifest.rounds.length - 1];
+  if (!sourceRound) {
+    return NextResponse.json({ error: 'Source round not found' }, { status: 404 });
+  }
+  const sourceConcept = sourceRound.concepts.find(c => c.id === conceptId);
+  const sourceVersion = sourceConcept?.versions.find(v => v.id === versionId);
+  if (!sourceConcept || !sourceVersion) {
+    return NextResponse.json({ error: 'Source version not found' }, { status: 404 });
+  }
+
+  // Find target round
+  const targetRound = manifest.rounds.find(r => r.id === targetRoundId);
+  if (!targetRound) {
+    return NextResponse.json({ error: 'Target round not found' }, { status: 404 });
+  }
+
+  // Find or create matching concept in target round (match by label)
+  let targetConcept = targetRound.concepts.find(c => c.label === sourceConcept.label);
+  if (!targetConcept) {
+    const newConceptId = `${sourceConcept.slug || conceptId}-${targetRound.id}`;
+    targetConcept = {
+      id: newConceptId,
+      slug: sourceConcept.slug,
+      label: sourceConcept.label,
+      description: sourceConcept.description,
+      position: targetRound.concepts.length + 1,
+      visible: true,
+      versions: [],
+    };
+    targetRound.concepts.push(targetConcept);
+  }
+
+  // Determine next version number
+  const maxNum = targetConcept.versions.length > 0
+    ? Math.max(...targetConcept.versions.map(v => v.number))
+    : 0;
+  const nextNum = maxNum + 1;
+  const newVersionId = `${targetConcept.id}--v${nextNum}`;
+
+  // Copy file
+  const projectDir = path.join(PROJECTS_DIR, client, project);
+  const conceptDir = targetConcept.slug || targetConcept.id;
+  const roundSlug = `round-${targetRound.number}`;
+  const newRelPath = `${conceptDir}/${roundSlug}/v${nextNum}.html`;
+  const destFile = path.join(projectDir, newRelPath);
+
+  try {
+    await fs.mkdir(path.dirname(destFile), { recursive: true });
+    await fs.copyFile(path.join(projectDir, sourceVersion.file), destFile);
+  } catch {
+    await fs.mkdir(path.dirname(destFile), { recursive: true });
+    await fs.writeFile(destFile, '<!-- copied -->', 'utf-8');
+  }
+
+  const newVersion = {
+    id: newVersionId,
+    number: nextNum,
+    file: newRelPath,
+    parentId: null,
+    changelog: `From ${sourceRound.name} — ${sourceConcept.label} v${sourceVersion.number}`,
+    visible: true,
+    starred: false,
+    created: new Date().toISOString(),
+    thumbnail: '',
+  };
+
+  targetConcept.versions.push(newVersion);
+  await writeManifest(client, project, manifest);
+
+  return NextResponse.json({
+    success: true,
+    targetRound: targetRound.name,
+    conceptLabel: targetConcept.label,
+    versionNumber: nextNum,
   });
 }

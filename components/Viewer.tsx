@@ -5,7 +5,7 @@ import useSWR from 'swr';
 import type { Manifest, ViewMode } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
 import { filterVisibleManifest } from '@/lib/filterManifest';
-import { numberToLetter, letterToNumber, conceptSlug } from '@/lib/letters';
+import { letterToNumber, conceptSlug } from '@/lib/letters';
 import { HtmlFrame, type HtmlFrameHandle } from './HtmlFrame';
 import { NavigationGrid } from './NavigationGrid';
 import { CanvasView, type CanvasViewHandle } from './CanvasView';
@@ -30,18 +30,23 @@ interface ViewerProps {
   client: string;
   project: string;
   mode?: ViewMode;
+  shareToken?: string;
 }
 
-export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
+export function Viewer({ client, project, mode = 'designer', shareToken }: ViewerProps) {
+  // In share mode, use token-based API routes that read from Supabase Storage
+  const manifestUrl = shareToken
+    ? `/api/s/${shareToken}/manifest`
+    : `/api/manifest/${client}/${project}`;
   const { data: manifest, isLoading, mutate } = useSWR<Manifest>(
-    `/api/manifest/${client}/${project}`,
+    manifestUrl,
     fetcher
   );
 
   const [conceptIndex, setConceptIndex] = useState(0);
   const [versionIndex, setVersionIndex] = useState(0);
   const [viewMode, setViewMode] = useState<'frame' | 'grid'>(mode === 'client' ? 'frame' : 'grid');
-  const [selections, setSelections] = useState<Map<string, string>>(new Map());
+  const [selections, setSelections] = useState<Set<string>>(new Set());
   const [activeRoundId, setActiveRoundId] = useState<string | null>(null);
   const flash = useFlash();
   const ui = useUIVisibility();
@@ -50,6 +55,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set());
+  const [clipboard, setClipboard] = useState<{ conceptId: string; versionId: string; file: string; label: string; number: number }[] | null>(null);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('overview');
   // Smooth zoom transition state
   const canvasRef = useRef<CanvasViewHandle>(null);
@@ -125,10 +131,60 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           annotationState.setAnnotationMode(v => !v);
         }
       }
+      // Cmd+C: copy frames to clipboard
+      if (e.key === 'c' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+        if (viewMode !== 'grid') return;
+        e.preventDefault();
+        const items: typeof clipboard = [];
+        if (multiSelected.size > 0) {
+          for (const key of multiSelected) {
+            const [cid, vid] = key.split(':');
+            const concept = concepts.find(c => c.id === cid);
+            const version = concept?.versions.find(v => v.id === vid);
+            if (concept && version) {
+              items.push({ conceptId: cid, versionId: vid, file: version.file, label: concept.label, number: version.number });
+            }
+          }
+        } else if (currentConcept && currentVersion) {
+          items.push({ conceptId: currentConcept.id, versionId: currentVersion.id, file: currentVersion.file, label: currentConcept.label, number: currentVersion.number });
+        }
+        if (items.length > 0) {
+          setClipboard(items);
+          toast(items.length === 1 ? `Copied ${items[0].label} v${items[0].number}` : `Copied ${items.length} frames`);
+        }
+      }
+      // Cmd+V: paste frames into current concept
+      if (e.key === 'v' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+        if (viewMode !== 'grid' || !clipboard || clipboard.length === 0 || !currentConcept) return;
+        e.preventDefault();
+        (async () => {
+          for (const item of clipboard) {
+            const res = await fetch('/api/paste', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                client, project,
+                sourceFile: item.file,
+                sourceLabel: item.label,
+                sourceNumber: item.number,
+                targetConceptId: currentConcept.id,
+                targetRoundId: activeRoundId,
+              }),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              toast(`Pasted → ${data.conceptLabel} v${data.versionNumber}`);
+            } else {
+              toast('Paste failed', 'error');
+            }
+          }
+          await mutate();
+        })();
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [viewMode, annotationState, ui]);
+  }, [viewMode, annotationState, ui, concepts, currentConcept, currentVersion, multiSelected, clipboard, client, project, activeRoundId, mutate]);
   const presentation = usePresentationMode(
     concepts, selections, conceptIndex, versionIndex, viewMode,
     setConceptIndex, setVersionIndex, setViewMode,
@@ -137,7 +193,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const mutations = useManifestMutations({
     manifest, client, project, mutate,
     conceptIndex, versionIndex, setConceptIndex, setVersionIndex,
-    currentConcept, currentVersion,
+    currentConcept, currentVersion, activeRoundId,
     undo, flash, viewMode, setViewMode, setZoomLevel,
   });
 
@@ -186,14 +242,14 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     let ci = concepts.findIndex(c => c.slug === slugOrId || conceptSlug(c.label) === slugOrId);
     let vi = 0;
 
-    if (ci >= 0 && letterOrV && !letterOrV.startsWith('v')) {
-      // New format: letter-based version lookup
-      const vNum = letterToNumber(letterOrV);
+    if (ci >= 0 && letterOrV && letterOrV.startsWith('v')) {
+      // v{N} format: #slug/v3
+      const vNum = parseInt(letterOrV.replace('v', ''), 10);
       const found = concepts[ci].versions.findIndex(v => v.number === vNum);
       if (found >= 0) vi = found;
     } else if (ci >= 0 && letterOrV) {
-      // Slug matched but version uses legacy vN format
-      const vNum = parseInt(letterOrV.replace('v', ''), 10);
+      // Legacy letter format: #slug/c → convert letter to number
+      const vNum = letterToNumber(letterOrV);
       const found = concepts[ci].versions.findIndex(v => v.number === vNum);
       if (found >= 0) vi = found;
     } else {
@@ -210,22 +266,22 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     if (ci < 0) return;
     setConceptIndex(ci);
     setVersionIndex(vi);
-    setViewMode('frame');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [concepts.length]);
 
   const handleNavigate = useCallback(
     (ci: number, vi: number) => {
+      if (multiSelected.size > 0) setMultiSelected(new Set());
       setConceptIndex(ci);
       setVersionIndex(vi);
       const concept = concepts[ci];
       const version = concept?.versions[vi];
       if (concept && version) {
         const slug = concept.slug || conceptSlug(concept.label);
-        window.history.replaceState(null, '', `#${slug}/${numberToLetter(version.number)}`);
+        window.history.replaceState(null, '', `#${slug}/v${version.number}`);
       }
     },
-    [concepts]
+    [concepts, multiSelected]
   );
 
   const handleHighlight = useCallback(
@@ -236,7 +292,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const version = concept?.versions[vi];
       if (concept && version) {
         const slug = concept.slug || conceptSlug(concept.label);
-        window.history.replaceState(null, '', `#${slug}/${numberToLetter(version.number)}`);
+        window.history.replaceState(null, '', `#${slug}/v${version.number}`);
       }
     },
     [concepts]
@@ -287,7 +343,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const version = concept?.versions[vi];
       if (concept && version) {
         const slug = concept.slug || conceptSlug(concept.label);
-        window.history.replaceState(null, '', `#${slug}/${numberToLetter(version.number)}`);
+        window.history.replaceState(null, '', `#${slug}/v${version.number}`);
       }
       setViewMode('frame');
     },
@@ -297,11 +353,12 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const handleToggleSelect = useCallback(() => {
     if (!currentConcept || !currentVersion) return;
     setSelections(prev => {
-      const next = new Map(prev);
-      if (next.get(currentConcept.id) === currentVersion.id) {
-        next.delete(currentConcept.id);
+      const next = new Set(prev);
+      const key = `${currentConcept.id}:${currentVersion.id}`;
+      if (next.has(key)) {
+        next.delete(key);
       } else {
-        next.set(currentConcept.id, currentVersion.id);
+        next.add(key);
       }
       return next;
     });
@@ -319,11 +376,12 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const handleStarVersion = useCallback((conceptId: string, versionId: string) => {
     setSelections(prev => {
-      const next = new Map(prev);
-      if (next.get(conceptId) === versionId) {
-        next.delete(conceptId);
+      const next = new Set(prev);
+      const key = `${conceptId}:${versionId}`;
+      if (next.has(key)) {
+        next.delete(key);
       } else {
-        next.set(conceptId, versionId);
+        next.add(key);
       }
       return next;
     });
@@ -342,7 +400,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
 
   const selectsConceptIndices = useMemo(() => {
     return concepts.reduce<number[]>((acc, c, i) => {
-      if (selections.has(c.id)) acc.push(i);
+      if (c.versions.some(v => selections.has(`${c.id}:${v.id}`))) acc.push(i);
       return acc;
     }, []);
   }, [concepts, selections]);
@@ -350,10 +408,8 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
   const getSelectedVersionIndex = useCallback((ci: number) => {
     const concept = concepts[ci];
     if (!concept) return 0;
-    const selectedVid = selections.get(concept.id);
-    if (!selectedVid) return 0;
-    const vi = concept.versions.findIndex(v => v.id === selectedVid);
-    return vi >= 0 ? vi : 0;
+    const starred = concept.versions.findIndex(v => selections.has(`${concept.id}:${v.id}`));
+    return starred >= 0 ? starred : 0;
   }, [concepts, selections]);
 
   const handleDrift = useMemo(() => {
@@ -401,9 +457,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         return { conceptId, versionId };
       });
     } else if (selections.size > 0) {
-      cardSelections = Array.from(selections.entries()).map(([conceptId, versionId]) => ({
-        conceptId, versionId,
-      }));
+      cardSelections = Array.from(selections).map(key => {
+        const [conceptId, versionId] = key.split(':');
+        return { conceptId, versionId };
+      });
     } else {
       toast('Select cards to send to the new round', 'error');
       return;
@@ -423,7 +480,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const data = await res.json();
       toast(`${data.name} created \u00b7 ${data.conceptCount} concepts`);
       setMultiSelected(new Set());
-      setSelections(new Map());
+      setSelections(new Set());
       setConceptIndex(0);
       setVersionIndex(0);
       setActiveRoundId(data.roundId);
@@ -447,7 +504,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${currentConcept.label}-${numberToLetter(currentVersion.number)}.png`;
+      a.download = `${currentConcept.label}-v${currentVersion.number}.png`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -502,7 +559,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       <div className="bg-[var(--background)] rounded-lg border border-[var(--border)] p-6 max-w-sm w-full mx-4 shadow-lg" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
         <div className="text-sm font-medium mb-2">Delete version?</div>
         <div className="text-xs text-[var(--muted)] mb-5">
-          {currentConcept.label} · {numberToLetter(currentVersion.number)} will be removed from the grid. You can undo with Cmd+Z.
+          {currentConcept.label} · v{currentVersion.number} will be removed from the grid. You can undo with Cmd+Z.
         </div>
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 text-[10px] text-[var(--muted)] cursor-pointer">
@@ -571,7 +628,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         }
         const name = window.prompt('New project name:');
         if (!name) return;
-        const versions = Array.from(selections.entries()).map(([conceptId, versionId]) => ({ conceptId, versionId }));
+        const versions = Array.from(selections).map(key => { const [conceptId, versionId] = key.split(':'); return { conceptId, versionId }; });
         const res = await fetch('/api/drift-to-project', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -593,10 +650,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
           return;
         }
         const name = window.prompt('Round name (optional):');
-        const roundSelects = Array.from(selections.entries()).map(([conceptId, versionId]) => ({
-          conceptId,
-          versionId,
-        }));
+        const roundSelects = Array.from(selections).map(key => { const [conceptId, versionId] = key.split(':'); return { conceptId, versionId }; });
         const res = await fetch('/api/rounds', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -614,6 +668,11 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
         }
       }}
       onNewRound={() => { ui.setCommandPaletteOpen(false); handleNewRound(); }}
+      onInsertConcept={() => {
+        ui.setCommandPaletteOpen(false);
+        const label = window.prompt('Concept name:');
+        if (label?.trim()) mutations.handleInsertConcept(label.trim(), conceptIndex);
+      }}
     />
   );
 
@@ -640,12 +699,14 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
     ? `${resolved.width} / ${resolved.height}`
     : '16 / 9';
 
-  const htmlSrc = `/api/html/${client}/${project}/${currentVersion.file}${frameVersion > 0 ? `?_v=${frameVersion}` : ''}`;
+  const htmlSrc = shareToken
+    ? `/api/s/${shareToken}/html/${currentVersion.file}`
+    : `/api/html/${client}/${project}/${currentVersion.file}${frameVersion > 0 ? `?_v=${frameVersion}` : ''}`;
   const thumbFilename = currentVersion.thumbnail?.replace('.thumbs/', '') || null;
   const thumbSrc = thumbFilename ? `/api/thumbs/${client}/${project}/${thumbFilename}` : null;
 
   // Shared action bar renderer — used in both grid and frame views
-  const isCurrentStarred = selections.get(currentConcept.id) === currentVersion.id;
+  const isCurrentStarred = selections.has(`${currentConcept.id}:${currentVersion.id}`);
   const actionBarBtn = "flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-white/10 transition-colors";
   const actionBarKey = { fontFamily: 'var(--font-mono, monospace)', fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em' } as const;
 
@@ -681,7 +742,10 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             const anns = await res.json();
             if (Array.isArray(anns) && anns.length > 0) {
               const lines = [filePath, '', 'Feedback:'];
-              anns.forEach((a: { text: string }, i: number) => lines.push(`${i + 1}. ${a.text}`));
+              anns.forEach((a: { text: string; resolved?: boolean }, i: number) => {
+                const prefix = a.resolved ? '✓ [RESOLVED] ' : '';
+                lines.push(`${i + 1}. ${prefix}${a.text}`);
+              });
               text = lines.join('\n');
             }
           }
@@ -714,7 +778,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
       </button>
       <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.12)' }} />
       <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.35)', padding: '0 4px' }}>
-        {currentConcept.label} · {numberToLetter(currentVersion.number)}
+        {currentConcept.label} · v{currentVersion.number}
       </span>
       <a href="/" className={actionBarBtn} title="Back to all projects" style={{ marginLeft: -2 }}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ opacity: 0.5 }}>
@@ -805,7 +869,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
                     setActiveRoundId(r.id);
                     setConceptIndex(0);
                     setVersionIndex(0);
-                    setSelections(new Map());
+                    setSelections(new Set());
                   }}
                   className="transition-all"
                   style={{
@@ -850,6 +914,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             onStarVersion={handleStarVersion}
             onDeleteVersion={mutations.handleDeleteVersion}
             onDeleteConcept={mutations.handleDeleteConcept}
+            onInsertConcept={mutations.handleInsertConcept}
             onHideVersion={mutations.handleHideVersion}
             multiSelected={multiSelected}
             onMultiSelectToggle={(key) => {
@@ -881,6 +946,39 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             onMoveConceptLeft={mutations.handleMoveConceptLeft}
             onMoveConceptRight={mutations.handleMoveConceptRight}
             onReorderConcepts={mutations.handleReorderConcepts}
+            onReorderVersions={mutations.handleReorderVersions}
+            onMoveCardBetweenColumns={mutations.handleMoveCardBetweenColumns}
+            rounds={rounds.map(r => ({ id: r.id, name: r.name, number: r.number }))}
+            activeRoundId={activeRoundId}
+            onSendToRound={async (conceptId, versionId, targetRoundId) => {
+              const res = await fetch('/api/rounds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client, project, action: 'copy-to', conceptId, versionId, sourceRoundId: activeRoundId, targetRoundId }),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                toast(`Sent to ${data.targetRound} → ${data.conceptLabel} v${data.versionNumber}`);
+                await mutate();
+              } else {
+                toast('Failed to send', 'error');
+              }
+            }}
+            onSendToNewRound={async (conceptId, versionId) => {
+              const res = await fetch('/api/rounds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client, project, action: 'create', selections: [{ conceptId, versionId }], sourceRoundId: activeRoundId }),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                toast(`${data.name} created with ${data.conceptCount} concept`);
+                setActiveRoundId(data.roundId);
+                await mutate();
+              } else {
+                toast('Failed to create round', 'error');
+              }
+            }}
             mode={mode}
             zoomLevel={zoomLevel}
             onZoomLevelChange={setZoomLevel}
@@ -921,7 +1019,7 @@ export function Viewer({ client, project, mode = 'designer' }: ViewerProps) {
             annotationMode={annotationState.annotationMode}
             onAdd={annotationState.handleAddAnnotation}
             onDelete={annotationState.handleDeleteAnnotation}
-            onResolve={() => {}}
+            onResolve={annotationState.handleResolveAnnotation}
           />
         </div>
         {/* Branding */}

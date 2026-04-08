@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavelength</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #0f0a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        /* Gradient mesh background */
+        .mesh-1 {
+            position: absolute;
+            width: 900px;
+            height: 900px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.4) 0%, transparent 70%);
+            top: -300px;
+            left: -200px;
+        }
+
+        .mesh-2 {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.35) 0%, transparent 70%);
+            bottom: -300px;
+            right: -100px;
+        }
+
+        .mesh-3 {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .layout {
+            display: flex;
+            align-items: center;
+            gap: 64px;
+            position: relative;
+            z-index: 2;
+            padding: 0 100px;
+            width: 100%;
+        }
+
+        .content {
+            flex: 1;
+            max-width: 560px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 32px;
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            background: #a78bfa;
+            border-radius: 50%;
+        }
+
+        h1 {
+            font-size: 60px;
+            font-weight: 800;
+            line-height: 1.06;
+            letter-spacing: -0.04em;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            line-height: 1.65;
+            color: rgba(255, 255, 255, 0.55);
+            margin-bottom: 40px;
+            max-width: 460px;
+        }
+
+        .cta-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .cta-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 36px;
+            background: #ffffff;
+            color: #4f46e5;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 100px;
+            text-decoration: none;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .cta-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 15px 24px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        /* Glass card panel */
+        .cards {
+            width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 24px 28px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .card-badge {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 4px 10px;
+            border-radius: 100px;
+        }
+
+        .card-desc {
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Channel preview card */
+        .channel-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .channel-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .channel-hash {
+            font-size: 15px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.3);
+            width: 20px;
+        }
+
+        .channel-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            flex: 1;
+        }
+
+        .channel-count {
+            font-size: 11px;
+            font-weight: 700;
+            color: #a78bfa;
+            background: rgba(167, 139, 250, 0.15);
+            padding: 2px 8px;
+            border-radius: 100px;
+        }
+
+        /* Presence card */
+        .presence-row {
+            display: flex;
+            align-items: center;
+            gap: -6px;
+            margin-top: 12px;
+        }
+
+        .presence-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(15, 10, 26, 0.8);
+            margin-left: -8px;
+        }
+
+        .presence-avatar:first-child { margin-left: 0; }
+        .presence-avatar.a { background: #a78bfa; }
+        .presence-avatar.b { background: #60a5fa; }
+        .presence-avatar.c { background: #34d399; }
+        .presence-avatar.d { background: #f472b6; }
+        .presence-avatar.e { background: #fbbf24; }
+
+        .presence-more {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(15, 10, 26, 0.8);
+            margin-left: -8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="mesh-1"></div>
+    <div class="mesh-2"></div>
+    <div class="mesh-3"></div>
+
+    <div class="layout">
+        <div class="content">
+            <div class="badge">
+                <span class="badge-dot"></span>
+                <span data-drift-editable="badge" data-drift-maxlen="40">Now with AI thread summaries</span>
+            </div>
+            <h1 data-drift-editable="headline" data-drift-maxlen="60">Communication that feels effortless</h1>
+            <p class="subtitle" data-drift-editable="subtitle" data-drift-maxlen="140">Wavelength combines organized threads, real-time presence, and smart summaries into one beautiful workspace your team will actually enjoy using.</p>
+            <div class="cta-group">
+                <a class="cta-primary" href="#">
+                    <span data-drift-editable="cta" data-drift-maxlen="30">Start for free</span>
+                    <span>&rarr;</span>
+                </a>
+                <a class="cta-ghost" href="#">
+                    <span data-drift-editable="cta-secondary" data-drift-maxlen="30">See how it works</span>
+                    <span>&rarr;</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="cards">
+            <div class="glass-card">
+                <div class="card-header">
+                    <span class="card-title" data-drift-editable="card1-title" data-drift-maxlen="30">Active Channels</span>
+                    <span class="card-badge">3 unread</span>
+                </div>
+                <div class="channel-list">
+                    <div class="channel-item">
+                        <span class="channel-hash">#</span>
+                        <span class="channel-name">product-launch</span>
+                        <span class="channel-count">12</span>
+                    </div>
+                    <div class="channel-item">
+                        <span class="channel-hash">#</span>
+                        <span class="channel-name">engineering</span>
+                        <span class="channel-count">5</span>
+                    </div>
+                    <div class="channel-item">
+                        <span class="channel-hash">#</span>
+                        <span class="channel-name">design-review</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <span class="card-title" data-drift-editable="card2-title" data-drift-maxlen="30">Team Presence</span>
+                    <span class="card-badge">14 online</span>
+                </div>
+                <div class="presence-row">
+                    <div class="presence-avatar a"></div>
+                    <div class="presence-avatar b"></div>
+                    <div class="presence-avatar c"></div>
+                    <div class="presence-avatar d"></div>
+                    <div class="presence-avatar e"></div>
+                    <div class="presence-more">+9</div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <span class="card-title" data-drift-editable="card3-title" data-drift-maxlen="30">Smart Summaries</span>
+                    <span class="card-badge">AI-powered</span>
+                </div>
+                <p class="card-desc" data-drift-editable="card3-desc" data-drift-maxlen="120">Missed a thread? Wavelength generates concise summaries so you can catch up in seconds, not minutes.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -69,6 +69,11 @@ export function useKeyboardNav({
       // Don't handle space (used for panning)
       if (e.key === ' ') return;
 
+      // Alt+Arrow is handled by CanvasView for reordering — don't navigate
+      if (e.altKey && e.key.startsWith('Arrow')) return;
+      // Shift+Arrow is handled by CanvasView for multi-select — don't navigate
+      if (e.shiftKey && e.key.startsWith('Arrow')) return;
+
       switch (e.key) {
         // ── Zoom level keys ──
         case '`': {
@@ -100,10 +105,6 @@ export function useKeyboardNav({
         // ── Arrow navigation ──
         case 'ArrowRight': {
           e.preventDefault();
-          if (e.shiftKey && viewMode === 'grid') {
-            onMoveConceptRight?.();
-            break;
-          }
           if (inSelectsRow && selectsConceptIndices.length > 0) {
             const curPos = selectsConceptIndices.indexOf(conceptIndex);
             const nextPos = curPos < selectsConceptIndices.length - 1 ? curPos + 1 : 0;
@@ -125,10 +126,6 @@ export function useKeyboardNav({
         }
         case 'ArrowLeft': {
           e.preventDefault();
-          if (e.shiftKey && viewMode === 'grid') {
-            onMoveConceptLeft?.();
-            break;
-          }
           if (inSelectsRow && selectsConceptIndices.length > 0) {
             const curPos = selectsConceptIndices.indexOf(conceptIndex);
             const prevPos = curPos > 0 ? curPos - 1 : selectsConceptIndices.length - 1;

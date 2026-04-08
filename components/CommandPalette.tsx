@@ -26,6 +26,9 @@ interface CommandPaletteProps {
   onToggleShowHidden?: () => void;
   onDriftToProject?: () => void;
   onNewRound?: () => void;
+  onMoveVersionUp?: () => void;
+  onMoveVersionDown?: () => void;
+  onInsertConcept?: () => void;
 }
 
 export function CommandPalette({
@@ -46,6 +49,9 @@ export function CommandPalette({
   onToggleShowHidden,
   onDriftToProject,
   onNewRound,
+  onMoveVersionUp,
+  onMoveVersionDown,
+  onInsertConcept,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -67,6 +73,9 @@ export function CommandPalette({
     ...(onUndo ? [{ label: 'Undo', shortcut: '\u2318Z', action: onUndo }] : []),
     ...(onExportPng ? [{ label: 'Export PNG', shortcut: '', action: onExportPng }] : []),
     ...(onToggleShowHidden ? [{ label: 'Show / hide hidden versions', shortcut: '', action: onToggleShowHidden }] : []),
+    ...(onMoveVersionUp ? [{ label: 'Move version up', shortcut: '⇧↑', action: onMoveVersionUp }] : []),
+    ...(onMoveVersionDown ? [{ label: 'Move version down', shortcut: '⇧↓', action: onMoveVersionDown }] : []),
+    ...(onInsertConcept ? [{ label: 'Insert concept here', shortcut: '', action: onInsertConcept }] : []),
     ...(onDriftToProject ? [{ label: 'Drift selects to new project', shortcut: '', action: onDriftToProject }] : []),
   ];
 
@@ -138,14 +147,15 @@ export function CommandPalette({
   return (
     <div
       className="fixed inset-0 z-[300] flex items-start justify-center pt-[20vh]"
-      style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(2px)' }}
+      style={{ background: 'rgba(0,0,0,0.12)', backdropFilter: 'blur(8px)' }}
       onClick={onClose}
     >
       <div
         className="w-full max-w-[400px] mx-4 border overflow-hidden shadow-xl"
         style={{
           fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-          background: 'var(--background)',
+          background: 'var(--palette-bg)',
+          backdropFilter: 'blur(16px)',
           borderColor: 'var(--border)',
           borderRadius: 'var(--radius-md, 8px)',
         }}

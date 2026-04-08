@@ -71,11 +71,30 @@ export function useAnnotationState(
     setAnnotations(prev => prev.filter(a => a.id !== id));
   }, [client, project, conceptId, versionId]);
 
+  const handleResolveAnnotation = useCallback(async (id: string) => {
+    if (!conceptId || !versionId) return;
+    const res = await fetch('/api/annotations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId,
+        versionId,
+        annotationId: id,
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setAnnotations(prev => prev.map(a => a.id === id ? { ...a, resolved: updated.resolved } : a));
+    }
+  }, [client, project, conceptId, versionId]);
+
   return {
     annotations,
     annotationMode,
     setAnnotationMode,
     handleAddAnnotation,
     handleDeleteAnnotation,
+    handleResolveAnnotation,
   };
 }

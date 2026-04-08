@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavelength</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #0a0a0a;
+            display: flex;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 80px 0 120px;
+        }
+
+        .right {
+            width: 520px;
+            background: #111111;
+            border-left: 1px solid #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px 48px;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 36px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+        }
+
+        .status-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            color: #22c55e;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: 52px;
+            font-weight: 700;
+            line-height: 1.08;
+            letter-spacing: -0.03em;
+            color: #fafafa;
+            margin-bottom: 20px;
+        }
+
+        .description {
+            font-size: 17px;
+            line-height: 1.7;
+            color: #737373;
+            max-width: 440px;
+            margin-bottom: 40px;
+        }
+
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 28px;
+            background: transparent;
+            color: #fafafa;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid #262626;
+            border-radius: 8px;
+            text-decoration: none;
+            letter-spacing: 0.02em;
+        }
+
+        .cta-cursor {
+            color: #22c55e;
+        }
+
+        /* Right panel - feature list */
+        .feature-block {
+            margin-bottom: 28px;
+        }
+
+        .feature-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            color: #22c55e;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 10px;
+        }
+
+        .feature-code {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            color: #a3a3a3;
+        }
+
+        .feature-code .key {
+            color: #737373;
+        }
+
+        .feature-code .val {
+            color: #fafafa;
+        }
+
+        .feature-code .accent {
+            color: #22c55e;
+        }
+
+        .divider {
+            height: 1px;
+            background: #1a1a1a;
+            margin: 28px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="left">
+        <div class="status">
+            <span class="status-dot"></span>
+            <span class="status-text" data-drift-editable="status" data-drift-maxlen="30">All systems operational</span>
+        </div>
+        <h1 data-drift-editable="headline" data-drift-maxlen="60">Built for teams who ship</h1>
+        <p class="description" data-drift-editable="description" data-drift-maxlen="200">Wavelength integrates with your development workflow. Threaded conversations, inline code reviews, and real-time presence for distributed teams.</p>
+        <a class="cta" href="#">
+            <span data-drift-editable="cta" data-drift-maxlen="30">wavelength init --start</span>
+            <span class="cta-cursor">_</span>
+        </a>
+    </div>
+    <div class="right">
+        <div class="feature-block">
+            <div class="feature-header">Threads</div>
+            <div class="feature-code">
+                <span class="key">type:</span> <span class="val">threaded</span><br>
+                <span class="key">depth:</span> <span class="accent">unlimited</span><br>
+                <span class="key">context:</span> <span class="val">preserved</span>
+            </div>
+        </div>
+        <div class="divider"></div>
+        <div class="feature-block">
+            <div class="feature-header">Integrations</div>
+            <div class="feature-code">
+                <span class="key">git:</span> <span class="accent">true</span><br>
+                <span class="key">ci_cd:</span> <span class="accent">true</span><br>
+                <span class="key">webhooks:</span> <span class="val">custom</span>
+            </div>
+        </div>
+        <div class="divider"></div>
+        <div class="feature-block">
+            <div class="feature-header">Security</div>
+            <div class="feature-code">
+                <span class="key">encryption:</span> <span class="accent">e2e</span><br>
+                <span class="key">sso:</span> <span class="val">SAML, OIDC</span><br>
+                <span class="key">audit_log:</span> <span class="accent">true</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

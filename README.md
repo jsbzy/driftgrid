@@ -1,139 +1,140 @@
 # DriftGrid
 
-**Rapid design iteration with AI -- version everything, compare anything, present to clients.**
+**The design iteration workspace for AI-generated work.**
 
-DriftGrid is a local-first design iteration platform built for the AI coding era. Your AI tool (Claude Code, Cursor, etc.) generates HTML designs, and DriftGrid versions, compares, and presents them in a 2D grid: concepts across, versions down. Drift around the grid until you reach your selects.
+Your AI tool generates HTML. DriftGrid versions it, compares it, and presents it to clients. Concepts across, versions down -- drift around the grid until you reach your selects.
+
+<!-- TODO: hero GIF here -->
+<!-- ![DriftGrid](docs/hero.gif) -->
+
+## Why DriftGrid
+
+AI coding tools (Claude Code, Cursor, Copilot) are incredibly fast at generating designs -- but there's no good way to manage the output. You end up with dozens of HTML files, no way to compare them, and a messy handoff to clients.
+
+DriftGrid fixes this. It gives every design a place on a 2D grid where you can zoom, browse, star your picks, and present them -- all from `localhost:3000`.
+
+- **BYO AI** -- DriftGrid doesn't generate designs. It's the workspace where your AI-generated work lives.
+- **Local-first** -- runs on your machine, no cloud dependency. Your files, your filesystem.
+- **Live HTML** -- every frame is a real HTML page, not a static screenshot. Interactive prototypes work out of the box.
 
 ## Quick Start
 
 ```bash
+git clone https://github.com/jsbzy/driftgrid.git
+cd driftgrid
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [localhost:3000](http://localhost:3000). The included demo project shows a 4-concept landing page iteration.
 
-## Features
-
-- **2D Grid Model** -- concepts as columns, versions as rows
-- **Infinite Canvas** -- pan, zoom, and navigate with keyboard shortcuts
-- **Live HTML Frames** -- interactive, not static mockups
-- **BYO AI** -- no built-in AI; use Claude Code, Cursor, or any tool to create HTML
-- **Selects & Presentation** -- star your picks, present as a slideshow
-- **Export** -- PDF, PNG, PPTX, and raw HTML
-- **Client Review** -- separate view with editable text and comments
-- **Auto Thumbnails** -- Playwright-generated screenshots with stale detection
-- **Dark Mode** -- toggle between light and dark themes
-- **Working Sets** -- save named selections for export or review
-- **Brand System** -- per-client brand guidelines, logos, and assets
-
-## Canvas Presets
-
-| Preset | Slug | Width | Height | Behavior |
-|--------|------|-------|--------|----------|
-| A4 Portrait | `a4-portrait` | 794px | 1123px | locked |
-| 16:9 Landscape | `landscape-16-9` | 1920px | 1080px | locked |
-| Desktop | `desktop` | 1440px | auto | responsive |
-| Tablet | `tablet` | 768px | auto | responsive |
-| Mobile | `mobile` | 375px | auto | responsive |
-| Freeform | `freeform` | custom | custom | configurable |
-
-## Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| Arrow keys | Navigate concepts (left/right) and versions (up/down) |
-| `` ` `` | Zoom to overview |
-| `1` | Zoom to column |
-| `2` | Zoom to 3 cards |
-| `3` | Zoom to 1.5 cards |
-| `4` | Zoom to single card |
-| `Enter` | Enter focused frame |
-| `Escape` | Exit to grid |
-| `Space` (hold) | Pan mode |
-| `S` | Toggle selects |
-| `D` | Drift (duplicate + iterate) |
-| `Delete` | Delete current version |
-| `Cmd+Z` | Undo last delete |
-| `?` | Toggle shortcuts panel |
-
-## Project Structure
-
-```
-driftgrid/
-+-- app/                    # Next.js app (App Router)
-+-- components/             # React components
-+-- lib/                    # Utilities, types, hooks
-+-- scripts/                # CLI tools
-+-- projects/
-|   +-- {client}/
-|       +-- brand/          # Brand guidelines, logo, assets
-|       +-- {project}/
-|           +-- manifest.json
-|           +-- .thumbs/
-|           +-- concept-1/
-|           |   +-- v1.html
-|           |   +-- v2.html
-|           +-- concept-2/
-|               +-- v1.html
-+-- CLAUDE.md               # Claude Code conventions
-+-- DRIFTGRID.md            # Master build plan
-+-- STATUS.md               # Build progress tracker
-```
-
-## CLI Commands
-
-### Initialize a project
+### Create your first project
 
 ```bash
-npm run init -- <client> <project> [--canvas <preset>]
+npm run init -- my-client landing-page
 ```
 
-Scaffolds a new project with manifest, starter HTML, and brand directory.
+This scaffolds a project at `projects/my-client/landing-page/` with a manifest, starter HTML, and brand directory. Point your AI tool at the HTML files and start iterating.
 
-```bash
-npm run init -- acme landing-page
-npm run init -- acme pitch-deck --canvas landscape-16-9
+## How It Works
+
+```
+projects/
+└── {client}/
+    ├── brand/              # Brand guidelines, logos, assets
+    └── {project}/
+        ├── manifest.json   # Source of truth
+        ├── concept-1/
+        │   ├── v1.html     # Version 1
+        │   └── v2.html     # Version 2 (iterated)
+        └── concept-2/
+            └── v1.html     # Different direction
 ```
 
-### Validate all projects
+**Concepts** are design directions (columns on the grid). **Versions** are iterations within a concept (rows). Your AI tool creates the HTML files, and DriftGrid reads the manifest to display them.
 
-```bash
-npm run doctor
-```
+### The Grid
 
-Checks all projects for missing files, duplicate IDs, orphaned HTML, and other issues.
+The infinite canvas shows all your work at a glance. Zoom in to browse, zoom out to compare. Five zoom levels let you go from full overview to single-card focus:
 
-### Generate thumbnails
+| Key | View |
+|-----|------|
+| `` ` `` | Full overview |
+| `1` | Column |
+| `2`-`4` | Card close-ups |
+| `Enter` | Enter frame (live HTML) |
+| `Esc` | Back out |
 
-```bash
-npm run generate-thumbs
-```
+Arrow keys navigate. `Space` to pan. `D` to drift (duplicate + iterate). `S` to toggle selects. `?` for all shortcuts.
 
-Regenerates Playwright-based PNG thumbnails for all versions.
+### Selects & Presentation
+
+Star your picks with `S`, then present them as a fullscreen slideshow. Working sets let you save named selections -- "Round 1 picks", "Client favorites" -- for export or review.
+
+### Client Review
+
+Share a separate review URL (`/review/{client}/{project}`) where clients see only what you've made visible. They can suggest text edits and leave comments without touching your working grid.
 
 ### Export
 
+Export from the UI or CLI:
+
 ```bash
-npm run export-pdf -- <client> <project> [--set <working-set>]
-npm run export-png -- <client> <project>
+npm run export-pdf -- my-client landing-page
+npm run export-png -- my-client landing-page
 ```
+
+Formats: PDF, PNG, PPTX, raw HTML. Working sets export as multi-page documents.
+
+## Canvas Presets
+
+| Preset | Width | Height | Behavior |
+|--------|-------|--------|----------|
+| A4 Portrait | 794px | 1123px | locked |
+| 16:9 Landscape | 1920px | 1080px | locked |
+| Desktop | 1440px | auto | scroll |
+| Tablet | 768px | auto | scroll |
+| Mobile | 375px | auto | scroll |
+| Freeform | custom | custom | configurable |
+
+```bash
+npm run init -- acme pitch-deck --canvas landscape-16-9
+```
+
+## MCP Server
+
+DriftGrid includes an MCP server for direct integration with Claude Code and other AI tools:
+
+```bash
+npm run mcp
+```
+
+This lets your AI tool create projects, add versions, read feedback, manage rounds, and more -- without leaving the conversation.
 
 ## Tech Stack
 
-- Next.js 16 + React 19
-- TypeScript
+- Next.js 16, React 19, TypeScript
 - Tailwind CSS v4
-- SWR for data fetching
-- Playwright for thumbnails and export
-- Puppeteer for PDF generation
+- Playwright (thumbnails + export)
+- SWR (data fetching)
+- No database -- filesystem is the source of truth
 
-## Architecture
+## CLI Reference
 
-- **Local-first** -- runs as a local dev server, all data in the filesystem
-- **BYO AI** -- no built-in AI; your tool generates the HTML, DriftGrid manages it
-- **Cloud-optional** -- paid tier planned for sharing, teams, and analytics
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the dev server |
+| `npm run init -- <client> <project>` | Scaffold a new project |
+| `npm run doctor` | Validate all projects |
+| `npm run generate-thumbs` | Regenerate thumbnails |
+| `npm run export-pdf -- <client> <project>` | Export to PDF |
+| `npm run export-png -- <client> <project>` | Export to PNG |
+| `npm run mcp` | Start the MCP server |
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT
+[MIT](LICENSE)
