@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-const PUBLIC_PATHS = ['/_next', '/favicon.ico', '/login', '/api/auth', '/s/', '/api/share', '/api/s/', '/review/'];
+const PUBLIC_PATHS = ['/_next', '/favicon.ico', '/login', '/api/auth', '/s/', '/api/share', '/api/s/', '/review/', '/api/manifest/', '/api/html/'];
 
 async function sha256(str: string): Promise<string> {
   const buf = await crypto.subtle.digest(
