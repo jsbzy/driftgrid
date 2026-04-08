@@ -59,24 +59,11 @@ export const NavigationGrid = memo(function NavigationGrid({
     return selections.has(`${cid}:${vid}`);
   }, [selections, conceptIds, versionIds]);
 
-  const gridLabel = `${conceptIndex + 1}.${versionCounts[conceptIndex] - versionIndex}`;
-
   return (
     <div
       className="fixed bottom-14 right-14 z-50"
       style={{ opacity: 0.45 }}
     >
-      <div style={{
-        fontFamily: 'var(--font-mono, monospace)',
-        fontSize: 18,
-        fontWeight: 900,
-        color: 'rgba(0,0,0,0.25)',
-        textAlign: 'left',
-        marginBottom: 8,
-        letterSpacing: '0.02em',
-      }}>
-        {gridLabel}
-      </div>
       {/* Selects row at top */}
       {hasSelections && conceptIds && (
         <>
@@ -173,6 +160,19 @@ export const NavigationGrid = memo(function NavigationGrid({
           </div>
         </>
       )}
+      <div style={{
+        fontFamily: 'var(--font-mono, monospace)',
+        fontSize: 9,
+        color: 'var(--muted)',
+        marginTop: 10,
+        display: 'flex',
+        gap: 8,
+        opacity: 0.7,
+      }}>
+        <span><strong>A</strong> Annotate</span>
+        <span><strong>H</strong> Hide</span>
+        <span><strong>G</strong> Grid</span>
+      </div>
     </div>
   );
 });
