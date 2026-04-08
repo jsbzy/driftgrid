@@ -859,8 +859,8 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         {deleteDialog}
         {/* Top-right: project name + round switcher */}
         <div className="fixed top-4 right-4 z-30 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
-          {/* Round switcher — hidden when only 1 round */}
-          {rounds.length > 1 && (
+          {/* Round switcher — hidden when only 1 round or in client mode */}
+          {rounds.length > 1 && mode !== 'client' && (
             <div className="flex items-center gap-1.5">
               {rounds.map(r => (
                 <button
