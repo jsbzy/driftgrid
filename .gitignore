@@ -50,6 +50,7 @@ _archive/
 
 # Thumbnail caches
 .thumbs/
+!/projects/recovryai/**/.thumbs/
 
 # Video / Remotion working files
 /video/

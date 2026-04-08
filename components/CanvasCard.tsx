@@ -12,6 +12,7 @@ interface CanvasCardProps {
   isMultiSelected?: boolean;
   isLatest?: boolean;
   filePath?: string;
+  mode?: string;
   onStar?: () => void;
   onDelete?: () => void;
   onDrift?: () => void;
@@ -34,6 +35,7 @@ export const CanvasCard = memo(function CanvasCard({
   isMultiSelected,
   isLatest,
   filePath,
+  mode,
   onStar,
   onDelete,
   onDrift,
@@ -165,8 +167,8 @@ export const CanvasCard = memo(function CanvasCard({
         )}
       </div>
 
-      {/* Reorder hint — shown on current card */}
-      {isCurrent && (
+      {/* Reorder hint — shown on current card, hidden in client mode */}
+      {isCurrent && mode !== 'client' && (
         <div
           className="absolute -bottom-5 left-0 right-0 text-center pointer-events-none"
           style={{ fontSize: 9, opacity: 0.3, color: 'var(--foreground)', letterSpacing: '0.04em' }}

@@ -687,7 +687,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
           })}
 
           {/* Insert concept "+" zones between columns and at the end */}
-          {onInsertConcept && layout.labels.length > 0 && (
+          {onInsertConcept && layout.labels.length > 0 && mode !== 'client' && (
             <>
               {/* Between each pair of columns */}
               {layout.labels.map((label, i) => {
@@ -940,6 +940,7 @@ const CardLayer = memo(function CardLayer({
               isLatest={isLatest}
               isMultiSelected={multiSelected.has(`${concept.id}:${version.id}`)}
               filePath={`~/driftgrid/projects/${client}/${project}/${version.file}`}
+              mode={mode}
               onStar={() => onStarVersion(concept.id, version.id)}
               onDelete={() => onDeleteVersion(concept.id, version.id)}
               onDrift={() => onDriftVersion(concept.id, version.id)}
