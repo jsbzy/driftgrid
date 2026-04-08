@@ -1006,6 +1006,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             ref={htmlFrameRef}
             src={htmlSrc}
             placeholder={thumbSrc}
+            borderless={mode === 'client'}
             canvasWidth={resolved.width}
             canvasHeight={typeof resolved.height === 'number' ? resolved.height : undefined}
             editMode={clientEdits.editMode}

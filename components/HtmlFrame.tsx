@@ -14,6 +14,7 @@ interface HtmlFrameProps {
   onScaledWidth?: (width: number) => void;
   placeholder?: string | null;
   onReady?: () => void;
+  borderless?: boolean;
 }
 
 export interface HtmlFrameHandle {
@@ -23,7 +24,7 @@ export interface HtmlFrameHandle {
 }
 
 export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
-  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, placeholder, onReady }, ref) {
+  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, placeholder, onReady, borderless }, ref) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0);
@@ -300,8 +301,8 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
             width: scaledWidth,
             height: scaledHeight,
             overflow: 'hidden',
-            border: '1px solid rgba(0,0,0,0.08)',
-            borderRadius: 4,
+            border: borderless ? 'none' : '1px solid rgba(0,0,0,0.08)',
+            borderRadius: borderless ? 0 : 4,
             position: 'relative',
           }}>
             {/* Thumbnail placeholder — visible until iframe loads */}
