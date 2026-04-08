@@ -1,8 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-/** True when Supabase env vars are configured (cloud mode) */
+/** True when Supabase env vars are configured AND cloud mode is explicitly enabled */
 export function isCloudMode(): boolean {
-  return !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return process.env.DRIFT_CLOUD === '1' && !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_ROLE_KEY;
 }
 
 /** Server-side admin client using service role key — full access, no RLS */
