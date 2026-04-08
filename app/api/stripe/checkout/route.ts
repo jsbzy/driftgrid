@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getUserId } from '@/lib/auth';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-04-30.basil' });
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-04-30.basil' });
+}
 
 export async function POST(request: Request) {
   const userId = await getUserId();
@@ -12,7 +14,7 @@ export async function POST(request: Request) {
 
   const { origin } = new URL(request.url);
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     mode: 'subscription',
     line_items: [{ price: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID!, quantity: 1 }],
     success_url: `${origin}/?checkout=success`,

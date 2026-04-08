@@ -3,7 +3,9 @@ import Stripe from 'stripe';
 import { getUserId } from '@/lib/auth';
 import { getProfile } from '@/lib/subscription';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-04-30.basil' });
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-04-30.basil' });
+}
 
 export async function POST(request: Request) {
   const userId = await getUserId();
@@ -17,7 +19,7 @@ export async function POST(request: Request) {
   }
 
   const { origin } = new URL(request.url);
-  const session = await stripe.billingPortal.sessions.create({
+  const session = await getStripe().billingPortal.sessions.create({
     customer: profile.stripe_customer_id,
     return_url: `${origin}/`,
   });
