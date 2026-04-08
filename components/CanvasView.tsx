@@ -744,6 +744,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             onThumbnailDoubleClick={handleThumbnailDoubleClick}
             onCardContextMenu={handleCardContextMenu}
             multiSelected={multiSelected}
+            mode={mode}
           />
         </div>
       </div>
@@ -870,6 +871,7 @@ const CardLayer = memo(function CardLayer({
   multiSelected,
   onThumbnailDoubleClick,
   onCardContextMenu,
+  mode,
 }: {
   layout: CanvasLayout;
   concepts: Concept[];
@@ -889,6 +891,7 @@ const CardLayer = memo(function CardLayer({
   multiSelected: Set<string>;
   onThumbnailDoubleClick: (ci: number, vi: number) => void;
   onCardContextMenu: (ci: number, vi: number, e: React.MouseEvent) => void;
+  mode?: string;
 }) {
   // Viewport culling: only render cards visible in the current view + buffer
   const vpW = viewportRef.current?.clientWidth ?? 2000;
