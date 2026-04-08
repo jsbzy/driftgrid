@@ -1,123 +1,122 @@
 'use client';
 
-import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 
 /**
- * Marketing landing page — shown at root URL for unauthenticated visitors in cloud mode.
- * Jeff will design the actual content — this is the structural shell.
+ * Minimalist teaser landing page — dot grid with subtle drift animation.
  */
 export function LandingPage() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let raf: number;
+    let time = 0;
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas!.width = window.innerWidth * dpr;
+      canvas!.height = window.innerHeight * dpr;
+      ctx!.scale(dpr, dpr);
+    }
+
+    function draw() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      ctx!.clearRect(0, 0, w, h);
+
+      const spacing = 32;
+      const cols = Math.ceil(w / spacing) + 2;
+      const rows = Math.ceil(h / spacing) + 2;
+      const cx = w / 2;
+      const cy = h / 2;
+      const maxDist = Math.sqrt(cx * cx + cy * cy);
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const baseX = col * spacing;
+          const baseY = row * spacing;
+
+          // Distance from center
+          const dx = baseX - cx;
+          const dy = baseY - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const normDist = dist / maxDist;
+
+          // Subtle drift: dots near center drift slowly, edges are still
+          const driftAmount = (1 - normDist) * 3;
+          const angle = Math.atan2(dy, dx) + time * 0.15;
+          const x = baseX + Math.cos(angle + dist * 0.008) * driftAmount;
+          const y = baseY + Math.sin(angle + dist * 0.008) * driftAmount;
+
+          // Opacity: brighter near center, fading to edges
+          const opacity = 0.06 + (1 - normDist) * 0.08;
+
+          // Size: slightly larger near center
+          const size = 0.8 + (1 - normDist) * 0.4;
+
+          ctx!.beginPath();
+          ctx!.arc(x, y, size, 0, Math.PI * 2);
+          ctx!.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+          ctx!.fill();
+        }
+      }
+
+      time += 0.008;
+      raf = requestAnimationFrame(draw);
+    }
+
+    resize();
+    draw();
+    window.addEventListener('resize', resize);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
   return (
     <div style={{
-      minHeight: '100vh',
+      position: 'fixed',
+      inset: 0,
       background: '#0a0a0a',
-      color: '#e5e5e5',
-      fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+      overflow: 'hidden',
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '40px 24px',
     }}>
-      {/* Logo / Wordmark */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+        }}
+      />
+
+      {/* Wordmark */}
       <div style={{
-        fontSize: 11,
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase' as const,
-        color: '#666',
-        marginBottom: 48,
+        position: 'relative',
+        zIndex: 1,
+        textAlign: 'center',
       }}>
-        DriftGrid
-      </div>
-
-      {/* Hero */}
-      <h1 style={{
-        fontSize: 32,
-        fontWeight: 500,
-        textAlign: 'center' as const,
-        lineHeight: 1.3,
-        maxWidth: 560,
-        marginBottom: 16,
-      }}>
-        Design iteration<br />for agents.
-      </h1>
-
-      <p style={{
-        fontSize: 14,
-        color: '#888',
-        textAlign: 'center' as const,
-        maxWidth: 440,
-        lineHeight: 1.6,
-        marginBottom: 48,
-      }}>
-        Your AI agent creates designs locally. Push to the cloud.
-        Share with clients. Iterate. Present.
-      </p>
-
-      {/* CTAs */}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-        <Link
-          href="/login"
-          style={{
-            padding: '10px 24px',
-            background: '#e5e5e5',
-            color: '#0a0a0a',
-            borderRadius: 4,
-            fontSize: 12,
-            fontWeight: 600,
-            letterSpacing: '0.04em',
-            textDecoration: 'none',
-          }}
-        >
-          Get started — $12/mo
-        </Link>
-        <a
-          href="https://github.com/jsbzy/driftgrid"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            padding: '10px 24px',
-            border: '1px solid #333',
-            borderRadius: 4,
-            fontSize: 12,
-            fontWeight: 500,
-            letterSpacing: '0.04em',
-            color: '#888',
-            textDecoration: 'none',
-          }}
-        >
-          Self-host free
-        </a>
-      </div>
-
-      {/* Features */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 32,
-        maxWidth: 640,
-        marginTop: 80,
-      }}>
-        {[
-          { title: 'Agent-native', desc: 'Your AI agent writes HTML. DriftGrid organizes it.' },
-          { title: 'Client review', desc: 'Share a link. Clients browse and comment. No login.' },
-          { title: 'Local-first', desc: 'Work offline. Push when ready. Your files, your system.' },
-        ].map(f => (
-          <div key={f.title}>
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>{f.title}</div>
-            <div style={{ fontSize: 11, color: '#666', lineHeight: 1.5 }}>{f.desc}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Footer */}
-      <div style={{
-        marginTop: 80,
-        fontSize: 9,
-        color: '#333',
-        letterSpacing: '0.04em',
-      }}>
-        BZY Design
+        <h1 style={{
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: 18,
+          fontWeight: 400,
+          letterSpacing: '0.25em',
+          color: 'rgba(255, 255, 255, 0.5)',
+          textTransform: 'lowercase',
+          margin: 0,
+        }}>
+          driftgrid
+        </h1>
       </div>
     </div>
   );
