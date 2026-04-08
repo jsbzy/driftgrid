@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>11 — Emergency</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Inter+Tight:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #ffffff; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        /* === LEFT/RIGHT LAYOUT === */
+        .slide { display: flex; width: 100%; height: 100vh; }
+        .left { width: 46%; display: flex; align-items: center; padding-left: 120px; }
+        .right { width: 54%; display: flex; align-items: center; justify-content: center; padding-right: 60px; }
+
+        /* === TEXT BLOCK (replaces .caption) === */
+        .text-block { width: 600px; }
+        .breadcrumb {
+            font-size: 12px; font-weight: 500; color: #A3A3A0;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            margin-bottom: 16px;
+            opacity: 0; transform: translateY(8px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .headline {
+            font-size: 40px; font-weight: 600; color: #1B1B1A;
+            line-height: 1.25; letter-spacing: -0.02em;
+            margin-bottom: 22px;
+            opacity: 0; transform: translateY(12px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .detail {
+            font-size: 17px; font-weight: 400; color: #3A3A38;
+            line-height: 1.6; letter-spacing: 0.01em;
+            opacity: 0; transform: translateY(12px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .text-block .show { opacity: 1; transform: translateY(0); }
+
+        .type-badge {
+            width: 40px; height: 40px; border-radius: 12px;
+            background: #FFEBEE;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 12px;
+            opacity: 0; transform: translateY(8px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .type-badge.show { opacity: 1; transform: translateY(0); }
+        .type-badge svg { width: 22px; height: 22px; }
+
+        /* === PHONE === */
+        .phone {
+            width: 340px; height: 736px;
+            border-radius: 40px; background: #f4f2ee;
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 4px 60px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .status { height: 36px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 29px 5px; }
+        .s-time { font-family: 'SF Pro Text', 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #1b1b1a; letter-spacing: -0.19px; }
+        .s-icons { font-size: 10px; color: #1b1b1a; }
+
+        .appbar { display: flex; align-items: center; padding: 10px 10px; position: relative; }
+        .ab-back { width: 32px; display: flex; align-items: center; justify-content: center; }
+        .ab-back svg { width: 20px; height: 20px; color: #1c1b1f; }
+        .ab-title { position: absolute; left: 50%; transform: translateX(-50%); font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 16px; font-weight: 500; color: #1c1b1f; }
+        .ab-actions { margin-left: auto; display: flex; gap: 6px; }
+        .ab-actions svg { width: 20px; height: 20px; color: #1c1b1f; }
+
+        .toggle-wrap { padding: 6px 13px; }
+        .toggle { display: flex; background: #dcd9d5; border-radius: 100px; padding: 4px; }
+        .tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 10px; border-radius: 100px; font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: #1c1b1f; }
+        .tab.active { background: #fff; }
+        .tab svg { width: 16px; height: 16px; }
+
+        .chat { flex: 1; padding: 0; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
+
+        .ts-wrap { display: flex; align-items: center; gap: 8px; padding: 6px 16px; }
+        .ts-line { flex: 1; height: 1px; background: #d4d0ca; }
+        .ts-pill { padding: 5px 10px; border: 1px solid #b8b6b2; border-radius: 25px; font-size: 12px; font-weight: 700; color: #1c1b1f; letter-spacing: 0.05px; white-space: nowrap; }
+
+        .sender { display: flex; align-items: baseline; gap: 5px; padding: 0 13px 0 53px; margin-bottom: 4px; }
+        .sender.right { justify-content: flex-end; padding: 0 13px; }
+        .s-name { font-size: 12px; font-weight: 700; color: #1b1b1a; letter-spacing: 0.05px; }
+        .s-ts { font-size: 11px; font-weight: 500; color: #6a6a66; letter-spacing: 0.04px; }
+        .s-dot { width: 2px; height: 2px; border-radius: 50%; background: #6a6a66; }
+
+        .bot-row { display: flex; gap: 8px; align-items: flex-start; padding: 0 16px 0 13px; }
+        .b-icon { width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; background: #1b1b1a; display: flex; align-items: center; justify-content: center; }
+        .b-icon svg { width: 14px; height: 14px; }
+        .b-msgs { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+
+        .bub { padding: 8px 16px; font-size: 14px; font-weight: 400; line-height: 20px; letter-spacing: 0.03px; border-radius: 8px; }
+        .bub.bot { background: #fff; color: #1c1b1f; }
+        .bub.user { background: #1b1b1a; color: #fff; width: fit-content; max-width: 75%; margin-left: auto; margin-right: 13px; }
+
+        .input-bar { display: flex; align-items: flex-end; padding: 6px 13px 5px; }
+        .in-wrap { flex: 1; display: flex; align-items: center; gap: 5px; border: 2px solid #6a6a66; border-radius: 24px; padding: 4px 4px 4px 16px; background: #fff; }
+        .in-text { flex: 1; font-size: 13px; color: #6a6a66; letter-spacing: 0.06px; padding: 4px 0; }
+        .send { width: 36px; height: 36px; border-radius: 100px; background: rgba(73,69,79,0.38); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .send svg { width: 18px; height: 18px; }
+
+        .home { width: 115px; height: 4px; background: #000; border-radius: 100px; align-self: center; margin: 6px 0 7px; }
+
+        /* Animation classes */
+        .anim { opacity: 0; transform: translateY(12px); transition: opacity 0.3s ease-out, transform 0.3s ease-out; }
+        .anim.show { opacity: 1; transform: translateY(0); }
+        .anim.gone { display: none; }
+
+        /* Typing indicator */
+        .typing-bubble { padding: 12px 18px; border-radius: 8px; background: #fff; display: inline-flex; gap: 4px; align-items: center; height: 40px; }
+        .typing-bubble .dot { width: 7px; height: 7px; border-radius: 50%; background: #b0aeaa; animation: bounce 0.6s infinite; }
+        .typing-bubble .dot:nth-child(2) { animation-delay: 0.15s; }
+        .typing-bubble .dot:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+        /* Patient typing indicator */
+        .typing-bubble.patient { background: #1b1b1a; width: fit-content; margin-left: auto; margin-right: 13px; }
+        .typing-bubble.patient .dot { background: rgba(255,255,255,0.5); }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="left">
+            <div class="text-block">
+                <div class="type-badge" id="tb-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+                <div class="breadcrumb" id="tb-breadcrumb">EMERGENCY</div>
+                <div class="headline" id="tb-headline">In an emergency,<br>the VCA directs patients<br>to call 911 immediately.</div>
+                <div class="detail" id="tb-detail">When a patient reports symptoms that could indicate a medical emergency, such as chest pain, difficulty breathing, or signs of blood clots, the VCA acts immediately. It directs the patient to call 911, provides interim safety guidance, and sends an urgent escalation to the care team with full clinical context. This happens any time of day or night.</div>
+            </div>
+        </div>
+        <div class="right">
+            <div class="phone">
+                <div class="status"><span class="s-time">11:17</span><span class="s-icons">&#9679;&#9679;&#9679;&#9679; &#8250;</span></div>
+                <div class="appbar">
+                    <div class="ab-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+                    <div class="ab-title">Virtual Care Assistant</div>
+                    <div class="ab-actions">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                    </div>
+                </div>
+                <div class="toggle-wrap">
+                    <div class="toggle">
+                        <div class="tab active">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2C10 6.418 13.582 10 18 10C13.582 10 10 13.582 10 18C10 13.582 6.418 10 2 10C6.418 10 10 6.418 10 2Z"/></svg>
+                            Assistant
+                        </div>
+                        <div class="tab">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                            Clinic
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat" id="chat">
+                    <!-- Today pill -->
+                    <div class="anim gone" id="step-today">
+                        <div class="ts-wrap"><div class="ts-line"></div><div class="ts-pill">Today</div><div class="ts-line"></div></div>
+                    </div>
+
+                    <!-- Patient typing indicator 1 -->
+                    <div class="anim gone" id="step-patient-typing1">
+                        <div class="typing-bubble patient">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                    </div>
+
+                    <!-- Patient reaches out (free form) -->
+                    <div class="anim gone" id="step-patient1">
+                        <div class="sender right">
+                            <span class="s-name">Marcia</span>
+                            <span class="s-ts">01/06/2024</span>
+                            <span class="s-dot"></span>
+                            <span class="s-ts">11:17 PM</span>
+                        </div>
+                        <div class="bub user">I've been having these episodes of crushing chest pain that radiates to my back. I can barely breathe. I stopped taking my blood thinning medication about a week ago.</div>
+                    </div>
+
+                    <!-- VCA detects potential emergency, asks follow-up -->
+                    <div class="anim gone" id="step-vca1">
+                        <div class="sender">
+                            <span class="s-name">RecovryAI</span>
+                            <span class="s-ts">01/06/2024</span>
+                            <span class="s-dot"></span>
+                            <span class="s-ts">11:17 PM</span>
+                        </div>
+                        <div class="bot-row">
+                            <div class="b-icon"><svg viewBox="0 0 20 20" fill="white"><path d="M10 2C10 6.418 13.582 10 18 10C13.582 10 10 13.582 10 18C10 13.582 6.418 10 2 10C6.418 10 10 6.418 10 2Z"/></svg></div>
+                            <div class="b-msgs">
+                                <div class="bub bot">These are serious symptoms that require immediate attention. Have you experienced any pain or swelling in your legs, particularly in the calf area, since stopping your blood-thinning medication?</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient typing indicator 2 -->
+                    <div class="anim gone" id="step-patient-typing2">
+                        <div class="typing-bubble patient">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                    </div>
+
+                    <!-- Patient confirms -->
+                    <div class="anim gone" id="step-patient2">
+                        <div class="sender right">
+                            <span class="s-name">Marcia</span>
+                            <span class="s-ts">01/06/2024</span>
+                            <span class="s-dot"></span>
+                            <span class="s-ts">11:18 PM</span>
+                        </div>
+                        <div class="bub user">My legs hurt a little, calves too. It's mostly tight but not swollen.</div>
+                    </div>
+
+                    <!-- Typing indicator -->
+                    <div class="anim gone" id="step-typing">
+                        <div class="bot-row">
+                            <div class="b-icon"><svg viewBox="0 0 20 20" fill="white"><path d="M10 2C10 6.418 13.582 10 18 10C13.582 10 10 13.582 10 18C10 13.582 6.418 10 2 10C6.418 10 10 6.418 10 2Z"/></svg></div>
+                            <div class="b-msgs">
+                                <div class="typing-bubble">
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VCA advises 911 + notifies provider -->
+                    <div class="anim gone" id="step-vca2">
+                        <div class="sender">
+                            <span class="s-name">RecovryAI</span>
+                            <span class="s-ts">01/06/2024</span>
+                            <span class="s-dot"></span>
+                            <span class="s-ts">11:18 PM</span>
+                        </div>
+                        <div class="bot-row">
+                            <div class="b-icon"><svg viewBox="0 0 20 20" fill="white"><path d="M10 2C10 6.418 13.582 10 18 10C13.582 10 10 13.582 10 18C10 13.582 6.418 10 2 10C6.418 10 10 6.418 10 2Z"/></svg></div>
+                            <div class="b-msgs">
+                                <div class="bub bot">Please seek immediate medical attention by going to the nearest emergency room or calling 911 right away. The symptoms you're describing are very serious and require urgent evaluation. I've notified Dr. Kwan's team simultaneously.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-bar">
+                    <div class="in-wrap">
+                        <div class="in-text">Enter your message here...</div>
+                        <div class="send"><svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7-7 7 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                    </div>
+                </div>
+                <div class="home"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chat = document.getElementById('chat');
+
+        function scrollToBottom() {
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function showStep(id) {
+            const el = document.getElementById(id);
+            el.classList.remove('gone');
+            void el.offsetWidth;
+            el.classList.add('show');
+            scrollToBottom();
+        }
+
+        function hideStep(id) {
+            const el = document.getElementById(id);
+            el.classList.remove('show');
+            el.classList.add('gone');
+        }
+
+        function reset() {
+            const steps = ['step-today', 'step-patient-typing1', 'step-patient1', 'step-vca1', 'step-patient-typing2', 'step-patient2', 'step-typing', 'step-vca2'];
+            steps.forEach(id => {
+                const el = document.getElementById(id);
+                el.classList.remove('show');
+                el.classList.add('gone');
+            });
+            chat.scrollTop = 0;
+        }
+
+        function showText() {
+            setTimeout(() => document.getElementById('tb-badge').classList.add('show'), 200);
+            setTimeout(() => document.getElementById('tb-breadcrumb').classList.add('show'), 350);
+            setTimeout(() => document.getElementById('tb-headline').classList.add('show'), 450);
+            setTimeout(() => document.getElementById('tb-detail').classList.add('show'), 750);
+        }
+
+        function run() {
+            reset();
+
+            setTimeout(() => { showStep('step-today'); }, 300);
+
+            setTimeout(() => showStep('step-patient-typing1'), 1500);
+            setTimeout(() => { hideStep('step-patient-typing1'); showStep('step-patient1'); }, 2000);
+
+            setTimeout(() => showStep('step-vca1'), 5000);
+
+            setTimeout(() => showStep('step-patient-typing2'), 6200);
+            setTimeout(() => { hideStep('step-patient-typing2'); showStep('step-patient2'); }, 6700);
+
+            setTimeout(() => { showStep('step-typing'); }, 7700);
+            setTimeout(() => hideStep('step-typing'), 9400);
+            setTimeout(() => { showStep('step-vca2'); }, 9450);
+            setTimeout(() => scrollToBottom(), 9550);
+        }
+
+        // Text fades in once on load
+        showText();
+
+        // Phone animation auto-loops on timer
+        run();
+        setInterval(() => run(), 12500);
+    </script>
+</body>
+</html>

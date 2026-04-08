@@ -2491,7 +2491,64 @@
       "number": 3,
       "name": "Rd3",
       "createdAt": "2026-04-06T17:00:10.000Z",
-      "selects": [],
+      "selects": [
+        {
+          "conceptId": "concept-open-r3",
+          "versionId": "v4-open"
+        },
+        {
+          "conceptId": "concept-intro-r3",
+          "versionId": "v4-intro"
+        },
+        {
+          "conceptId": "concept-the-app-r3",
+          "versionId": "v4-the-app"
+        },
+        {
+          "conceptId": "concept-two-ways-r3",
+          "versionId": "v3-two-ways"
+        },
+        {
+          "conceptId": "concept-check-in-r3",
+          "versionId": "v4-check-in"
+        },
+        {
+          "conceptId": "concept-247-r3",
+          "versionId": "v3-twenty-four-seven"
+        },
+        {
+          "conceptId": "concept-score-r3",
+          "versionId": "v4-score"
+        },
+        {
+          "conceptId": "concept-response-types-r3",
+          "versionId": "v4-response-types"
+        },
+        {
+          "conceptId": "concept-normal-r3",
+          "versionId": "v4-normal-response"
+        },
+        {
+          "conceptId": "concept-escalation-r3",
+          "versionId": "v4-escalation"
+        },
+        {
+          "conceptId": "concept-emergency-r3",
+          "versionId": "v4-emergency"
+        },
+        {
+          "conceptId": "concept-portal-r3",
+          "versionId": "v4-portal"
+        },
+        {
+          "conceptId": "concept-clinic-r3",
+          "versionId": "v4-clinic"
+        },
+        {
+          "conceptId": "concept-close-r3",
+          "versionId": "v4-close"
+        }
+      ],
       "concepts": [
         {
           "id": "concept-open-r3",
@@ -3420,7 +3477,335 @@
           ],
           "slug": "close"
         }
-      ]
+      ],
+      "closedAt": "2026-04-08T15:50:02.248Z"
+    },
+    {
+      "number": 4,
+      "label": "Round 4",
+      "created": "2026-04-08T15:50:02.256Z",
+      "closedAt": null,
+      "selects": null,
+      "concepts": [
+        {
+          "id": "concept-open-r4",
+          "label": "Open",
+          "description": "Logo opening slide",
+          "position": 0,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-open-r4-v1",
+              "number": 1,
+              "file": "open/round-4/v1.html",
+              "parentId": "v4-open",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.250Z",
+              "thumbnail": ".thumbs/concept-open-r4-v-open-r4-v1.webp"
+            }
+          ],
+          "slug": "open"
+        },
+        {
+          "id": "concept-intro-r4",
+          "label": "Intro",
+          "description": "Patient app + provider app working together",
+          "position": 1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-intro-r4-v1",
+              "number": 1,
+              "file": "intro/round-4/v1.html",
+              "parentId": "v4-intro",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.250Z",
+              "thumbnail": ".thumbs/concept-intro-r4-v-intro-r4-v1.webp",
+              "annotations": []
+            }
+          ],
+          "slug": "intro"
+        },
+        {
+          "id": "concept-the-app-r4",
+          "label": "The Patient App",
+          "description": "Meet the Virtual Care Assistant",
+          "position": 2,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-the-app-r4-v1",
+              "number": 1,
+              "file": "the-app/round-4/v1.html",
+              "parentId": "v4-the-app",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.251Z",
+              "thumbnail": ".thumbs/concept-the-app-r4-v-the-app-r4-v1.webp",
+              "annotations": []
+            }
+          ],
+          "slug": "the-patient-app"
+        },
+        {
+          "id": "concept-two-ways-r4",
+          "label": "Agent Interaction",
+          "description": "Two ways to interact with the assistant",
+          "position": 3,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-two-ways-r4-v1",
+              "number": 1,
+              "file": "two-ways/round-4/v1.html",
+              "parentId": "v3-two-ways",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.252Z",
+              "thumbnail": ".thumbs/concept-two-ways-r4-v-two-ways-r4-v1.webp"
+            }
+          ],
+          "slug": "agent-interaction"
+        },
+        {
+          "id": "concept-check-in-r4",
+          "label": "Check-In",
+          "description": "Daily check-ins across five recovery factors",
+          "position": 4,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-check-in-r4-v1",
+              "number": 1,
+              "file": "check-in/round-4/v1.html",
+              "parentId": "v4-check-in",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.252Z",
+              "annotations": [
+                {
+                  "id": "a-3ndb00mn",
+                  "x": 0.5914718019257221,
+                  "y": 0.6831550802139037,
+                  "element": null,
+                  "text": "The animation screen should loop, on all pages.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T15:54:10.456Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ],
+              "thumbnail": ".thumbs/concept-check-in-r4-v-check-in-r4-v1.webp"
+            }
+          ],
+          "slug": "check-in"
+        },
+        {
+          "id": "concept-twenty-four-seven-r4",
+          "label": "24/7",
+          "description": "Patients can reach out anytime",
+          "position": 5,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-twenty-four-seven-r4-v1",
+              "number": 1,
+              "file": "twenty-four-seven/round-4/v1.html",
+              "parentId": "v3-twenty-four-seven",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.252Z",
+              "annotations": [],
+              "thumbnail": ".thumbs/concept-twenty-four-seven-r4-v-twenty-four-seven-r4-v1.webp"
+            }
+          ],
+          "slug": "24-7"
+        },
+        {
+          "id": "concept-score-r4",
+          "label": "Score",
+          "description": "Single recovery score",
+          "position": 6,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-score-r4-v1",
+              "number": 1,
+              "file": "score/round-4/v1.html",
+              "parentId": "v4-score",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.253Z",
+              "annotations": [],
+              "thumbnail": ".thumbs/concept-score-r4-v-score-r4-v1.webp"
+            }
+          ],
+          "slug": "score"
+        },
+        {
+          "id": "concept-response-types-r4",
+          "label": "Response Types",
+          "description": "Three ways the assistant responds",
+          "position": 7,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-response-types-r4-v1",
+              "number": 1,
+              "file": "response-types/round-4/v1.html",
+              "parentId": "v4-response-types",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.253Z",
+              "annotations": [],
+              "thumbnail": ".thumbs/concept-response-types-r4-v-response-types-r4-v1.webp"
+            }
+          ],
+          "slug": "response-types"
+        },
+        {
+          "id": "concept-normal-response-r4",
+          "label": "Normal Response",
+          "description": "Guidance and reassurance when on track",
+          "position": 8,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-normal-response-r4-v1",
+              "number": 1,
+              "file": "normal-response/round-4/v1.html",
+              "parentId": "v4-normal-response",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.254Z",
+              "annotations": [],
+              "thumbnail": ".thumbs/concept-normal-response-r4-v-normal-response-r4-v1.webp"
+            }
+          ],
+          "slug": "normal-response"
+        },
+        {
+          "id": "concept-escalation-r4",
+          "label": "Escalation",
+          "description": "VCA escalates to care team",
+          "position": 9,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-escalation-r4-v1",
+              "number": 1,
+              "file": "escalation/round-4/v1.html",
+              "parentId": "v4-escalation",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.254Z",
+              "annotations": [],
+              "thumbnail": ".thumbs/concept-escalation-r4-v-escalation-r4-v1.webp"
+            }
+          ],
+          "slug": "escalation"
+        },
+        {
+          "id": "concept-emergency-r4",
+          "label": "Emergency",
+          "description": "Directs patients to call 911",
+          "position": 10,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-emergency-r4-v1",
+              "number": 1,
+              "file": "emergency/round-4/v1.html",
+              "parentId": "v4-emergency",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.255Z",
+              "annotations": [],
+              "thumbnail": ".thumbs/concept-emergency-r4-v-emergency-r4-v1.webp"
+            }
+          ],
+          "slug": "emergency"
+        },
+        {
+          "id": "concept-portal-r4",
+          "label": "Provider App",
+          "description": "Care team sees everything in context",
+          "position": 11,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-portal-r4-v1",
+              "number": 1,
+              "file": "portal/round-4/v1.html",
+              "parentId": "v4-portal",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.255Z",
+              "thumbnail": ".thumbs/concept-portal-r4-v-portal-r4-v1.webp"
+            }
+          ],
+          "slug": "provider-app"
+        },
+        {
+          "id": "concept-clinic-r4",
+          "label": "Clinic",
+          "description": "Every patient at a glance",
+          "position": 12,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-clinic-r4-v1",
+              "number": 1,
+              "file": "clinic/round-4/v1.html",
+              "parentId": "v4-clinic",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.256Z",
+              "thumbnail": ".thumbs/concept-clinic-r4-v-clinic-r4-v1.webp"
+            }
+          ],
+          "slug": "clinic"
+        },
+        {
+          "id": "concept-close-r4",
+          "label": "Close",
+          "description": "Logo closing slide",
+          "position": 13,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v-close-r4-v1",
+              "number": 1,
+              "file": "close/round-4/v1.html",
+              "parentId": "v4-close",
+              "changelog": "Carried from Round 3",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T15:50:02.256Z",
+              "thumbnail": ".thumbs/concept-close-r4-v-close-r4-v1.webp"
+            }
+          ],
+          "slug": "close"
+        }
+      ],
+      "createdAt": "2026-03-26T00:00:00.000Z"
     }
   ]
 }
