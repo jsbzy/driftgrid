@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSJ Feature — Regulatory Moat Quote</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+        body {
+            width: 1200px;
+            height: 627px;
+            background: #F5F7FA;
+            font-family: 'IBM Plex Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            position: relative;
+        }
+        .grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(62,181,166,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(62,181,166,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+        .content {
+            position: absolute;
+            inset: 0;
+            margin: 48px 80px;
+            padding: 48px 72px 48px 88px;
+            border-left: 3px solid #3EB5A6;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .source {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+            color: #3EB5A6;
+            margin-bottom: 12px;
+        }
+        .wsj-nameplate {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 16px;
+            letter-spacing: 0.06em;
+            color: #1a1a1a;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+        }
+        .quote {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.35;
+            color: #1a1a1a;
+            margin-bottom: 36px;
+            max-width: 880px;
+        }
+        .quote em {
+            font-style: normal;
+            color: #3EB5A6;
+        }
+        .attr-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        .attr-title {
+            font-size: 12px;
+            color: #888;
+        }
+        .logo {
+            position: absolute;
+            bottom: 48px;
+            right: 80px;
+        }
+        .logo img {
+            height: 28px;
+            width: auto;
+            display: block;
+        }
+        @media print {
+            html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+<div class="grid"></div>
+
+<div class="content">
+    <div class="source" data-drift-editable="source" data-drift-maxlen="60">WSJ Pro &nbsp;&middot;&nbsp; March 23, 2026</div>
+    <div class="wsj-nameplate">The Wall Street Journal.</div>
+
+    <div class="quote" data-drift-editable="quote" data-drift-maxlen="300">&ldquo;The <em>regulatory hurdle</em> is difficult and it&rsquo;s going to be difficult for anyone to <em>compete against</em>.&rdquo;</div>
+
+    <div class="attr-name" data-drift-editable="attribution-name" data-drift-maxlen="60">Scott Walchek</div>
+    <div class="attr-title" data-drift-editable="attribution-title" data-drift-maxlen="120">CEO &amp; Co-Founder, RecovryAI &nbsp;&middot;&nbsp; as quoted in The Wall Street Journal</div>
+</div>
+
+<div class="logo"><img src="../../brand/logos/logo-color-light.svg" alt="RecovryAI"></div>
+</body>
+</html>

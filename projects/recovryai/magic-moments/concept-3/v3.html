@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pain Check-In — No Container</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .screen {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 40px 32px;
+            position: relative;
+        }
+
+        .content {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 64px;
+            max-width: 340px; width: 100%;
+            position: relative;
+        }
+
+        .greeting {
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .greeting-day {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; font-weight: 500;
+            letter-spacing: 0.06em; color: #33B6B0;
+        }
+        .greeting-question {
+            font-size: 34px; font-weight: 300;
+            color: #1B1B1A; text-align: center;
+            line-height: 1.2; letter-spacing: -0.02em;
+        }
+        .greeting-question strong { font-weight: 600; }
+
+        .options {
+            display: flex; flex-direction: column;
+            gap: 0; width: 100%;
+        }
+
+        .option {
+            padding: 18px 0;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex; flex-direction: row;
+            align-items: center; gap: 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .option:last-child { border-bottom: none; }
+        .option:hover .option-text { color: #000; }
+        .option:hover .option-dot { transform: scale(1.2); }
+        .option.selected .option-text { font-weight: 600; }
+
+        .option-dot {
+            width: 10px; height: 10px; border-radius: 5px;
+            flex-shrink: 0;
+            transition: transform 0.15s ease;
+        }
+        .option[data-level="1"] .option-dot { background: #6BCB9B; }
+        .option[data-level="2"] .option-dot { background: #8CC98F; }
+        .option[data-level="3"] .option-dot { background: #D4A843; }
+        .option[data-level="4"] .option-dot { background: #CD7F3A; }
+        .option[data-level="5"] .option-dot { background: #C45B4A; }
+
+        .option-text {
+            font-size: 20px; font-weight: 400;
+            color: #555;
+            transition: all 0.15s ease;
+        }
+
+        .rx-footer {
+            display: flex; align-items: center; gap: 6px;
+            position: absolute; bottom: -60px;
+        }
+        .rx-badge {
+            width: 14px; height: 14px; border-radius: 2px;
+            background: #ccc;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .rx-badge span { font-size: 6px; font-weight: 700; color: white; }
+        .rx-label { font-size: 10px; color: #bbb; }
+
+        .confirmed {
+            display: none; flex-direction: column;
+            align-items: center; gap: 24px;
+        }
+        .confirmed.show { display: flex; }
+        .confirmed-dot {
+            width: 16px; height: 16px; border-radius: 8px;
+        }
+        .confirmed-text {
+            font-size: 24px; font-weight: 300; color: #1B1B1A;
+            text-align: center; line-height: 1.3;
+        }
+        .confirmed-text strong { font-weight: 600; }
+        .confirmed-sub {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; color: #bbb;
+        }
+
+        .voice-hint {
+            position: absolute; bottom: 32px;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; color: #bbb;
+        }
+        .voice-dot {
+            width: 8px; height: 8px; border-radius: 4px;
+            background: rgba(51,182,176,0.3);
+        }
+
+        .replay {
+            position: fixed; top: 20px; right: 20px;
+            font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+            color: #999; background: none; border: 1px solid #ddd;
+            padding: 6px 12px; border-radius: 6px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="screen">
+    <div class="content" id="questionView">
+        <div class="greeting">
+            <div class="greeting-day">DAY 8 · MORNING CHECK-IN</div>
+            <div class="greeting-question">How's your<br><strong>pain</strong> today?</div>
+        </div>
+
+        <div class="options">
+            <div class="option" data-level="1" onclick="select(this, 1)">
+                <span class="option-dot"></span>
+                <span class="option-text">None</span>
+            </div>
+            <div class="option" data-level="2" onclick="select(this, 2)">
+                <span class="option-dot"></span>
+                <span class="option-text">Mild</span>
+            </div>
+            <div class="option" data-level="3" onclick="select(this, 3)">
+                <span class="option-dot"></span>
+                <span class="option-text">Moderate</span>
+            </div>
+            <div class="option" data-level="4" onclick="select(this, 4)">
+                <span class="option-dot"></span>
+                <span class="option-text">Significant</span>
+            </div>
+            <div class="option" data-level="5" onclick="select(this, 5)">
+                <span class="option-dot"></span>
+                <span class="option-text">Severe</span>
+            </div>
+        </div>
+
+        <div class="rx-footer">
+            <div class="rx-badge"><span>Rx</span></div>
+            <span class="rx-label">Verified</span>
+        </div>
+    </div>
+
+    <div class="confirmed" id="confirmView">
+        <div class="confirmed-dot" id="confirmDot"></div>
+        <div>
+            <div class="confirmed-text"><strong id="painLevel">Moderate</strong></div>
+            <div class="confirmed-sub" style="text-align: center; margin-top: 8px;">Recorded · 8:04 AM</div>
+        </div>
+    </div>
+
+    <div class="voice-hint">
+        <div class="voice-dot"></div>
+        Or just tell me how you feel
+    </div>
+</div>
+
+<button class="replay" onclick="location.reload()">Replay</button>
+
+<script>
+const levels = {1: 'None', 2: 'Mild', 3: 'Moderate', 4: 'Significant', 5: 'Severe'};
+const colors = {1: '#6BCB9B', 2: '#8CC98F', 3: '#D4A843', 4: '#CD7F3A', 5: '#C45B4A'};
+
+function select(el, level) {
+    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+
+    setTimeout(() => {
+        document.getElementById('painLevel').textContent = levels[level];
+        document.getElementById('confirmDot').style.background = colors[level];
+        document.getElementById('questionView').style.display = 'none';
+        document.querySelector('.voice-hint').style.display = 'none';
+        document.getElementById('confirmView').classList.add('show');
+    }, 300);
+}
+</script>
+
+</body>
+</html>

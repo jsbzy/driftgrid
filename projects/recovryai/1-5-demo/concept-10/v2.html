@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat 10 — Emergency (Wireframe)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #F5F7FA; color: #1a1a1a; display: flex; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        .meta-strip { width: 280px; min-width: 280px; background: #EBEEF2; padding: 48px 32px; display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid #D0D5DC; }
+        .beat-num { font-size: 48px; font-weight: 700; color: #3EB5A6; line-height: 1; }
+        .beat-title { font-size: 20px; font-weight: 600; margin-top: 8px; color: #1a1a1a; }
+        .beat-time { font-size: 12px; color: #999; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .vo-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #3EB5A6; margin-bottom: 8px; }
+        .vo-text { font-size: 14px; font-weight: 300; line-height: 1.6; color: #555; }
+        .vo-text em { font-style: normal; color: #3EB5A6; font-weight: 500; }
+        .canvas { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+        .frame-area { display: flex; align-items: center; justify-content: center; gap: 48px; }
+
+        .wf-phone { width: 220px; height: 440px; border: 2px solid #D0D5DC; border-radius: 28px; display: flex; flex-direction: column; padding: 12px 10px; background: #FFFFFF; }
+        .wf-phone.emergency { border-color: #C94444; }
+        .wf-phone-notch { width: 60px; height: 5px; background: #D0D5DC; border-radius: 3px; align-self: center; margin-bottom: 8px; }
+        .wf-phone-bar { width: 32px; height: 3px; background: #D0D5DC; border-radius: 2px; align-self: center; margin-top: 6px; }
+
+        .wf-chat { flex: 1; display: flex; flex-direction: column; gap: 5px; overflow: hidden; padding: 4px; }
+        .wf-msg { padding: 6px 8px; border-radius: 8px; font-size: 8px; line-height: 1.4; max-width: 90%; }
+        .wf-msg.bot { background: #E8ECF0; color: #888; align-self: flex-start; }
+        .wf-msg.user { background: #E6F7F5; color: #3EB5A6; align-self: flex-end; }
+        .wf-msg.emergency { background: #FEF2F2; border: 1px solid #C9444480; color: #E87777; align-self: flex-start; font-weight: 500; }
+        .wf-msg.emergency-cta { background: #C94444; color: #1a1a1a; align-self: flex-start; font-weight: 600; text-align: center; width: 90%; font-size: 10px; padding: 10px; border-radius: 10px; }
+
+        .divider { width: 1px; height: 300px; background: linear-gradient(to bottom, transparent, #D0D5DC, transparent); }
+        .simultaneous { display: flex; flex-direction: column; align-items: center; gap: 4px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .sim-label { font-size: 8px; color: #C94444; text-transform: uppercase; letter-spacing: 0.1em; writing-mode: vertical-rl; text-orientation: mixed; }
+
+        .wf-desktop-sm { width: 480px; height: 340px; border: 2px solid #D0D5DC; border-radius: 10px; background: #FFFFFF; display: flex; flex-direction: column; overflow: hidden; }
+        .wf-browser-bar { height: 24px; background: #EBEEF2; display: flex; align-items: center; padding: 0 8px; gap: 4px; border-bottom: 1px solid #D0D5DC; }
+        .wf-browser-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .wf-browser-dot.r { background: #FF5F56; }
+        .wf-browser-dot.y { background: #FFBD2E; }
+        .wf-browser-dot.g { background: #27C93F; }
+
+        .wf-emergency-banner { background: #FEF2F2; border-bottom: 1px solid #C9444440; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
+        .wf-emergency-icon { width: 20px; height: 20px; background: #C94444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #1a1a1a; }
+        .wf-emergency-text { font-size: 10px; color: #E87777; font-weight: 600; }
+        .wf-emergency-time { font-size: 9px; color: #C94444; margin-left: auto; }
+
+        .wf-dashboard-content { flex: 1; padding: 12px; display: flex; gap: 12px; }
+        .wf-patient-row { background: #E8ECF0; border-radius: 6px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; }
+        .wf-status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .wf-status-dot.red { background: #C94444; }
+        .wf-row-text { font-size: 9px; color: #888; }
+        .wf-row-text strong { color: #333; }
+
+        .callout { font-size: 9px; color: #333; text-transform: uppercase; letter-spacing: 0.06em; text-align: center; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="meta-strip">
+        <div>
+            <div class="beat-num">10</div>
+            <div class="beat-title">Emergency</div>
+            <div class="beat-time">90 – 100 sec</div>
+        </div>
+        <div>
+            <div class="vo-label">Voiceover</div>
+            <div class="vo-text">"For critical symptoms — chest pain, shortness of breath — the VCA <em>immediately advises the patient to call 911</em> and alerts the care team."</div>
+        </div>
+    </div>
+    <div class="canvas">
+        <div class="frame-area">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div class="wf-phone emergency">
+                    <div class="wf-phone-notch"></div>
+                    <div class="wf-chat">
+                        <div class="wf-msg bot">How are you feeling this evening?</div>
+                        <div class="wf-msg user">I'm having chest pain and I can't breathe well</div>
+                        <div class="wf-msg emergency">⚠ IMPORTANT: The symptoms you're describing may require immediate medical attention.</div>
+                        <div class="wf-msg emergency-cta">📞 Call 911 Now</div>
+                        <div class="wf-msg emergency" style="font-weight: 400; font-size: 7px;">Your care team has been notified immediately. If you are alone, unlock your door. Stay calm and stay on the line with 911.</div>
+                    </div>
+                    <div class="wf-phone-bar"></div>
+                </div>
+                <div class="callout">Patient — Emergency Response</div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div style="font-size: 8px; color: #C94444; text-transform: uppercase; letter-spacing: 0.1em;">Simultaneous</div>
+                <div style="width: 40px; height: 1px; background: #C94444;"></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div class="wf-desktop-sm">
+                    <div class="wf-browser-bar">
+                        <div class="wf-browser-dot r"></div>
+                        <div class="wf-browser-dot y"></div>
+                        <div class="wf-browser-dot g"></div>
+                    </div>
+                    <div class="wf-emergency-banner">
+                        <div class="wf-emergency-icon">!</div>
+                        <div class="wf-emergency-text">EMERGENCY: Sarah Chen — Chest Pain, Difficulty Breathing</div>
+                        <div class="wf-emergency-time">Just now</div>
+                    </div>
+                    <div class="wf-dashboard-content">
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="font-size: 9px; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em;">Emergency Details</div>
+                            <div style="background: #E8ECF0; border-radius: 6px; padding: 10px; font-size: 9px; color: #555; line-height: 1.6;">
+                                <div style="color: #E87777; font-weight: 600; margin-bottom: 4px;">Reported Symptoms</div>
+                                Chest pain<br>Difficulty breathing<br>
+                                <div style="color: #aaa; margin-top: 6px;">Day 14 of 30 · Total Knee Replacement</div>
+                                <div style="color: #aaa;">Patient advised to call 911</div>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <div style="font-size: 9px; background: #C94444; color: #1a1a1a; padding: 6px 12px; border-radius: 4px; font-weight: 600;">Call Patient</div>
+                                <div style="font-size: 9px; border: 1px solid #D0D5DC; color: #888; padding: 6px 12px; border-radius: 4px;">View Conversation</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="callout">Provider — Emergency Alert</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

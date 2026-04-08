@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Response Types</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #ffffff; }
+
+        .slide { display: flex; width: 100%; height: 100vh; align-items: center; justify-content: center; }
+        .content { text-align: center; }
+
+        .cap-line {
+            font-size: 48px; font-weight: 600; color: #1B1B1A; line-height: 1.25;
+            letter-spacing: -0.02em; margin-bottom: 12px;
+            opacity: 0; transform: translateY(16px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out, color 0.4s ease;
+        }
+        .cap-line.show { opacity: 1; transform: translateY(0); }
+        .cap-line.dim { color: #C8C6C1; }
+
+        .types { display: flex; gap: 60px; margin-top: 60px; justify-content: center; }
+        .type-card {
+            display: flex; flex-direction: column; align-items: center; gap: 16px;
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        .type-card.show { opacity: 1; transform: translateY(0); }
+
+        .type-icon {
+            width: 64px; height: 64px; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .type-icon.normal { background: #E8F5E9; }
+        .type-icon.provider { background: #FFF3E0; }
+        .type-icon.emergency { background: #FFEBEE; }
+        .type-icon svg { width: 28px; height: 28px; }
+
+        .type-label {
+            font-size: 15px; font-weight: 600; color: #1B1B1A;
+            letter-spacing: -0.01em;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="content">
+            <div class="cap-line" id="cap1">A normal response,<br>a provider escalation,<br>or an emergency escalation.</div>
+            <div class="cap-line" id="cap2">Let's take a look at each.</div>
+
+            <div class="types">
+                <div class="type-card" id="card1">
+                    <div class="type-icon normal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                    <div class="type-label">Normal Response</div>
+                </div>
+                <div class="type-card" id="card2">
+                    <div class="type-icon provider">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <div class="type-label">Provider Escalation</div>
+                </div>
+                <div class="type-card" id="card3">
+                    <div class="type-icon emergency">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </div>
+                    <div class="type-label">Emergency Escalation</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <audio id="vo" preload="auto" src="../../audio/06-response-types.mp3"></audio>
+    <script>
+        function showCap(id) {
+            document.querySelectorAll('.cap-line.show').forEach(el => el.classList.add('dim'));
+            const el = document.getElementById(id);
+            if (el) { el.classList.add('show'); el.classList.remove('dim'); }
+        }
+
+        function reset() {
+            const vo = document.getElementById('vo');
+            vo.pause();
+            vo.currentTime = 0;
+            document.querySelectorAll('.cap-line').forEach(el => el.classList.remove('show', 'dim'));
+            document.querySelectorAll('.type-card').forEach(el => el.classList.remove('show'));
+        }
+
+        function run() {
+            reset();
+            document.getElementById('vo').play().catch(() => {});
+
+            setTimeout(() => { showCap('cap1'); document.getElementById('card1').classList.add('show'); }, 400);
+            setTimeout(() => document.getElementById('card2').classList.add('show'), 1200);
+            setTimeout(() => document.getElementById('card3').classList.add('show'), 2000);
+            setTimeout(() => showCap('cap2'), 3500);
+        }
+
+        run();
+        setInterval(run, 10000);
+    </script>
+</body>
+</html>

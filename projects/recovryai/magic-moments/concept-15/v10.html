@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecovryAI — The Patient Journey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #FFFFFF;
+            -webkit-font-smoothing: antialiased;
+            color: #1B1B1A;
+        }
+
+        .page {
+            width: 100%; height: 100vh;
+            display: flex; flex-direction: column;
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .hdr {
+            display: flex; align-items: baseline; justify-content: space-between;
+            padding: 40px 48px 0;
+            flex-shrink: 0;
+        }
+        .wm { font-size: 13px; font-weight: 500; color: #B0B0AE; }
+        .wm b { color: #1B1B1A; font-weight: 600; }
+        .wm .d { color: #3EB5A6; }
+        .hdr-r { font-size: 10px; font-weight: 500; color: #C8C8C4; letter-spacing: 0.08em; text-transform: uppercase; }
+
+        /* Grid */
+        .grid {
+            flex: 1; display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            padding: 36px 48px 0;
+            gap: 0;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .col {
+            padding: 0 16px;
+            display: flex; flex-direction: column;
+            min-width: 0;
+        }
+        .col:first-child { padding-left: 0; }
+        .col:last-child { padding-right: 0; }
+
+        .col + .col { border-left: 1px solid #F5F5F3; }
+
+        /* Act header */
+        .act-num {
+            font-size: 9px; font-weight: 600; color: #3EB5A6;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .act-title {
+            font-size: 16px; font-weight: 700; color: #1B1B1A;
+            letter-spacing: -0.02em; line-height: 1.2;
+            margin-bottom: 3px;
+        }
+        .act-sub {
+            font-size: 10px; font-weight: 400; color: #B0B0AE;
+            margin-bottom: 24px;
+        }
+
+        /* Moments with connected dots */
+        .moments { display: flex; flex-direction: column; gap: 0; }
+
+        .moment {
+            display: flex; align-items: flex-start; gap: 12px;
+            cursor: pointer;
+            padding: 8px 0;
+            transition: opacity 0.15s ease;
+        }
+        .moment:hover { opacity: 1 !important; }
+        .moment:hover .m-title { color: #1B1B1A; }
+        .moment:hover .dot { background: #3EB5A6; border-color: #3EB5A6; }
+
+        /* Dot + vertical line */
+        .dot-col {
+            display: flex; flex-direction: column; align-items: center;
+            padding-top: 4px;
+            flex-shrink: 0;
+            width: 12px;
+        }
+        .dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            border: 1.5px solid #D4D4D0;
+            background: #FFFFFF;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+            z-index: 1;
+        }
+        .dot.filled { background: #3EB5A6; border-color: #3EB5A6; }
+
+        .stem {
+            width: 1px;
+            flex: 1;
+            background: #EBEBEA;
+            margin-top: 4px;
+        }
+        .moment:last-child .stem { background: transparent; }
+
+        /* Text */
+        .m-text { min-width: 0; }
+        .m-title {
+            font-size: 12px; font-weight: 600; color: #4A4A48;
+            letter-spacing: -0.01em; line-height: 1.3;
+            margin-bottom: 2px;
+            transition: color 0.15s ease;
+        }
+        .m-desc {
+            font-size: 10px; font-weight: 400; color: #A3A3A0;
+            line-height: 1.4;
+        }
+
+        /* Footer */
+        .ftr {
+            padding: 0 48px 32px;
+            display: flex; align-items: center; gap: 12px;
+            flex-shrink: 0;
+        }
+        .ftr-line {
+            flex: 1; height: 1px; background: #F0F0EE;
+            position: relative;
+        }
+        .ftr-fill {
+            position: absolute; top: 0; left: 0;
+            width: 47%; height: 100%; background: #3EB5A6;
+        }
+        .ftr-dot {
+            position: absolute; top: 50%; left: 47%;
+            transform: translate(-50%, -50%);
+            width: 5px; height: 5px; border-radius: 50%;
+            background: #3EB5A6;
+        }
+        .ftr-label {
+            font-size: 9px; color: #C8C8C4; white-space: nowrap;
+            letter-spacing: 0.04em; text-transform: uppercase;
+        }
+
+        /* ── Overlay ── */
+        .overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.94);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 100;
+        }
+        .overlay.active { opacity: 1; pointer-events: all; }
+
+        .panel {
+            max-width: 520px; width: 90%;
+            transform: translateY(8px);
+            transition: transform 0.25s ease;
+        }
+        .overlay.active .panel { transform: translateY(0); }
+
+        .panel-close {
+            position: fixed; top: 28px; right: 36px;
+            font-size: 12px; color: #B0B0AE; cursor: pointer;
+            border: none; background: none; letter-spacing: 0.06em;
+            text-transform: uppercase; font-weight: 500; font-family: inherit;
+        }
+        .panel-close:hover { color: #1B1B1A; }
+
+        .panel-act {
+            font-size: 9px; font-weight: 600; color: #3EB5A6;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .panel-title {
+            font-size: 28px; font-weight: 700; color: #1B1B1A;
+            letter-spacing: -0.03em; line-height: 1.15;
+            margin-bottom: 14px;
+        }
+        .panel-desc {
+            font-size: 14px; font-weight: 400; color: #6B6B68;
+            line-height: 1.65; margin-bottom: 28px;
+        }
+        .panel-points {
+            list-style: none; margin-bottom: 32px;
+            border-top: 1px solid #F0F0EE;
+        }
+        .panel-points li {
+            font-size: 13px; color: #6B6B68; line-height: 1.5;
+            padding: 9px 0;
+            border-bottom: 1px solid #F0F0EE;
+        }
+        .panel-cta {
+            font-size: 11px; font-weight: 600; color: #3EB5A6;
+            letter-spacing: 0.04em; cursor: pointer;
+            border: none; background: none; padding: 0;
+            font-family: inherit;
+        }
+        .panel-cta:hover { opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+<div class="page">
+    <div class="hdr">
+        <div class="wm"><b>recovry<span class="d">.</span>ai</b></div>
+        <div class="hdr-r">The Patient Journey</div>
+    </div>
+
+    <div class="grid">
+        <!-- ACT 1 -->
+        <div class="col">
+            <div class="act-num">Act 1</div>
+            <div class="act-title">Prescribed</div>
+            <div class="act-sub">Pre-surgery</div>
+            <div class="moments">
+                <div class="moment" onclick="show('rx')">
+                    <div class="dot-col"><div class="dot filled"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">Living Prescription</div><div class="m-desc">Doctor signs the prescription. AI care begins.</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACT 2 -->
+        <div class="col">
+            <div class="act-num">Act 2</div>
+            <div class="act-title">Day 1</div>
+            <div class="act-sub">Setup & Activation</div>
+            <div class="moments">
+                <div class="moment" onclick="show('sync')">
+                    <div class="dot-col"><div class="dot filled"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">Sensor Sync</div><div class="m-desc">Devices connect. 24/7 monitoring activates.</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACT 3 -->
+        <div class="col">
+            <div class="act-num">Act 3</div>
+            <div class="act-title">Daily Heartbeat</div>
+            <div class="act-sub">Days 1–90</div>
+            <div class="moments">
+                <div class="moment" onclick="show('checkin')">
+                    <div class="dot-col"><div class="dot filled"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">Check-In</div><div class="m-desc">Pain, sleep, mobility. One question at a time.</div></div>
+                </div>
+                <div class="moment" onclick="show('status')">
+                    <div class="dot-col"><div class="dot"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">Recovery Status</div><div class="m-desc">One glance — how you're doing right now.</div></div>
+                </div>
+                <div class="moment" onclick="show('normal')">
+                    <div class="dot-col"><div class="dot"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">"Is This Normal?"</div><div class="m-desc">Ask anything. Answers backed by your data.</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACT 4 -->
+        <div class="col">
+            <div class="act-num">Act 4</div>
+            <div class="act-title">Something's Off</div>
+            <div class="act-sub">When needed</div>
+            <div class="moments">
+                <div class="moment" onclick="show('pathways')">
+                    <div class="dot-col"><div class="dot" style="border-color:#D97706;"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">Response Pathways</div><div class="m-desc">Green, yellow, red. Escalated as needed.</div></div>
+                </div>
+                <div class="moment" onclick="show('alerts')">
+                    <div class="dot-col"><div class="dot" style="border-color:#DC2626;"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">Provider Alerts</div><div class="m-desc">Real-time alerts. Full context. One-tap actions.</div></div>
+                </div>
+                <div class="moment" onclick="show('agentic')">
+                    <div class="dot-col"><div class="dot filled"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">Agentic Actions</div><div class="m-desc">VCA schedules, refills, coordinates autonomously.</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACT 5 -->
+        <div class="col">
+            <div class="act-num">Act 5</div>
+            <div class="act-title">The Circle</div>
+            <div class="act-sub">Patient + Caregiver + Provider</div>
+            <div class="moments">
+                <div class="moment" onclick="show('circle')">
+                    <div class="dot-col"><div class="dot filled"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">Circle of Care</div><div class="m-desc">Daily updates for Sarah. Peace of mind.</div></div>
+                </div>
+                <div class="moment" onclick="show('dashboard')">
+                    <div class="dot-col"><div class="dot"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">Provider Dashboard</div><div class="m-desc">Patient → cohort → health system.</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACT 6 -->
+        <div class="col">
+            <div class="act-num">Act 6</div>
+            <div class="act-title">Graduation</div>
+            <div class="act-sub">Day 90 + Beyond</div>
+            <div class="moments">
+                <div class="moment" onclick="show('graduation')">
+                    <div class="dot-col"><div class="dot filled"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">Recovery Complete</div><div class="m-desc">The emotional graduation. 90 days.</div></div>
+                </div>
+                <div class="moment" onclick="show('ongoing')">
+                    <div class="dot-col"><div class="dot"></div><div class="stem"></div></div>
+                    <div class="m-text"><div class="m-title">Ongoing Relationship</div><div class="m-desc">Wellness. Future surgeries. A lifelong partner.</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ftr">
+        <span class="ftr-label">Surgery</span>
+        <div class="ftr-line"><div class="ftr-fill"></div><div class="ftr-dot"></div></div>
+        <span class="ftr-label">Ongoing</span>
+    </div>
+</div>
+
+<!-- Overlay -->
+<div class="overlay" id="ov" onclick="hide(event)">
+    <button class="panel-close" onclick="hide()">Close</button>
+    <div class="panel" onclick="event.stopPropagation()">
+        <div class="panel-act" id="p-act"></div>
+        <div class="panel-title" id="p-title"></div>
+        <div class="panel-desc" id="p-desc"></div>
+        <ul class="panel-points" id="p-pts"></ul>
+        <button class="panel-cta">View designs →</button>
+    </div>
+</div>
+
+<script>
+const D={
+rx:{act:'Act 1 · Prescribed',title:'Living Prescription',desc:'The first-ever physician-prescribed AI for post-operative recovery. A doctor signs a prescription for a Virtual Care Assistant — not an app you download, but medicine your doctor orders.',pts:['Prescription is digitally signed and authenticated','Patient details, procedure, and recovery protocol pre-loaded','The VCA activates immediately — no manual setup','The prescription is a living document that tracks recovery progress']},
+sync:{act:'Act 2 · Day 1',title:'Sensor Sync',desc:'The patient\'s devices connect to RecovryAI. Apple Watch, knee sensor — detected automatically, paired with one tap. The safety net is real.',pts:['Automatic device detection — no manual configuration','Consumer sensors: Apple Watch, activity trackers, smart rings','Medical sensors: Stryker knee tracker, specialized devices','"I can see you now. Your recovery is being monitored 24/7."']},
+checkin:{act:'Act 3 · Daily Heartbeat',title:'Daily Check-In',desc:'Every day, the VCA checks in. One question at a time. How\'s your pain? How did you sleep? The patient feels seen — someone is paying attention, even at 2am.',pts:['Five dimensions: pain, sleep, mobility, meds, nutrition','Cognitive gentleness — one question at a time, large touch targets','Patient-initiated or VCA-initiated','Data feeds into recovery status and provider dashboard']},
+status:{act:'Act 3 · Daily Heartbeat',title:'Recovery Status',desc:'A single, comprehensible view of how you\'re doing right now. Recovery is abstract and scary — a clear status turns anxiety into awareness.',pts:['Day counter with 90-day timeline','Traffic light status: green, yellow, red','Aggregates check-in data + sensor readings','The anchor that the three response pathways branch from']},
+normal:{act:'Act 3 · Daily Heartbeat',title:'"Is This Normal?"',desc:'Every surgery patient Googles symptoms at 2am and spirals. The VCA intercepts that anxiety with trusted, personalized, physician-backed context.',pts:['Proactive: "Day 42 — mild stiffness is typical at this stage"','Reactive: "My knee feels warm, is that okay?"','Responses backed by your sensor data, not generic advice','Rx Trust Mark on every response — this is prescribed AI']},
+pathways:{act:'Act 4 · Something\'s Off',title:'Response Pathways',desc:'Three escalation tiers based on all incoming data. The patient is always aware of their status. When something\'s off, the VCA doesn\'t wait.',pts:['Green: on track — VCA encourages and reassures','Yellow: outside parameters — provider notified, follow-up scheduled','Red: concerning signal — VCA advises calling 911','The moment a provider calls because the AI flagged something']},
+alerts:{act:'Act 4 · Something\'s Off',title:'Provider Alerts',desc:'Providers don\'t just watch a dashboard — they receive proactive, actionable alerts. The right information at the right time.',pts:['Text, email, or in-app notifications','Full clinical context in one glance','One-tap actions: call patient, view dashboard, adjust protocol','Configurable by provider — what triggers, how urgent, which channel']},
+agentic:{act:'Act 4 · Something\'s Off',title:'Agentic Actions',desc:'The VCA doesn\'t just observe and report — it acts. Scheduling, prescriptions, PT orders. The leap from monitoring tool to care agent.',pts:['Schedules follow-up appointments autonomously','Sends prescription refill requests to pharmacy','Orders physical therapy based on recovery progress','Every action logged, auditable, physician-approved']},
+circle:{act:'Act 5 · The Circle',title:'Circle of Care',desc:'After surgery, there\'s always someone else — a spouse, a child — who is also anxious. A simple "on track" message transforms their day.',pts:['Sarah receives daily updates: "James is on track. No concerns."','Appropriate detail — reassuring, not overwhelming','Alerts when attention is needed, not just routine updates','The most emotionally powerful moment for a completely different person']},
+dashboard:{act:'Act 5 · The Circle',title:'Provider Dashboard',desc:'Three zoom levels of the same interface. The provider sees in 10 seconds what would take 30 minutes of phone calls.',pts:['Patient: full recovery picture — conversations, trends, sensors','Cohort: all recovering patients at a glance','System: multi-clinic overview for health system executives','The hero is the transition — pinch from one patient to fifteen']},
+graduation:{act:'Act 6 · Graduation',title:'Recovery Complete',desc:'Day 90. The bookend to the Rx Moment. Summary of the journey, final status, handoff. The emotional close of the recovery chapter.',pts:['Journey summary: 90 days of showing up','Final recovery status and key milestones','Provider sign-off and clinical summary','The graduation is earned — not a notification, a celebration']},
+ongoing:{act:'Act 6 · Graduation',title:'Ongoing Relationship',desc:'Recovery ends. The relationship doesn\'t. The VCA transitions from prescribed clinical care to ongoing wellness — the trust compounds.',pts:['Post-recovery health monitoring and wellness guidance','The patient already trusts the VCA — 90 days earned that','Future surgeries start on Day 1 with a VCA that already knows you','One year later: "Happy anniversary. How does that knee feel?"']}
+};
+function show(k){const d=D[k];if(!d)return;document.getElementById('p-act').textContent=d.act;document.getElementById('p-title').textContent=d.title;document.getElementById('p-desc').textContent=d.desc;document.getElementById('p-pts').innerHTML=d.pts.map(p=>'<li>'+p+'</li>').join('');document.getElementById('ov').classList.add('active');}
+function hide(e){if(e&&e.target!==e.currentTarget)return;document.getElementById('ov').classList.remove('active');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('ov').classList.remove('active');});
+</script>
+</body>
+</html>

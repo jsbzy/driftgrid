@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSJ Feature — Broadsheet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Cormorant+Garamond:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+        body {
+            width: 1200px;
+            height: 627px;
+            background: #FAFAF7;
+            font-family: 'IBM Plex Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            position: relative;
+        }
+
+        /* Subtle warm noise texture */
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .layout {
+            position: absolute;
+            inset: 0;
+            display: flex;
+        }
+
+        /* Left column — WSJ authority */
+        .left {
+            width: 380px;
+            padding: 64px 48px 64px 72px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-right: 1px solid rgba(0,0,0,0.08);
+            position: relative;
+        }
+        .left::after {
+            content: '';
+            position: absolute;
+            right: -3px;
+            top: 64px;
+            bottom: 64px;
+            width: 1px;
+            background: rgba(0,0,0,0.04);
+        }
+
+        .featured-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #3EB5A6;
+            margin-bottom: 20px;
+        }
+
+        .wsj-masthead {
+            font-family: 'UnifrakturMaguntia', cursive;
+            font-size: 44px;
+            color: #1a1a1a;
+            line-height: 1.05;
+            margin-bottom: 24px;
+        }
+
+        .wsj-meta {
+            font-size: 11px;
+            font-weight: 400;
+            color: #999;
+            line-height: 1.6;
+        }
+        .wsj-meta strong {
+            color: #3EB5A6;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        /* Right column — article content */
+        .right {
+            flex: 1;
+            padding: 64px 72px 64px 56px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .tag-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .tag-exclusive {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #1a1a1a;
+            border: 1px solid #1a1a1a;
+            padding: 3px 8px;
+        }
+        .tag-cat {
+            font-size: 9px;
+            font-weight: 400;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #aaa;
+        }
+
+        .headline {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 600;
+            font-size: 42px;
+            line-height: 1.12;
+            color: #1a1a1a;
+            margin-bottom: 28px;
+            letter-spacing: -0.01em;
+        }
+
+        .excerpt {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            font-weight: 300;
+            line-height: 1.75;
+            color: #666;
+            margin-bottom: 32px;
+            max-width: 580px;
+        }
+        .excerpt em {
+            font-style: normal;
+            color: #3EB5A6;
+            font-weight: 500;
+        }
+
+        .byline {
+            font-size: 12px;
+            color: #aaa;
+        }
+        .byline strong {
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* RecovryAI logo — confident, not tiny */
+        .logo {
+            position: absolute;
+            bottom: 48px;
+            right: 72px;
+        }
+        .logo img {
+            height: 22px;
+            width: auto;
+            display: block;
+            opacity: 0.7;
+        }
+
+        @media print {
+            html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <div class="left">
+        <div class="featured-label">As Featured In</div>
+        <div class="wsj-masthead" data-drift-editable="wsj-nameplate" data-drift-maxlen="40">The Wall Street Journal</div>
+        <div class="wsj-meta">
+            <strong>WSJ PRO</strong> &middot; Exclusive<br>
+            March 23, 2026
+        </div>
+    </div>
+
+    <div class="right">
+        <div class="tag-row">
+            <span class="tag-exclusive">Exclusive</span>
+            <span class="tag-cat">Industry News</span>
+        </div>
+
+        <h1 class="headline" data-drift-editable="headline" data-drift-maxlen="80">Startups Are Pushing AI<br>Into Patient Care</h1>
+
+        <div class="excerpt" data-drift-editable="excerpt" data-drift-maxlen="300"><em>RecovryAI</em> has created virtual care assistants designed to assist patients after joint replacements &mdash; prescribed by doctors to help patients stay on track with their recovery.</div>
+
+        <div class="byline">By <strong>Brian Gormley</strong></div>
+    </div>
+</div>
+
+<div class="logo"><img src="../../brand/logos/logo-color-light.svg" alt="RecovryAI"></div>
+</body>
+</html>

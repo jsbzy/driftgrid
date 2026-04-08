@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three-Lane Diagram — Horizontal Spectrum</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --bg-light: #e8e8e8;
+            --teal: #3EB5A6;
+            --teal-text: #0b6b60;
+            --text: #1a1a1a;
+            --text-dim: #666;
+            --text-mid: #444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            max-width: 1440px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 60px;
+        }
+
+        .diagram-wrap {
+            max-width: 780px;
+            width: 100%;
+        }
+
+        /* Spectrum bar */
+        .spectrum {
+            display: flex;
+            margin-bottom: 2.5rem;
+        }
+
+        .spectrum-segment {
+            flex: 1;
+            height: 4px;
+            background: var(--bg-light);
+        }
+
+        .spectrum-segment:last-child {
+            background: var(--teal);
+        }
+
+        .spectrum-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .spectrum-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.5rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .spectrum-label:last-child {
+            color: var(--teal-text);
+        }
+
+        /* Lanes as horizontal rows */
+        .lanes {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .lane {
+            display: grid;
+            grid-template-columns: 140px 1fr 1fr 1fr;
+            gap: 0;
+            border-top: 1px solid var(--bg-light);
+            padding: 1.25rem 0;
+        }
+
+        .lane:last-child {
+            border-bottom: 1px solid var(--bg-light);
+        }
+
+        .lane--active {
+            background: rgba(62, 181, 166, 0.03);
+        }
+
+        .lane-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            padding-right: 1.25rem;
+        }
+
+        .lane-number {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.5rem;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .lane--active .lane-number {
+            color: var(--teal);
+        }
+
+        .lane-title {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.35;
+        }
+
+        .lane-cell {
+            padding: 0 1rem;
+            border-left: 1px solid var(--bg-light);
+        }
+
+        .lane-cell-label {
+            font-size: 0.5rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 0.3rem;
+        }
+
+        .lane-cell-value {
+            font-size: 0.68rem;
+            color: var(--text-mid);
+            line-height: 1.5;
+        }
+
+        .lane-marker {
+            display: inline-block;
+            font-size: 0.5rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--teal);
+            background: rgba(62, 181, 166, 0.08);
+            padding: 0.15rem 0.45rem;
+            border-radius: 2px;
+            margin-top: 0.5rem;
+        }
+
+        /* Column headers */
+        .col-headers {
+            display: grid;
+            grid-template-columns: 140px 1fr 1fr 1fr;
+            gap: 0;
+            padding-bottom: 0.6rem;
+        }
+
+        .col-header {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.5rem;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            padding: 0 1rem;
+        }
+
+        .col-header:first-child {
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagram-wrap">
+        <div class="spectrum-labels">
+            <span class="spectrum-label">No FDA Oversight</span>
+            <span class="spectrum-label">Exempt Under &sect;520(o)</span>
+            <span class="spectrum-label">Device Classification Required</span>
+        </div>
+        <div class="spectrum">
+            <div class="spectrum-segment"></div>
+            <div class="spectrum-segment"></div>
+            <div class="spectrum-segment"></div>
+        </div>
+
+        <div class="col-headers">
+            <div class="col-header"></div>
+            <div class="col-header">End User</div>
+            <div class="col-header">Regulatory Posture</div>
+            <div class="col-header">Accountability</div>
+        </div>
+
+        <div class="lanes">
+            <div class="lane">
+                <div class="lane-header">
+                    <div class="lane-number">Lane One</div>
+                    <div class="lane-title">Provider-Facing Clinical&nbsp;Support</div>
+                </div>
+                <div class="lane-cell">
+                    <div class="lane-cell-value">Licensed clinician</div>
+                </div>
+                <div class="lane-cell">
+                    <div class="lane-cell-value">Exempt under &sect;520(o)(1)(E) &mdash; clinician reviews &amp; retains&nbsp;judgment</div>
+                </div>
+                <div class="lane-cell">
+                    <div class="lane-cell-value">Clinician&rsquo;s license stands behind every&nbsp;output</div>
+                </div>
+            </div>
+
+            <div class="lane">
+                <div class="lane-header">
+                    <div class="lane-number">Lane Two</div>
+                    <div class="lane-title">Consumer-Facing Health &amp; Wellness&nbsp;AI</div>
+                </div>
+                <div class="lane-cell">
+                    <div class="lane-cell-value">Consumer / patient (outside care&nbsp;pathway)</div>
+                </div>
+                <div class="lane-cell">
+                    <div class="lane-cell-value">Disclaimers, not authorization &mdash; designed to stay wide of the regulatory&nbsp;line</div>
+                </div>
+                <div class="lane-cell">
+                    <div class="lane-cell-value">No clinical accountability</div>
+                </div>
+            </div>
+
+            <div class="lane lane--active">
+                <div class="lane-header">
+                    <div class="lane-number">Lane Three</div>
+                    <div class="lane-title">Regulated, Patient-Facing Clinical&nbsp;AI</div>
+                    <span class="lane-marker">RecovryAI</span>
+                </div>
+                <div class="lane-cell">
+                    <div class="lane-cell-value">Patient (inside care pathway, physician-prescribed)</div>
+                </div>
+                <div class="lane-cell">
+                    <div class="lane-cell-value">Meets device definition &mdash; FDA authorization via De Novo&nbsp;pathway</div>
+                </div>
+                <div class="lane-cell">
+                    <div class="lane-cell-value">Cleared indication, evidence record, defined safety&nbsp;architecture</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

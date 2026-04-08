@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#10 — Circle of Care: Graduation (Caregiver)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .card {
+            background: #FFFFFF;
+            border: 1.5px solid rgba(62,181,166,0.2);
+            border-radius: 16px; width: 100%; overflow: hidden;
+        }
+
+        .card-glow {
+            height: 100px;
+            background: linear-gradient(180deg, rgba(62,181,166,0.06) 0%, transparent 100%);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .check-circle {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center;
+            animation: gentleBreathe 3s ease-in-out infinite;
+        }
+        .check-circle svg { width: 24px; height: 24px; }
+        @keyframes gentleBreathe {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(62,181,166,0.1); }
+            50% { transform: scale(1.04); box-shadow: 0 0 40px rgba(62,181,166,0.2); }
+        }
+
+        .card-body { padding: 0 24px 24px; }
+
+        .card-label {
+            font-size: 10px; font-weight: 600; color: #3EB5A6;
+            letter-spacing: 0.05em; text-align: center;
+            margin-bottom: 12px;
+        }
+        .card-title {
+            font-size: 22px; font-weight: 300; color: #1a1a1a;
+            text-align: center; line-height: 1.3;
+            letter-spacing: -0.01em; margin-bottom: 8px;
+        }
+        .card-title strong { font-weight: 600; }
+        .card-subtitle {
+            font-size: 14px; color: #888; text-align: center;
+            line-height: 1.5; margin-bottom: 24px;
+        }
+
+        /* Message from VCA */
+        .vca-note {
+            background: rgba(62,181,166,0.04);
+            border: 1px solid rgba(62,181,166,0.1);
+            border-radius: 12px; padding: 16px;
+            margin-bottom: 20px;
+        }
+        .vca-note-header {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 10px;
+        }
+        .vca-av {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .vca-av svg { width: 11px; height: 11px; }
+        .vca-note-name { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+        .vca-note-text {
+            font-size: 14px; color: #555; line-height: 1.55;
+        }
+        .vca-note-text strong { font-weight: 600; color: #1a1a1a; }
+
+        /* Journey stats */
+        .journey-stats {
+            display: flex; gap: 0; padding: 16px 0;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            margin-bottom: 20px;
+        }
+        .j-stat {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; text-align: center;
+        }
+        .j-stat + .j-stat { border-left: 1px solid rgba(0,0,0,0.04); }
+        .j-stat-val { font-size: 20px; font-weight: 600; color: #3EB5A6; }
+        .j-stat-label { font-size: 10px; color: #888; margin-top: 2px; line-height: 1.3; }
+
+        /* What's next for the caregiver */
+        .whats-next {
+            background: rgba(0,0,0,0.015); border-radius: 10px;
+            padding: 14px;
+        }
+        .wn-label {
+            font-size: 10px; font-weight: 600; color: #888;
+            letter-spacing: 0.04em; margin-bottom: 8px;
+        }
+        .wn-text {
+            font-size: 13px; color: #555; line-height: 1.5;
+        }
+
+        .card-footer {
+            padding: 12px 24px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .rx-badge {
+            width: 14px; height: 14px; border-radius: 2px;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .rx-badge span { font-size: 6px; font-weight: 700; color: white; }
+        .footer-text { font-size: 10px; color: #3EB5A6; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="card-glow">
+            <div class="check-circle">
+                <svg viewBox="0 0 1000 1000" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M666.16 319.463C666.16 327.133 672.345 333.35 679.975 333.35H831.937V666.65H679.975C672.345 666.65 666.16 672.868 666.16 680.538V833.3H334.605V680.538C334.605 672.868 328.42 666.65 320.79 666.65H168.827V333.35H320.79C328.42 333.35 334.605 327.133 334.605 319.463V166.7H666.16V319.463ZM500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="white"/></svg>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="card-label">DAY 90 · RECOVERY COMPLETE</div>
+            <h1 class="card-title" data-drift-editable="headline" data-drift-maxlen="50">
+                <strong>James did it.</strong>
+            </h1>
+            <p class="card-subtitle" data-drift-editable="subtitle" data-drift-maxlen="120">
+                His 90-day recovery is complete. And Sarah -- you were a huge part of that.
+            </p>
+
+            <div class="vca-note">
+                <div class="vca-note-header">
+                    <div class="vca-av">
+                        <svg viewBox="0 0 1000 1000" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M666.16 319.463C666.16 327.133 672.345 333.35 679.975 333.35H831.937V666.65H679.975C672.345 666.65 666.16 672.868 666.16 680.538V833.3H334.605V680.538C334.605 672.868 328.42 666.65 320.79 666.65H168.827V333.35H320.79C328.42 333.35 334.605 327.133 334.605 319.463V166.7H666.16V319.463ZM500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="white"/></svg>
+                    </div>
+                    <span class="vca-note-name">James's VCA</span>
+                </div>
+                <p class="vca-note-text" data-drift-editable="vca-message" data-drift-maxlen="300">
+                    <strong>Sarah, thank you.</strong> I watched James go through hard days -- and on every one of them, he mentioned you. When he couldn't sleep on Day 6, you were there. When he was worried about the clicking, you drove him to reassurance before I even sent the tip. Recovery isn't something anyone does alone. <strong>You made the difference.</strong>
+                </p>
+            </div>
+
+            <div class="journey-stats">
+                <div class="j-stat">
+                    <div class="j-stat-val">90</div>
+                    <div class="j-stat-label">Days<br>together</div>
+                </div>
+                <div class="j-stat">
+                    <div class="j-stat-val">128°</div>
+                    <div class="j-stat-label">Final knee<br>ROM</div>
+                </div>
+                <div class="j-stat">
+                    <div class="j-stat-val">0.5</div>
+                    <div class="j-stat-label">Pain score<br>today</div>
+                </div>
+            </div>
+
+            <div class="whats-next">
+                <div class="wn-label">WHAT CHANGES NOW</div>
+                <p class="wn-text" data-drift-editable="whats-next" data-drift-maxlen="200">
+                    Your daily digests will stop. James will transition to optional weekly check-ins. If anything needs your attention in the future, I'll reach out directly. You've both earned the peace of mind.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <div class="rx-badge"><span>Rx</span></div>
+            <span class="footer-text">Recovery Program Complete</span>
+        </div>
+    </div>
+</body>
+</html>

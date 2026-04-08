@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>01, Open</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #ffffff; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 24px; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        .mark { width: 120px; height: 120px; }
+        .wordmark { font-size: 48px; font-weight: 600; letter-spacing: -0.03em; color: #1B1B1A; }
+        .wordmark span { color: #33B5B0; }
+
+        .cap-line {
+            font-size: 36px; font-weight: 600; color: #1B1B1A; line-height: 1.25;
+            letter-spacing: -0.02em; margin-bottom: 8px;
+            opacity: 0; transform: translateY(16px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out, color 0.4s ease;
+            text-align: center;
+        }
+        .cap-line.show { opacity: 1; transform: translateY(0); }
+        .cap-line.dim { color: #C8C6C1; }
+    </style>
+</head>
+<body>
+    <div class="mark"><svg viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M666.16 319.463C666.16 327.133 672.345 333.35 679.975 333.35H831.937V666.65H679.975C672.345 666.65 666.16 672.868 666.16 680.538V833.3H334.605V680.538C334.605 672.868 328.42 666.65 320.79 666.65H168.827V333.35H320.79C328.42 333.35 334.605 327.133 334.605 319.463V166.7H666.16V319.463ZM500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="#33B6B0"/></svg></div>
+    <div class="wordmark">recovry<span>.</span>ai</div>
+    <div class="caption" style="margin-top: 12px;">
+        <div class="cap-line" id="cap1">This is RecovryAI.</div>
+        <div class="cap-line" id="cap2">Here's how it works.</div>
+    </div>
+    <audio id="vo" preload="auto" src="../../audio/01-open.mp3"></audio>
+    <script>
+        function showCap(id) {
+            document.querySelectorAll('.cap-line.show').forEach(el => el.classList.add('dim'));
+            const el = document.getElementById(id);
+            if (el) { el.classList.add('show'); el.classList.remove('dim'); }
+        }
+
+        function reset() {
+            const vo = document.getElementById('vo');
+            vo.pause();
+            vo.currentTime = 0;
+            document.querySelectorAll('.cap-line').forEach(el => el.classList.remove('show', 'dim'));
+        }
+
+        function run() {
+            reset();
+            document.getElementById('vo').play().catch(() => {});
+            setTimeout(() => showCap('cap1'), 0);
+            setTimeout(() => showCap('cap2'), 1500);
+        }
+
+        run();
+    </script>
+</body>
+</html>

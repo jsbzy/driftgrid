@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat 11 — Clinic Overview (Wireframe)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #F5F7FA; color: #1a1a1a; display: flex; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        .meta-strip { width: 280px; min-width: 280px; background: #EBEEF2; padding: 48px 32px; display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid #D0D5DC; }
+        .beat-num { font-size: 48px; font-weight: 700; color: #3EB5A6; line-height: 1; }
+        .beat-title { font-size: 20px; font-weight: 600; margin-top: 8px; color: #1a1a1a; }
+        .beat-time { font-size: 12px; color: #999; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .vo-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #3EB5A6; margin-bottom: 8px; }
+        .vo-text { font-size: 14px; font-weight: 300; line-height: 1.6; color: #555; }
+        .vo-text em { font-style: normal; color: #3EB5A6; font-weight: 500; }
+        .canvas { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px; }
+
+        .wf-desktop { width: 100%; max-width: 1000px; height: 560px; border: 2px solid #D0D5DC; border-radius: 12px; background: #FFFFFF; display: flex; flex-direction: column; overflow: hidden; }
+        .wf-browser-bar { height: 28px; background: #EBEEF2; display: flex; align-items: center; padding: 0 10px; gap: 5px; border-bottom: 1px solid #D0D5DC; }
+        .wf-browser-dot { width: 7px; height: 7px; border-radius: 50%; }
+        .wf-browser-dot.r { background: #FF5F56; }
+        .wf-browser-dot.y { background: #FFBD2E; }
+        .wf-browser-dot.g { background: #27C93F; }
+        .wf-url { margin-left: 10px; font-size: 8px; color: #333; background: #FFFFFF; padding: 2px 10px; border-radius: 4px; }
+
+        .wf-dash { flex: 1; display: flex; }
+        .wf-sidebar { width: 160px; background: #EBEEF2; border-right: 1px solid #D0D5DC; padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; }
+        .wf-nav { height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 6px; border-radius: 4px; font-size: 8px; color: #aaa; }
+        .wf-nav.active { background: #E8ECF0; color: #3EB5A6; }
+
+        .wf-main { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .wf-main-header { display: flex; justify-content: space-between; align-items: center; }
+        .wf-main-header h3 { font-size: 14px; font-weight: 600; color: #333; }
+
+        .wf-stats { display: flex; gap: 12px; }
+        .wf-stat { flex: 1; background: #E8ECF0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+        .wf-stat .num { font-size: 24px; font-weight: 700; }
+        .wf-stat .num.green { color: #3EB5A6; }
+        .wf-stat .num.amber { color: #D49150; }
+        .wf-stat .num.red { color: #C94444; }
+        .wf-stat .label { font-size: 9px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; }
+
+        .wf-table { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+        .wf-table-header { display: flex; padding: 6px 10px; font-size: 8px; color: #333; text-transform: uppercase; letter-spacing: 0.08em; }
+        .wf-table-row { display: flex; padding: 8px 10px; background: #E8ECF0; border-radius: 4px; align-items: center; font-size: 9px; }
+        .wf-table-row.highlight { border-left: 2px solid #C94444; }
+        .wf-col-status { width: 24px; display: flex; justify-content: center; }
+        .wf-col-name { width: 140px; color: #333; }
+        .wf-col-procedure { flex: 1; color: #999; }
+        .wf-col-day { width: 70px; color: #999; }
+        .wf-col-score { width: 50px; font-weight: 600; }
+        .wf-col-score.green { color: #3EB5A6; }
+        .wf-col-score.amber { color: #D49150; }
+        .wf-col-score.red { color: #C94444; }
+        .wf-col-badge { width: 80px; }
+        .badge { font-size: 7px; padding: 2px 6px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.06em; display: inline-block; }
+        .badge.on-track { background: #1A2E2B; color: #3EB5A6; }
+        .badge.at-risk { background: #FFF7ED; color: #D49150; }
+        .badge.emergency { background: #FEF2F2; color: #C94444; }
+
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+        .dot.green { background: #3EB5A6; }
+        .dot.amber { background: #D49150; }
+        .dot.red { background: #C94444; }
+    </style>
+</head>
+<body>
+    <div class="meta-strip">
+        <div>
+            <div class="beat-num">11</div>
+            <div class="beat-title">Clinic Overview</div>
+            <div class="beat-time">100 – 110 sec</div>
+        </div>
+        <div>
+            <div class="vo-label">Voiceover</div>
+            <div class="vo-text">"At a glance, care teams can track every patient: <em>on track, at risk, or requiring immediate attention</em>."</div>
+        </div>
+    </div>
+    <div class="canvas">
+        <div class="wf-desktop">
+            <div class="wf-browser-bar">
+                <div class="wf-browser-dot r"></div>
+                <div class="wf-browser-dot y"></div>
+                <div class="wf-browser-dot g"></div>
+                <div class="wf-url">portal.recovry.ai/clinic/mountain-view-ortho</div>
+            </div>
+            <div class="wf-dash">
+                <div class="wf-sidebar">
+                    <div class="wf-nav active">Dashboard</div>
+                    <div class="wf-nav">Patients</div>
+                    <div class="wf-nav">Alerts</div>
+                    <div class="wf-nav">Schedule</div>
+                    <div class="wf-nav">Reports</div>
+                </div>
+                <div class="wf-main">
+                    <div class="wf-main-header">
+                        <h3>Mountain View Orthopedics — Active Patients</h3>
+                    </div>
+                    <div class="wf-stats">
+                        <div class="wf-stat">
+                            <div class="num green">18</div>
+                            <div class="label">On Track</div>
+                        </div>
+                        <div class="wf-stat">
+                            <div class="num amber">4</div>
+                            <div class="label">At Risk</div>
+                        </div>
+                        <div class="wf-stat">
+                            <div class="num red">1</div>
+                            <div class="label">Emergency</div>
+                        </div>
+                        <div class="wf-stat">
+                            <div class="num" style="color: #333;">23</div>
+                            <div class="label">Total Active</div>
+                        </div>
+                    </div>
+                    <div class="wf-table">
+                        <div class="wf-table-header">
+                            <div class="wf-col-status"></div>
+                            <div class="wf-col-name">Patient</div>
+                            <div class="wf-col-procedure">Procedure</div>
+                            <div class="wf-col-day">Day</div>
+                            <div class="wf-col-score">Score</div>
+                            <div class="wf-col-badge">Status</div>
+                        </div>
+                        <div class="wf-table-row highlight">
+                            <div class="wf-col-status"><div class="dot red"></div></div>
+                            <div class="wf-col-name">Sarah Chen</div>
+                            <div class="wf-col-procedure">Total Knee Replacement</div>
+                            <div class="wf-col-day">Day 14</div>
+                            <div class="wf-col-score red">—</div>
+                            <div class="wf-col-badge"><span class="badge emergency">Emergency</span></div>
+                        </div>
+                        <div class="wf-table-row">
+                            <div class="wf-col-status"><div class="dot amber"></div></div>
+                            <div class="wf-col-name">James Mitchell</div>
+                            <div class="wf-col-procedure">Hip Replacement</div>
+                            <div class="wf-col-day">Day 8</div>
+                            <div class="wf-col-score amber">61</div>
+                            <div class="wf-col-badge"><span class="badge at-risk">At Risk</span></div>
+                        </div>
+                        <div class="wf-table-row">
+                            <div class="wf-col-status"><div class="dot green"></div></div>
+                            <div class="wf-col-name">Maria Garcia</div>
+                            <div class="wf-col-procedure">ACL Reconstruction</div>
+                            <div class="wf-col-day">Day 22</div>
+                            <div class="wf-col-score green">88</div>
+                            <div class="wf-col-badge"><span class="badge on-track">On Track</span></div>
+                        </div>
+                        <div class="wf-table-row">
+                            <div class="wf-col-status"><div class="dot green"></div></div>
+                            <div class="wf-col-name">Robert Kim</div>
+                            <div class="wf-col-procedure">Rotator Cuff Repair</div>
+                            <div class="wf-col-day">Day 5</div>
+                            <div class="wf-col-score green">74</div>
+                            <div class="wf-col-badge"><span class="badge on-track">On Track</span></div>
+                        </div>
+                        <div class="wf-table-row" style="opacity: 0.4;">
+                            <div class="wf-col-status"><div class="dot green"></div></div>
+                            <div class="wf-col-name">Linda Thompson</div>
+                            <div class="wf-col-procedure">Total Knee Replacement</div>
+                            <div class="wf-col-day">Day 28</div>
+                            <div class="wf-col-score green">94</div>
+                            <div class="wf-col-badge"><span class="badge on-track">On Track</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

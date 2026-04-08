@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three-Lane Diagram — Three Roads v1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --bg-light: #e8e8e8;
+            --teal: #3EB5A6;
+            --text: #1a1a1a;
+            --text-dim: #666;
+            --text-mid: #444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            max-width: 1440px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 60px;
+        }
+
+        .diagram-wrap {
+            max-width: 780px;
+            width: 100%;
+        }
+
+        .diagram-title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.6rem;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .road {
+            position: relative;
+            padding-left: 160px;
+            margin-bottom: 2.5rem;
+        }
+
+        .road:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .road-label {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 140px;
+        }
+
+        .road-number {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.5rem;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 0.25rem;
+        }
+
+        .road--active .road-number {
+            color: var(--teal);
+        }
+
+        .road-name {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.35;
+        }
+
+        /* The track line */
+        .road-track {
+            position: relative;
+            height: 2px;
+            background: var(--bg-light);
+            margin-top: 0.6rem;
+        }
+
+        .road-line {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: var(--bg-light);
+        }
+
+        .road--active .road-line {
+            background: var(--teal);
+        }
+
+        /* Lane 1: short */
+        .road--one .road-line { width: 22%; }
+        /* Lane 2: short */
+        .road--two .road-line { width: 28%; }
+        /* Lane 3: full width, fades out */
+        .road--three .road-line { width: 100%; }
+
+        /* Terminus dot for short lanes */
+        .road-terminus {
+            position: absolute;
+            top: 50%;
+            transform: translate(50%, -50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--bg-light);
+        }
+
+        .road--one .road-terminus { right: calc(100% - 22%); }
+        .road--two .road-terminus { right: calc(100% - 28%); }
+
+        /* Start dot */
+        .road-start {
+            position: absolute;
+            left: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--bg-light);
+        }
+
+        .road--active .road-start {
+            background: var(--teal);
+        }
+
+        /* Milestones on Lane 3 */
+        .milestone {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .milestone-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--teal);
+            margin-bottom: 0.5rem;
+        }
+
+        .milestone-label {
+            position: absolute;
+            top: 12px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.45rem;
+            font-weight: 400;
+            color: var(--text-dim);
+            white-space: nowrap;
+            letter-spacing: 0.03em;
+        }
+
+        .milestone--1 { left: 20%; }
+        .milestone--2 { left: 45%; }
+        .milestone--3 { left: 70%; }
+
+        /* Fade-out on Lane 3 right edge */
+        .road--three .road-track::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -8px;
+            width: 60px;
+            height: 18px;
+            background: linear-gradient(90deg, transparent, var(--bg));
+            z-index: 2;
+        }
+
+        /* Regulatory label under short lanes */
+        .road-regulatory {
+            font-size: 0.55rem;
+            color: var(--text-dim);
+            margin-top: 0.75rem;
+        }
+
+        /* Players */
+        .road-players {
+            font-size: 0.5rem;
+            color: var(--text-dim);
+            font-style: italic;
+            margin-top: 0.2rem;
+        }
+
+        /* Lane 3 extra bottom space for milestones */
+        .road--three {
+            padding-bottom: 1.5rem;
+        }
+
+        .quote {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--bg-light);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 300;
+            color: var(--text-dim);
+            text-align: center;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagram-wrap">
+        <div class="diagram-title">Three Lanes of Healthcare AI</div>
+
+        <!-- Lane One -->
+        <div class="road road--one">
+            <div class="road-label">
+                <div class="road-number">Lane One</div>
+                <div class="road-name">Provider-Facing Clinical&nbsp;Support</div>
+            </div>
+            <div class="road-track">
+                <div class="road-line"></div>
+                <div class="road-start"></div>
+                <div class="road-terminus"></div>
+            </div>
+            <div class="road-regulatory">Exempt under Section 520(o)(1)(E)</div>
+            <div class="road-players">Abridge, Nuance, Rad AI, OpenEvidence, UpToDate</div>
+        </div>
+
+        <!-- Lane Two -->
+        <div class="road road--two">
+            <div class="road-label">
+                <div class="road-number">Lane Two</div>
+                <div class="road-name">Consumer-Facing Health &amp; Wellness&nbsp;AI</div>
+            </div>
+            <div class="road-track">
+                <div class="road-line"></div>
+                <div class="road-start"></div>
+                <div class="road-terminus"></div>
+            </div>
+            <div class="road-regulatory">Disclaimers, not authorization</div>
+            <div class="road-players">OpenAI, Anthropic, Amazon, symptom checkers</div>
+        </div>
+
+        <!-- Lane Three -->
+        <div class="road road--three road--active">
+            <div class="road-label">
+                <div class="road-number">Lane Three</div>
+                <div class="road-name">Regulated, Patient-Facing Clinical&nbsp;AI</div>
+            </div>
+            <div class="road-track">
+                <div class="road-line"></div>
+                <div class="road-start"></div>
+                <div class="milestone milestone--1">
+                    <div class="milestone-dot"></div>
+                    <span class="milestone-label">Breakthrough Designation</span>
+                </div>
+                <div class="milestone milestone--2">
+                    <div class="milestone-dot"></div>
+                    <span class="milestone-label">Clinical Validation</span>
+                </div>
+                <div class="milestone milestone--3">
+                    <div class="milestone-dot"></div>
+                    <span class="milestone-label">De Novo Submission</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="quote">&ldquo;The road in lane three is longer than the other two. It was always going to&nbsp;be.&rdquo;</div>
+    </div>
+</body>
+</html>

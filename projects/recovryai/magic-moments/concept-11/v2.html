@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#10 — Circle of Care (Digest View)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        .status-bar {
+            padding: 14px 20px 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        /* Caregiver header */
+        .cg-header {
+            padding: 20px 24px 16px;
+            background: #FFFFFF;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .cg-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .cg-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #EDF8F7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cg-icon svg { width: 22px; height: 22px; }
+        .cg-greeting {
+            font-size: 13px;
+            font-weight: 400;
+            color: #888;
+        }
+        .cg-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            letter-spacing: -0.02em;
+        }
+
+        /* Status banner */
+        .status-banner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: #F0FDF9;
+            border-radius: 12px;
+        }
+        .sb-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #059669;
+            flex-shrink: 0;
+        }
+        .sb-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: #059669;
+            flex: 1;
+        }
+        .sb-day {
+            font-size: 12px;
+            font-weight: 600;
+            color: #059669;
+        }
+
+        /* Daily digest */
+        .digest {
+            padding: 24px 24px 0;
+        }
+        .digest-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .digest-card {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .digest-item {
+            display: flex;
+            gap: 14px;
+            padding: 10px 0;
+        }
+        .digest-item + .digest-item {
+            border-top: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .di-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #F8FAFA;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .di-icon svg { width: 16px; height: 16px; }
+
+        .di-content { flex: 1; }
+        .di-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 1px;
+        }
+        .di-value {
+            font-size: 13px;
+            font-weight: 400;
+            color: #555;
+        }
+        .di-trend {
+            font-size: 11px;
+            font-weight: 500;
+            color: #059669;
+        }
+
+        /* Summary message */
+        .summary-msg {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 16px;
+            padding: 18px 20px;
+            margin-bottom: 16px;
+        }
+        .sm-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .sm-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #3EB5A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sm-avatar svg { width: 12px; height: 12px; }
+        .sm-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .sm-text {
+            font-size: 14px;
+            font-weight: 400;
+            color: #1a1a1a;
+            line-height: 1.55;
+        }
+
+        /* CTA */
+        .cg-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .cg-action {
+            flex: 1;
+            padding: 13px 0;
+            text-align: center;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .cg-action.primary {
+            background: #1a1a1a;
+            color: #FFFFFF;
+        }
+        .cg-action.secondary {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.08);
+            color: #1a1a1a;
+        }
+
+        .cg-rx {
+            text-align: center;
+            font-size: 11px;
+            color: #bbb;
+            padding-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-bar">9:41</div>
+
+    <div class="cg-header">
+        <div class="cg-top">
+            <div class="cg-icon">
+                <svg viewBox="0 0 22 22" fill="none"><path d="M11 2v5M11 15v5M2 11h5M15 11h5" stroke="#3EB5A6" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+                <div class="cg-greeting">Good morning, Sarah</div>
+                <div class="cg-name" data-drift-editable="patient-name" data-drift-maxlen="30">James's Recovery</div>
+            </div>
+        </div>
+        <div class="status-banner">
+            <div class="sb-dot"></div>
+            <div class="sb-text">On Track — No Concerns</div>
+            <div class="sb-day">Day 42</div>
+        </div>
+    </div>
+
+    <div class="digest">
+        <div class="digest-title">Today's Update</div>
+
+        <div class="digest-card">
+            <div class="digest-item">
+                <div class="di-icon">
+                    <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="#3EB5A6" stroke-width="1.2"/><path d="M8 5.5v3l2 1.5" stroke="#3EB5A6" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </div>
+                <div class="di-content">
+                    <div class="di-label">Knee Mobility</div>
+                    <div class="di-value">105° range of motion</div>
+                    <div class="di-trend">Up 2° from yesterday</div>
+                </div>
+            </div>
+            <div class="digest-item">
+                <div class="di-icon">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M2 12l3-4 2.5 2 3-5 3.5 4" stroke="#3EB5A6" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="di-content">
+                    <div class="di-label">Activity</div>
+                    <div class="di-value">4,200 steps yesterday</div>
+                    <div class="di-trend">Consistent this week</div>
+                </div>
+            </div>
+            <div class="digest-item">
+                <div class="di-icon">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M8 3C6 3 4.5 5 4.5 7c0 4 3.5 6.5 3.5 6.5s3.5-2.5 3.5-6.5C11.5 5 10 3 8 3z" stroke="#3EB5A6" stroke-width="1.2"/></svg>
+                </div>
+                <div class="di-content">
+                    <div class="di-label">Pain Level</div>
+                    <div class="di-value">3 out of 10</div>
+                    <div class="di-trend">Down from 4 last week</div>
+                </div>
+            </div>
+            <div class="digest-item">
+                <div class="di-icon">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 13V6a1 1 0 011-1h8a1 1 0 011 1v7" stroke="#3EB5A6" stroke-width="1.2" stroke-linecap="round"/><path d="M5 5V4a3 3 0 016 0v1" stroke="#3EB5A6" stroke-width="1.2"/></svg>
+                </div>
+                <div class="di-content">
+                    <div class="di-label">Sleep</div>
+                    <div class="di-value">7.2 hours last night</div>
+                    <div class="di-trend">Improving steadily</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VCA summary -->
+        <div class="summary-msg">
+            <div class="sm-header">
+                <div class="sm-avatar">
+                    <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v3M6 8v3M1 6h3M8 6h3" stroke="white" stroke-width="1" stroke-linecap="round"/></svg>
+                </div>
+                <span class="sm-label">VCA Summary</span>
+            </div>
+            <div class="sm-text" data-drift-editable="summary" data-drift-maxlen="200">James is doing well. He completed all PT exercises yesterday and reported less morning stiffness. His mobility keeps improving and he's ahead of the typical recovery curve. No concerns today.</div>
+        </div>
+
+        <div class="cg-actions">
+            <div class="cg-action secondary">View Full Report</div>
+            <div class="cg-action primary">Send a Note</div>
+        </div>
+
+        <div class="cg-rx">Prescribed by Dr. Elena Morris · UCSF Medical Center</div>
+    </div>
+</body>
+</html>

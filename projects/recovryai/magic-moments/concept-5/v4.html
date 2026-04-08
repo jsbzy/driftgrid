@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recovery Status — Chat Timeline Full Transcript</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            display: flex; align-items: flex-start; justify-content: center;
+        }
+
+        .phone {
+            width: 380px; height: 740px;
+            background: #F5F7FA;
+            display: flex; flex-direction: column;
+            overflow: hidden; margin-top: 20px;
+        }
+
+        .header {
+            padding: 16px 20px 12px; background: white;
+            border-bottom: 1px solid rgba(0,0,0,0.06); flex-shrink: 0; z-index: 10;
+        }
+        .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .header-title { font-size: 15px; font-weight: 500; color: #1B1B1A; }
+        .header-day { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #33B6B0; font-weight: 500; letter-spacing: 0.04em; }
+        .header-bar { width: 100%; height: 3px; background: rgba(0,0,0,0.04); border-radius: 2px; }
+        .header-fill { height: 100%; border-radius: 2px; background: #33B6B0; }
+
+        .chat { flex: 1; overflow-y: auto; padding: 16px 20px 20px; display: flex; flex-direction: column; }
+
+        /* ── Day row ── */
+        .history { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+        .day-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px; cursor: pointer; border-radius: 8px;
+            transition: background 0.2s ease, opacity 0.2s ease;
+        }
+        .day-row:hover { background: rgba(0,0,0,0.02); opacity: 1 !important; }
+        .day-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; font-weight: 500; color: #bbb;
+            width: 20px; text-align: right; flex-shrink: 0;
+        }
+        .day-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .day-dims { display: flex; gap: 2px; flex-shrink: 0; }
+        .day-mini { width: 4px; height: 4px; border-radius: 50%; }
+        .day-status { font-size: 11px; font-weight: 300; color: #bbb; flex: 1; }
+        .day-row.attention .day-status { color: #D97706; }
+
+        /* ── Expand area ── */
+        .day-expand {
+            max-height: 0; opacity: 0; overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;
+            margin: 0 4px;
+        }
+        .day-expand.open { max-height: 800px; opacity: 1; }
+        .day-expand-inner {
+            padding: 6px 0 14px 30px;
+            border-left: 1px solid rgba(0,0,0,0.04);
+            margin-left: 15px;
+        }
+
+        /* Status summary — always first in expand */
+        .dx-status {
+            padding: 8px 12px; margin-bottom: 8px;
+            background: rgba(0,0,0,0.015); border-radius: 8px;
+        }
+        .dx-status-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 8px; font-weight: 500; color: #ccc; letter-spacing: 0.04em;
+            margin-bottom: 6px;
+        }
+        .dx-dims { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+        .dx-dim { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 300; color: #bbb; }
+        .dx-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+
+        /* View conversation toggle */
+        .dx-convo-toggle {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; color: #33B6B0; cursor: pointer;
+            padding: 6px 0; display: flex; align-items: center; gap: 4px;
+        }
+        .dx-convo-toggle:hover { color: #2a9a8d; }
+        .dx-convo-toggle .chv { font-size: 8px; transition: transform 0.2s ease; display: inline-block; }
+        .dx-convo-toggle .chv.open { transform: rotate(90deg); }
+
+        /* Conversation thread */
+        .dx-convo {
+            max-height: 0; opacity: 0; overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;
+        }
+        .dx-convo.open { max-height: 2000px; opacity: 1; }
+        .dx-convo-inner { padding: 8px 0 4px; display: flex; flex-direction: column; gap: 8px; }
+
+        /* Mini VCA messages in transcript */
+        .dx-msg { display: flex; gap: 6px; align-items: flex-start; }
+        .dx-av {
+            width: 18px; height: 18px; border-radius: 9px;
+            background: rgba(51,182,176,0.1);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+        }
+        .dx-av span { font-size: 5px; font-weight: 700; color: #33B6B0; }
+        .dx-bubble {
+            background: rgba(0,0,0,0.02); border-radius: 10px 10px 10px 3px;
+            padding: 8px 12px; max-width: 220px;
+        }
+        .dx-bubble p { font-size: 12px; font-weight: 300; color: #777; line-height: 1.45; }
+        .dx-bubble .dx-time { font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #ccc; margin-top: 3px; }
+
+        /* Patient message */
+        .dx-patient {
+            align-self: flex-end;
+            background: rgba(51,182,176,0.06); border-radius: 10px 10px 3px 10px;
+            padding: 8px 12px; max-width: 220px;
+        }
+        .dx-patient p { font-size: 12px; font-weight: 300; color: #555; line-height: 1.45; }
+
+        /* Mini check-in card in transcript */
+        .dx-checkin {
+            background: rgba(0,0,0,0.02); border-radius: 8px;
+            padding: 8px 12px;
+        }
+        .dx-ci-label { font-family: 'IBM Plex Mono', monospace; font-size: 7px; color: #33B6B0; font-weight: 500; letter-spacing: 0.04em; margin-bottom: 4px; }
+        .dx-ci-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+        .dx-ci-dot { width: 5px; height: 5px; border-radius: 50%; }
+        .dx-ci-name { font-size: 10px; color: #777; flex: 1; }
+        .dx-ci-val { font-size: 10px; font-weight: 300; color: #bbb; }
+
+        /* ── Today section ── */
+        .day-sep { display: flex; align-items: center; gap: 12px; padding: 20px 0 12px; }
+        .day-sep-line { flex: 1; height: 1px; background: rgba(0,0,0,0.06); }
+        .day-sep-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #33B6B0; font-weight: 500; letter-spacing: 0.05em; }
+
+        .vca-msg { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; }
+        .vca-av {
+            width: 24px; height: 24px; border-radius: 12px;
+            background: rgba(51,182,176,0.12);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+        }
+        .vca-av span { font-size: 7px; font-weight: 700; color: #33B6B0; }
+        .vca-bubble {
+            background: white; border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 14px 14px 14px 4px; padding: 12px 16px; max-width: 280px;
+        }
+        .vca-bubble p { font-size: 14px; font-weight: 300; color: #555; line-height: 1.5; }
+        .vca-bubble .time { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #ccc; margin-top: 4px; }
+
+        .checkin-done {
+            background: white; border: 1px solid rgba(0,0,0,0.04);
+            border-radius: 12px; padding: 14px 18px;
+            margin: 6px 0 6px 32px; max-width: 300px;
+        }
+        .ci-label { font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #33B6B0; font-weight: 500; letter-spacing: 0.05em; margin-bottom: 10px; }
+        .ci-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+        .ci-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .ci-name { font-size: 12px; color: #555; flex: 1; }
+        .ci-val { font-size: 12px; font-weight: 300; color: #999; }
+
+        .status-card {
+            background: white; border: 1.5px solid rgba(0,0,0,0.05);
+            border-radius: 16px; overflow: hidden;
+            margin: 6px 0 6px 32px; max-width: 300px;
+        }
+        .sc-body { padding: 20px 20px 16px; display: flex; flex-direction: column; align-items: center; }
+        .sc-orb-wrap { position: relative; width: 48px; height: 48px; margin-bottom: 12px; }
+        .sc-orb {
+            width: 40px; height: 40px; border-radius: 50%;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            background: #33B6B0; animation: pulse 3.5s ease-in-out infinite;
+        }
+        .sc-orb::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; background: inherit; opacity: 0.08; filter: blur(10px); z-index: -1; }
+        @keyframes pulse {
+            0%,100% { transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 20px rgba(0,0,0,0.06); }
+            50% { transform: translate(-50%,-50%) scale(1.08); box-shadow: 0 0 32px rgba(0,0,0,0.1); }
+        }
+        .sc-label { font-size: 18px; font-weight: 300; color: #1B1B1A; margin-bottom: 4px; }
+        .sc-sub { font-size: 12px; font-weight: 300; color: #999; text-align: center; line-height: 1.5; margin-bottom: 14px; max-width: 240px; }
+        .sc-dims { display: flex; width: 100%; justify-content: space-between; }
+        .sc-dim { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+        .sc-dim-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .sc-dim-name { font-size: 8px; color: #bbb; }
+        .sc-footer { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 10px 20px; border-top: 1px solid rgba(0,0,0,0.04); }
+        .rx-box { width: 12px; height: 12px; border-radius: 2px; background: #ccc; display: flex; align-items: center; justify-content: center; }
+        .rx-box span { font-size: 5px; font-weight: 700; color: white; }
+        .ft { font-size: 9px; color: #bbb; }
+
+        .concept-label { position: fixed; top: 20px; left: 20px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #ccc; letter-spacing: 0.04em; }
+    </style>
+</head>
+<body>
+
+<div class="concept-label">CONCEPT B · FULL TRANSCRIPT · DAY 50</div>
+
+<div class="phone">
+    <div class="header">
+        <div class="header-top">
+            <span class="header-title">recovry.ai <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#ccc;margin-left:5px;vertical-align:middle;"><span style="font-size:7px;font-weight:700;color:white;">Rx</span></span></span>
+            <span class="header-day">DAY 50 OF 90</span>
+        </div>
+        <div class="header-bar"><div class="header-fill" style="width:55.6%;"></div></div>
+    </div>
+
+    <div class="chat" id="chat">
+        <div class="history" id="history"></div>
+
+        <div class="day-sep">
+            <div class="day-sep-line"></div>
+            <span class="day-sep-label">TODAY · DAY 50</span>
+            <div class="day-sep-line"></div>
+        </div>
+
+        <div class="vca-msg">
+            <div class="vca-av"><span>Rx</span></div>
+            <div class="vca-bubble">
+                <p>Good morning! You're past the halfway mark. Time for your check-in.</p>
+                <div class="time">8:02 AM</div>
+            </div>
+        </div>
+
+        <div class="checkin-done">
+            <div class="ci-label">CHECK-IN COMPLETE</div>
+            <div class="ci-row"><div class="ci-dot" style="background:#33B6B0;"></div><span class="ci-name">Pain</span><span class="ci-val">Minimal</span></div>
+            <div class="ci-row"><div class="ci-dot" style="background:#33B6B0;"></div><span class="ci-name">Sleep</span><span class="ci-val">Good</span></div>
+            <div class="ci-row"><div class="ci-dot" style="background:#33B6B0;"></div><span class="ci-name">Mobility</span><span class="ci-val">Strong</span></div>
+            <div class="ci-row"><div class="ci-dot" style="background:#33B6B0;"></div><span class="ci-name">Meds</span><span class="ci-val">On track</span></div>
+            <div class="ci-row"><div class="ci-dot" style="background:#33B6B0;"></div><span class="ci-name">Nutrition</span><span class="ci-val">Good</span></div>
+        </div>
+
+        <div class="vca-msg">
+            <div class="vca-av"><span>Rx</span></div>
+            <div class="vca-bubble">
+                <p>Excellent — everything's looking strong. 40 days to go.</p>
+                <div class="time">8:05 AM</div>
+            </div>
+        </div>
+
+        <div class="status-card" style="margin-left:32px;">
+            <div class="sc-body">
+                <div class="sc-orb-wrap"><div class="sc-orb"></div></div>
+                <div class="sc-label">Excellent</div>
+                <div class="sc-sub">Recovery is going great. Keep it up.</div>
+                <div class="sc-dims">
+                    <div class="sc-dim"><div class="sc-dim-dot" style="background:#33B6B0;"></div><span class="sc-dim-name">Pain</span></div>
+                    <div class="sc-dim"><div class="sc-dim-dot" style="background:#33B6B0;"></div><span class="sc-dim-name">Sleep</span></div>
+                    <div class="sc-dim"><div class="sc-dim-dot" style="background:#33B6B0;"></div><span class="sc-dim-name">Mobility</span></div>
+                    <div class="sc-dim"><div class="sc-dim-dot" style="background:#33B6B0;"></div><span class="sc-dim-name">Meds</span></div>
+                    <div class="sc-dim"><div class="sc-dim-dot" style="background:#33B6B0;"></div><span class="sc-dim-name">Nutrition</span></div>
+                </div>
+            </div>
+            <div class="sc-footer"><div class="rx-box"><span>Rx</span></div><span class="ft">Verified</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const SC = { excellent:'#33B6B0', ontrack:'#7BADA6', watch:'#B8A07A', attention:'#D97706' };
+const names = ['Pain','Sleep','Mobility','Meds','Nutrition'];
+const labels = { excellent:'Excellent', ontrack:'On track', watch:'Watch', attention:'Care team notified' };
+
+const statuses = [
+    'ontrack','ontrack','ontrack','excellent','ontrack',
+    'attention','watch','ontrack','ontrack','ontrack',
+    'ontrack','excellent','excellent','ontrack','ontrack',
+    'ontrack','excellent','excellent','ontrack','ontrack',
+    'ontrack','ontrack','watch','attention','watch',
+    'ontrack','ontrack','excellent','ontrack','ontrack',
+    'ontrack','excellent','excellent','ontrack','ontrack',
+    'excellent','excellent','ontrack','ontrack','ontrack',
+    'excellent','excellent','excellent','ontrack','watch',
+    'ontrack','ontrack','excellent','excellent'
+];
+
+// Simulated conversations per day
+const convoTemplates = {
+    excellent: [
+        { vca:'Good morning! Time for your check-in.', time:'8:01 AM' },
+        { type:'checkin' },
+        { vca:'Everything looks great today. Keep doing what you\u2019re doing.', time:'8:04 AM' },
+        { type:'status' }
+    ],
+    ontrack: [
+        { vca:'Good morning! How are you feeling today?', time:'8:02 AM' },
+        { type:'checkin' },
+        { vca:'Looking good \u2014 recovery is on course.', time:'8:05 AM' },
+        { type:'status' }
+    ],
+    watch: [
+        { vca:'Good morning. Let\u2019s check in on how you\u2019re doing.', time:'8:01 AM' },
+        { type:'checkin' },
+        { vca:'A couple of things to keep an eye on. Nothing alarming, but I\u2019ll be monitoring.', time:'8:04 AM' },
+        { type:'status' }
+    ],
+    attention: [
+        { vca:'Good morning. Time for your check-in.', time:'8:01 AM' },
+        { type:'checkin' },
+        { vca:'I\u2019m seeing some changes that need attention. I\u2019ve notified your care team.', time:'8:04 AM' },
+        { patient:'Should I be worried?' },
+        { vca:'Dr. Chen will check in with you this afternoon. In the meantime, stay ahead of your pain meds and try to rest.', time:'8:06 AM' },
+        { type:'status' }
+    ]
+};
+
+function dimColors(st, day) {
+    const seed = day * 7;
+    const palettes = {
+        excellent: [['#33B6B0','#7BADA6'],['#33B6B0','#7BADA6'],['#33B6B0','#7BADA6'],['#33B6B0'],['#33B6B0','#7BADA6']],
+        ontrack:   [['#7BADA6','#B8A07A'],['#33B6B0','#7BADA6'],['#33B6B0','#7BADA6'],['#33B6B0'],['#7BADA6','#33B6B0']],
+        watch:     [['#B8A07A','#C4805A'],['#B8A07A','#7BADA6'],['#7BADA6','#B8A07A'],['#33B6B0'],['#7BADA6','#B8A07A']],
+        attention: [['#C4805A','#C45B4A'],['#C4805A','#B8A07A'],['#B8A07A','#C4805A'],['#33B6B0','#7BADA6'],['#C4805A','#B8A07A']]
+    };
+    const vm = {'#33B6B0':'Minimal','#7BADA6':'Mild','#B8A07A':'Moderate','#C4805A':'Significant','#C45B4A':'High'};
+    const vs = {'#33B6B0':'Good','#7BADA6':'Fair','#B8A07A':'Fair','#C4805A':'Poor','#C45B4A':'Very poor'};
+    const vmob = {'#33B6B0':'Strong','#7BADA6':'Good','#B8A07A':'Fair','#C4805A':'Limited','#C45B4A':'Very limited'};
+    const vmed = {'#33B6B0':'On track','#7BADA6':'On track','#B8A07A':'Missed','#C4805A':'Missed','#C45B4A':'Missed'};
+    const vnut = {'#33B6B0':'Good','#7BADA6':'Fair','#B8A07A':'Fair','#C4805A':'Low','#C45B4A':'Very low'};
+    const maps = [vm, vs, vmob, vmed, vnut];
+    const p = palettes[st] || palettes.ontrack;
+    return names.map((n,i) => {
+        const c = p[i][(seed + i) % p[i].length];
+        return { c, v: maps[i][c] || '' };
+    });
+}
+
+const days = statuses.map((st, i) => ({
+    day: i + 1, st, dims: dimColors(st, i + 1)
+}));
+
+function renderCheckin(dims) {
+    let h = '<div class="dx-checkin"><div class="dx-ci-label">CHECK-IN</div>';
+    dims.forEach((d,i) => {
+        h += '<div class="dx-ci-row"><div class="dx-ci-dot" style="background:'+d.c+'"></div><span class="dx-ci-name">'+names[i]+'</span><span class="dx-ci-val">'+d.v+'</span></div>';
+    });
+    return h + '</div>';
+}
+
+// Rich conversations for recent days (keyed by day number)
+const richConvos = {
+    47: [
+        { vca:'Good morning! How are you feeling today?', time:'8:02 AM' },
+        { patient:'Pretty good actually. Slept way better last night.' },
+        { vca:'That\u2019s great to hear. Sleep has been trending up this week. What do you think changed?', time:'8:03 AM' },
+        { patient:'I stopped looking at my phone before bed like you suggested. And the new pillow position helps with the knee.' },
+        { vca:'That\u2019s exactly the kind of adjustment that compounds over time. Let\u2019s do your check-in.', time:'8:04 AM' },
+        { type:'checkin' },
+        { vca:'Looking good. Sleep is the best it\u2019s been since Day 1. Keep the phone-free routine going.', time:'8:07 AM' },
+        { type:'status' },
+        { patient:'Can I start walking longer distances? I feel ready.' },
+        { vca:'Your mobility data supports that. Try adding 5 minutes to your walks this week. If you feel any sharp pain or swelling, scale back and let me know.', time:'8:09 AM' },
+        { patient:'Got it. Thanks!' }
+    ],
+    48: [
+        { vca:'Good morning! Time for your check-in.', time:'8:01 AM' },
+        { type:'checkin' },
+        { vca:'Everything looks excellent. You\u2019re ahead of where most patients are at Day 48.', time:'8:04 AM' },
+        { type:'status' },
+        { patient:'I have a question \u2014 is it normal that my knee still clicks when I go up stairs?' },
+        { vca:'Yes, that\u2019s very common and typically harmless at this stage. The clicking is usually from soft tissue settling around the new joint. It tends to diminish over the next few weeks.', time:'8:06 AM' },
+        { patient:'OK good. It doesn\u2019t hurt, just sounds weird.' },
+        { vca:'If it ever becomes painful or is accompanied by swelling, let me know right away. But clicking without pain is completely normal.', time:'8:07 AM' },
+        { patient:'Will do. Also \u2014 I went for a 20 min walk yesterday!' },
+        { vca:'That\u2019s a great milestone. How did the knee feel afterward?', time:'8:08 AM' },
+        { patient:'A little stiff but no pain. I iced it after.' },
+        { vca:'Perfect approach. The stiffness should decrease as you build up. You\u2019re doing really well.', time:'8:09 AM' }
+    ],
+    49: [
+        { vca:'Good morning! How did you sleep?', time:'8:01 AM' },
+        { patient:'Not great honestly. Woke up around 3am with some aching.' },
+        { vca:'I\u2019m sorry to hear that. Was it the knee, or more general discomfort?', time:'8:02 AM' },
+        { patient:'Mostly the knee. It felt kind of warm too.' },
+        { vca:'Some warmth and nighttime aching can happen after increasing activity. You mentioned a 20-minute walk yesterday \u2014 your body may be adjusting. Let\u2019s check in on everything.', time:'8:03 AM' },
+        { type:'checkin' },
+        { vca:'Your pain is slightly elevated from yesterday but still within normal range for your recovery stage. The sleep disruption is worth watching.', time:'8:06 AM' },
+        { type:'status' },
+        { patient:'Should I cut back on the walking?' },
+        { vca:'Not necessarily. Try 15 minutes today instead of 20, and ice for 15 minutes after. If the nighttime aching continues tomorrow, we\u2019ll adjust your plan.', time:'8:08 AM' },
+        { patient:'OK. What about the warmth? That freaked me out a little.' },
+        { vca:'Mild warmth after activity is normal \u2014 it\u2019s increased blood flow to the healing area. It should subside within an hour. If it persists beyond that, or if you notice redness or significant swelling, tell me immediately and I\u2019ll contact Dr. Chen.', time:'8:10 AM' },
+        { patient:'That makes sense. It did go away after a while.' },
+        { vca:'Good. You\u2019re doing all the right things. The fact that you\u2019re noticing these details means you\u2019re paying attention to your body, which is exactly what we want.', time:'8:11 AM' },
+        { patient:'Thanks, that helps.' }
+    ]
+};
+
+function renderConvo(d) {
+    // Use rich conversation if available for this day
+    const items = richConvos[d.day] || convoTemplates[d.st];
+    let h = '';
+    items.forEach(item => {
+        if (item.vca) {
+            h += '<div class="dx-msg"><div class="dx-av"><span>Rx</span></div><div class="dx-bubble"><p>'+item.vca+'</p><div class="dx-time">'+item.time+'</div></div></div>';
+        } else if (item.patient) {
+            h += '<div class="dx-patient"><p>'+item.patient+'</p></div>';
+        } else if (item.type === 'checkin') {
+            h += renderCheckin(d.dims);
+        } else if (item.type === 'status') {
+            // skip
+        }
+    });
+    return h;
+}
+
+function buildHistory() {
+    const el = document.getElementById('history');
+    const total = days.length;
+    let h = '';
+
+    days.forEach((d, i) => {
+        const opacity = (0.25 + (i / (total - 1)) * 0.55).toFixed(2);
+        const isAtt = d.st === 'attention';
+
+        h += '<div class="day-row'+(isAtt?' attention':'')+'" style="opacity:'+opacity+';" onclick="toggleExpand('+i+')">';
+        const starred = richConvos[d.day];
+        h += '<span class="day-num">'+(starred?'\u2605 ':'')+d.day+'</span>';
+        h += '<div class="day-dot" style="background:'+SC[d.st]+';"></div>';
+        h += '<div class="day-dims">';
+        d.dims.forEach(dim => { h += '<div class="day-mini" style="background:'+dim.c+';"></div>'; });
+        h += '</div>';
+        h += '<span class="day-status">'+labels[d.st]+'</span>';
+        h += '</div>';
+
+        // Expandable area
+        h += '<div class="day-expand" id="exp'+i+'">';
+        h += '<div class="day-expand-inner">';
+
+        // Status summary
+        h += '<div class="dx-status">';
+        h += '<div class="dx-status-label">STATUS</div>';
+        h += '<div class="dx-dims">';
+        d.dims.forEach((dim,j) => {
+            h += '<div class="dx-dim"><div class="dx-dot" style="background:'+dim.c+';"></div>'+names[j]+': '+dim.v+'</div>';
+        });
+        h += '</div></div>';
+
+        // Conversation toggle
+        h += '<div class="dx-convo-toggle" onclick="event.stopPropagation();toggleConvo('+i+')">';
+        h += '<span class="chv" id="chv'+i+'">&#9656;</span> View conversation';
+        h += '</div>';
+
+        // Conversation thread
+        h += '<div class="dx-convo" id="convo'+i+'">';
+        h += '<div class="dx-convo-inner">';
+        h += renderConvo(d);
+        h += '</div></div>';
+
+        h += '</div></div>';
+    });
+
+    el.innerHTML = h;
+}
+
+function toggleExpand(i) {
+    const el = document.getElementById('exp' + i);
+    const wasOpen = el.classList.contains('open');
+    el.classList.toggle('open');
+    // Close convo if collapsing
+    if (wasOpen) {
+        document.getElementById('convo' + i).classList.remove('open');
+        document.getElementById('chv' + i).classList.remove('open');
+    }
+}
+
+function toggleConvo(i) {
+    document.getElementById('convo' + i).classList.toggle('open');
+    document.getElementById('chv' + i).classList.toggle('open');
+}
+
+buildHistory();
+setTimeout(() => { document.getElementById('chat').scrollTop = 99999; }, 50);
+</script>
+
+</body>
+</html>

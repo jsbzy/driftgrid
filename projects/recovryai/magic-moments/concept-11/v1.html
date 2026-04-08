@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#10 — Circle of Care</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px 0;
+        }
+
+        .notification-context {
+            text-align: center;
+            padding: 0 24px 20px;
+        }
+        .notif-time {
+            font-size: 32px;
+            font-weight: 300;
+            color: #1a1a1a;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+        .notif-date {
+            font-size: 14px;
+            font-weight: 400;
+            color: #888;
+        }
+
+        .notification-card {
+            margin: 0 20px;
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .notif-header {
+            padding: 18px 20px 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .notif-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #EDF8F7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .notif-icon svg { width: 20px; height: 20px; }
+        .notif-app-info { flex: 1; }
+        .notif-app-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 1px;
+        }
+        .notif-app-sub {
+            font-size: 11px;
+            font-weight: 400;
+            color: #888;
+        }
+        .notif-timestamp {
+            font-size: 11px;
+            font-weight: 400;
+            color: #bbb;
+        }
+
+        .notif-body {
+            padding: 0 20px 20px;
+        }
+
+        .notif-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            line-height: 1.35;
+            letter-spacing: -0.01em;
+        }
+
+        .notif-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #F0FDF9;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .notif-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #059669;
+        }
+        .notif-status-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: #059669;
+        }
+
+        .notif-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .notif-metric {
+            padding: 12px;
+            background: #F8FAFA;
+            border-radius: 10px;
+        }
+        .nm-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 1px;
+        }
+        .nm-label {
+            font-size: 11px;
+            font-weight: 400;
+            color: #888;
+        }
+
+        .notif-summary {
+            font-size: 14px;
+            font-weight: 400;
+            color: #555;
+            line-height: 1.55;
+        }
+
+        .notif-footer {
+            padding: 14px 20px;
+            border-top: 1px solid rgba(0,0,0,0.06);
+            display: flex;
+            gap: 8px;
+        }
+        .notif-action {
+            flex: 1;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .notif-action.primary {
+            background: #1a1a1a;
+            color: #FFFFFF;
+        }
+        .notif-action.secondary {
+            background: rgba(0,0,0,0.04);
+            color: #555;
+        }
+
+        .notif-rx {
+            padding: 12px 20px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 400;
+            color: #888;
+        }
+        .notif-rx svg { width: 12px; height: 12px; }
+
+        .caregiver-label {
+            text-align: center;
+            padding: 20px 24px 0;
+            font-size: 12px;
+            font-weight: 400;
+            color: #bbb;
+        }
+    </style>
+</head>
+<body>
+    <div class="notification-context">
+        <div class="notif-time">8:32 AM</div>
+        <div class="notif-date">Wednesday, April 25, 2026</div>
+    </div>
+
+    <div class="notification-card">
+        <div class="notif-header">
+            <div class="notif-icon">
+                <svg viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2v5M10 13v5M2 10h5M13 10h5" stroke="#3EB5A6" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="notif-app-info">
+                <div class="notif-app-name">recovry.ai</div>
+                <div class="notif-app-sub">Caregiver Update</div>
+            </div>
+            <div class="notif-timestamp">now</div>
+        </div>
+
+        <div class="notif-body">
+            <div class="notif-title" data-drift-editable="headline" data-drift-maxlen="60">James's Recovery Update — Day 42</div>
+
+            <div class="notif-status">
+                <div class="notif-status-dot"></div>
+                <div class="notif-status-text">On Track</div>
+            </div>
+
+            <div class="notif-metrics">
+                <div class="notif-metric">
+                    <div class="nm-value">105°</div>
+                    <div class="nm-label">Knee mobility</div>
+                </div>
+                <div class="notif-metric">
+                    <div class="nm-value">4,200</div>
+                    <div class="nm-label">Steps yesterday</div>
+                </div>
+                <div class="notif-metric">
+                    <div class="nm-value">3/10</div>
+                    <div class="nm-label">Pain level</div>
+                </div>
+                <div class="notif-metric">
+                    <div class="nm-value">7.2 hrs</div>
+                    <div class="nm-label">Sleep last night</div>
+                </div>
+            </div>
+
+            <div class="notif-summary" data-drift-editable="summary" data-drift-maxlen="200">Mobility continues to improve. James completed all PT exercises yesterday and reported less stiffness in the morning. No concerns today. He's ahead of the typical recovery curve.</div>
+        </div>
+
+        <div class="notif-footer">
+            <div class="notif-action secondary">Full Report</div>
+            <div class="notif-action primary">Send James a Note</div>
+        </div>
+
+        <div class="notif-rx">
+            <svg viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#888" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Prescribed by Dr. Elena Morris, UCSF
+        </div>
+    </div>
+
+    <div class="caregiver-label">Shared with Sarah Park (wife)</div>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#11 — Provider Dashboard: Alert-Driven View</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 220px 1fr 360px;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: #1a1a1a; padding: 24px 0;
+            display: flex; flex-direction: column;
+        }
+        .sidebar-logo {
+            padding: 0 20px 24px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .logo-mark {
+            width: 28px; height: 28px; border-radius: 8px;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .logo-mark svg { width: 14px; height: 14px; }
+        .logo-text { font-size: 14px; font-weight: 600; color: white; }
+        .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 20px; font-size: 13px; color: #888; cursor: pointer;
+        }
+        .nav-item.active { color: white; background: rgba(255,255,255,0.06); }
+        .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .nav-badge {
+            margin-left: auto; font-size: 10px; font-weight: 600;
+            background: #DC2626; color: white; padding: 2px 6px;
+            border-radius: 10px;
+        }
+        .sidebar-bottom {
+            margin-top: auto; padding: 16px 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .sidebar-name { font-size: 12px; font-weight: 500; color: #ccc; }
+        .sidebar-role { font-size: 11px; color: #666; margin-top: 2px; }
+
+        /* Main — alert-driven */
+        .main { padding: 24px 28px; overflow-y: auto; }
+        .main-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .main-title { font-size: 20px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.02em; }
+        .main-sub { font-size: 13px; color: #888; margin-top: 2px; }
+
+        .timestamp-header {
+            font-size: 11px; font-weight: 500; color: #888;
+            letter-spacing: 0.03em;
+        }
+
+        /* Priority sections */
+        .priority-section { margin-bottom: 28px; }
+        .priority-label {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 12px;
+        }
+        .priority-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .priority-text { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+
+        /* Alert cards */
+        .alert-card {
+            background: white; border-radius: 12px; overflow: hidden;
+            margin-bottom: 10px; cursor: pointer;
+            transition: box-shadow 0.2s, transform 0.15s;
+        }
+        .alert-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); transform: translateY(-1px); }
+
+        .alert-card.urgent { border-left: 3px solid #DC2626; }
+        .alert-card.watch { border-left: 3px solid #D97706; }
+        .alert-card.info { border-left: 3px solid #3EB5A6; }
+
+        .alert-body { padding: 16px 16px 14px; }
+        .alert-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .alert-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 600; color: white; flex-shrink: 0;
+        }
+        .alert-patient { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+        .alert-procedure { font-size: 11px; color: #888; }
+        .alert-time { margin-left: auto; font-size: 11px; color: #bbb; }
+
+        .alert-message {
+            font-size: 13px; color: #555; line-height: 1.5;
+            padding-left: 42px;
+        }
+
+        .alert-metrics {
+            display: flex; gap: 16px; margin-top: 10px; padding-left: 42px;
+        }
+        .alert-metric {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 11px; color: #888;
+        }
+        .alert-metric strong { font-weight: 600; color: #1a1a1a; }
+
+        .alert-actions {
+            display: flex; gap: 8px; padding: 10px 16px 10px 58px;
+            border-top: 1px solid rgba(0,0,0,0.03);
+        }
+        .alert-action {
+            font-size: 12px; font-weight: 500; padding: 5px 12px;
+            border-radius: 6px; cursor: pointer; border: none;
+            font-family: 'Inter', sans-serif;
+        }
+        .alert-action.primary { background: #1a1a1a; color: white; }
+        .alert-action.secondary { background: none; color: #888; }
+
+        /* "All quiet" section */
+        .quiet-section {
+            text-align: center; padding: 32px 0;
+        }
+        .quiet-icon {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(5,150,105,0.06); display: flex;
+            align-items: center; justify-content: center;
+            margin: 0 auto 12px;
+        }
+        .quiet-icon svg { width: 24px; height: 24px; }
+        .quiet-text { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+        .quiet-sub { font-size: 13px; color: #888; margin-top: 4px; }
+
+        /* Right panel — selected alert detail */
+        .detail-panel {
+            background: white; border-left: 1px solid rgba(0,0,0,0.06);
+            padding: 24px 20px; overflow-y: auto;
+        }
+        .detail-title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 20px; }
+
+        .detail-patient {
+            display: flex; align-items: center; gap: 12px;
+            padding-bottom: 20px; border-bottom: 1px solid rgba(0,0,0,0.04);
+            margin-bottom: 20px;
+        }
+        .detail-avatar {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: #DC2626; display: flex; align-items: center;
+            justify-content: center; font-size: 16px; font-weight: 600; color: white;
+        }
+        .detail-name { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+        .detail-meta { font-size: 12px; color: #888; margin-top: 2px; }
+
+        .detail-section { margin-bottom: 20px; }
+        .detail-section-title {
+            font-size: 11px; font-weight: 600; color: #888;
+            letter-spacing: 0.04em; text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .detail-alert-msg {
+            background: rgba(220,38,38,0.04); border: 1px solid rgba(220,38,38,0.1);
+            border-radius: 10px; padding: 14px; margin-bottom: 16px;
+        }
+        .detail-alert-text {
+            font-size: 13px; font-weight: 500; color: #DC2626; line-height: 1.5;
+        }
+        .detail-alert-time { font-size: 11px; color: #888; margin-top: 6px; }
+
+        .detail-dim-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.03);
+        }
+        .detail-dim-row:last-child { border-bottom: none; }
+        .detail-dim-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .detail-dim-name { font-size: 13px; color: #1a1a1a; flex: 1; }
+        .detail-dim-val { font-size: 12px; font-weight: 500; }
+
+        .detail-convo-item {
+            display: flex; gap: 8px; margin-bottom: 10px;
+        }
+        .detail-convo-av {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: rgba(62,181,166,0.1); display: flex;
+            align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .detail-convo-av span { font-size: 7px; font-weight: 700; color: #3EB5A6; }
+        .detail-convo-bubble {
+            background: rgba(0,0,0,0.02); border-radius: 10px;
+            padding: 8px 12px; max-width: 260px;
+        }
+        .detail-convo-bubble p { font-size: 12px; color: #555; line-height: 1.45; }
+        .detail-convo-time { font-size: 10px; color: #ccc; margin-top: 2px; }
+
+        .detail-patient-msg {
+            align-self: flex-end; margin-left: auto;
+            background: rgba(0,0,0,0.03); border-radius: 10px;
+            padding: 8px 12px; max-width: 260px; margin-bottom: 10px;
+        }
+        .detail-patient-msg p { font-size: 12px; color: #555; line-height: 1.45; }
+
+        .detail-actions {
+            display: flex; gap: 8px; margin-top: 20px;
+        }
+        .detail-btn {
+            flex: 1; padding: 10px; border-radius: 8px; border: none;
+            font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+            cursor: pointer; text-align: center;
+        }
+        .detail-btn.primary { background: #1a1a1a; color: white; }
+        .detail-btn.secondary { background: rgba(0,0,0,0.04); color: #555; }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-mark">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v4M7 9v4M1 7h4M9 7h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </div>
+                <span class="logo-text">recovry.ai</span>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-item">
+                    <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
+                    Overview
+                </div>
+                <div class="nav-item">
+                    <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3.5" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 14.5c0-3.04 2.46-5.5 5.5-5.5s5.5 2.46 5.5 5.5" stroke="currentColor" stroke-width="1.3"/></svg>
+                    Patients
+                </div>
+                <div class="nav-item active">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M8 1L10 5.5H15L11 8.5L12.5 13L8 10L3.5 13L5 8.5L1 5.5H6L8 1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                    Needs Attention
+                    <span class="nav-badge">3</span>
+                </div>
+                <div class="nav-item">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M1 12l3.5-5L8 9.5l4-6.5L15 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Analytics
+                </div>
+            </div>
+            <div class="sidebar-bottom">
+                <div class="sidebar-name">Dr. Elena Morris, MD</div>
+                <div class="sidebar-role">Orthopedic Surgery</div>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="main-header">
+                <div>
+                    <div class="main-title" data-drift-editable="headline" data-drift-maxlen="40">Needs Attention</div>
+                    <div class="main-sub">3 patients require your review</div>
+                </div>
+                <div class="timestamp-header">Updated 2 min ago</div>
+            </div>
+
+            <!-- Urgent -->
+            <div class="priority-section">
+                <div class="priority-label">
+                    <div class="priority-dot" style="background: #DC2626;"></div>
+                    <span class="priority-text" style="color: #DC2626;">URGENT</span>
+                </div>
+
+                <div class="alert-card urgent">
+                    <div class="alert-body">
+                        <div class="alert-top">
+                            <div class="alert-avatar" style="background: #DC2626;">MR</div>
+                            <div>
+                                <div class="alert-patient">Maria Rodriguez</div>
+                                <div class="alert-procedure">Left TKA · Day 18</div>
+                            </div>
+                            <div class="alert-time">12 min ago</div>
+                        </div>
+                        <div class="alert-message">
+                            Significant pain increase (3.2 to 5.8) with reported warmth and swelling. Patient expressed concern. VCA recommends provider review.
+                        </div>
+                        <div class="alert-metrics">
+                            <div class="alert-metric">Pain: <strong style="color:#DC2626;">5.8</strong></div>
+                            <div class="alert-metric">Temp: <strong style="color:#D97706;">99.4°F</strong></div>
+                            <div class="alert-metric">ROM: <strong>72°</strong></div>
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="alert-action primary">Call Patient</button>
+                        <button class="alert-action secondary">View Full Record</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Watch -->
+            <div class="priority-section">
+                <div class="priority-label">
+                    <div class="priority-dot" style="background: #D97706;"></div>
+                    <span class="priority-text" style="color: #D97706;">WATCH</span>
+                </div>
+
+                <div class="alert-card watch">
+                    <div class="alert-body">
+                        <div class="alert-top">
+                            <div class="alert-avatar" style="background: #D97706;">TN</div>
+                            <div>
+                                <div class="alert-patient">Tom Nguyen</div>
+                                <div class="alert-procedure">Right Hip · Day 31</div>
+                            </div>
+                            <div class="alert-time">2 hours ago</div>
+                        </div>
+                        <div class="alert-message">
+                            Sleep quality declining for 3 consecutive nights. Pain stable but mood reported as "low." VCA has adjusted evening check-in.
+                        </div>
+                        <div class="alert-metrics">
+                            <div class="alert-metric">Sleep: <strong style="color:#D97706;">Poor</strong></div>
+                            <div class="alert-metric">Pain: <strong>3.8</strong></div>
+                            <div class="alert-metric">Mood: <strong style="color:#D97706;">Low</strong></div>
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="alert-action primary">Send Message</button>
+                        <button class="alert-action secondary">View Record</button>
+                    </div>
+                </div>
+
+                <div class="alert-card watch">
+                    <div class="alert-body">
+                        <div class="alert-top">
+                            <div class="alert-avatar" style="background: #B8A07A;">LJ</div>
+                            <div>
+                                <div class="alert-patient">Linda Johnson</div>
+                                <div class="alert-procedure">Left TKA · Day 55</div>
+                            </div>
+                            <div class="alert-time">6 hours ago</div>
+                        </div>
+                        <div class="alert-message">
+                            ROM plateau at 108° for 5 days. Expected >115° by Day 55. May benefit from PT protocol adjustment.
+                        </div>
+                        <div class="alert-metrics">
+                            <div class="alert-metric">ROM: <strong style="color:#D97706;">108°</strong></div>
+                            <div class="alert-metric">Expected: <strong>115°+</strong></div>
+                            <div class="alert-metric">Pain: <strong>3.1</strong></div>
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="alert-action primary">Adjust Protocol</button>
+                        <button class="alert-action secondary">View Record</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All quiet -->
+            <div class="quiet-section">
+                <div class="quiet-icon">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5 11-11" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="quiet-text">5 other patients are on track</div>
+                <div class="quiet-sub">No action needed at this time</div>
+            </div>
+        </div>
+
+        <!-- Detail panel — Maria Rodriguez -->
+        <div class="detail-panel">
+            <div class="detail-title">Alert Detail</div>
+
+            <div class="detail-patient">
+                <div class="detail-avatar">MR</div>
+                <div>
+                    <div class="detail-name">Maria Rodriguez</div>
+                    <div class="detail-meta">Left TKA · Day 18 of 90 · UCSF</div>
+                </div>
+            </div>
+
+            <div class="detail-alert-msg">
+                <div class="detail-alert-text">
+                    Significant pain spike with warmth and swelling at surgical site. Patient distressed. Immediate provider review recommended.
+                </div>
+                <div class="detail-alert-time">Triggered at 2:48 PM · April 24, 2026</div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">Current Dimensions</div>
+                <div class="detail-dim-row">
+                    <div class="detail-dim-dot" style="background: #DC2626;"></div>
+                    <span class="detail-dim-name">Pain</span>
+                    <span class="detail-dim-val" style="color: #DC2626;">5.8 (was 3.2)</span>
+                </div>
+                <div class="detail-dim-row">
+                    <div class="detail-dim-dot" style="background: #D97706;"></div>
+                    <span class="detail-dim-name">Sleep</span>
+                    <span class="detail-dim-val" style="color: #D97706;">Poor</span>
+                </div>
+                <div class="detail-dim-row">
+                    <div class="detail-dim-dot" style="background: #B8A07A;"></div>
+                    <span class="detail-dim-name">Mobility</span>
+                    <span class="detail-dim-val" style="color: #888;">Limited</span>
+                </div>
+                <div class="detail-dim-row">
+                    <div class="detail-dim-dot" style="background: #3EB5A6;"></div>
+                    <span class="detail-dim-name">Medication</span>
+                    <span class="detail-dim-val" style="color: #059669;">On Track</span>
+                </div>
+                <div class="detail-dim-row">
+                    <div class="detail-dim-dot" style="background: #C4805A;"></div>
+                    <span class="detail-dim-name">Nutrition</span>
+                    <span class="detail-dim-val" style="color: #888;">Low</span>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">VCA Conversation (today)</div>
+
+                <div class="detail-convo-item">
+                    <div class="detail-convo-av"><span>Rx</span></div>
+                    <div>
+                        <div class="detail-convo-bubble">
+                            <p>Good afternoon, Maria. How are you feeling?</p>
+                        </div>
+                        <div class="detail-convo-time">2:30 PM</div>
+                    </div>
+                </div>
+
+                <div class="detail-patient-msg">
+                    <p>Not good. My knee is really swollen and it hurts a lot more than yesterday. I'm scared something is wrong.</p>
+                </div>
+
+                <div class="detail-convo-item">
+                    <div class="detail-convo-av"><span>Rx</span></div>
+                    <div>
+                        <div class="detail-convo-bubble">
+                            <p>I understand that's frightening. Can you tell me more about the swelling? Is there warmth or redness around the incision?</p>
+                        </div>
+                        <div class="detail-convo-time">2:31 PM</div>
+                    </div>
+                </div>
+
+                <div class="detail-patient-msg">
+                    <p>Yes it's warm and kind of red. And the pain is like a 6 out of 10.</p>
+                </div>
+
+                <div class="detail-convo-item">
+                    <div class="detail-convo-av"><span>Rx</span></div>
+                    <div>
+                        <div class="detail-convo-bubble">
+                            <p>Thank you for telling me. I'm contacting Dr. Morris right now. She'll review your status and reach out shortly. In the meantime, elevate your leg and apply ice.</p>
+                        </div>
+                        <div class="detail-convo-time">2:32 PM</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-actions">
+                <button class="detail-btn primary">Call Maria</button>
+                <button class="detail-btn secondary">Send Message</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

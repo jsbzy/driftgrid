@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>03 — Check-In</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #F4F2EE; display: flex; align-items: center; justify-content: center; gap: 64px; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        .phone { width: 280px; height: 560px; border: 2.5px solid #C8C6C1; border-radius: 38px; background: #fff; display: flex; flex-direction: column; padding: 18px 16px; }
+        .notch { width: 60px; height: 5px; background: #E8E6E1; border-radius: 3px; align-self: center; margin-bottom: 12px; }
+        .greeting { background: #1B1B1A; border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+        .g-line { background: #3A3A38; border-radius: 3px; }
+        .g-line.w100 { width: 100px; height: 7px; margin-bottom: 4px; }
+        .g-line.w140 { width: 140px; height: 5px; }
+        .chat { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .msg-l { width: 75%; height: 28px; background: #F0EEEA; border-radius: 12px 12px 12px 3px; }
+        .slider-block { border: 1.5px solid #E8E6E1; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+        .slider-top { display: flex; justify-content: space-between; }
+        .sl { width: 50px; height: 5px; background: #E8E6E1; border-radius: 3px; }
+        .sv { width: 30px; height: 5px; background: #E8E6E1; border-radius: 3px; }
+        .slider-track { height: 4px; background: #E8E6E1; border-radius: 2px; position: relative; }
+        .slider-fill { height: 100%; background: #33B5B0; border-radius: 2px; }
+        .slider-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2.5px solid #33B5B0; position: absolute; top: -5px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .msg-l2 { width: 65%; height: 24px; background: #F0EEEA; border-radius: 12px 12px 12px 3px; }
+        .btn { background: #1B1B1A; border-radius: 20px; height: 36px; margin-top: auto; }
+        .home-bar { width: 36px; height: 3px; background: #D0D0CC; border-radius: 2px; align-self: center; margin-top: 8px; }
+
+        .categories { display: flex; flex-direction: column; gap: 14px; }
+        .cat { display: flex; align-items: center; gap: 12px; }
+        .cat-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #C8C6C1; }
+        .cat-dot.done { background: #33B5B0; border-color: #33B5B0; }
+        .cat-line { width: 80px; height: 7px; background: #E8E6E1; border-radius: 3px; }
+        .cat-sub { width: 100px; height: 5px; background: #F0EEEA; border-radius: 3px; }
+
+        .caption { position: absolute; bottom: 56px; left: 0; right: 0; text-align: center; padding: 0 200px; font-size: 19px; font-weight: 400; color: #8A8A86; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="phone">
+        <div class="notch"></div>
+        <div class="greeting"><div class="g-line w100"></div><div class="g-line w140"></div></div>
+        <div class="chat">
+            <div class="msg-l"></div>
+            <div class="slider-block">
+                <div class="slider-top"><div class="sl"></div><div class="sv"></div></div>
+                <div class="slider-track"><div class="slider-fill" style="width: 30%;"></div><div class="slider-thumb" style="left: 25%;"></div></div>
+            </div>
+            <div class="msg-l2"></div>
+            <div class="slider-block">
+                <div class="slider-top"><div class="sl"></div><div class="sv"></div></div>
+                <div class="slider-track"><div class="slider-fill" style="width: 55%;"></div><div class="slider-thumb" style="left: 50%;"></div></div>
+            </div>
+            <div class="msg-l2"></div>
+        </div>
+        <div class="btn"></div>
+        <div class="home-bar"></div>
+    </div>
+
+    <div class="categories">
+        <div class="cat"><div class="cat-dot done"></div><div class="cat-line"></div><div class="cat-sub"></div></div>
+        <div class="cat"><div class="cat-dot done"></div><div class="cat-line"></div><div class="cat-sub"></div></div>
+        <div class="cat"><div class="cat-dot"></div><div class="cat-line"></div><div class="cat-sub"></div></div>
+        <div class="cat"><div class="cat-dot"></div><div class="cat-line"></div><div class="cat-sub"></div></div>
+        <div class="cat"><div class="cat-dot"></div><div class="cat-line"></div><div class="cat-sub"></div></div>
+    </div>
+
+    <div class="caption">Every day, the VCA walks the patient through a two-minute check-in — pain, sleep, medication, nutrition, and mobility. Simple prompts. No forms.</div>
+</body>
+</html>

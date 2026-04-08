@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10 — Escalation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Inter+Tight:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #ffffff; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        /* === LEFT/RIGHT LAYOUT === */
+        .slide { display: flex; width: 100%; height: 100vh; }
+        .left { width: 46%; display: flex; align-items: center; padding-left: 120px; }
+        .right { width: 54%; display: flex; align-items: center; justify-content: center; padding-right: 60px; }
+
+        /* === TEXT BLOCK (replaces .caption) === */
+        .text-block { width: 500px; }
+        .breadcrumb {
+            font-size: 12px; font-weight: 500; color: #A3A3A0;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            margin-bottom: 16px;
+            opacity: 0; transform: translateY(8px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .headline {
+            font-size: 40px; font-weight: 600; color: #1B1B1A;
+            line-height: 1.25; letter-spacing: -0.02em;
+            margin-bottom: 22px;
+            opacity: 0; transform: translateY(12px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .detail {
+            font-size: 17px; font-weight: 400; color: #3A3A38;
+            line-height: 1.6; letter-spacing: 0.01em;
+            opacity: 0; transform: translateY(12px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .text-block .show { opacity: 1; transform: translateY(0); }
+
+        /* === PHONE === */
+        .phone {
+            width: 340px; height: 736px;
+            border-radius: 40px; background: #f4f2ee;
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 4px 60px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .status { height: 36px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 29px 5px; }
+        .s-time { font-family: 'SF Pro Text', 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #1b1b1a; letter-spacing: -0.19px; }
+        .s-icons { font-size: 10px; color: #1b1b1a; }
+
+        .appbar { display: flex; align-items: center; padding: 10px 10px; position: relative; }
+        .ab-back { width: 32px; display: flex; align-items: center; justify-content: center; }
+        .ab-back svg { width: 20px; height: 20px; color: #1c1b1f; }
+        .ab-title { position: absolute; left: 50%; transform: translateX(-50%); font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 16px; font-weight: 500; color: #1c1b1f; }
+        .ab-actions { margin-left: auto; display: flex; gap: 6px; }
+        .ab-actions svg { width: 20px; height: 20px; color: #1c1b1f; }
+
+        .toggle-wrap { padding: 6px 13px; }
+        .toggle { display: flex; background: #dcd9d5; border-radius: 100px; padding: 4px; }
+        .tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 10px; border-radius: 100px; font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: #1c1b1f; }
+        .tab.active { background: #fff; }
+        .tab svg { width: 16px; height: 16px; }
+
+        .chat { flex: 1; padding: 0; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
+
+        .ts-wrap { display: flex; align-items: center; gap: 8px; padding: 6px 16px; }
+        .ts-line { flex: 1; height: 1px; background: #d4d0ca; }
+        .ts-pill { padding: 5px 10px; border: 1px solid #b8b6b2; border-radius: 25px; font-size: 12px; font-weight: 700; color: #1c1b1f; letter-spacing: 0.05px; white-space: nowrap; }
+
+        .sender { display: flex; align-items: baseline; gap: 5px; padding: 0 13px 0 53px; margin-bottom: 4px; }
+        .sender.right { justify-content: flex-end; }
+        .s-name { font-size: 12px; font-weight: 700; color: #1b1b1a; letter-spacing: 0.05px; }
+        .s-ts { font-size: 11px; font-weight: 500; color: #6a6a66; letter-spacing: 0.04px; }
+        .s-dot { width: 2px; height: 2px; border-radius: 50%; background: #6a6a66; }
+
+        .bot-row { display: flex; gap: 8px; align-items: flex-start; padding: 0 16px 0 13px; }
+        .b-icon { width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; background: #1b1b1a; display: flex; align-items: center; justify-content: center; }
+        .b-icon svg { width: 14px; height: 14px; }
+        .b-msgs { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+
+        .bub { padding: 8px 16px; font-size: 14px; font-weight: 400; line-height: 20px; letter-spacing: 0.03px; border-radius: 8px; }
+        .bub.bot { background: #fff; color: #1c1b1f; }
+        .bub.user { background: #1b1b1a; color: #fff; width: fit-content; max-width: 75%; margin-left: auto; margin-right: 13px; }
+
+        .input-bar { display: flex; align-items: flex-end; padding: 6px 13px 5px; }
+        .in-wrap { flex: 1; display: flex; align-items: center; gap: 5px; border: 2px solid #6a6a66; border-radius: 24px; padding: 4px 4px 4px 16px; background: #fff; }
+        .in-text { flex: 1; font-size: 13px; color: #6a6a66; letter-spacing: 0.06px; padding: 4px 0; }
+        .send { width: 36px; height: 36px; border-radius: 100px; background: rgba(73,69,79,0.38); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .send svg { width: 18px; height: 18px; }
+
+        .home { width: 115px; height: 4px; background: #000; border-radius: 100px; align-self: center; margin: 6px 0 7px; }
+
+        .typing-bubble { padding: 12px 18px; border-radius: 8px; background: #fff; display: inline-flex; gap: 4px; align-items: center; height: 40px; }
+        .typing-bubble .dot { width: 7px; height: 7px; border-radius: 50%; background: #b0aeaa; animation: bounce 0.6s infinite; }
+        .typing-bubble .dot:nth-child(2) { animation-delay: 0.15s; }
+        .typing-bubble .dot:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+        .msg { opacity: 0; transform: translateY(12px); transition: opacity 0.4s ease-out, transform 0.4s ease-out; }
+        .msg.visible { opacity: 1; transform: translateY(0); }
+        .hidden { display: none; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        .patient-typing { display: flex; justify-content: flex-end; padding: 0 13px; }
+        .patient-typing-bubble { background: #1b1b1a; padding: 10px 16px; border-radius: 8px; display: inline-flex; gap: 4px; align-items: center; }
+        .patient-typing-bubble span { color: #fff; font-size: 14px; }
+        .patient-typing-bubble span:nth-child(1) { animation: blink 1s infinite; }
+        .patient-typing-bubble span:nth-child(2) { animation: blink 1s infinite 0.2s; }
+        .patient-typing-bubble span:nth-child(3) { animation: blink 1s infinite 0.4s; }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="left">
+            <div class="text-block">
+                <div class="breadcrumb" id="tb-breadcrumb">10 / ESCALATION</div>
+                <div class="headline" id="tb-headline">When something feels<br>off, it flags<br>the care team.</div>
+                <div class="detail" id="tb-detail">If the assistant detects concerning patterns — elevated pain, declining mobility, missed medications — it follows up with the patient to gather more context. Once confirmed, it packages the clinical summary and sends a structured notification to the care team. The provider receives the full conversation, recovery data, and a recommended action, all in one place.</div>
+            </div>
+        </div>
+        <div class="right">
+            <div class="phone">
+                <div class="status"><span class="s-time">9:41</span><span class="s-icons">&#9679;&#9679;&#9679;&#9679; &#8250;</span></div>
+                <div class="appbar">
+                    <div class="ab-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+                    <div class="ab-title">AI Assistant</div>
+                    <div class="ab-actions">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                    </div>
+                </div>
+                <div class="toggle-wrap">
+                    <div class="toggle">
+                        <div class="tab active">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2C10 6.418 13.582 10 18 10C13.582 10 10 13.582 10 18C10 13.582 6.418 10 2 10C6.418 10 10 6.418 10 2Z"/></svg>
+                            Assistant
+                        </div>
+                        <div class="tab">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                            Clinic
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat" id="chat">
+                    <div class="msg hidden" id="el-today">
+                        <div class="ts-wrap"><div class="ts-line"></div><div class="ts-pill">Today</div><div class="ts-line"></div></div>
+                    </div>
+                    <div class="msg hidden" id="el-sender1">
+                        <div class="sender">
+                            <span class="s-name">RecovryAI</span>
+                            <span class="s-ts">01/06/2024</span>
+                            <span class="s-dot"></span>
+                            <span class="s-ts">2:15 PM</span>
+                        </div>
+                    </div>
+                    <div class="bot-row hidden" id="el-botrow1">
+                        <div class="b-icon"><svg viewBox="0 0 20 20" fill="white"><path d="M10 2C10 6.418 13.582 10 18 10C13.582 10 10 13.582 10 18C10 13.582 6.418 10 2 10C6.418 10 10 6.418 10 2Z"/></svg></div>
+                        <div class="b-msgs">
+                            <div class="msg hidden" id="el-typing1"><div class="typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                            <div class="msg hidden" id="el-msg1"><div class="bub bot">I noticed you reported your pain as severe during today's check-in. At 25 days post-op following your total knee replacement, I'd expect this level of discomfort to have started improving by now.</div></div>
+                            <div class="msg hidden" id="el-typing2"><div class="typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                            <div class="msg hidden" id="el-msg2"><div class="bub bot">Can you describe where exactly you're feeling the pain, and whether it's constant or comes and goes?</div></div>
+                        </div>
+                    </div>
+                    <div class="msg hidden" id="el-patient-typing">
+                        <div class="patient-typing"><div class="patient-typing-bubble"><span>&#8226;</span><span>&#8226;</span><span>&#8226;</span></div></div>
+                    </div>
+                    <div class="msg hidden" id="el-patient">
+                        <div class="sender right">
+                            <span class="s-name">Marcia</span>
+                            <span class="s-ts">01/06/2024</span>
+                            <span class="s-dot"></span>
+                            <span class="s-ts">2:16 PM</span>
+                        </div>
+                        <div class="bub user">It's around the lower right side of my kneecap. It's pretty constant, especially during my bending exercises.</div>
+                    </div>
+                    <div class="msg hidden" id="el-sender3">
+                        <div class="sender">
+                            <span class="s-name">RecovryAI</span>
+                            <span class="s-ts">01/06/2024</span>
+                            <span class="s-dot"></span>
+                            <span class="s-ts">2:16 PM</span>
+                        </div>
+                    </div>
+                    <div class="bot-row hidden" id="el-botrow2">
+                        <div class="b-icon"><svg viewBox="0 0 20 20" fill="white"><path d="M10 2C10 6.418 13.582 10 18 10C13.582 10 10 13.582 10 18C10 13.582 6.418 10 2 10C6.418 10 10 6.418 10 2Z"/></svg></div>
+                        <div class="b-msgs">
+                            <div class="msg hidden" id="el-typing3"><div class="typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                            <div class="msg hidden" id="el-msg4"><div class="bub bot">Thank you for sharing that. I've sent a notification to Dr. Kwan's team regarding your symptoms. While this doesn't appear to be an emergency, it's important to address so we can ensure proper healing. In the meantime, ease off the bending exercises and apply ice to the area.</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-bar">
+                    <div class="in-wrap">
+                        <div class="in-text">Enter your message here...</div>
+                        <div class="send"><svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7-7 7 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                    </div>
+                </div>
+                <div class="home"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chat = document.getElementById('chat');
+
+        function showEl(id) {
+            const el = document.getElementById(id);
+            if (el) { el.classList.remove('hidden'); el.offsetHeight; el.classList.add('visible'); }
+        }
+        function hideEl(id) {
+            const el = document.getElementById(id);
+            if (el) { el.classList.remove('visible'); el.classList.add('hidden'); }
+        }
+        function scroll() { requestAnimationFrame(() => chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' })); }
+
+        function reset() {
+            document.querySelectorAll('.msg, .bot-row').forEach(el => { el.classList.remove('visible'); el.classList.add('hidden'); });
+            chat.scrollTop = 0;
+        }
+
+        function showText() {
+            setTimeout(() => document.getElementById('tb-breadcrumb').classList.add('show'), 200);
+            setTimeout(() => document.getElementById('tb-headline').classList.add('show'), 400);
+            setTimeout(() => document.getElementById('tb-detail').classList.add('show'), 700);
+        }
+
+        const timeline = [
+            [300,  () => { showEl('el-today'); }],
+            [600,  () => { showEl('el-sender1'); scroll(); }],
+            [900,  () => { showEl('el-botrow1'); showEl('el-typing1'); scroll(); }],
+            [2300, () => { hideEl('el-typing1'); showEl('el-msg1'); scroll(); }],
+            [4300, () => { showEl('el-typing2'); scroll(); }],
+            [6000, () => { hideEl('el-typing2'); showEl('el-msg2'); scroll(); }],
+            [6800, () => { showEl('el-patient-typing'); scroll(); }],
+            [7300, () => { hideEl('el-patient-typing'); showEl('el-patient'); scroll(); }],
+            [8400, () => { showEl('el-sender3'); scroll(); }],
+            [8600, () => { showEl('el-botrow2'); showEl('el-typing3'); scroll(); }],
+            [10000, () => { hideEl('el-typing3'); showEl('el-msg4'); scroll(); }],
+        ];
+
+        function run() {
+            reset();
+            timeline.forEach(([ms, fn]) => setTimeout(fn, ms));
+        }
+
+        // Text fades in once on load
+        showText();
+
+        // Phone animation auto-loops on timer
+        run();
+        setInterval(() => run(), 12000);
+    </script>
+</body>
+</html>

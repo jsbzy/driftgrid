@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recovery Status — 5-Tier Interactive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            display: flex; align-items: flex-start; justify-content: center;
+            padding-top: 60px;
+            user-select: none;
+        }
+
+        .container { max-width: 380px; width: 100%; padding: 20px; }
+
+        /* ── Card ── */
+        .card {
+            background: white; border: 1.5px solid rgba(0,0,0,0.05);
+            border-radius: 16px; overflow: hidden;
+        }
+        .card-body {
+            padding: 32px 28px 24px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .card-meta {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; font-weight: 500; letter-spacing: 0.06em;
+            color: #33B6B0; margin-bottom: 28px;
+            transition: color 0.4s ease;
+        }
+
+        /* ── Orb ── */
+        .orb-wrap { position: relative; width: 88px; height: 88px; margin-bottom: 24px; }
+        .orb {
+            width: 72px; height: 72px; border-radius: 50%;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            animation: breathe 3.5s ease-in-out infinite;
+            transition: background 0.5s ease, box-shadow 0.5s ease;
+        }
+        .orb::after {
+            content: ''; position: absolute; inset: -12px; border-radius: 50%;
+            background: inherit; opacity: 0.08; filter: blur(16px); z-index: -1;
+        }
+        @keyframes breathe {
+            0%,100% { transform: translate(-50%,-50%) scale(1); }
+            50% { transform: translate(-50%,-50%) scale(1.06); }
+        }
+
+        /* ── Status text ── */
+        .status-label {
+            font-size: 24px; font-weight: 300; color: #1B1B1A;
+            margin-bottom: 6px; transition: all 0.4s ease;
+        }
+        .status-sub {
+            font-size: 13px; font-weight: 300; color: #999;
+            text-align: center; line-height: 1.55; max-width: 260px;
+            margin-bottom: 28px; transition: all 0.4s ease;
+            min-height: 40px;
+        }
+
+        /* ── Slider ── */
+        .slider-area { width: 100%; margin-bottom: 8px; }
+        .slider-labels {
+            display: flex; justify-content: space-between; margin-bottom: 6px;
+        }
+        .slider-lbl {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; font-weight: 400; color: #ccc; letter-spacing: 0.03em;
+        }
+        .slider-track {
+            position: relative; width: 100%; height: 16px;
+            cursor: pointer; display: flex; align-items: center;
+        }
+        .slider-rail {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 100%; height: 2px; background: rgba(0,0,0,0.04); border-radius: 1px;
+        }
+        .slider-fill {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            height: 2px; border-radius: 1px;
+            transition: width 0.3s ease, background 0.4s ease;
+        }
+        .slider-dot {
+            position: absolute; top: 50%; transform: translate(-50%,-50%);
+            width: 10px; height: 10px; border-radius: 50%;
+            transition: left 0.3s ease, background 0.4s ease;
+            cursor: grab; z-index: 2;
+        }
+        .slider-dot:active { cursor: grabbing; transform: translate(-50%,-50%) scale(1.3); }
+        .slider-ticks {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+            pointer-events: none;
+        }
+        .tick {
+            position: absolute; top: 50%; transform: translate(-50%,-50%);
+            width: 3px; height: 3px; border-radius: 50%;
+            background: rgba(0,0,0,0.08);
+            transition: background 0.3s ease;
+        }
+        .tick.active { background: rgba(0,0,0,0.2); }
+
+        /* Return to today */
+        .return-btn {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; color: #33B6B0; cursor: pointer;
+            padding: 4px 0; margin-bottom: 20px;
+            opacity: 0; transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .return-btn.show { opacity: 1; pointer-events: auto; }
+        .return-btn:hover { color: #2a9a8d; }
+
+        /* ── Dimension dots with names ── */
+        .dims {
+            display: flex; width: 100%; justify-content: space-between;
+            padding: 0 4px;
+        }
+        .dim-wrap {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 6px; flex: 1; cursor: default;
+        }
+        .dim-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            transition: background 0.4s ease, transform 0.2s ease;
+        }
+        .dim-wrap:hover .dim-dot { transform: scale(1.25); }
+        .dim-name {
+            font-size: 9px; font-weight: 400; color: #bbb;
+        }
+
+        /* ── Footer ── */
+        .card-footer {
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+            padding: 14px 28px; border-top: 1px solid rgba(0,0,0,0.04);
+        }
+        .rx-box {
+            width: 14px; height: 14px; border-radius: 2px; background: #ccc;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .rx-box span { font-size: 6px; font-weight: 700; color: white; }
+        .ft { font-size: 10px; color: #bbb; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+            <div class="card-meta" id="meta">DAY 8 OF 90 · RECOVERY STATUS</div>
+
+            <div class="orb-wrap"><div class="orb" id="orb"></div></div>
+
+            <div class="status-label" id="label" data-drift-editable="status-label" data-drift-maxlen="30"></div>
+            <div class="status-sub" id="sub" data-drift-editable="status-sub" data-drift-maxlen="120"></div>
+
+            <!-- Interactive slider -->
+            <div class="slider-area">
+                <div class="slider-labels">
+                    <span class="slider-lbl">Day 1</span>
+                    <span class="slider-lbl">Today</span>
+                </div>
+                <div class="slider-track" id="track">
+                    <div class="slider-rail"></div>
+                    <div class="slider-fill" id="fill"></div>
+                    <div class="slider-ticks" id="ticks"></div>
+                    <div class="slider-dot" id="sdot"></div>
+                </div>
+            </div>
+
+            <div class="return-btn" id="returnBtn" onclick="goTo(8)">← Return to today</div>
+
+            <!-- Dimension dots with always-visible names -->
+            <div class="dims" id="dims"></div>
+        </div>
+
+        <div class="card-footer">
+            <div class="rx-box"><span>Rx</span></div><span class="ft">Verified</span>
+        </div>
+    </div>
+</div>
+
+<script>
+// 5-tier color system
+const SC = {
+    excellent: '#33B6B0',
+    ontrack:   '#7BADA6',
+    watch:     '#B8A07A',
+    attention: '#D97706',
+    urgent:    '#DC2626'
+};
+
+const TOTAL = 8;
+
+const data = [
+    { day:1, st:'ontrack', label:'On track', sub:'Surgery complete. Recovery is beginning as expected.',
+      dims:[{c:'#C4805A',n:'Pain'},{c:'#B8A07A',n:'Sleep'},{c:'#C4805A',n:'Mobility'},{c:'#33B6B0',n:'Meds'},{c:'#B8A07A',n:'Nutrition'}] },
+    { day:2, st:'ontrack', label:'On track', sub:'Expected discomfort. Rest and recover.',
+      dims:[{c:'#C4805A',n:'Pain'},{c:'#C4805A',n:'Sleep'},{c:'#C45B4A',n:'Mobility'},{c:'#33B6B0',n:'Meds'},{c:'#B8A07A',n:'Nutrition'}] },
+    { day:3, st:'ontrack', label:'On track', sub:'Improving. Pain starting to ease.',
+      dims:[{c:'#B8A07A',n:'Pain'},{c:'#B8A07A',n:'Sleep'},{c:'#C4805A',n:'Mobility'},{c:'#33B6B0',n:'Meds'},{c:'#7BADA6',n:'Nutrition'}] },
+    { day:4, st:'excellent', label:'Excellent', sub:'Recovery is going great. Keep it up.',
+      dims:[{c:'#7BADA6',n:'Pain'},{c:'#33B6B0',n:'Sleep'},{c:'#7BADA6',n:'Mobility'},{c:'#33B6B0',n:'Meds'},{c:'#33B6B0',n:'Nutrition'}] },
+    { day:5, st:'ontrack', label:'On track', sub:'Slight pain increase is normal around Day 5.',
+      dims:[{c:'#B8A07A',n:'Pain'},{c:'#33B6B0',n:'Sleep'},{c:'#7BADA6',n:'Mobility'},{c:'#33B6B0',n:'Meds'},{c:'#33B6B0',n:'Nutrition'}] },
+    { day:6, st:'attention', label:'Needs attention', sub:'We\u2019ve noticed some changes. Your care team has been notified.',
+      dims:[{c:'#C4805A',n:'Pain'},{c:'#C4805A',n:'Sleep'},{c:'#B8A07A',n:'Mobility'},{c:'#33B6B0',n:'Meds'},{c:'#C4805A',n:'Nutrition'}] },
+    { day:7, st:'watch', label:'Watch', sub:'Improving after care team adjustment. Keep monitoring.',
+      dims:[{c:'#B8A07A',n:'Pain'},{c:'#B8A07A',n:'Sleep'},{c:'#33B6B0',n:'Mobility'},{c:'#33B6B0',n:'Meds'},{c:'#7BADA6',n:'Nutrition'}] },
+    { day:8, st:'ontrack', label:'On track', sub:'Your recovery is progressing as expected.',
+      dims:[{c:'#7BADA6',n:'Pain'},{c:'#33B6B0',n:'Sleep'},{c:'#33B6B0',n:'Mobility'},{c:'#33B6B0',n:'Meds'},{c:'#7BADA6',n:'Nutrition'}] }
+];
+
+let currentDay = -1;
+let dragging = false;
+
+const track = document.getElementById('track');
+const fill = document.getElementById('fill');
+const sdot = document.getElementById('sdot');
+const ticks = document.getElementById('ticks');
+
+// Build tick marks — colored by day status
+for (let i = 0; i < TOTAL; i++) {
+    const t = document.createElement('div');
+    t.className = 'tick';
+    t.style.left = (i / (TOTAL - 1) * 100) + '%';
+    t.style.background = SC[data[i].st] + '60';
+    ticks.appendChild(t);
+}
+
+function dayToPercent(d) { return ((d - 1) / (TOTAL - 1)) * 100; }
+function percentToDay(p) {
+    return Math.max(1, Math.min(TOTAL, Math.round((p / 100) * (TOTAL - 1) + 1)));
+}
+
+function setDay(d) {
+    if (d === currentDay) return;
+    currentDay = d;
+    const s = data[d - 1];
+    const color = SC[s.st];
+    const pct = dayToPercent(d);
+
+    document.getElementById('meta').textContent = 'DAY ' + d + ' OF 90 \u00B7 RECOVERY STATUS';
+
+    const orb = document.getElementById('orb');
+    orb.style.background = color;
+    orb.style.boxShadow = '0 0 40px ' + color + '30, 0 0 80px ' + color + '15';
+
+    document.getElementById('label').textContent = s.label;
+    document.getElementById('sub').textContent = s.sub;
+
+    fill.style.width = pct + '%';
+    fill.style.background = color;
+    sdot.style.left = pct + '%';
+    sdot.style.background = color;
+
+    ticks.querySelectorAll('.tick').forEach((t, i) => {
+        t.classList.toggle('active', i < d);
+    });
+
+    document.getElementById('returnBtn').classList.toggle('show', d < TOTAL);
+
+    renderDims(s.dims);
+}
+
+function renderDims(dims) {
+    let h = '';
+    dims.forEach(d => {
+        h += '<div class="dim-wrap">';
+        h += '<div class="dim-dot" style="background:' + d.c + '"></div>';
+        h += '<span class="dim-name">' + d.n + '</span>';
+        h += '</div>';
+    });
+    document.getElementById('dims').innerHTML = h;
+}
+
+function goTo(d) { setDay(d); }
+
+// Slider interaction
+function getDay(e) {
+    const rect = track.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    return percentToDay(pct);
+}
+
+track.addEventListener('mousedown', e => { dragging = true; setDay(getDay(e)); });
+document.addEventListener('mousemove', e => { if (dragging) setDay(getDay(e)); });
+document.addEventListener('mouseup', () => { dragging = false; });
+track.addEventListener('touchstart', e => { dragging = true; setDay(getDay(e)); }, { passive: true });
+document.addEventListener('touchmove', e => { if (dragging) setDay(getDay(e)); }, { passive: true });
+document.addEventListener('touchend', () => { dragging = false; });
+
+// Init
+setDay(8);
+</script>
+
+</body>
+</html>

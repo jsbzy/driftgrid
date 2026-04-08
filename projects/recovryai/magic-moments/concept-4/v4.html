@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recovery Status — Daily Digest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            max-width: 380px; margin: 0 auto;
+            padding: 48px 20px 60px;
+        }
+
+        /* ── Section labels ── */
+        .section-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; font-weight: 500; letter-spacing: 0.06em;
+            color: #bbb; margin-bottom: 12px;
+        }
+
+        /* ── Today's digest card (hero) ── */
+        .digest-hero {
+            border-radius: 16px; overflow: hidden;
+            margin-bottom: 32px;
+            border: 1.5px solid rgba(0,0,0,0.05);
+            transition: background 0.4s ease, border-color 0.4s ease;
+        }
+        .dh-body { padding: 24px 24px 20px; }
+        .dh-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .dh-day {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; font-weight: 500; letter-spacing: 0.06em; color: #33B6B0;
+        }
+        .dh-status-row { display: flex; align-items: center; gap: 8px; }
+        .dh-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            transition: background 0.4s ease, box-shadow 0.4s ease;
+        }
+        .dh-dot.green  { background: #33B6B0; box-shadow: 0 0 8px rgba(51,182,176,0.3); }
+        .dh-dot.yellow { background: #D97706; box-shadow: 0 0 8px rgba(217,119,6,0.3); }
+        .dh-dot.red    { background: #DC2626; box-shadow: 0 0 8px rgba(220,38,38,0.3); }
+        .dh-status-label { font-size: 15px; font-weight: 500; color: #1B1B1A; transition: color 0.3s ease; }
+
+        /* Dimension row */
+        .dh-dims { display: flex; width: 100%; justify-content: space-between; margin-bottom: 20px; }
+        .dh-dim { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+        .dh-dim-dot { width: 10px; height: 10px; border-radius: 50%; transition: background 0.3s ease; }
+        .dh-dim-name { font-size: 9px; font-weight: 400; color: #bbb; }
+        .dh-dim-val { font-size: 10px; font-weight: 300; color: #999; }
+
+        /* Trend arrows */
+        .dh-trends { border-top: 1px solid rgba(0,0,0,0.04); padding-top: 16px; }
+        .dh-trend-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 8px; color: #ccc; letter-spacing: 0.04em; margin-bottom: 8px;
+        }
+        .dh-trend-row { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+        .dh-trend {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 11px; font-weight: 300; color: #999;
+        }
+        .dh-trend .arrow { font-weight: 500; font-size: 12px; }
+        .dh-trend .arrow.up { color: #33B6B0; }
+        .dh-trend .arrow.down { color: #C4805A; }
+        .dh-trend .arrow.flat { color: #ccc; }
+
+        /* Footer */
+        .dh-footer {
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+            padding: 12px 24px; border-top: 1px solid rgba(0,0,0,0.04);
+        }
+        .rx-box {
+            width: 14px; height: 14px; border-radius: 2px; background: #ccc;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .rx-box span { font-size: 6px; font-weight: 700; color: white; }
+        .ft { font-size: 10px; color: #bbb; }
+
+        /* ── Stacked history cards ── */
+        .stack { display: flex; flex-direction: column; gap: 6px; }
+        .digest-mini {
+            border-radius: 12px; overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.04);
+            padding: 14px 18px;
+            display: flex; align-items: center; gap: 12px;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+        .dm-day {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; font-weight: 500; color: #bbb; letter-spacing: 0.02em;
+            width: 42px; flex-shrink: 0;
+        }
+        .dm-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .dm-dims { display: flex; gap: 4px; flex-shrink: 0; }
+        .dm-mini { width: 6px; height: 6px; border-radius: 50%; }
+        .dm-label { font-size: 12px; font-weight: 300; color: #bbb; flex: 1; }
+        .digest-mini.yellow-card { border-left: 3px solid rgba(217,119,6,0.25); }
+        .digest-mini.yellow-card .dm-day { color: #D97706; }
+
+        /* ── Tint backgrounds ── */
+        .tint-green  { background: rgba(51,182,176,0.02); }
+        .tint-yellow { background: rgba(217,119,6,0.04); }
+        .tint-red    { background: rgba(220,38,38,0.04); }
+        .tint-white  { background: white; }
+
+        /* ── Progress bar ── */
+        .prog-section { margin-bottom: 28px; }
+        .prog-row { display: flex; align-items: center; gap: 10px; }
+        .prog-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; color: #bbb; letter-spacing: 0.03em; white-space: nowrap;
+        }
+        .prog-bar { flex: 1; height: 2px; background: rgba(0,0,0,0.04); border-radius: 1px; }
+        .prog-fill { height: 100%; border-radius: 1px; transition: background 0.4s ease; }
+
+        /* Controls */
+        .state-toggle { position: fixed; top: 20px; right: 20px; display: flex; gap: 6px; }
+        .state-btn {
+            font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #999;
+            background: none; border: 1px solid #ddd; padding: 5px 10px; border-radius: 5px;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .state-btn:hover { border-color: #aaa; color: #666; }
+        .state-btn.active { border-color: #888; color: #555; background: rgba(0,0,0,0.02); }
+        .concept-label {
+            position: fixed; top: 20px; left: 20px;
+            font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #ccc; letter-spacing: 0.04em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="concept-label">CONCEPT C · DAILY DIGEST</div>
+
+<!-- Progress -->
+<div class="prog-section">
+    <div class="prog-row">
+        <span class="prog-label">DAY 8 OF 90</span>
+        <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:8.9%;background:#33B6B0;"></div></div>
+    </div>
+</div>
+
+<!-- Today's Digest -->
+<div class="section-label">TODAY</div>
+<div class="digest-hero tint-green" id="heroCard">
+    <div class="dh-body">
+        <div class="dh-top">
+            <span class="dh-day">DAY 8 · MORNING DIGEST</span>
+            <div class="dh-status-row">
+                <div class="dh-dot green" id="heroDot"></div>
+                <span class="dh-status-label" id="heroLabel" data-drift-editable="status-label" data-drift-maxlen="30">On track</span>
+            </div>
+        </div>
+        <div class="dh-dims" id="heroDims"></div>
+        <div class="dh-trends" id="heroTrends"></div>
+    </div>
+    <div class="dh-footer">
+        <div class="rx-box"><span>Rx</span></div><span class="ft">Verified</span>
+    </div>
+</div>
+
+<!-- History stack -->
+<div class="section-label">THIS WEEK</div>
+<div class="stack" id="stack"></div>
+
+<div class="state-toggle">
+    <button class="state-btn active" onclick="setState('green',this)">Green</button>
+    <button class="state-btn" onclick="setState('yellow',this)">Yellow</button>
+    <button class="state-btn" onclick="setState('red',this)">Red</button>
+</div>
+
+<script>
+const SC = { green:'#33B6B0', yellow:'#D97706', red:'#DC2626' };
+const names = ['Pain','Sleep','Mobility','Meds','Appetite'];
+
+const todayStates = {
+    green: {
+        label:'On track', tint:'tint-green',
+        dims:[{c:'#7BADA6',v:'Mild'},{c:'#33B6B0',v:'Good'},{c:'#33B6B0',v:'Good'},{c:'#33B6B0',v:'On track'},{c:'#7BADA6',v:'Fair'}],
+        trends:[{name:'Pain',arrow:'\u2193',dir:'up',txt:'improving'},{name:'Sleep',arrow:'\u2192',dir:'flat',txt:'stable'},{name:'Mobility',arrow:'\u2191',dir:'up',txt:'better'},{name:'Meds',arrow:'\u2192',dir:'flat',txt:'on track'},{name:'Appetite',arrow:'\u2192',dir:'flat',txt:'stable'}]
+    },
+    yellow: {
+        label:'Needs attention', tint:'tint-yellow',
+        dims:[{c:'#C4805A',v:'Significant'},{c:'#B8A07A',v:'Fair'},{c:'#B8A07A',v:'Limited'},{c:'#33B6B0',v:'On track'},{c:'#C4805A',v:'Low'}],
+        trends:[{name:'Pain',arrow:'\u2191',dir:'down',txt:'increasing'},{name:'Sleep',arrow:'\u2193',dir:'down',txt:'declining'},{name:'Mobility',arrow:'\u2193',dir:'down',txt:'reduced'},{name:'Meds',arrow:'\u2192',dir:'flat',txt:'on track'},{name:'Appetite',arrow:'\u2193',dir:'down',txt:'declining'}]
+    },
+    red: {
+        label:'Contact your doctor', tint:'tint-red',
+        dims:[{c:'#C45B4A',v:'High'},{c:'#C45B4A',v:'Very poor'},{c:'#C4805A',v:'Limited'},{c:'#B8A07A',v:'Missed'},{c:'#C4805A',v:'Low'}],
+        trends:[{name:'Pain',arrow:'\u2191',dir:'down',txt:'worsening'},{name:'Sleep',arrow:'\u2191',dir:'down',txt:'worsening'},{name:'Mobility',arrow:'\u2193',dir:'down',txt:'declining'},{name:'Meds',arrow:'\u2717',dir:'down',txt:'missed dose'},{name:'Appetite',arrow:'\u2193',dir:'down',txt:'declining'}]
+    }
+};
+
+const history = [
+    { day:7, label:'On track',       st:'green',  tint:'tint-green',  dc:['#B8A07A','#B8A07A','#33B6B0','#33B6B0','#7BADA6'], cls:'' },
+    { day:6, label:'Needs attention', st:'yellow', tint:'tint-yellow', dc:['#C4805A','#C4805A','#B8A07A','#33B6B0','#C4805A'], cls:'yellow-card' },
+    { day:5, label:'On track',       st:'green',  tint:'tint-green',  dc:['#B8A07A','#33B6B0','#7BADA6','#33B6B0','#33B6B0'], cls:'' },
+    { day:4, label:'On track',       st:'green',  tint:'tint-green',  dc:['#7BADA6','#33B6B0','#7BADA6','#33B6B0','#33B6B0'], cls:'' }
+];
+
+function renderHero(state) {
+    const s = todayStates[state];
+    // Dot
+    document.getElementById('heroDot').className = 'dh-dot ' + state;
+    // Label
+    document.getElementById('heroLabel').textContent = s.label;
+    // Tint
+    const card = document.getElementById('heroCard');
+    card.className = 'digest-hero ' + s.tint;
+    // Progress
+    document.getElementById('progFill').style.background = SC[state];
+    // Dims
+    let dh = '';
+    s.dims.forEach((d,i) => {
+        dh += '<div class="dh-dim"><div class="dh-dim-dot" style="background:'+d.c+'"></div><span class="dh-dim-name">'+names[i]+'</span><span class="dh-dim-val">'+d.v+'</span></div>';
+    });
+    document.getElementById('heroDims').innerHTML = dh;
+    // Trends
+    let th = '<div class="dh-trend-label">VS YESTERDAY</div><div class="dh-trend-row">';
+    s.trends.forEach(t => {
+        th += '<div class="dh-trend"><span class="arrow '+t.dir+'">'+t.arrow+'</span> '+t.name+' '+t.txt+'</div>';
+    });
+    th += '</div>';
+    document.getElementById('heroTrends').innerHTML = th;
+}
+
+function renderStack() {
+    let h = '';
+    history.forEach(r => {
+        h += '<div class="digest-mini '+r.tint+' '+r.cls+'">';
+        h += '<span class="dm-day">Day '+r.day+'</span>';
+        h += '<div class="dm-dot" style="background:'+SC[r.st]+'"></div>';
+        h += '<div class="dm-dims">';
+        r.dc.forEach(c => { h += '<div class="dm-mini" style="background:'+c+'"></div>'; });
+        h += '</div>';
+        h += '<span class="dm-label">'+r.label+'</span>';
+        h += '</div>';
+    });
+    document.getElementById('stack').innerHTML = h;
+}
+
+function setState(state, btn) {
+    renderHero(state);
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+renderHero('green');
+renderStack();
+</script>
+
+</body>
+</html>

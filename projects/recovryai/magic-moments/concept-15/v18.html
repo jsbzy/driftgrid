@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Journey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #FFFFFF;
+            -webkit-font-smoothing: antialiased;
+        }
+        .slide {
+            width: 1920px; height: 1080px;
+            transform-origin: top left;
+            display: flex;
+            flex-direction: column;
+            padding: 48px 100px 40px;
+        }
+
+        /* Top bar */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 48px;
+        }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo-mark {
+            width: 32px; height: 32px; border-radius: 8px; background: #3EB5A6;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo-mark svg { width: 14px; height: 14px; }
+        .logo-text { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+        .slide-title {
+            font-size: 32px; font-weight: 700; color: #1a1a1a;
+            letter-spacing: -0.03em;
+        }
+        .rx-badge {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 12px; border-radius: 6px;
+            background: rgba(62,181,166,0.06); border: 1px solid rgba(62,181,166,0.1);
+            font-size: 11px; font-weight: 500; color: #3EB5A6;
+        }
+
+        /* Lane label */
+        .lane-tag {
+            font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+            text-transform: uppercase; color: #bbb;
+            margin-bottom: 12px;
+        }
+
+        /* Journey content */
+        .journey { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+        /* Phase grid — 4 columns */
+        .phases {
+            display: grid;
+            grid-template-columns: 1fr 2.4fr 2.4fr 1fr;
+            gap: 0;
+        }
+
+        /* Each phase column */
+        .phase { padding: 0 16px; }
+        .phase:not(:last-child) { border-right: 1px solid rgba(0,0,0,0.03); }
+
+        /* Patient row */
+        .patient-row {
+            display: grid;
+            grid-template-columns: 1fr 2.4fr 2.4fr 1fr;
+            gap: 0;
+            margin-bottom: 0;
+        }
+        .patient-cell { padding: 0 16px; display: flex; flex-direction: column; gap: 4px; justify-content: flex-end; }
+
+        /* Timeline */
+        .timeline {
+            display: grid;
+            grid-template-columns: 1fr 2.4fr 2.4fr 1fr;
+            gap: 0;
+            margin: 20px 0;
+        }
+        .tl-segment {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 16px;
+            position: relative;
+        }
+        .tl-line {
+            flex: 1; height: 2px;
+            border-radius: 1px;
+        }
+        .tl-1 .tl-line { background: #3EB5A6; }
+        .tl-2 .tl-line { background: #3EB5A6; }
+        .tl-3 .tl-line { background: #D97706; }
+        .tl-4 .tl-line { background: #059669; }
+        .tl-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .tl-1 .tl-dot { background: #3EB5A6; }
+        .tl-2 .tl-dot { background: #3EB5A6; }
+        .tl-3 .tl-dot { background: #D97706; }
+        .tl-4 .tl-dot { background: #059669; }
+        .tl-label {
+            position: absolute;
+            top: -24px; left: 16px;
+            display: flex; align-items: baseline; gap: 8px;
+        }
+        .tl-phase-name {
+            font-size: 14px; font-weight: 600; color: #1a1a1a;
+        }
+        .tl-phase-time {
+            font-size: 10px; font-weight: 400; color: #bbb;
+        }
+        .tl-arrow {
+            position: absolute;
+            right: -5px; top: 50%; transform: translateY(-50%);
+            width: 0; height: 0;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            z-index: 2;
+        }
+        .tl-1 .tl-arrow { border-left: 5px solid #3EB5A6; }
+        .tl-2 .tl-arrow { border-left: 5px solid #3EB5A6; }
+        .tl-3 .tl-arrow { border-left: 5px solid #D97706; }
+
+        /* Provider row */
+        .provider-row {
+            display: grid;
+            grid-template-columns: 1fr 2.4fr 2.4fr 1fr;
+            gap: 0;
+        }
+        .provider-cell { padding: 0 16px; display: flex; flex-direction: column; gap: 4px; justify-content: flex-start; }
+
+        /* Moment pill */
+        .m {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            background: #FAFBFC;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .m-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .m-name {
+            font-size: 13px; font-weight: 600; color: #1a1a1a;
+            flex: 1; white-space: nowrap;
+        }
+        .m-desc {
+            font-size: 11px; color: #999;
+            white-space: nowrap;
+        }
+        .m-num {
+            font-size: 9px; font-weight: 500; color: #ccc;
+            flex-shrink: 0;
+        }
+
+        /* Provider pills — subtle difference */
+        .provider-cell .m {
+            background: rgba(62,181,166,0.02);
+            border-color: rgba(62,181,166,0.06);
+        }
+
+        /* Dot colors */
+        .d-teal { background: #3EB5A6; }
+        .d-green { background: #059669; }
+        .d-blue { background: #3B82F6; }
+        .d-amber { background: #D97706; }
+        .d-red { background: #DC2626; }
+        .d-gray { background: #999; }
+
+        /* Bottom */
+        .bottom {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            margin-top: auto;
+        }
+        .bottom-text { font-size: 11px; color: #999; }
+        .bottom-text strong { font-weight: 600; color: #3EB5A6; }
+        .bottom-bar { flex: 1; height: 3px; background: rgba(0,0,0,0.04); border-radius: 2px; overflow: hidden; }
+        .bottom-fill { width: 47%; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #7BADA6, #3EB5A6); }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <!-- Top -->
+        <div class="top-bar">
+            <div class="logo">
+                <div class="logo-mark"><svg viewBox="0 0 1000 1000" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M666.16 319.463C666.16 327.133 672.345 333.35 679.975 333.35H831.937V666.65H679.975C672.345 666.65 666.16 672.868 666.16 680.538V833.3H334.605V680.538C334.605 672.868 328.42 666.65 320.79 666.65H168.827V333.35H320.79C328.42 333.35 334.605 327.133 334.605 319.463V166.7H666.16V319.463ZM500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="white"/></svg></div>
+                <span class="logo-text">recovry.ai</span>
+            </div>
+            <div class="slide-title" data-drift-editable="title" data-drift-maxlen="40">The Patient Journey</div>
+            <div class="rx-badge">Rx · Physician-Prescribed AI</div>
+        </div>
+
+        <div class="journey">
+            <!-- Patient lane label -->
+            <div class="lane-tag">Patient Experience</div>
+
+            <!-- Patient moments row -->
+            <div class="patient-row">
+                <div class="patient-cell">
+                    <div class="m"><div class="m-dot d-teal"></div><span class="m-name">Living Prescription</span><span class="m-num">#1</span></div>
+                    <div class="m"><div class="m-dot d-teal"></div><span class="m-name">Sensor Sync</span><span class="m-num">#2</span></div>
+                    <div class="m"><div class="m-dot d-teal"></div><span class="m-name">Device Monitoring</span><span class="m-num">#4</span></div>
+                </div>
+                <div class="patient-cell">
+                    <div class="m"><div class="m-dot d-green"></div><span class="m-name">Daily Check-In</span><span class="m-desc">Pain, sleep, mood</span><span class="m-num">#3</span></div>
+                    <div class="m"><div class="m-dot d-green"></div><span class="m-name">Recovery Status</span><span class="m-desc">At-a-glance health</span><span class="m-num">#7</span></div>
+                    <div class="m"><div class="m-dot d-blue"></div><span class="m-name">"Is This Normal?"</span><span class="m-desc">Ask anything</span><span class="m-num">#6</span></div>
+                </div>
+                <div class="patient-cell">
+                    <div class="m"><div class="m-dot d-amber"></div><span class="m-name">Response Pathways</span><span class="m-desc">Triage + escalation</span><span class="m-num">#5</span></div>
+                    <div class="m"><div class="m-dot d-teal"></div><span class="m-name">Circle of Care</span><span class="m-desc">Family visibility</span><span class="m-num">#10</span></div>
+                </div>
+                <div class="patient-cell">
+                    <div class="m"><div class="m-dot d-green"></div><span class="m-name">Graduation</span><span class="m-num">#8</span></div>
+                    <div class="m"><div class="m-dot d-teal"></div><span class="m-name">Ongoing Care</span><span class="m-num">#13</span></div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline">
+                <div class="tl-segment tl-1">
+                    <div class="tl-label"><span class="tl-phase-name">Prescribed</span><span class="tl-phase-time">Day 0–1</span></div>
+                    <div class="tl-dot"></div>
+                    <div class="tl-line"></div>
+                    <div class="tl-arrow"></div>
+                </div>
+                <div class="tl-segment tl-2">
+                    <div class="tl-label"><span class="tl-phase-name">Daily Rhythm</span><span class="tl-phase-time">Every day</span></div>
+                    <div class="tl-dot"></div>
+                    <div class="tl-line"></div>
+                    <div class="tl-arrow"></div>
+                </div>
+                <div class="tl-segment tl-3">
+                    <div class="tl-label"><span class="tl-phase-name">When It Matters</span><span class="tl-phase-time">Escalation</span></div>
+                    <div class="tl-dot"></div>
+                    <div class="tl-line"></div>
+                    <div class="tl-arrow"></div>
+                </div>
+                <div class="tl-segment tl-4">
+                    <div class="tl-label"><span class="tl-phase-name">Graduation</span><span class="tl-phase-time">Day 90+</span></div>
+                    <div class="tl-dot"></div>
+                    <div class="tl-line"></div>
+                </div>
+            </div>
+
+            <!-- Provider lane label -->
+            <div class="lane-tag" style="margin-top: 8px;">Care Team</div>
+
+            <!-- Provider moments row -->
+            <div class="provider-row">
+                <div class="provider-cell">
+                    <!-- empty in prescribed phase -->
+                </div>
+                <div class="provider-cell">
+                    <div class="m"><div class="m-dot d-gray"></div><span class="m-name">Provider Dashboard</span><span class="m-desc">All patients, one view</span><span class="m-num">#11</span></div>
+                </div>
+                <div class="provider-cell">
+                    <div class="m"><div class="m-dot d-red"></div><span class="m-name">Provider Alerts</span><span class="m-desc">Escalation to team</span><span class="m-num">#12</span></div>
+                    <div class="m"><div class="m-dot d-teal"></div><span class="m-name">Agentic Actions</span><span class="m-desc">AI acts when safe</span><span class="m-num">#9</span></div>
+                </div>
+                <div class="provider-cell">
+                    <!-- empty in graduation phase -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom -->
+        <div class="bottom">
+            <span class="bottom-text">James Park · Right TKA · UCSF Medical Center</span>
+            <div class="bottom-bar"><div class="bottom-fill"></div></div>
+            <span class="bottom-text"><strong>Day 42</strong> of 90</span>
+        </div>
+    </div>
+
+    <script>
+        function s() {
+            const el = document.querySelector('.slide');
+            const sc = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            el.style.transform = 'scale(' + sc + ')';
+        }
+        s(); window.addEventListener('resize', s);
+    </script>
+</body>
+</html>

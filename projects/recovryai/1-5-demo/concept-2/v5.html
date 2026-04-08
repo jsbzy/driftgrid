@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat 2 — What It Is</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased;
+            background: #F4F2EE;
+            display: flex; align-items: center; justify-content: center; gap: 80px; padding: 0 120px;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .text-side { max-width: 500px; }
+        .text-side h1 { font-size: 42px; font-weight: 600; color: #1B1B1A; line-height: 1.15; letter-spacing: -0.02em; }
+        .text-side h1 span { color: #33B5B0; }
+        .text-side p { font-size: 17px; color: #8A8A86; line-height: 1.6; margin-top: 16px; }
+
+        .phone { width: 280px; min-width: 280px; height: 560px; border: 2px solid #C8C6C1; border-radius: 36px; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
+        .ph-status { height: 36px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        .ph-status span { font-size: 11px; color: #C8C6C1; }
+        .ph-welcome { display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
+        .ph-avatar { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #C8C6C1; }
+        .ph-name { font-size: 14px; font-weight: 600; color: #1B1B1A; }
+        .ph-sub { font-size: 11px; color: #A3A3A0; }
+
+        .ph-score { margin: 8px 16px; border: 1.5px solid #E8E6E1; border-radius: 14px; padding: 20px; text-align: center; }
+        .ph-score-label { font-size: 10px; color: #A3A3A0; text-transform: uppercase; letter-spacing: 0.06em; }
+        .ph-score-val { font-size: 32px; font-weight: 700; color: #1B1B1A; margin: 4px 0; }
+        .ph-score-badge { font-size: 14px; font-weight: 600; color: #33B5B0; }
+
+        .ph-stats { padding: 8px 16px; flex: 1; }
+        .ph-stat { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F0EEEA; font-size: 13px; color: #6B6B68; }
+        .ph-stat .val { font-weight: 600; color: #1B1B1A; }
+
+        .ph-nav { height: 44px; border-top: 1px solid #E8E6E1; display: flex; align-items: center; justify-content: space-around; }
+        .ph-nav-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #C8C6C1; }
+        .ph-nav-dot.active { background: #33B5B0; border-color: #33B5B0; }
+        .ph-nav-center { width: 28px; height: 28px; border-radius: 50%; background: #33B5B0; }
+
+        .vo {
+            position: absolute; bottom: 56px; left: 0; right: 0;
+            text-align: center; padding: 0 200px;
+            font-size: 17px; font-weight: 400; color: #8A8A86; line-height: 1.6;
+        }
+        .vo em { font-style: normal; color: #33B5B0; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="text-side">
+        <h1>A physician-prescribed <span>Virtual Care Assistant</span></h1>
+        <p>Patients receive a dedicated AI companion for the critical 30-day recovery window — available around the clock, informed by clinical protocols.</p>
+    </div>
+    <div class="phone">
+        <div class="ph-status"><span>9:41</span><span>---</span></div>
+        <div class="ph-welcome">
+            <div class="ph-avatar"></div>
+            <div><div class="ph-name">Hi, Marcia</div><div class="ph-sub">Let's check in today!</div></div>
+        </div>
+        <div class="ph-score">
+            <div class="ph-score-label">Recovery Score</div>
+            <div class="ph-score-val">75.8%</div>
+            <div class="ph-score-badge">Improving</div>
+        </div>
+        <div class="ph-stats">
+            <div class="ph-stat"><span>Activity</span><span class="val">45%</span></div>
+            <div class="ph-stat"><span>Diet</span><span class="val">5%</span></div>
+            <div class="ph-stat"><span>Sleep</span><span class="val">27%</span></div>
+            <div class="ph-stat"><span>Medication</span><span class="val">32%</span></div>
+        </div>
+        <div class="ph-nav">
+            <div class="ph-nav-dot active"></div>
+            <div class="ph-nav-dot"></div>
+            <div class="ph-nav-center"></div>
+            <div class="ph-nav-dot"></div>
+            <div class="ph-nav-dot"></div>
+        </div>
+    </div>
+    <div class="vo">"We put an <em>AI-powered care assistant</em> in the patient's pocket — one that's prescribed by their surgeon, not downloaded from an app store."</div>
+</body>
+</html>

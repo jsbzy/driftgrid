@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat 2 — What It Is</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #F5F7FA; color: #1a1a1a; display: flex; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        .sidebar { width: 400px; min-width: 400px; background: #1a1a1a; color: #fff; padding: 80px 48px; display: flex; flex-direction: column; justify-content: space-between; }
+        .beat-number { font-size: 120px; font-weight: 700; color: #3EB5A6; line-height: 1; letter-spacing: -0.04em; }
+        .beat-title { font-size: 32px; font-weight: 600; margin-top: 16px; line-height: 1.2; }
+        .timing { font-size: 14px; font-weight: 400; color: #888; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .device-tag { display: inline-block; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: #3EB5A6; border: 1px solid rgba(62, 181, 166, 0.3); padding: 4px 12px; border-radius: 4px; }
+        .main { flex: 1; padding: 80px 64px; display: flex; flex-direction: column; justify-content: center; gap: 48px; }
+        .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #3EB5A6; margin-bottom: 12px; }
+        .vo-script { font-size: 28px; font-weight: 300; line-height: 1.5; color: #1a1a1a; max-width: 800px; }
+        .vo-script em { font-style: normal; color: #3EB5A6; font-weight: 500; }
+        .detail-row { display: flex; gap: 48px; }
+        .detail-block { flex: 1; }
+        .detail-text { font-size: 15px; font-weight: 400; line-height: 1.7; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div>
+            <div class="beat-number" data-drift-editable="beat-number" data-drift-maxlen="4">02</div>
+            <div class="beat-title" data-drift-editable="beat-title" data-drift-maxlen="40">What It Is</div>
+            <div class="timing" data-drift-editable="timing" data-drift-maxlen="20">8 – 15 sec</div>
+        </div>
+        <div class="device-tag">Phone — App Screen</div>
+    </div>
+    <div class="main">
+        <div>
+            <div class="section-label">Voiceover</div>
+            <div class="vo-script" data-drift-editable="vo-script" data-drift-maxlen="300">
+                "An AI-Powered&nbsp;<em>Virtual Care Assistant</em> that accompanies patients through their recovery journey at home."
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-block">
+                <div class="section-label">On-Screen Text</div>
+                <div class="detail-text" data-drift-editable="onscreen-text" data-drift-maxlen="200">
+                    Subtitle text: "Virtual Care Assistant" with brief descriptor. Phone appears showing the app home screen or onboarding welcome.
+                </div>
+            </div>
+            <div class="detail-block">
+                <div class="section-label">Visual Direction</div>
+                <div class="detail-text" data-drift-editable="visual-direction" data-drift-maxlen="300">
+                    Phone device frame slides in from right or fades up. Shows the app's home/welcome screen. Clean background. This is the first time we see the actual product. Quick — establishes that this is a mobile app patients interact with.
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</body></html>

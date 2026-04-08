@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>02c, First Check-In</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Inter+Tight:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #E8E4DE; display: flex; align-items: center; justify-content: center; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        /* Phone, Figma: 375px wide, but we scale to fit 16:9 frame */
+        .phone {
+            width: 300px; height: 650px;
+            border-radius: 40px; background: #f4f2ee;
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 4px 60px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05);
+        }
+
+        /* Status bar, Figma: pt 18px, px 36px, pb 6px */
+        .status { height: 36px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 29px 5px; }
+        .s-time { font-family: 'SF Pro Text', 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #1b1b1a; letter-spacing: -0.19px; }
+        .s-icons { font-size: 10px; color: #1b1b1a; }
+
+        /* App bar, Figma: p 12px, title 20px Inter Tight Medium */
+        .appbar { display: flex; align-items: center; padding: 10px 10px 10px; position: relative; }
+        .ab-back { width: 32px; display: flex; align-items: center; justify-content: center; }
+        .ab-back svg { width: 20px; height: 20px; color: #1c1b1f; }
+        .ab-title { position: absolute; left: 50%; transform: translateX(-50%); font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 16px; font-weight: 500; color: #1c1b1f; text-align: center; }
+        .ab-actions { margin-left: auto; display: flex; gap: 6px; }
+        .ab-actions svg { width: 20px; height: 20px; color: #1c1b1f; }
+
+        /* Toggle, Figma: bg #dcd9d5, p 4px, radius 100px, tab text 16px Inter Tight Medium */
+        .toggle-wrap { padding: 6px 13px; }
+        .toggle { display: flex; background: #dcd9d5; border-radius: 100px; padding: 3px; }
+        .tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 10px; border-radius: 100px; font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: #1c1b1f; letter-spacing: 0.02px; }
+        .tab.active { background: #fff; }
+        .tab svg { width: 16px; height: 16px; }
+
+        /* Chat area, Figma: gap 20px between message groups */
+        .chat { flex: 1; padding: 0 0; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+
+        /* Timestamp pill, Figma: 12px Bold, border #b8b6b2, px 12px py 6px, radius 25px */
+        .ts-wrap { display: flex; align-items: center; gap: 8px; padding: 6px 19px; }
+        .ts-line { flex: 1; height: 1px; background: #d4d0ca; }
+        .ts-pill { padding: 5px 10px; border: 1px solid #b8b6b2; border-radius: 25px; font-size: 10px; font-weight: 700; color: #1c1b1f; letter-spacing: 0.05px; white-space: nowrap; }
+
+        /* Sender line, Figma: name 12px Bold #1b1b1a, time 11px Medium #6a6a66 */
+        .sender { display: flex; align-items: baseline; gap: 5px; padding: 0 13px 0 53px; margin-bottom: 5px; }
+        .sender.right { justify-content: flex-end; padding: 0 13px 0 38px; }
+        .s-name { font-size: 10px; font-weight: 700; color: #1b1b1a; letter-spacing: 0.05px; }
+        .s-ts { font-size: 9px; font-weight: 500; color: #6a6a66; letter-spacing: 0.04px; }
+        .s-dot { width: 2px; height: 2px; border-radius: 50%; background: #6a6a66; }
+
+        /* Bot row, Figma: avatar 32px, gap 8px */
+        .bot-row { display: flex; gap: 6px; align-items: flex-start; padding: 0 38px 0 13px; }
+        .b-icon { width: 26px; height: 26px; flex-shrink: 0; }
+        .b-icon img { width: 100%; height: 100%; }
+        .b-msgs { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+
+        /* Bubbles, Figma: px 16px py 8px, radius 8px, font 14px Regular, line-height 20px */
+        .bub {
+            padding: 6px 13px; font-size: 11px; font-weight: 400;
+            line-height: 1.43; letter-spacing: 0.03px; border-radius: 6px;
+        }
+        .bub.bot { background: #fff; color: #1c1b1f; }
+        .bub.bot.muted { color: #8a8884; }
+        .bub.user {
+            background: #1b1b1a; color: #fff;
+            margin-left: auto; margin-right: 13px;
+        }
+
+        /* Check-in card */
+        .checkin {
+            border: 2px solid #33B5B0; border-radius: 10px;
+            padding: 13px 14px; max-width: 88%;
+        }
+        .ck-label { font-size: 10px; font-weight: 700; color: #33B5B0; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+        .ck-text { font-size: 11px; color: #1b1b1a; line-height: 1.45; margin-bottom: 10px; }
+        .ck-btn { background: #1b1b1a; color: #fff; border-radius: 20px; padding: 8px 0; font-size: 11px; font-weight: 600; text-align: center; }
+
+        /* Input, Figma: border 2px #6a6a66, radius 24px, text 16px #6a6a66 */
+        .input-bar { display: flex; align-items: flex-end; gap: 0; padding: 6px 13px 5px; }
+        .in-wrap {
+            flex: 1; display: flex; align-items: flex-end; gap: 5px;
+            border: 1.5px solid #6a6a66; border-radius: 19px;
+            padding: 5px 5px 5px 16px; background: #fff;
+        }
+        .in-text { flex: 1; font-size: 13px; color: #6a6a66; letter-spacing: 0.06px; padding: 4px 0; }
+        /* Send button, Figma: 36px, bg rgba(73,69,79,0.38) when empty, NOT teal */
+        .send {
+            width: 29px; height: 29px; border-radius: 100px;
+            background: rgba(73,69,79,0.38);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .send svg { width: 16px; height: 16px; }
+
+        /* Home indicator, Figma: 144px wide, 5px, black, radius 100px */
+        .home { width: 115px; height: 4px; background: #000; border-radius: 100px; align-self: center; margin: 6px 0 7px; }
+
+        .vo { position: absolute; bottom: 28px; left: 0; right: 0; text-align: center; padding: 0 300px; font-size: 16px; font-weight: 400; color: #A3A3A0; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="phone">
+        <div class="status">
+            <span class="s-time">9:41</span>
+            <span class="s-icons">●●●● ›</span>
+        </div>
+        <div class="appbar">
+            <div class="ab-back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </div>
+            <div class="ab-title">AI Assistant</div>
+            <div class="ab-actions">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+            </div>
+        </div>
+        <div class="toggle-wrap">
+            <div class="toggle">
+                <div class="tab active">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2l1.5 4.5H16l-3.5 3 1.5 4.5L10 11l-4 3 1.5-4.5L4 6.5h4.5z"/></svg>
+                    Assistant
+                </div>
+                <div class="tab">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                    Clinic
+                </div>
+            </div>
+        </div>
+
+        <div class="chat">
+            <!-- Timestamp -->
+            <div class="ts-wrap">
+                <div class="ts-line"></div>
+                <div class="ts-pill">Today</div>
+                <div class="ts-line"></div>
+            </div>
+
+            <!-- Faded bot message -->
+            <div>
+                <div class="sender">
+                    <span class="s-name">RecovryAI</span>
+                    <span class="s-ts">12/12/2023</span>
+                    <span class="s-dot"></span>
+                    <span class="s-ts">9:42 AM</span>
+                </div>
+                <div class="bot-row">
+                    <div class="b-icon"><img src="https://www.figma.com/api/mcp/asset/0e4cb345-0a66-4569-927c-5ee0888bd858" alt="AI"></div>
+                    <div class="b-msgs">
+                        <div class="bub bot muted">You can also ask me anything about your recovery, anytime. If something needs your care team's attention, I'll make sure they know.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient reply -->
+            <div>
+                <div class="sender right">
+                    <span class="s-name">Marcia</span>
+                    <span class="s-ts">12/12/2023</span>
+                    <span class="s-dot"></span>
+                    <span class="s-ts">9:42 AM</span>
+                </div>
+                <div class="bub user">Got it, thanks!</div>
+            </div>
+
+            <!-- VCA check-in prompt -->
+            <div>
+                <div class="sender">
+                    <span class="s-name">RecovryAI</span>
+                    <span class="s-ts">12/12/2023</span>
+                    <span class="s-dot"></span>
+                    <span class="s-ts">9:42 AM</span>
+                </div>
+                <div class="bot-row">
+                    <div class="b-icon"><img src="https://www.figma.com/api/mcp/asset/0e4cb345-0a66-4569-927c-5ee0888bd858" alt="AI"></div>
+                    <div class="b-msgs">
+                        <div class="bub bot">Great. Let's get started with your first check-in, it'll only take a couple of minutes.</div>
+                        <div class="checkin">
+                            <div class="ck-label">Daily Check-In</div>
+                            <div class="ck-text">We'll go through five quick areas: pain, sleep, medication, nutrition, and mobility.</div>
+                            <div class="ck-btn">Start Check-In →</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-bar">
+            <div class="in-wrap">
+                <div class="in-text">Enter your message here...</div>
+                <div class="send">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7-7 7 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+            </div>
+        </div>
+        <div class="home"></div>
+    </div>
+    <div class="vo">02c, Patient responds, VCA prompts first check-in → Beat 03</div>
+</body>
+</html>

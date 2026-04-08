@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecovryAI.Magic Moments Overview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #FAFBFC;
+            color: #1a1a1a;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        .page { max-width: 860px; margin: 0 auto; padding: 64px 40px 80px; }
+
+        /* Header */
+        .logo { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 48px; }
+        .logo .dot { color: #3EB5A6; }
+        h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 8px; }
+        .subtitle { font-size: 16px; font-weight: 300; color: #888; margin-bottom: 48px; }
+
+        /* Section */
+        .section { margin-bottom: 48px; }
+        .section-label {
+            font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+            color: #3EB5A6; margin-bottom: 12px;
+        }
+        h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px; }
+        p { font-size: 15px; color: #555; line-height: 1.7; margin-bottom: 12px; }
+        p strong { color: #1a1a1a; font-weight: 600; }
+
+        /* Pillar cards */
+        .pillars { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+        .pillar {
+            display: flex; gap: 16px; align-items: flex-start;
+            padding: 20px 24px;
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.04);
+            border-radius: 12px;
+        }
+        .pillar-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #3EB5A6; flex-shrink: 0; margin-top: 6px;
+        }
+        .pillar-dot.amber { background: #D97706; }
+        .pillar-dot.green { background: #059669; }
+        .pillar-dot.blue { background: #3B82F6; }
+        .pillar-dot.gray { background: #999; }
+        .pillar-title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 2px; }
+        .pillar-desc { font-size: 13px; color: #888; line-height: 1.5; }
+
+        /* Gentle callout */
+        .callout {
+            padding: 28px 32px;
+            background: rgba(62,181,166,0.04);
+            border-left: 3px solid #3EB5A6;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 16px;
+        }
+        .callout-title { font-size: 16px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+        .callout p { font-size: 14px; color: #555; margin-bottom: 0; }
+
+        /* Moments grid */
+        .moments { display: flex; flex-direction: column; gap: 0; }
+        .phase-header {
+            font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+            color: #bbb; padding: 20px 0 8px;
+        }
+        .moment {
+            display: flex; align-items: baseline; gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+        }
+        .moment:last-child { border-bottom: none; }
+        .m-num { font-size: 11px; font-weight: 500; color: #ccc; width: 20px; flex-shrink: 0; text-align: right; }
+        .m-name { font-size: 14px; font-weight: 600; color: #1a1a1a; width: 200px; flex-shrink: 0; }
+        .m-desc { font-size: 13px; color: #888; }
+
+        /* Divider */
+        hr { border: none; height: 1px; background: rgba(0,0,0,0.04); margin: 48px 0; }
+
+        /* Footer */
+        .footer { font-size: 12px; color: #bbb; text-align: center; padding-top: 32px; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="logo">recovry<span class="dot">.</span>ai</div>
+
+    <h1>Key UX Experiences & Principles</h1>
+    <div class="subtitle">A UX exploration for physician-prescribed AI in post-operative recovery</div>
+
+    <!-- The Problem -->
+    <div class="section">
+        <div class="section-label">THE GAP</div>
+        <p><strong>80% of surgeries are now same-day or outpatient.</strong> Patients come home with little more than a PDF. The 90 days that follow, the hardest part of recovery, happen largely alone. <strong>RecovryAI fills that gap</strong> as a physician-prescribed Virtual Care Assistant that monitors, guides, and acts on behalf of the patient from Day 1 to Day 90 and beyond.</p>
+    </div>
+
+    <hr>
+
+    <!-- Design Foundations -->
+    <div class="section">
+        <div class="section-label">DESIGN FOUNDATIONS</div>
+        <h2>Four Primitives</h2>
+        <p>Before individual moments, we established the foundational design language:</p>
+        <div class="pillars">
+            <div class="pillar">
+                <div class="pillar-dot"></div>
+                <div>
+                    <div class="pillar-title">Conversation-First</div>
+                    <div class="pillar-desc">Chat-based at its core. Works inside any messaging environment. As few touches as possible.</div>
+                </div>
+            </div>
+            <div class="pillar">
+                <div class="pillar-dot"></div>
+                <div>
+                    <div class="pillar-title">Embeddable Cards</div>
+                    <div class="pillar-desc">Structured information as embeddable, portable cards. The atom of the RecovryAI experience.travels wherever the patient is.</div>
+                </div>
+            </div>
+            <div class="pillar">
+                <div class="pillar-dot"></div>
+                <div>
+                    <div class="pillar-title">Rx Trust Mark</div>
+                    <div class="pillar-desc">Visual proof on every VCA message that this is physician-prescribed, FDA-pathway AI. Like the lock icon in your browser.small, ubiquitous, essential.</div>
+                </div>
+            </div>
+            <div class="pillar">
+                <div class="pillar-dot green"></div>
+                <div>
+                    <div class="pillar-title">Cognitive Gentleness</div>
+                    <div class="pillar-desc">The lens we evaluate every design through. Assumes the patient at their lowest capacity.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cognitive Gentleness callout -->
+    <div class="callout">
+        <div class="callout-title">Cognitive Gentleness</div>
+        <p>Post-surgery patients are on pain medication, exhausted, and often anxious. Every interaction assumes the patient at their lowest cognitive capacity. <strong>One question at a time.</strong> Large touch targets. Simple, warm language.never clinical jargon. The VCA feels like a calm, steady presence.not a system demanding input. This isn't a feature. It's a lens we apply to every patient-facing moment.</p>
+    </div>
+
+    <hr>
+
+    <!-- The 13 Moments -->
+    <div class="section">
+        <div class="section-label">THE EXPLORATION</div>
+        <h2>10 Magic Moments</h2>
+        <p>The following are key UX moments across the patient journey that are being explored and brought to life, both as actual product UI and as marketing abstractions for storytelling.</p>
+
+        <div class="moments">
+            <div class="phase-header">PRESCRIPTION & ACTIVATION · ONE-TIME</div>
+            <div class="moment">
+                <span class="m-num">1</span>
+                <span class="m-name">LIVE Prescribed AI</span>
+                <span class="m-desc">Doctor prescribes AI via digital signature.</span>
+            </div>
+            <div class="moment">
+                <span class="m-num">2</span>
+                <span class="m-name">Sensor Sync</span>
+                <span class="m-desc">Devices and 3rd parties connect. 24/7 data streams and monitoring.</span>
+            </div>
+
+            <div class="phase-header">CORE VCA SUPPORT · EVERY DAY</div>
+            <div class="moment">
+                <span class="m-num">3</span>
+                <span class="m-name">Check-In</span>
+                <span class="m-desc">Pain, sleep, mobility, meds, nutrition. Questions.</span>
+            </div>
+            <div class="moment">
+                <span class="m-num">4</span>
+                <span class="m-name">Recovery Status & Timeline</span>
+                <span class="m-desc">Current status and history.</span>
+            </div>
+
+            <div class="phase-header">ESCALATION & ACTIONS · WHEN NEEDED</div>
+            <div class="moment">
+                <span class="m-num">5</span>
+                <span class="m-name">Response Pathways</span>
+                <span class="m-desc">Provider response. Emergency response.</span>
+            </div>
+            <div class="moment">
+                <span class="m-num">6</span>
+                <span class="m-name">Agentic Actions</span>
+                <span class="m-desc">VCA schedules, refills, coordinates autonomously.</span>
+            </div>
+
+            <div class="phase-header">SUPPORT NETWORK · IN PARALLEL</div>
+            <div class="moment">
+                <span class="m-num">7</span>
+                <span class="m-name">Provider Dashboard & Alerts</span>
+                <span class="m-desc">Patient → cohort → health system.</span>
+            </div>
+            <div class="moment">
+                <span class="m-num">8</span>
+                <span class="m-name">Circle of Care</span>
+                <span class="m-desc">Updates and inputs from caregiver/family.</span>
+            </div>
+
+            <div class="phase-header">OUTCOME · DAY 90 + BEYOND</div>
+            <div class="moment">
+                <span class="m-num">9</span>
+                <span class="m-name">Recovery Complete</span>
+                <span class="m-desc">The emotional graduation. 90 days of showing up.</span>
+            </div>
+            <div class="moment">
+                <span class="m-num">10</span>
+                <span class="m-name">Ongoing Relationship</span>
+                <span class="m-desc">Wellness. Future surgeries. A lifelong partner.</span>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="footer">
+        recovry.ai · Magic Moments UX Exploration · March 2026
+    </div>
+</div>
+</body>
+</html>

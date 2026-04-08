@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>05 — Recovery Score</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #F4F2EE; display: flex; align-items: center; justify-content: center; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        .phone { width: 300px; height: 600px; border: 2.5px solid #C8C6C1; border-radius: 40px; background: #fff; display: flex; flex-direction: column; padding: 18px 16px; align-items: center; }
+        .notch { width: 60px; height: 5px; background: #E8E6E1; border-radius: 3px; margin-bottom: 16px; }
+        .welcome { display: flex; align-items: center; gap: 10px; align-self: flex-start; padding: 0 4px 14px; width: 100%; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #E8E6E1; }
+        .w-lines { display: flex; flex-direction: column; gap: 4px; }
+        .wl { background: #E8E6E1; border-radius: 3px; }
+        .wl.a { width: 100px; height: 7px; }
+        .wl.b { width: 70px; height: 5px; }
+        .score-ring { width: 140px; height: 140px; border: 5px solid #E8E6E1; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; margin: 8px 0; }
+        .score-ring::before { content: ''; position: absolute; inset: -5px; border-radius: 50%; border: 5px solid transparent; border-top-color: #33B5B0; border-right-color: #33B5B0; transform: rotate(30deg); }
+        .score-inner { width: 60px; height: 20px; background: #33B5B0; border-radius: 4px; opacity: 0.2; }
+        .score-label { width: 60px; height: 5px; background: #E8E6E1; border-radius: 3px; margin-top: 8px; }
+        .score-badge { width: 140px; height: 6px; background: #E8E6E1; border-radius: 3px; margin-top: 6px; }
+        .breakdown { width: 100%; padding: 0 4px; margin-top: 16px; display: flex; flex-direction: column; gap: 0; flex: 1; }
+        .bd-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0EEEA; }
+        .bd-name { width: 56px; height: 6px; background: #E8E6E1; border-radius: 3px; }
+        .bd-val { width: 28px; height: 7px; background: #E8E6E1; border-radius: 3px; }
+        .nav { margin-top: auto; width: 100%; height: 36px; border-top: 1px solid #E8E6E1; display: flex; align-items: center; justify-content: space-around; padding-top: 6px; }
+        .nd { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #D0D0CC; }
+        .nd.active { background: #33B5B0; border-color: #33B5B0; }
+        .nc { width: 22px; height: 22px; border-radius: 50%; background: #33B5B0; }
+        .hb { width: 36px; height: 3px; background: #D0D0CC; border-radius: 2px; margin-top: 8px; }
+        .caption { position: absolute; bottom: 56px; left: 0; right: 0; text-align: center; padding: 0 200px; font-size: 19px; font-weight: 400; color: #8A8A86; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="phone">
+        <div class="notch"></div>
+        <div class="welcome"><div class="avatar"></div><div class="w-lines"><div class="wl a"></div><div class="wl b"></div></div></div>
+        <div class="score-ring"><div class="score-inner"></div></div>
+        <div class="score-label"></div>
+        <div class="score-badge"></div>
+        <div class="breakdown">
+            <div class="bd-row"><div class="bd-name"></div><div class="bd-val"></div></div>
+            <div class="bd-row"><div class="bd-name"></div><div class="bd-val"></div></div>
+            <div class="bd-row"><div class="bd-name"></div><div class="bd-val"></div></div>
+            <div class="bd-row"><div class="bd-name"></div><div class="bd-val"></div></div>
+            <div class="bd-row"><div class="bd-name"></div><div class="bd-val"></div></div>
+        </div>
+        <div class="nav"><div class="nd active"></div><div class="nd"></div><div class="nc"></div><div class="nd"></div><div class="nd"></div></div>
+        <div class="hb"></div>
+    </div>
+    <div class="caption">Every check-in feeds a single recovery score — giving the patient a clear view of progress and the care team an early signal if something's off.</div>
+</body>
+</html>

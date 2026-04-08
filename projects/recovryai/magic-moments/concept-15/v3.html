@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#14 — Journey Map: Visual with Icons</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #FFFFFF;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .journey {
+            width: 1920px; height: 1080px;
+            padding: 60px 80px;
+            display: flex; flex-direction: column;
+        }
+
+        .journey-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 48px;
+        }
+        .journey-logo {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo-mark {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .logo-mark svg { width: 18px; height: 18px; }
+        .logo-text { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+        .journey-title {
+            font-size: 28px; font-weight: 300; color: #1a1a1a;
+            letter-spacing: -0.02em;
+        }
+        .journey-title strong { font-weight: 600; }
+        .journey-subtitle {
+            font-size: 14px; color: #888;
+        }
+
+        /* Timeline rail */
+        .timeline-rail {
+            position: relative;
+            flex: 1; display: flex; flex-direction: column;
+        }
+
+        /* Phase columns */
+        .phases {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0;
+            flex: 1;
+        }
+
+        .phase {
+            padding: 0 20px;
+            border-left: 1px solid rgba(0,0,0,0.04);
+            display: flex; flex-direction: column;
+        }
+        .phase:first-child { border-left: none; }
+
+        .phase-header {
+            margin-bottom: 24px;
+        }
+        .phase-num {
+            font-size: 10px; font-weight: 600; color: #3EB5A6;
+            letter-spacing: 0.06em; margin-bottom: 4px;
+        }
+        .phase-name {
+            font-size: 16px; font-weight: 600; color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        .phase-days { font-size: 12px; color: #888; }
+
+        /* Moment cards */
+        .moments { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+
+        .moment-card {
+            background: #F8F9FB;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+        .moment-card:hover {
+            background: #F0F2F5;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+        .moment-icon-row {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 10px;
+        }
+        .moment-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .moment-icon svg { width: 18px; height: 18px; }
+        .moment-icon.teal { background: rgba(62,181,166,0.1); }
+        .moment-icon.green { background: rgba(5,150,105,0.08); }
+        .moment-icon.amber { background: rgba(217,119,6,0.08); }
+        .moment-icon.red { background: rgba(220,38,38,0.06); }
+        .moment-icon.blue { background: rgba(59,130,246,0.08); }
+        .moment-icon.gray { background: rgba(0,0,0,0.04); }
+
+        .moment-label {
+            font-size: 10px; font-weight: 600; color: #888;
+            letter-spacing: 0.03em;
+        }
+        .moment-name {
+            font-size: 14px; font-weight: 600; color: #1a1a1a;
+            margin-bottom: 4px; line-height: 1.3;
+        }
+        .moment-desc {
+            font-size: 12px; color: #888; line-height: 1.4;
+        }
+
+        /* Current marker */
+        .current-marker {
+            position: absolute;
+            top: 0; bottom: 0;
+            border-left: 2px dashed #3EB5A6;
+            left: calc(100% * 42 / 90);
+            z-index: 10;
+        }
+        .current-label {
+            position: absolute;
+            top: -28px; left: -20px;
+            font-size: 10px; font-weight: 600;
+            color: #3EB5A6; background: rgba(62,181,166,0.06);
+            padding: 3px 8px; border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        /* Flow arrow at bottom */
+        .flow-bar {
+            margin-top: 20px; padding: 16px 0;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex; align-items: center;
+        }
+        .flow-line {
+            flex: 1; height: 3px; background: linear-gradient(90deg,
+                #3EB5A6 0%, #3EB5A6 47%, rgba(0,0,0,0.06) 47%);
+            border-radius: 2px; position: relative;
+        }
+        .flow-dot {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #3EB5A6; border: 2px solid white;
+            box-shadow: 0 0 0 3px rgba(62,181,166,0.15);
+            left: 47%;
+        }
+        .flow-label-start { font-size: 11px; color: #888; margin-right: 12px; }
+        .flow-label-end { font-size: 11px; color: #888; margin-left: 12px; }
+    </style>
+</head>
+<body>
+    <div class="journey">
+        <div class="journey-header">
+            <div class="journey-logo">
+                <div class="logo-mark">
+                    <svg viewBox="0 0 18 18" fill="none"><path d="M9 2v5M9 11v5M2 9h5M11 9h5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <span class="logo-text">recovry.ai</span>
+            </div>
+            <div style="text-align: center;">
+                <div class="journey-title"><strong>The Patient Journey</strong></div>
+                <div class="journey-subtitle">James Park · Right Total Knee Arthroplasty · 90-Day Recovery</div>
+            </div>
+            <div class="journey-subtitle">Day 42 of 90</div>
+        </div>
+
+        <div class="timeline-rail" style="position: relative;">
+            <div class="phases">
+                <!-- Phase 1: Prescribed -->
+                <div class="phase">
+                    <div class="phase-header">
+                        <div class="phase-num">ACT 1</div>
+                        <div class="phase-name">Prescribed</div>
+                        <div class="phase-days">Pre-surgery</div>
+                    </div>
+                    <div class="moments">
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon teal">
+                                    <svg viewBox="0 0 18 18" fill="none"><rect x="3" y="2" width="12" height="14" rx="2" stroke="#3EB5A6" stroke-width="1.5"/><path d="M6 6h6M6 9h6M6 12h4" stroke="#3EB5A6" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                </div>
+                                <span class="moment-label">MM#1</span>
+                            </div>
+                            <div class="moment-name">Living Prescription</div>
+                            <div class="moment-desc">Doctor signs the prescription. AI care begins.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 2: Day 1 -->
+                <div class="phase">
+                    <div class="phase-header">
+                        <div class="phase-num">ACT 2</div>
+                        <div class="phase-name">Day 1</div>
+                        <div class="phase-days">Setup & Activation</div>
+                    </div>
+                    <div class="moments">
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon teal">
+                                    <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6" stroke="#3EB5A6" stroke-width="1.5"/><circle cx="9" cy="9" r="2" fill="#3EB5A6"/><path d="M9 3V1M9 17V15M3 9H1M17 9H15" stroke="#3EB5A6" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                </div>
+                                <span class="moment-label">MM#2 + MM#4</span>
+                            </div>
+                            <div class="moment-name">Sensor Sync</div>
+                            <div class="moment-desc">Devices connect. Safety net activates. 24/7 monitoring begins.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 3: Daily -->
+                <div class="phase">
+                    <div class="phase-header">
+                        <div class="phase-num">ACT 3</div>
+                        <div class="phase-name">Daily Heartbeat</div>
+                        <div class="phase-days">Days 1-90</div>
+                    </div>
+                    <div class="moments">
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon green">
+                                    <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6" stroke="#059669" stroke-width="1.5"/><path d="M6 9l2 2 4-4" stroke="#059669" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <span class="moment-label">MM#3</span>
+                            </div>
+                            <div class="moment-name">Check-In</div>
+                            <div class="moment-desc">One question at a time. Pain, sleep, mobility, meds, nutrition.</div>
+                        </div>
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon green">
+                                    <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="5" fill="#059669" opacity="0.15"/><circle cx="9" cy="9" r="3" fill="#059669"/></svg>
+                                </div>
+                                <span class="moment-label">MM#7</span>
+                            </div>
+                            <div class="moment-name">Recovery Status</div>
+                            <div class="moment-desc">The breathing orb. One glance = how you're doing.</div>
+                        </div>
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon blue">
+                                    <svg viewBox="0 0 18 18" fill="none"><path d="M4 14V4l5 4-5 4z" fill="#3B82F6" opacity="0.5"/><path d="M9 14V4l5 4-5 4z" fill="#3B82F6"/></svg>
+                                </div>
+                                <span class="moment-label">MM#6</span>
+                            </div>
+                            <div class="moment-name">"Is This Normal?"</div>
+                            <div class="moment-desc">Ask anything. Get answers backed by YOUR data.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 4: Something's Off -->
+                <div class="phase">
+                    <div class="phase-header">
+                        <div class="phase-num">ACT 4</div>
+                        <div class="phase-name">Something's Off</div>
+                        <div class="phase-days">When needed</div>
+                    </div>
+                    <div class="moments">
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon amber">
+                                    <svg viewBox="0 0 18 18" fill="none"><path d="M9 3L16 15H2L9 3z" stroke="#D97706" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 8v3M9 13h.01" stroke="#D97706" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                </div>
+                                <span class="moment-label">MM#5</span>
+                            </div>
+                            <div class="moment-name">Response Pathways</div>
+                            <div class="moment-desc">Green, yellow, red. Calm, clear, escalated as needed.</div>
+                        </div>
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon red">
+                                    <svg viewBox="0 0 18 18" fill="none"><path d="M5 5l8 8M13 5L5 13" stroke="#DC2626" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                </div>
+                                <span class="moment-label">MM#12</span>
+                            </div>
+                            <div class="moment-name">Provider Alerts</div>
+                            <div class="moment-desc">Real-time alerts with full context and one-tap actions.</div>
+                        </div>
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon teal">
+                                    <svg viewBox="0 0 18 18" fill="none"><path d="M3 9h3l2-4 2 8 2-4h3" stroke="#3EB5A6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <span class="moment-label">MM#9</span>
+                            </div>
+                            <div class="moment-name">Agentic Actions</div>
+                            <div class="moment-desc">VCA schedules, refills, coordinates -- autonomously.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 5: The Circle -->
+                <div class="phase">
+                    <div class="phase-header">
+                        <div class="phase-num">ACT 5</div>
+                        <div class="phase-name">The Circle</div>
+                        <div class="phase-days">Patient + Caregiver + Provider</div>
+                    </div>
+                    <div class="moments">
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon teal">
+                                    <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="#3EB5A6" stroke-width="1.5"/><circle cx="4" cy="14" r="2" stroke="#3EB5A6" stroke-width="1.2"/><circle cx="14" cy="14" r="2" stroke="#3EB5A6" stroke-width="1.2"/><path d="M9 9v2M5.5 12.5L8 11M12.5 12.5L10 11" stroke="#3EB5A6" stroke-width="1" stroke-linecap="round"/></svg>
+                                </div>
+                                <span class="moment-label">MM#10</span>
+                            </div>
+                            <div class="moment-name">Circle of Care</div>
+                            <div class="moment-desc">Daily digest for Sarah. Alerts when attention needed.</div>
+                        </div>
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon gray">
+                                    <svg viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="14" height="12" rx="2" stroke="#555" stroke-width="1.5"/><path d="M2 7h14" stroke="#555" stroke-width="1.5"/></svg>
+                                </div>
+                                <span class="moment-label">MM#11</span>
+                            </div>
+                            <div class="moment-name">Provider Dashboard</div>
+                            <div class="moment-desc">Cohort view, patient deep-dives, alert-driven workflow.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 6: Graduation -->
+                <div class="phase">
+                    <div class="phase-header">
+                        <div class="phase-num">ACT 6</div>
+                        <div class="phase-name">Graduation</div>
+                        <div class="phase-days">Day 90 + Beyond</div>
+                    </div>
+                    <div class="moments">
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon green">
+                                    <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6" stroke="#059669" stroke-width="1.5"/><path d="M6 9l2 2 4-4" stroke="#059669" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
+                                <span class="moment-label">MM#8</span>
+                            </div>
+                            <div class="moment-name">Recovery Complete</div>
+                            <div class="moment-desc">The emotional graduation. 90 days of showing up.</div>
+                        </div>
+                        <div class="moment-card">
+                            <div class="moment-icon-row">
+                                <div class="moment-icon teal">
+                                    <svg viewBox="0 0 18 18" fill="none"><path d="M9 2C5.13 2 2 5.13 2 9s3.13 7 7 7 7-3.13 7-7" stroke="#3EB5A6" stroke-width="1.5" stroke-linecap="round"/><path d="M14 4l-5 5" stroke="#3EB5A6" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                </div>
+                                <span class="moment-label">MM#13</span>
+                            </div>
+                            <div class="moment-name">Ongoing Relationship</div>
+                            <div class="moment-desc">Weekly check-ins. Future surgeries. One year anniversary.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flow-bar">
+            <span class="flow-label-start">Surgery</span>
+            <div class="flow-line">
+                <div class="flow-dot"></div>
+            </div>
+            <span class="flow-label-end">Ongoing</span>
+        </div>
+    </div>
+</body>
+</html>

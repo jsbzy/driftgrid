@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecovryAI — Patient Journey (Detailed)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            padding: 36px 56px 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .header-left {}
+        .wordmark {
+            font-size: 14px;
+            font-weight: 600;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .wordmark .dot { color: #3EB5A6; }
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: -0.03em;
+        }
+        .header-right {
+            text-align: right;
+        }
+        .hr-patient {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+        .hr-detail {
+            font-size: 12px;
+            font-weight: 400;
+            color: #888;
+        }
+
+        /* Main area */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 56px;
+            min-height: 0;
+        }
+
+        /* Timeline track */
+        .timeline-track {
+            position: relative;
+            height: 4px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 2px;
+            margin: 0 80px 48px;
+        }
+        .timeline-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 47%;
+            background: #3EB5A6;
+            border-radius: 2px;
+        }
+
+        /* Acts container */
+        .acts {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+        }
+
+        .act-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Act card */
+        .act-card {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 14px;
+            padding: 20px 18px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .act-card.current {
+            border-color: rgba(62,181,166,0.2);
+        }
+
+        .ac-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .ac-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .ac-dot.complete { background: #059669; }
+        .ac-dot.current { background: #3EB5A6; }
+        .ac-dot.future { background: #FFFFFF; border: 1.5px solid rgba(0,0,0,0.1); }
+        .ac-dot svg { width: 16px; height: 16px; }
+
+        .ac-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .ac-label.complete { color: #059669; }
+        .ac-label.current { color: #3EB5A6; }
+        .ac-label.future { color: #bbb; }
+
+        .ac-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: -0.01em;
+            margin-bottom: 4px;
+        }
+        .act-col.future-col .ac-title { color: #aaa; }
+
+        .ac-timing {
+            font-size: 11px;
+            font-weight: 400;
+            color: #888;
+            margin-bottom: 14px;
+        }
+
+        .ac-moments {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+        .ac-moment {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: #F8FAFA;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 400;
+            color: #555;
+        }
+        .act-col.future-col .ac-moment {
+            color: #bbb;
+            background: rgba(0,0,0,0.02);
+        }
+        .ac-moment-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .ac-moment-dot.complete { background: #059669; }
+        .ac-moment-dot.current { background: #3EB5A6; }
+        .ac-moment-dot.future { background: #ccc; }
+
+        /* Legend & footer */
+        .footer {
+            padding: 0 56px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #888;
+        }
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .legend-dot.ld-complete { background: #059669; }
+        .legend-dot.ld-current { background: #3EB5A6; }
+        .legend-dot.ld-future { background: #FFFFFF; border: 1.5px solid rgba(0,0,0,0.1); }
+        .footer-right {
+            font-size: 11px;
+            color: #bbb;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="wordmark">recovry<span class="dot">.</span>ai</div>
+            <div class="page-title" data-drift-editable="headline" data-drift-maxlen="50">The 90-Day Recovery Journey</div>
+        </div>
+        <div class="header-right">
+            <div class="hr-patient">James Park, 58</div>
+            <div class="hr-detail">R Total Knee Arthroplasty · Dr. Elena Morris · UCSF</div>
+            <div class="hr-detail">March 14 – June 12, 2026</div>
+        </div>
+    </div>
+
+    <div class="main">
+        <!-- Track -->
+        <div class="timeline-track">
+            <div class="timeline-fill"></div>
+        </div>
+
+        <!-- Cards -->
+        <div class="acts">
+            <!-- Act 1 -->
+            <div class="act-col">
+                <div class="act-card">
+                    <div class="ac-top">
+                        <div class="ac-dot complete">
+                            <svg viewBox="0 0 16 16" fill="none"><path d="M4 8L7 11L12 5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div class="ac-label complete">Act 1</div>
+                    </div>
+                    <div class="ac-title">Prescribed</div>
+                    <div class="ac-timing">Pre-surgery</div>
+                    <div class="ac-moments">
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot complete"></div>
+                            Rx Trust Mark
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot complete"></div>
+                            Living Prescription
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot complete"></div>
+                            Trust Established
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Act 2 -->
+            <div class="act-col">
+                <div class="act-card">
+                    <div class="ac-top">
+                        <div class="ac-dot complete">
+                            <svg viewBox="0 0 16 16" fill="none"><path d="M4 8L7 11L12 5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div class="ac-label complete">Act 2</div>
+                    </div>
+                    <div class="ac-title">Activation</div>
+                    <div class="ac-timing">Day 1</div>
+                    <div class="ac-moments">
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot complete"></div>
+                            VCA Onboarding
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot complete"></div>
+                            Sensor Sync
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot complete"></div>
+                            First Check-In
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Act 3 — current -->
+            <div class="act-col">
+                <div class="act-card current">
+                    <div class="ac-top">
+                        <div class="ac-dot current">
+                            <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="white"/></svg>
+                        </div>
+                        <div class="ac-label current">Act 3</div>
+                    </div>
+                    <div class="ac-title">Daily Heartbeat</div>
+                    <div class="ac-timing">Days 2–60</div>
+                    <div class="ac-moments">
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot current"></div>
+                            Daily Check-Ins
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot current"></div>
+                            "Is This Normal?"
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot current"></div>
+                            Recovery Status
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Act 4 -->
+            <div class="act-col future-col">
+                <div class="act-card">
+                    <div class="ac-top">
+                        <div class="ac-dot future">
+                            <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="#bbb" stroke-width="1.2"/><path d="M8 6v2.5M8 10h.01" stroke="#bbb" stroke-width="1.2" stroke-linecap="round"/></svg>
+                        </div>
+                        <div class="ac-label future">Act 4</div>
+                    </div>
+                    <div class="ac-title">Something's Off</div>
+                    <div class="ac-timing">As needed</div>
+                    <div class="ac-moments">
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot future"></div>
+                            Escalation Pathways
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot future"></div>
+                            Provider Alerts
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot future"></div>
+                            Agentic Actions
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Act 5 -->
+            <div class="act-col future-col">
+                <div class="act-card">
+                    <div class="ac-top">
+                        <div class="ac-dot future">
+                            <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="#bbb" stroke-width="1.2"/><circle cx="8" cy="7" r="2" stroke="#bbb" stroke-width="1"/></svg>
+                        </div>
+                        <div class="ac-label future">Act 5</div>
+                    </div>
+                    <div class="ac-title">The Circle</div>
+                    <div class="ac-timing">Ongoing</div>
+                    <div class="ac-moments">
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot future"></div>
+                            Caregiver Updates
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot future"></div>
+                            Provider Dashboard
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot future"></div>
+                            Circle of Care
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Act 6 -->
+            <div class="act-col future-col">
+                <div class="act-card">
+                    <div class="ac-top">
+                        <div class="ac-dot future">
+                            <svg viewBox="0 0 16 16" fill="none"><path d="M5 8L7.5 10.5L11 6" stroke="#bbb" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div class="ac-label future">Act 6</div>
+                    </div>
+                    <div class="ac-title">Graduation</div>
+                    <div class="ac-timing">Day 90+</div>
+                    <div class="ac-moments">
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot future"></div>
+                            Recovery Timeline
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot future"></div>
+                            Completion Moment
+                        </div>
+                        <div class="ac-moment">
+                            <div class="ac-moment-dot future"></div>
+                            Ongoing Relationship
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot ld-complete"></div>
+                Complete
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot ld-current"></div>
+                Current Phase
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot ld-future"></div>
+                Ahead
+            </div>
+        </div>
+        <div class="footer-right">FDA Breakthrough Device Designation · Physician-Prescribed AI</div>
+    </div>
+</body>
+</html>

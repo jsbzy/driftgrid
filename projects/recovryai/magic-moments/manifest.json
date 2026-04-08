@@ -1,0 +1,1486 @@
+{
+  "project": {
+    "name": "Magic Moments",
+    "slug": "magic-moments",
+    "client": "recovryai",
+    "canvas": "desktop",
+    "created": "2026-03-22T00:00:00.000Z",
+    "links": []
+  },
+  "concepts": [
+    {
+      "id": "concept-15",
+      "label": "MM#14 \u2014 UX Journey Map",
+      "description": "Landscape 1920x1080 \u2014 complete patient journey as horizontal timeline with 6-act structure",
+      "position": 1,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-15/v2.html",
+          "parentId": "v1",
+          "changelog": "Card grid \u2014 6 act cards in a row with moment items listed inside each, progress track above",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-15-v2.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-15/v5.html",
+          "parentId": "v2",
+          "changelog": "Simplified 4 acts \u2014 large act cards with connector arrows, moment pills inside each, tighter presentation focus",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-15-v5.png"
+        },
+        {
+          "id": "v13",
+          "number": 13,
+          "file": "concept-15/v13.html",
+          "parentId": "v12",
+          "changelog": "Column-row hybrid \u2014 bookend columns (Prescription left, Outcome right), center has 3 horizontal rows (Companion, Guardian, Network)",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-15-v13.png"
+        },
+        {
+          "id": "v17",
+          "number": 17,
+          "file": "concept-15/v17.html",
+          "parentId": "v16",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T21:42:14.758Z",
+          "thumbnail": ".thumbs/concept-15-v17.png"
+        },
+        {
+          "id": "v19",
+          "number": 19,
+          "file": "concept-15/v19.html",
+          "parentId": "v18",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T04:36:35.904Z",
+          "thumbnail": ".thumbs/concept-15-v19.png"
+        },
+        {
+          "id": "v22",
+          "number": 22,
+          "file": "concept-15/v22.html",
+          "parentId": "v21",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T15:22:08.692Z",
+          "thumbnail": ".thumbs/concept-15-v22.png"
+        },
+        {
+          "id": "v23",
+          "number": 23,
+          "file": "concept-15/v23.html",
+          "parentId": "v22",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T17:15:59.691Z",
+          "thumbnail": ".thumbs/concept-15-v23.png"
+        },
+        {
+          "id": "v24",
+          "number": 24,
+          "file": "concept-15/v24.html",
+          "parentId": "v23",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T03:19:56.426Z",
+          "thumbnail": ".thumbs/concept-15-v24.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-2",
+      "label": "MM#1 \u2014 Living Prescription",
+      "description": "The Rx Moment \u2014 the first physician-prescribed AI prescription artifact",
+      "position": 2,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-2/v1.html",
+          "parentId": null,
+          "changelog": "Static living prescription card",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-2-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-2/v2.html",
+          "parentId": "v1",
+          "changelog": "Animated \u2014 narrative build (video)",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-2-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-2/v3.html",
+          "parentId": "v2",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:35:36.256Z",
+          "thumbnail": ".thumbs/concept-2-v3.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-2/v4.html",
+          "parentId": "v3",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:35:42.381Z",
+          "thumbnail": ".thumbs/concept-2-v4.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-6",
+      "label": "MM#4 \u2014 Sensor Sync",
+      "description": "The moment devices connect \u2014 Apple Watch and Knee Sensor pairing with a satisfying connected state",
+      "position": 3,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-6/v1.html",
+          "parentId": null,
+          "changelog": "Device cards with metrics \u2014 two stacked cards showing connected status and live data, VCA confirmation below",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-6-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-6/v2.html",
+          "parentId": "v1",
+          "changelog": "Centered pairing visual \u2014 device bubbles with animated connection dots, confirmation card below",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-6-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-6/v3.html",
+          "parentId": "v2",
+          "changelog": "Real UI \u2014 connected state with data flow lines, live metrics strip, warm VCA confirmation",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-6-v3.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-6/v5.html",
+          "parentId": "v4",
+          "changelog": "Concept: Sensor-first \u2014 5 devices in radial ring around RecovryAI sparkle, data particles flowing inward",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-6-v5.png"
+        },
+        {
+          "id": "v6",
+          "number": 6,
+          "file": "concept-6/v6.html",
+          "parentId": "v4",
+          "changelog": "Concept: Data-first \u2014 10 signal pills streaming into RecovryAI, sensors as subtle activated indicators below",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-6-v6.png"
+        },
+        {
+          "id": "v8",
+          "number": 8,
+          "file": "concept-6/v8.html",
+          "parentId": "v7",
+          "changelog": "Expanded ecosystem \u2014 18 signals in 5 categories (Vitals, Movement, Recovery, Compliance, Wellbeing), 7 source devices, interactive activation",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-6-v8.png"
+        },
+        {
+          "id": "v9",
+          "number": 9,
+          "file": "concept-6/v9.html",
+          "parentId": "v8",
+          "changelog": "Design overhaul \u2014 hero stat counter, progress bar, clean signal rows with slide-in values, minimal device strip, Apple-level restraint",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-6-v9.png"
+        },
+        {
+          "id": "v19",
+          "number": 19,
+          "file": "concept-6/v19.html",
+          "parentId": "v18",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T21:49:15.926Z",
+          "thumbnail": ".thumbs/concept-6-v19.png"
+        },
+        {
+          "id": "v21",
+          "number": 21,
+          "file": "concept-6/v21.html",
+          "parentId": "v3",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T14:42:21.314Z",
+          "thumbnail": ".thumbs/concept-6-v21.png"
+        },
+        {
+          "id": "v22",
+          "number": 22,
+          "file": "concept-6/v22.html",
+          "parentId": "v9",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T14:44:32.032Z",
+          "thumbnail": ".thumbs/concept-6-v22.png"
+        },
+        {
+          "id": "v23",
+          "number": 23,
+          "file": "concept-6/v23.html",
+          "parentId": "v21",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T14:44:38.962Z",
+          "thumbnail": ".thumbs/concept-6-v23.png"
+        },
+        {
+          "id": "v24",
+          "number": 24,
+          "file": "concept-6/v24.html",
+          "parentId": "v20",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T15:24:07.992Z",
+          "thumbnail": ".thumbs/concept-6-v24.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-1",
+      "label": "MM#0 \u2014 Rx Trust Mark",
+      "description": "Trust indicator design explorations \u2014 the visual signal that output comes from physician-prescribed, FDA-pathway AI",
+      "position": 4,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-1/v1.html",
+          "parentId": null,
+          "changelog": "Animated seal with pulse",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-1-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-1/v2.html",
+          "parentId": "v1",
+          "changelog": "Recessive gray variant",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-1-v2.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-1/v4.html",
+          "parentId": "v1",
+          "changelog": "Check + Rx only",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-1-v4.png"
+        },
+        {
+          "id": "v7",
+          "number": 7,
+          "file": "concept-1/v7.html",
+          "parentId": "v1",
+          "changelog": "Stylized light",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-1-v7.png"
+        },
+        {
+          "id": "v10",
+          "number": 10,
+          "file": "concept-1/v10.html",
+          "parentId": "v8",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T21:19:39.660Z",
+          "thumbnail": ".thumbs/concept-1-v10.png"
+        },
+        {
+          "id": "v11",
+          "number": 11,
+          "file": "concept-1/v11.html",
+          "parentId": "v7",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T15:33:01.138Z",
+          "thumbnail": ".thumbs/concept-1-v11.png"
+        },
+        {
+          "id": "v12",
+          "number": 12,
+          "file": "concept-1/v12.html",
+          "parentId": "v11",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T22:58:26.032Z",
+          "thumbnail": ".thumbs/concept-1-v12.png"
+        },
+        {
+          "id": "v13",
+          "number": 13,
+          "file": "concept-1/v13.html",
+          "parentId": "v12",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T22:58:28.529Z",
+          "thumbnail": ".thumbs/concept-1-v13.png"
+        },
+        {
+          "id": "v14",
+          "number": 14,
+          "file": "concept-1/v14.html",
+          "parentId": "v13",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T22:58:29.182Z",
+          "thumbnail": ".thumbs/concept-1-v14.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-3",
+      "label": "MM#2 \u2014 Daily Check-In",
+      "description": "Pain assessment, daily check-in flows, and patient input patterns",
+      "position": 5,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-3/v1.html",
+          "parentId": null,
+          "changelog": "Pain fullscreen v1",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-3/v2.html",
+          "parentId": "v1",
+          "changelog": "Pain fullscreen v2",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-3/v3.html",
+          "parentId": "v2",
+          "changelog": "Pain fullscreen v3",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v3.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-3/v4.html",
+          "parentId": "v3",
+          "changelog": "Pain fullscreen v4",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v4.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-3/v5.html",
+          "parentId": "v4",
+          "changelog": "Pain fullscreen v5",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v5.png"
+        },
+        {
+          "id": "v6",
+          "number": 6,
+          "file": "concept-3/v6.html",
+          "parentId": "v5",
+          "changelog": "Pain fullscreen v6",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v6.png"
+        },
+        {
+          "id": "v7",
+          "number": 7,
+          "file": "concept-3/v7.html",
+          "parentId": "v6",
+          "changelog": "Pain fullscreen v7",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v7.png"
+        },
+        {
+          "id": "v8",
+          "number": 8,
+          "file": "concept-3/v8.html",
+          "parentId": "v7",
+          "changelog": "Pain fullscreen v8",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v8.png"
+        },
+        {
+          "id": "v9",
+          "number": 9,
+          "file": "concept-3/v9.html",
+          "parentId": "v8",
+          "changelog": "Pain fullscreen v9",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v9.png"
+        },
+        {
+          "id": "v10",
+          "number": 10,
+          "file": "concept-3/v10.html",
+          "parentId": null,
+          "changelog": "Pain card \u2014 vertical layout",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v10.png"
+        },
+        {
+          "id": "v11",
+          "number": 11,
+          "file": "concept-3/v11.html",
+          "parentId": "v10",
+          "changelog": "Pain card \u2014 horizontal layout",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v11.png"
+        },
+        {
+          "id": "v12",
+          "number": 12,
+          "file": "concept-3/v12.html",
+          "parentId": "v10",
+          "changelog": "Pain card \u2014 flow",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v12.png"
+        },
+        {
+          "id": "v13",
+          "number": 13,
+          "file": "concept-3/v13.html",
+          "parentId": null,
+          "changelog": "Pain slider input",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v13.png"
+        },
+        {
+          "id": "v14",
+          "number": 14,
+          "file": "concept-3/v14.html",
+          "parentId": null,
+          "changelog": "Full check-in flow",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v14.png"
+        },
+        {
+          "id": "v15",
+          "number": 15,
+          "file": "concept-3/v15.html",
+          "parentId": "v14",
+          "changelog": "All dimensions check-in",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v15.png"
+        },
+        {
+          "id": "v16",
+          "number": 16,
+          "file": "concept-3/v16.html",
+          "parentId": null,
+          "changelog": "Card with footer icons",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v16.png"
+        },
+        {
+          "id": "v17",
+          "number": 17,
+          "file": "concept-3/v17.html",
+          "parentId": "v16",
+          "changelog": "Card with footer options",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v17.png"
+        },
+        {
+          "id": "v18",
+          "number": 18,
+          "file": "concept-3/v18.html",
+          "parentId": "v14",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T23:43:35.372Z",
+          "thumbnail": ".thumbs/concept-3-v18.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-9",
+      "label": "MM#8 \u2014 Recovery Timeline",
+      "description": "Visual timeline showing the 90-day journey \u2014 current position Day 42, milestones passed, what's ahead",
+      "position": 6,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-9/v1.html",
+          "parentId": null,
+          "changelog": "Vertical timeline \u2014 progress bar hero, milestone cards at key phases, current day highlight with metrics",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-9-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-9/v2.html",
+          "parentId": "v1",
+          "changelog": "Horizontal scroll \u2014 large day number hero, horizontal scrollable timeline nodes, today detail card with metrics",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-9-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-9/v3.html",
+          "parentId": "v2",
+          "changelog": "Graduation moment \u2014 emotional completion card with breathing orb, journey stats, personal VCA message, and provider note",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-9-v3.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-9/v4.html",
+          "parentId": "v2",
+          "changelog": "Detailed milestone timeline \u2014 phased vertical timeline with done/current/future milestones, ROM metrics, and \"What's Next\" card",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-9-v4.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-9/v5.html",
+          "parentId": "v2",
+          "changelog": "Transition conversation \u2014 Day 90 chat with completion card, \"What's Next\" options, patient reply, and closing VCA message",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-9-v5.png"
+        },
+        {
+          "id": "v6",
+          "number": 6,
+          "file": "concept-9/v6.html",
+          "parentId": "v4",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T15:40:32.966Z",
+          "thumbnail": ".thumbs/concept-9-v6.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-5",
+      "label": "MM#3 \u2014 Chat as Timeline",
+      "description": "The conversation IS the timeline \u2014 chat-first recovery status with progressive day history, expandable transcripts, and weekly collapse",
+      "position": 7,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-5/v1.html",
+          "parentId": null,
+          "changelog": "Initial chat-as-timeline \u2014 day nodes with card styling, expandable history",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-5-v1.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-5/v5.html",
+          "parentId": "v4",
+          "changelog": "Weekly collapse \u2014 past weeks condensed into single rows with 7 status dots, expand into individual days, three-level disclosure",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-5-v5.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-8",
+      "label": "MM#6 \u2014 Is This Normal?",
+      "description": "The 2am anxiety interceptor \u2014 patient asks about warm knee, VCA responds with clinically precise reassurance and live sensor data",
+      "position": 8,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-8/v1.html",
+          "parentId": null,
+          "changelog": "Light mode chat \u2014 full conversation with data context card, Rx trust badge, and input field",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-8-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-8/v2.html",
+          "parentId": "v1",
+          "changelog": "Dark mode 2am \u2014 adaptive dark theme for nighttime, teal patient bubbles, sensor data inset",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-8-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-8/v3.html",
+          "parentId": "v2",
+          "changelog": "Extended conversation \u2014 patient asks multiple questions with data context card, clinically precise multi-topic responses",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-8-v3.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-8/v4.html",
+          "parentId": "v2",
+          "changelog": "Proactive tip \u2014 VCA-initiated notification card with Day 42 stiffness tip, evidence from sensor data, and actionable suggestion",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-8-v4.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-8/v5.html",
+          "parentId": "v1",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T15:01:19.858Z",
+          "thumbnail": ".thumbs/concept-8-v5.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-10",
+      "label": "MM#9 \u2014 Agentic Workflows",
+      "description": "VCA taking autonomous action \u2014 scheduling appointments, sending Rx refills, sharing PT reports",
+      "position": 9,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-10/v1.html",
+          "parentId": null,
+          "changelog": "Chat-based actions \u2014 VCA messages with embedded action cards showing scheduled appointment, Rx refill, and PT report",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-10-v1.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-10/v3.html",
+          "parentId": "v2",
+          "changelog": "PT scheduling \u2014 step-by-step agentic workflow showing protocol check, availability search, time selection, and confirmed appointment",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-10-v3.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-10/v4.html",
+          "parentId": "v2",
+          "changelog": "Medication refill \u2014 proactive detection of low supply with amber alert, supply bar, and pharmacy refill confirmation",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-10-v4.png"
+        },
+        {
+          "id": "v6",
+          "number": 6,
+          "file": "concept-10/v6.html",
+          "parentId": "v2",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T15:06:19.277Z",
+          "thumbnail": ".thumbs/concept-10-v6.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-11",
+      "label": "MM#10 \u2014 Circle of Care",
+      "description": "Caregiver's view \u2014 simple, warm notification with recovery update for spouse/family member",
+      "position": 10,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-11/v1.html",
+          "parentId": null,
+          "changelog": "Lock screen notification \u2014 push notification card with metrics grid, summary text, and action buttons",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-11-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-11/v2.html",
+          "parentId": "v1",
+          "changelog": "In-app digest \u2014 full caregiver dashboard with status banner, daily metrics, VCA summary, and actions",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-11-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-11/v3.html",
+          "parentId": "v2",
+          "changelog": "Daily digest for caregiver \u2014 summary card for Sarah with status, dimensions grid, highlights, and upcoming events",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-11-v3.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-11/v4.html",
+          "parentId": "v2",
+          "changelog": "Caregiver alert \u2014 amber attention card with changed dimensions, reassurance section, and call/message actions",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-11-v4.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-11/v5.html",
+          "parentId": "v2",
+          "changelog": "Caregiver graduation \u2014 emotional Day 90 card for Sarah acknowledging her role, journey stats, and what changes next",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-11-v5.png"
+        },
+        {
+          "id": "v6",
+          "number": 6,
+          "file": "concept-11/v6.html",
+          "parentId": "v4",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T15:44:41.749Z",
+          "thumbnail": ".thumbs/concept-11-v6.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-14",
+      "label": "MM#13 \u2014 Ongoing Relationship",
+      "description": "Post-recovery \u2014 graduation moment at Day 90 with transition to ongoing wellness relationship",
+      "position": 11,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-14/v1.html",
+          "parentId": null,
+          "changelog": "Static graduation \u2014 hero with stats card, divider, and ongoing features card",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-14-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-14/v2.html",
+          "parentId": "v1",
+          "changelog": "Chat graduation \u2014 VCA sends graduation card in conversation, patient responds, VCA describes ongoing relationship",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-14-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-14/v3.html",
+          "parentId": "v2",
+          "changelog": "Weekly wellness check-in \u2014 lighter conversational tone, weekly snapshot card, post-recovery header badge",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-14-v3.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-14/v4.html",
+          "parentId": "v2",
+          "changelog": "Next surgery \u2014 VCA already knows patient context from knee recovery, personalized insights card for hip replacement",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-14-v4.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-14/v5.html",
+          "parentId": "v2",
+          "changelog": "One year anniversary \u2014 emotional milestone card with stats, VCA memory of key moments, and simple check-in",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-14-v5.png"
+        },
+        {
+          "id": "v6",
+          "number": 6,
+          "file": "concept-14/v6.html",
+          "parentId": "v5",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T21:45:56.071Z",
+          "thumbnail": ".thumbs/concept-14-v6.png"
+        },
+        {
+          "id": "v7",
+          "number": 7,
+          "file": "concept-14/v7.html",
+          "parentId": "v6",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T21:45:58.021Z",
+          "thumbnail": ".thumbs/concept-14-v7.png"
+        },
+        {
+          "id": "v8",
+          "number": 8,
+          "file": "concept-14/v8.html",
+          "parentId": "v1",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T15:11:33.151Z",
+          "thumbnail": ".thumbs/concept-14-v8.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-4",
+      "label": "MM#3 \u2014 Recovery Status",
+      "description": "The patient's current recovery indicator \u2014 a single, comprehensible view of how they're doing right now",
+      "position": 12,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-4/v1.html",
+          "parentId": null,
+          "changelog": "Breathing orb \u2014 unified status with dimension breakdown and 90-day progress",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-4-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-4/v2.html",
+          "parentId": null,
+          "changelog": "Expandable Portal \u2014 compact card that expands through 3 layers (status \u2192 dimensions \u2192 timeline)",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-4-v2.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-4/v5.html",
+          "parentId": "v1",
+          "changelog": "Level exploration \u2014 3/4/5-tier systems side by side, simplified dimensions (dot + name only), Appetite \u2192 Nutrition",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-4-v5.png"
+        },
+        {
+          "id": "v6",
+          "number": 6,
+          "file": "concept-4/v6.html",
+          "parentId": "v1",
+          "changelog": "Interactive timeline slider \u2014 drag to scrub through Days 1-8, orb/text/dots update live, dimension labels on hover only, Nutrition rename",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-4-v6.png"
+        },
+        {
+          "id": "v7",
+          "number": 7,
+          "file": "concept-4/v7.html",
+          "parentId": "v6",
+          "changelog": "5-tier status system (Excellent/On track/Watch/Attention/Urgent), dimension names always visible, richer 8-day story data",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-4-v7.png"
+        },
+        {
+          "id": "v8",
+          "number": 8,
+          "file": "concept-4/v8.html",
+          "parentId": "v7",
+          "changelog": "Proportional 90-day bar \u2014 today at ~9% position, vast empty future visible, ghost marker when viewing past",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-4-v8.png"
+        },
+        {
+          "id": "v9",
+          "number": 9,
+          "file": "concept-4/v9.html",
+          "parentId": "v8",
+          "changelog": "Today-centered timeline \u2014 today at 50%, past expands left, future compresses right, dual-scale bar",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-4-v9.png"
+        },
+        {
+          "id": "v10",
+          "number": 10,
+          "file": "concept-4/v10.html",
+          "parentId": "v9",
+          "changelog": "Gradient history bar \u2014 smooth color transitions show recovery story at a glance, faded overlay when viewing past days",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-4-v10.png"
+        },
+        {
+          "id": "v11",
+          "number": 11,
+          "file": "concept-4/v11.html",
+          "parentId": "v10",
+          "changelog": "Day 55 of 90 \u2014 full recovery story with 55 days of gradient history, two attention blips (Day 6, Day 23-24), mostly excellent by Phase 3",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-4-v11.png"
+        },
+        {
+          "id": "v14",
+          "number": 14,
+          "file": "concept-4/v14.html",
+          "parentId": "v13",
+          "changelog": "Urgent state updated \u2014 'Call emergency services / go to nearest ER'",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-23T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-4-v14.png"
+        },
+        {
+          "id": "v15",
+          "number": 15,
+          "file": "concept-4/v15.html",
+          "parentId": "v9",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-24T15:37:20.126Z",
+          "thumbnail": ".thumbs/concept-4-v15.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-12",
+      "label": "MM#11 \u2014 Provider Dashboard",
+      "description": "Provider's view \u2014 clean dashboard showing a cohort of patients with status indicators and key metrics",
+      "position": 13,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-12/v1.html",
+          "parentId": null,
+          "changelog": "List view \u2014 summary stats header, alert banner, patient rows with status dots and key metrics",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-12-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-12/v2.html",
+          "parentId": "v1",
+          "changelog": "Card view \u2014 filter tabs, individual patient cards with inline metric badges and alert callouts",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-12-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-12/v3.html",
+          "parentId": "v2",
+          "changelog": "Patient deep-dive \u2014 3-column dashboard with sidebar, patient header, metrics, trend chart, conversations, and live sensor panel",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-12-v3.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-12/v4.html",
+          "parentId": "v2",
+          "changelog": "Cohort view \u2014 8-patient table with avatar, day, status pill, pain/ROM, sparkline trend, and review action",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-12-v4.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-12/v5.html",
+          "parentId": "v2",
+          "changelog": "Alert-driven view \u2014 needs-attention list sorted by urgency (red/amber), quiet section, detail panel with conversation",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-12-v5.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-13",
+      "label": "MM#12 \u2014 Provider Alerts",
+      "description": "Provider alert notification \u2014 anomaly detection with findings, VCA recommendation, and action buttons",
+      "position": 14,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-13/v1.html",
+          "parentId": null,
+          "changelog": "Push notification \u2014 lock screen alert card with findings, recommendation, and Call/Dashboard/Dismiss actions",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-13-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-13/v2.html",
+          "parentId": "v1",
+          "changelog": "In-app detail \u2014 full alert view with patient info, anomaly rows with values, VCA assessment, and patient-reported context",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-13-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-13/v3.html",
+          "parentId": "v2",
+          "changelog": "SMS alert format \u2014 iMessage-style urgent text with data summary card and deep-link actions",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-13-v3.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-13/v4.html",
+          "parentId": "v2",
+          "changelog": "In-app notification \u2014 full alert card with patient header, data grid, VCA assessment, and one-tap action buttons",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-13-v4.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-13/v5.html",
+          "parentId": "v2",
+          "changelog": "Alert resolved \u2014 event timeline (red to green), resolution summary, and updated status showing successful outcome",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-13-v5.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-7",
+      "label": "MM#5 \u2014 VCA Response Pathways",
+      "description": "Three-tier response system \u2014 Green (all clear), Yellow (provider escalation), Red (emergency protocol)",
+      "position": 15,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-7/v1.html",
+          "parentId": null,
+          "changelog": "Three stacked pathway cards \u2014 each tier expanded with VCA message, actions, and escalation detail",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-7-v1.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-7/v2.html",
+          "parentId": "v1",
+          "changelog": "Current status hero \u2014 single hero card showing Green/active with compact tier overview and trigger explanations below",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-7-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-7/v3.html",
+          "parentId": "v2",
+          "changelog": "Yellow escalation \u2014 real-time detection with data card, VCA explanation, escalation steps, and actionable advice",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-7-v3.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-7/v4.html",
+          "parentId": "v2",
+          "changelog": "Green reassurance \u2014 on-track status card with breathing orb, all dimensions green, VCA summary, and progress strip",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-7-v4.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-7/v5.html",
+          "parentId": "v2",
+          "changelog": "Red emergency \u2014 urgent banner, emergency action card with numbered steps, call button, and notification strip",
+          "visible": true,
+          "starred": true,
+          "created": "2026-03-22T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-7-v5.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-0eximv34",
+      "label": "Concept 16",
+      "description": "Branched from MM#3 \u2014 Recovery Status v15",
+      "position": 16,
+      "visible": true,
+      "branchedFrom": {
+        "conceptId": "concept-4",
+        "versionId": "v15"
+      },
+      "versions": [
+        {
+          "id": "version-2hxujgn4",
+          "number": 1,
+          "file": "concept-16/v1.html",
+          "parentId": null,
+          "changelog": "Branched from MM#3 \u2014 Recovery Status v15",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:03:50.709Z",
+          "thumbnail": ".thumbs/concept-0eximv34-version-2hxujgn4.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-16/v2.html",
+          "parentId": "version-2hxujgn4",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:04:22.611Z",
+          "thumbnail": ".thumbs/concept-0eximv34-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-16/v3.html",
+          "parentId": "version-2hxujgn4",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:06:40.348Z",
+          "thumbnail": ".thumbs/concept-0eximv34-v3.png"
+        },
+        {
+          "id": "v4",
+          "number": 4,
+          "file": "concept-16/v4.html",
+          "parentId": "v3",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:06:42.664Z",
+          "thumbnail": ".thumbs/concept-0eximv34-v4.png"
+        },
+        {
+          "id": "v5",
+          "number": 5,
+          "file": "concept-16/v5.html",
+          "parentId": "v4",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:06:49.144Z",
+          "thumbnail": ".thumbs/concept-0eximv34-v5.png"
+        },
+        {
+          "id": "v6",
+          "number": 6,
+          "file": "concept-16/v6.html",
+          "parentId": "version-2hxujgn4",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:06:59.460Z",
+          "thumbnail": ".thumbs/concept-0eximv34-v6.png"
+        },
+        {
+          "id": "v7",
+          "number": 7,
+          "file": "concept-16/v7.html",
+          "parentId": "version-2hxujgn4",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:17:04.170Z",
+          "thumbnail": ".thumbs/concept-0eximv34-v7.png"
+        },
+        {
+          "id": "v8",
+          "number": 8,
+          "file": "concept-16/v8.html",
+          "parentId": "v7",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:17:06.405Z",
+          "thumbnail": ".thumbs/concept-0eximv34-v8.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-9tflah8t",
+      "label": "Concept 17",
+      "description": "Branched from Concept 16 v6",
+      "position": 17,
+      "visible": true,
+      "branchedFrom": {
+        "conceptId": "concept-0eximv34",
+        "versionId": "v6"
+      },
+      "versions": [
+        {
+          "id": "version-0o73msay",
+          "number": 1,
+          "file": "concept-17/v1.html",
+          "parentId": null,
+          "changelog": "Branched from Concept 16 v6",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:14:19.436Z",
+          "thumbnail": ".thumbs/concept-9tflah8t-version-0o73msay.png"
+        },
+        {
+          "id": "v2",
+          "number": 2,
+          "file": "concept-17/v2.html",
+          "parentId": "version-0o73msay",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:14:24.264Z",
+          "thumbnail": ".thumbs/concept-9tflah8t-v2.png"
+        },
+        {
+          "id": "v3",
+          "number": 3,
+          "file": "concept-17/v3.html",
+          "parentId": "version-0o73msay",
+          "changelog": "",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-25T04:14:35.378Z",
+          "thumbnail": ".thumbs/concept-9tflah8t-v3.png"
+        }
+      ]
+    }
+  ],
+  "workingSets": [],
+  "comments": [],
+  "clientEdits": [],
+  "rounds": []
+}

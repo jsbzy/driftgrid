@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pain Check-In — Horizontal Scale</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .screen {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 40px 32px;
+            position: relative;
+        }
+
+        .content {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 72px;
+            max-width: 420px; width: 100%;
+            position: relative;
+        }
+
+        .greeting {
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .greeting-day {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; font-weight: 500;
+            letter-spacing: 0.06em; color: #33B6B0;
+        }
+        .greeting-question {
+            font-size: 34px; font-weight: 300;
+            color: #1B1B1A; text-align: center;
+            line-height: 1.2; letter-spacing: -0.02em;
+        }
+        .greeting-question strong { font-weight: 600; }
+
+        /* Horizontal scale */
+        .scale {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 32px;
+            width: 100%;
+        }
+
+        .dots-row {
+            display: flex; flex-direction: row;
+            align-items: center; justify-content: space-between;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Connecting line behind dots */
+        .dots-row::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 24px; right: 24px;
+            height: 2px;
+            background: linear-gradient(to right, #6BCB9B, #8CC98F, #D4A843, #CD7F3A, #C45B4A);
+            opacity: 0.2;
+            transform: translateY(-50%);
+        }
+
+        .dot-option {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 10px;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+        }
+
+        .dot {
+            width: 40px; height: 40px; border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease;
+            border: 2.5px solid transparent;
+            background: white;
+        }
+        .dot-inner {
+            width: 14px; height: 14px; border-radius: 7px;
+            transition: all 0.2s ease;
+        }
+        .dot-option:hover .dot {
+            transform: scale(1.1);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .dot-option.selected .dot {
+            border-color: currentColor;
+            transform: scale(1.15);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        .dot-option.selected .dot-inner {
+            width: 20px; height: 20px; border-radius: 10px;
+        }
+
+        .dot-option[data-level="1"] .dot-inner { background: #6BCB9B; }
+        .dot-option[data-level="2"] .dot-inner { background: #8CC98F; }
+        .dot-option[data-level="3"] .dot-inner { background: #D4A843; }
+        .dot-option[data-level="4"] .dot-inner { background: #CD7F3A; }
+        .dot-option[data-level="5"] .dot-inner { background: #C45B4A; }
+
+        .dot-option[data-level="1"].selected .dot { border-color: #6BCB9B; color: #6BCB9B; }
+        .dot-option[data-level="2"].selected .dot { border-color: #8CC98F; color: #8CC98F; }
+        .dot-option[data-level="3"].selected .dot { border-color: #D4A843; color: #D4A843; }
+        .dot-option[data-level="4"].selected .dot { border-color: #CD7F3A; color: #CD7F3A; }
+        .dot-option[data-level="5"].selected .dot { border-color: #C45B4A; color: #C45B4A; }
+
+        .dot-label {
+            font-size: 12px; font-weight: 400; color: #aaa;
+            transition: all 0.15s ease;
+        }
+        .dot-option.selected .dot-label {
+            font-weight: 600; color: #555;
+        }
+
+        /* Selected label — appears big */
+        .selected-label {
+            font-size: 28px; font-weight: 300; color: #1B1B1A;
+            min-height: 36px;
+            transition: all 0.2s ease;
+        }
+        .selected-label strong { font-weight: 600; }
+
+        .rx-footer {
+            display: flex; align-items: center; gap: 6px;
+            position: absolute; bottom: -80px;
+        }
+        .rx-badge {
+            width: 14px; height: 14px; border-radius: 2px;
+            background: #ccc;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .rx-badge span { font-size: 6px; font-weight: 700; color: white; }
+        .rx-label { font-size: 10px; color: #bbb; }
+
+        .confirmed {
+            display: none; flex-direction: column;
+            align-items: center; gap: 24px;
+        }
+        .confirmed.show { display: flex; }
+        .confirmed-dot { width: 16px; height: 16px; border-radius: 8px; }
+        .confirmed-text {
+            font-size: 24px; font-weight: 300; color: #1B1B1A;
+            text-align: center;
+        }
+        .confirmed-text strong { font-weight: 600; }
+        .confirmed-sub {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; color: #bbb; text-align: center;
+        }
+
+        .confirm-btn {
+            padding: 14px 40px;
+            background: #1B1B1A;
+            border: none; border-radius: 12px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 15px; font-weight: 600; color: white;
+            cursor: pointer;
+            opacity: 0; pointer-events: none;
+            transition: all 0.2s ease;
+        }
+        .confirm-btn.visible { opacity: 1; pointer-events: auto; }
+        .confirm-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+        .voice-hint {
+            position: absolute; bottom: 32px;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; color: #bbb;
+        }
+        .voice-dot {
+            width: 8px; height: 8px; border-radius: 4px;
+            background: rgba(51,182,176,0.3);
+        }
+
+        .replay {
+            position: fixed; top: 20px; right: 20px;
+            font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+            color: #999; background: none; border: 1px solid #ddd;
+            padding: 6px 12px; border-radius: 6px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="screen">
+    <div class="content" id="questionView">
+        <div class="greeting">
+            <div class="greeting-day">DAY 8 · MORNING CHECK-IN</div>
+            <div class="greeting-question">How's your<br><strong>pain</strong> today?</div>
+        </div>
+
+        <div class="scale">
+            <div class="dots-row">
+                <div class="dot-option" data-level="1" onclick="pick(this, 1)">
+                    <div class="dot"><div class="dot-inner"></div></div>
+                    <span class="dot-label">None</span>
+                </div>
+                <div class="dot-option" data-level="2" onclick="pick(this, 2)">
+                    <div class="dot"><div class="dot-inner"></div></div>
+                    <span class="dot-label">Mild</span>
+                </div>
+                <div class="dot-option" data-level="3" onclick="pick(this, 3)">
+                    <div class="dot"><div class="dot-inner"></div></div>
+                    <span class="dot-label">Moderate</span>
+                </div>
+                <div class="dot-option" data-level="4" onclick="pick(this, 4)">
+                    <div class="dot"><div class="dot-inner"></div></div>
+                    <span class="dot-label">Significant</span>
+                </div>
+                <div class="dot-option" data-level="5" onclick="pick(this, 5)">
+                    <div class="dot"><div class="dot-inner"></div></div>
+                    <span class="dot-label">Severe</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="confirm-btn" id="confirmBtn" onclick="confirm()">Confirm</button>
+
+        <div class="rx-footer">
+            <div class="rx-badge"><span>Rx</span></div>
+            <span class="rx-label">Verified</span>
+        </div>
+    </div>
+
+    <div class="confirmed" id="confirmView">
+        <div class="confirmed-dot" id="confirmDot"></div>
+        <div>
+            <div class="confirmed-text"><strong id="painLevel">Moderate</strong></div>
+            <div class="confirmed-sub" style="margin-top: 8px;">Recorded · 8:04 AM</div>
+        </div>
+    </div>
+
+    <div class="voice-hint">
+        <div class="voice-dot"></div>
+        Or just tell me how you feel
+    </div>
+</div>
+
+<button class="replay" onclick="location.reload()">Replay</button>
+
+<script>
+const levels = {1: 'None', 2: 'Mild', 3: 'Moderate', 4: 'Significant', 5: 'Severe'};
+const colors = {1: '#6BCB9B', 2: '#8CC98F', 3: '#D4A843', 4: '#CD7F3A', 5: '#C45B4A'};
+let selected = null;
+
+function pick(el, level) {
+    document.querySelectorAll('.dot-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    selected = level;
+    document.getElementById('confirmBtn').classList.add('visible');
+}
+
+function confirm() {
+    if (!selected) return;
+    document.getElementById('painLevel').textContent = levels[selected];
+    document.getElementById('confirmDot').style.background = colors[selected];
+    document.getElementById('questionView').style.display = 'none';
+    document.querySelector('.voice-hint').style.display = 'none';
+    document.getElementById('confirmView').classList.add('show');
+}
+</script>
+
+</body>
+</html>

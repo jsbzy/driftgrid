@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat 2 — What It Is</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #F4F2EE;
+            display: flex; align-items: center; justify-content: center;
+            gap: 80px; padding: 0 120px;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .text-side { max-width: 520px; display: flex; flex-direction: column; gap: 20px; }
+        .text-side h1 {
+            font-size: 44px; font-weight: 600; color: #1B1B1A;
+            line-height: 1.15; letter-spacing: -0.02em;
+        }
+        .text-side h1 span { color: #33B5B0; }
+        .text-side p { font-size: 18px; font-weight: 400; color: #6B6B68; line-height: 1.6; }
+
+        /* Phone frame */
+        .phone {
+            width: 300px; min-width: 300px; height: 620px;
+            border: 3px solid #D0D0CC;
+            border-radius: 40px;
+            background: #fff;
+            overflow: hidden;
+            display: flex; flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+        }
+
+        /* Status bar */
+        .status-bar {
+            height: 44px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; font-size: 14px; font-weight: 600; color: #1B1B1A;
+        }
+
+        /* Home screen content */
+        .home-content { flex: 1; padding: 0 16px; overflow: hidden; }
+
+        .welcome {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 0;
+        }
+        .avatar {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: #E8E6E1; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 600; color: #6B6B68;
+        }
+        .welcome-text h3 { font-size: 16px; font-weight: 600; color: #1B1B1A; }
+        .welcome-text p { font-size: 12px; color: #A3A3A0; }
+        .notif {
+            width: 24px; height: 24px; margin-left: auto;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px;
+        }
+
+        .score-card {
+            background: #fff; border: 1px solid #E8E6E1; border-radius: 16px;
+            padding: 20px; text-align: center; margin: 8px 0;
+        }
+        .score-label { font-size: 12px; color: #A3A3A0; margin-bottom: 4px; }
+        .score-value { font-size: 36px; font-weight: 700; color: #1B1B1A; }
+        .score-value span { font-size: 18px; font-weight: 400; color: #A3A3A0; }
+        .score-status {
+            display: inline-block; font-size: 14px; font-weight: 600;
+            color: #33B5B0; margin-left: 4px;
+        }
+        .score-badge {
+            display: inline-block; font-size: 11px; font-weight: 500;
+            background: #E6F7F5; color: #33B5B0; padding: 4px 12px;
+            border-radius: 20px; margin-top: 8px;
+        }
+
+        .pain-card {
+            background: #fff; border: 1px solid #E8E6E1; border-radius: 16px;
+            padding: 16px; margin: 8px 0; display: flex; align-items: center; gap: 12px;
+        }
+        .pain-circle {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: #F5C842; display: flex; align-items: center; justify-content: center;
+        }
+        .pain-info .pain-label { font-size: 11px; color: #A3A3A0; }
+        .pain-info .pain-level { font-size: 16px; font-weight: 600; color: #1B1B1A; }
+        .pain-info .pain-status { font-size: 12px; color: #A3A3A0; }
+
+        .stat-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid #F0EEEA;
+        }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-name { font-size: 14px; color: #1B1B1A; }
+        .stat-sub { font-size: 11px; color: #A3A3A0; }
+        .stat-val { display: flex; align-items: center; gap: 4px; font-size: 16px; font-weight: 600; color: #1B1B1A; }
+        .stat-arrow { font-size: 12px; }
+        .stat-arrow.up { color: #33B5B0; }
+        .stat-arrow.down { color: #E05555; }
+
+        /* Bottom nav */
+        .bottom-nav {
+            height: 60px; border-top: 1px solid #E8E6E1;
+            display: flex; align-items: center; justify-content: space-around;
+            padding: 0 8px;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 9px; color: #A3A3A0; }
+        .nav-item.active { color: #1B1B1A; }
+        .nav-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .nav-center {
+            width: 40px; height: 40px; background: #33B5B0; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 18px; margin-top: -8px;
+        }
+
+        .vo-strip {
+            position: absolute; bottom: 48px; left: 0; right: 0;
+            text-align: center;
+            font-size: 13px; font-weight: 400; color: #A3A3A0;
+            letter-spacing: 0.02em;
+        }
+        .vo-strip em { font-style: normal; color: #33B5B0; }
+    </style>
+</head>
+<body>
+    <div class="text-side">
+        <h1 data-drift-editable="headline" data-drift-maxlen="80">An AI-Powered<br><span>Virtual Care Assistant</span></h1>
+        <p data-drift-editable="body" data-drift-maxlen="200">Accompanying patients through their recovery journey at home with daily check-ins, personalized guidance, and care team visibility.</p>
+    </div>
+
+    <div class="phone">
+        <div class="status-bar">
+            <span>9:41</span>
+            <span style="font-size: 12px; letter-spacing: 2px;">●●● ⟩</span>
+        </div>
+        <div class="home-content">
+            <div class="welcome">
+                <div class="avatar">M</div>
+                <div class="welcome-text">
+                    <h3>Hi, Marcia</h3>
+                    <p>Let's check in today!</p>
+                </div>
+                <div class="notif">🔔</div>
+            </div>
+
+            <div class="score-card">
+                <div class="score-label">Your recovery score</div>
+                <div class="score-value">75.8<span>%</span> <span class="score-status">Improving</span></div>
+                <div class="score-badge">Great job improving your recovery score!</div>
+            </div>
+
+            <div class="pain-card">
+                <div class="pain-circle"></div>
+                <div class="pain-info">
+                    <div class="pain-label">*Average of pain reportings</div>
+                    <div class="pain-level">Moderate Pain</div>
+                    <div class="pain-status">Stable</div>
+                </div>
+            </div>
+
+            <div>
+                <div class="stat-row">
+                    <div><div class="stat-name">Activity</div><div class="stat-sub">Improving</div></div>
+                    <div class="stat-val"><span class="stat-arrow up">↑</span> 45%</div>
+                </div>
+                <div class="stat-row">
+                    <div><div class="stat-name">Diet</div><div class="stat-sub">In Decline</div></div>
+                    <div class="stat-val"><span class="stat-arrow down">↓</span> 5%</div>
+                </div>
+                <div class="stat-row">
+                    <div><div class="stat-name">Sleep</div><div class="stat-sub">Stable</div></div>
+                    <div class="stat-val"><span class="stat-arrow up">↑</span> 27%</div>
+                </div>
+                <div class="stat-row">
+                    <div><div class="stat-name">Medication</div><div class="stat-sub">Improving</div></div>
+                    <div class="stat-val"><span class="stat-arrow up">↑</span> 32%</div>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-nav">
+            <div class="nav-item active"><div class="nav-icon">🏠</div>Home</div>
+            <div class="nav-item"><div class="nav-icon">📊</div>Analytics</div>
+            <div class="nav-item"><div class="nav-center">💬</div></div>
+            <div class="nav-item"><div class="nav-icon">📋</div>Resources</div>
+            <div class="nav-item"><div class="nav-icon">❤️</div>Report</div>
+        </div>
+    </div>
+
+    <div class="vo-strip">VO: "An AI-Powered <em>Virtual Care Assistant</em> that accompanies patients through their recovery journey at home."</div>
+</body>
+</html>

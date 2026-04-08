@@ -1,0 +1,17 @@
+<svg viewBox="0 0 1000 1050" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Classic pharmaceutical R with serifs -->
+  <path fill-rule="evenodd" d="
+    M150 50 H280 V950 H150 Z
+    M50 50 H360 V120 H50 Z
+    M50 880 H280 V950 H50 Z
+    M280 50 H490 C720 50, 720 490, 490 490 H280 Z
+    M280 140 V400 H450 C620 400, 620 140, 450 140 Z
+    M295 490 H395 L745 900 H645 Z
+    M615 900 H845 V970 H615 Z
+  " fill="#1B1B1A"/>
+
+  <!-- RecovryAI 4-point sparkle replacing the cross-slash -->
+  <g transform="translate(175, 350) scale(0.65)">
+    <path d="M500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="#33B6B0"/>
+  </g>
+</svg>

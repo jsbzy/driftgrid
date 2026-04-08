@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RecovryAI — Investor Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    body {
+      width: 1920px;
+      height: 1080px;
+      background: linear-gradient(135deg, #1B1B1A 0%, #2A2A28 50%, #1B1B1A 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      position: relative;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .accent-line {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 6px;
+      height: 100%;
+      background: linear-gradient(to bottom, #33B6B0, #33B6B0 50%, transparent);
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 120px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .logo-section img {
+      height: 64px;
+      width: auto;
+      display: block;
+    }
+
+    .tagline {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #33B6B0;
+      margin-bottom: 16px;
+    }
+
+    .headline {
+      font-family: 'Inter', sans-serif;
+      font-size: 72px;
+      font-weight: 700;
+      line-height: 1.15;
+      color: #FFFFFF;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+      max-width: 1000px;
+    }
+
+    .headline .highlight {
+      color: #33B6B0;
+    }
+
+    .subheading {
+      font-family: 'Inter', sans-serif;
+      font-size: 24px;
+      font-weight: 400;
+      line-height: 1.5;
+      color: #A3A3A0;
+      max-width: 900px;
+      margin-bottom: 48px;
+    }
+
+    .cta-section {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .cta-button {
+      display: inline-block;
+      padding: 16px 48px;
+      background: #33B6B0;
+      color: #FFFFFF;
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+      border: 2px solid #33B6B0;
+      cursor: pointer;
+    }
+
+    .cta-button:hover {
+      background: transparent;
+      color: #33B6B0;
+    }
+
+    .cta-button.secondary {
+      background: transparent;
+      color: #33B6B0;
+      border: 2px solid #33B6B0;
+    }
+
+    .cta-button.secondary:hover {
+      background: #33B6B0;
+      color: #FFFFFF;
+    }
+
+    .stat-bar {
+      position: absolute;
+      bottom: 80px;
+      left: 120px;
+      right: 120px;
+      display: flex;
+      gap: 80px;
+      z-index: 20;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stat-number {
+      font-family: 'Inter', sans-serif;
+      font-size: 48px;
+      font-weight: 700;
+      color: #33B6B0;
+    }
+
+    .stat-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6B6B68;
+      letter-spacing: 0.05em;
+    }
+
+    .background-shape {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.05;
+      pointer-events: none;
+    }
+
+    .shape-1 {
+      width: 400px;
+      height: 400px;
+      background: #33B6B0;
+      top: -100px;
+      right: -100px;
+    }
+
+    .shape-2 {
+      width: 300px;
+      height: 300px;
+      background: #33B6B0;
+      bottom: -50px;
+      left: -100px;
+    }
+
+    @media print {
+      html, body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="accent-line"></div>
+  <div class="background-shape shape-1"></div>
+  <div class="background-shape shape-2"></div>
+
+  <div class="container">
+    <div class="hero-content">
+      <div class="logo-section">
+        <img src="../../brand/logos/logo-white.svg" alt="RecovryAI">
+      </div>
+
+      <div>
+        <div class="tagline" data-drift-editable="tagline">FDA-Authorized Virtual Care</div>
+        <h1 class="headline" data-drift-editable="headline">
+          Every patient deserves a <span class="highlight">virtual care assistant</span>
+        </h1>
+        <p class="subheading" data-drift-editable="subheading">
+          RecovryAI transforms post-operative recovery with personalized, clinically-validated care protocols guided by AI-powered virtual assistants.
+        </p>
+      </div>
+
+      <div class="cta-section">
+        <button class="cta-button" data-drift-editable="cta-primary-text">Explore RecovryAI</button>
+        <button class="cta-button secondary" data-drift-editable="cta-secondary-text">Learn More</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-bar">
+    <div class="stat">
+      <div class="stat-number" data-drift-editable="stat-1-number">FDA</div>
+      <div class="stat-label" data-drift-editable="stat-1-label">Authorized</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number" data-drift-editable="stat-2-number">AI</div>
+      <div class="stat-label" data-drift-editable="stat-2-label">Powered</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number" data-drift-editable="stat-3-number">24/7</div>
+      <div class="stat-label" data-drift-editable="stat-3-label">Care Guidance</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Response Types</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #ffffff; cursor: pointer; }
+
+        .slide { display: flex; width: 100%; height: 100vh; align-items: center; justify-content: center; }
+        .content { text-align: center; }
+
+        .types { display: flex; gap: 80px; justify-content: center; }
+        .type-card {
+            display: flex; flex-direction: column; align-items: center; gap: 16px;
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .type-card.show { opacity: 1; transform: translateY(0); }
+
+        .type-icon {
+            width: 120px; height: 120px; border-radius: 28px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .type-icon.normal { background: #E8F5E9; }
+        .type-icon.provider { background: #FFF3E0; }
+        .type-icon.emergency { background: #FFEBEE; }
+        .type-icon svg { width: 52px; height: 52px; }
+
+        .type-label {
+            font-size: 17px; font-weight: 600; color: #1B1B1A;
+            letter-spacing: -0.01em;
+        }
+
+        .cap-wrap { position: relative; height: 110px; display: flex; align-items: center; justify-content: center; margin-top: 120px; width: 100vw; margin-left: 50%; transform: translateX(-50%); }
+        .cap-line {
+            position: absolute;
+            font-size: 40px; font-weight: 600; color: #1B1B1A; line-height: 1.3;
+            letter-spacing: -0.02em;
+            opacity: 0; transform: translateY(14px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .cap-line.show { opacity: 1; transform: translateY(0); }
+        .cap-line.hide { opacity: 0; transform: translateY(-10px); }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="content">
+            <div class="types">
+                <div class="type-card" id="card1">
+                    <div class="type-icon normal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                    <div class="type-label">Normal Response</div>
+                </div>
+                <div class="type-card" id="card2">
+                    <div class="type-icon provider">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <div class="type-label">Provider Escalation</div>
+                </div>
+                <div class="type-card" id="card3">
+                    <div class="type-icon emergency">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </div>
+                    <div class="type-label">Emergency Escalation</div>
+                </div>
+            </div>
+
+            <div class="cap-wrap">
+                <div class="cap-line" id="cap1">Based on the recovery data,<br>the assistant responds in one of three ways.</div>
+                <div class="cap-line" id="cap2">A normal response, a provider escalation,<br>or an emergency escalation.</div>
+                <div class="cap-line" id="cap3">Let's take a look at each.</div>
+            </div>
+        </div>
+    </div>
+    <audio id="vo" preload="auto" src="../../audio/06-response-types.mp3?v=6"></audio>
+    <script>
+        let currentCap = null;
+        function showCap(id) {
+            if (currentCap) {
+                currentCap.classList.remove('show');
+                currentCap.classList.add('hide');
+            }
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('hide');
+                void el.offsetHeight;
+                el.classList.add('show');
+                currentCap = el;
+            }
+        }
+
+        const vo = document.getElementById('vo');
+
+        function reset() {
+            vo.pause();
+            vo.currentTime = 0;
+            currentCap = null;
+            document.querySelectorAll('.cap-line').forEach(el => el.classList.remove('show', 'hide'));
+            document.querySelectorAll('.type-card').forEach(el => el.classList.remove('show'));
+        }
+
+        function run() {
+            reset();
+            vo.play().catch(() => {});
+
+            // 400ms: cap1 "Based on the recovery data..."
+            setTimeout(() => showCap('cap1'), 400);
+            // 4200ms: cap2 "A normal response..." + Normal Response card
+            setTimeout(() => { showCap('cap2'); document.getElementById('card1').classList.add('show'); }, 4200);
+            // 5500ms: Provider Escalation card
+            setTimeout(() => document.getElementById('card2').classList.add('show'), 5500);
+            // 7000ms: Emergency Escalation card
+            setTimeout(() => document.getElementById('card3').classList.add('show'), 7000);
+            // 9100ms: cap3 "Let's take a look at each."
+            setTimeout(() => showCap('cap3'), 9100);
+        }
+
+        vo.addEventListener('ended', () => setTimeout(run, 2000));
+        run();
+        document.addEventListener('click', function handler() {
+            document.removeEventListener('click', handler);
+            run();
+        });
+    
+        // VO mute toggle — press H to mute/unmute, persists across slides
+        (function() {
+            var a = document.getElementById('vo');
+            if (!a) return;
+            if (localStorage.getItem('drift-vo-muted') === 'true') a.muted = true;
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'h' || e.key === 'H') {
+                    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+                    a.muted = !a.muted;
+                    localStorage.setItem('drift-vo-muted', String(a.muted));
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat 8 — Provider Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #F4F2EE;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 40px 80px;
+            gap: 24px;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .slide-header {
+            text-align: center; max-width: 700px;
+        }
+        .slide-header h2 {
+            font-size: 32px; font-weight: 600; color: #1B1B1A;
+            letter-spacing: -0.02em;
+        }
+        .slide-header h2 span { color: #33B5B0; }
+
+        /* Desktop browser frame */
+        .browser {
+            width: 100%; max-width: 1400px; height: 680px;
+            border: 2px solid #D0D0CC; border-radius: 12px;
+            background: #fff; overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.06);
+            display: flex; flex-direction: column;
+        }
+        .browser-bar {
+            height: 36px; background: #F4F2EE; border-bottom: 1px solid #E8E6E1;
+            display: flex; align-items: center; padding: 0 14px; gap: 8px;
+        }
+        .browser-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .browser-dot.r { background: #FF5F56; }
+        .browser-dot.y { background: #FFBD2E; }
+        .browser-dot.g { background: #27C93F; }
+        .browser-url {
+            margin-left: 16px; background: #fff; border-radius: 6px;
+            padding: 4px 14px; font-size: 11px; color: #A3A3A0;
+        }
+
+        .portal { flex: 1; display: flex; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 56px; background: #F9F8F6; border-right: 1px solid #E8E6E1;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 16px 0; gap: 4px;
+        }
+        .sidebar-logo {
+            width: 36px; height: 36px; background: #33B5B0; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 16px; margin-bottom: 16px;
+        }
+        .sidebar-item {
+            width: 36px; height: 36px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; color: #A3A3A0; cursor: pointer;
+        }
+        .sidebar-item.active { background: #E8E6E1; color: #1B1B1A; }
+
+        /* Main content - patient detail */
+        .main { flex: 1; display: flex; overflow: hidden; }
+
+        /* Left: patient info */
+        .patient-panel {
+            width: 280px; border-right: 1px solid #E8E6E1;
+            padding: 20px; overflow-y: auto;
+        }
+        .patient-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .patient-avatar {
+            width: 48px; height: 48px; border-radius: 50%; background: #E8E6E1;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: 600; color: #6B6B68;
+        }
+        .patient-name { font-size: 16px; font-weight: 600; color: #1B1B1A; }
+        .patient-meta { font-size: 11px; color: #A3A3A0; }
+
+        .info-card {
+            background: #F9F8F6; border-radius: 12px; padding: 14px;
+            margin-bottom: 10px;
+        }
+        .info-card .label { font-size: 11px; color: #A3A3A0; margin-bottom: 4px; }
+        .info-card .value { font-size: 24px; font-weight: 700; }
+        .info-card .value.declining { color: #E05555; }
+        .info-card .value.improving { color: #33B5B0; }
+        .info-card .sub { font-size: 11px; color: #E05555; font-weight: 500; }
+
+        .stat-mini { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F0EEEA; font-size: 13px; }
+        .stat-mini .name { color: #1B1B1A; }
+        .stat-mini .name small { color: #A3A3A0; font-size: 10px; display: block; }
+        .stat-mini .val { font-weight: 600; display: flex; align-items: center; gap: 4px; }
+        .stat-mini .up { color: #33B5B0; }
+        .stat-mini .down { color: #E05555; }
+
+        .view-btn {
+            background: #1B1B1A; color: #fff; border-radius: 8px;
+            padding: 10px; text-align: center; font-size: 13px; font-weight: 500;
+            margin-top: 12px;
+        }
+
+        .contact-info { margin-top: 16px; font-size: 12px; color: #6B6B68; }
+        .contact-info div { padding: 4px 0; }
+        .contact-info strong { color: #1B1B1A; }
+
+        /* Center: conversation */
+        .conversation-panel { flex: 1; display: flex; flex-direction: column; }
+        .conv-header {
+            padding: 16px 20px; border-bottom: 1px solid #E8E6E1;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .conv-toggle {
+            display: flex; background: #E8E6E1; border-radius: 20px; padding: 2px;
+        }
+        .conv-tab { padding: 6px 16px; border-radius: 18px; font-size: 12px; font-weight: 500; color: #6B6B68; }
+        .conv-tab.active { background: #fff; color: #1B1B1A; font-weight: 600; }
+
+        .conv-body { flex: 1; padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .conv-timestamp { text-align: center; font-size: 10px; color: #A3A3A0; }
+
+        .conv-msg { max-width: 70%; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; }
+        .conv-msg.bot { background: #F4F2EE; color: #1B1B1A; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .conv-msg.bot .role { font-size: 10px; font-weight: 600; color: #33B5B0; margin-bottom: 3px; }
+        .conv-msg.patient { background: #1B1B1A; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .conv-msg.patient .role { font-size: 10px; color: #A3A3A0; margin-bottom: 3px; text-align: right; }
+
+        .conv-report {
+            background: #fff; border: 1px solid #E8E6E1; border-radius: 10px;
+            padding: 10px 12px; max-width: 60%; align-self: flex-start;
+        }
+        .conv-report h5 { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+        .conv-report .row { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; }
+
+        /* Right: patient history */
+        .history-panel {
+            width: 260px; border-left: 1px solid #E8E6E1;
+            padding: 16px; overflow-y: auto;
+        }
+        .history-panel h4 {
+            font-size: 14px; font-weight: 600; color: #1B1B1A;
+            margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .history-panel h4 .badge {
+            font-size: 10px; background: #E05555; color: #fff; padding: 2px 8px;
+            border-radius: 10px; font-weight: 500;
+        }
+
+        .history-event {
+            padding: 10px 0; border-bottom: 1px solid #F0EEEA;
+            font-size: 12px; color: #6B6B68; line-height: 1.5;
+        }
+        .history-event .date { font-size: 10px; color: #A3A3A0; }
+        .history-event strong { color: #1B1B1A; }
+        .history-event .doctor {
+            display: flex; align-items: center; gap: 6px; margin-top: 6px;
+        }
+        .history-event .doc-avatar {
+            width: 24px; height: 24px; border-radius: 50%; background: #E8E6E1;
+            font-size: 10px; display: flex; align-items: center; justify-content: center;
+        }
+
+        .vo-strip {
+            position: absolute; bottom: 20px; left: 0; right: 0;
+            text-align: center; font-size: 13px; font-weight: 400; color: #A3A3A0;
+        }
+        .vo-strip em { font-style: normal; color: #33B5B0; }
+    </style>
+</head>
+<body>
+    <div class="slide-header">
+        <h2 data-drift-editable="headline" data-drift-maxlen="80">Providers have <span>full visibility</span> into every conversation</h2>
+    </div>
+
+    <div class="browser">
+        <div class="browser-bar">
+            <div class="browser-dot r"></div>
+            <div class="browser-dot y"></div>
+            <div class="browser-dot g"></div>
+            <div class="browser-url">portal.recovry.ai / patients / micheala-swain</div>
+        </div>
+        <div class="portal">
+            <div class="sidebar">
+                <div class="sidebar-logo">✦</div>
+                <div class="sidebar-item">🏠</div>
+                <div class="sidebar-item active">👥</div>
+                <div class="sidebar-item">🔔</div>
+                <div class="sidebar-item">📊</div>
+                <div class="sidebar-item">⚙</div>
+            </div>
+
+            <div class="main">
+                <div class="patient-panel">
+                    <div style="font-size: 12px; color: #A3A3A0; margin-bottom: 8px;">Home › Micheala Swain</div>
+                    <div class="patient-header">
+                        <div class="patient-avatar">MS</div>
+                        <div>
+                            <div class="patient-name">Micheala Swain</div>
+                            <div class="patient-meta">THR · POD-9 · Age: 48 · Female</div>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="label">Recovery Score</div>
+                        <div class="value declining">43% <span style="font-size: 12px;">↓</span></div>
+                        <div class="sub">Declining</div>
+                    </div>
+                    <div class="stat-mini"><div class="name">Activity<small>Improving</small></div><div class="val up">↑ 45%</div></div>
+                    <div class="stat-mini"><div class="name">Diet<small>In Decline</small></div><div class="val down">↓ 5%</div></div>
+                    <div class="stat-mini"><div class="name">Sleep<small>Stable</small></div><div class="val">27%</div></div>
+                    <div class="stat-mini"><div class="name">Medication<small>Improving</small></div><div class="val up">↑ 32%</div></div>
+                    <div class="view-btn">View Analytics →</div>
+                    <div class="contact-info">
+                        <div><strong>Mobile</strong> (123) 456-7890</div>
+                        <div><strong>Email</strong> swain.micheala@gmail.com</div>
+                        <div><strong>Surgery Date</strong> December 12, 2023</div>
+                        <div><strong>Assigned Surgeon</strong> Dr. Ryan Kwan</div>
+                    </div>
+                </div>
+
+                <div class="conversation-panel">
+                    <div class="conv-header">
+                        <div class="conv-toggle">
+                            <div class="conv-tab active">✦ Assistant</div>
+                            <div class="conv-tab">👤 Clinic</div>
+                        </div>
+                    </div>
+                    <div class="conv-body">
+                        <div class="conv-timestamp">Yesterday</div>
+                        <div class="conv-msg bot">
+                            <div class="role">RecovryAI · 12/12/2023 · 4:08 pm</div>
+                            Can you describe the nature and location of your pain? Is it concentrated in your hip area, or do you feel it elsewhere?
+                        </div>
+                        <div class="conv-msg patient">
+                            <div class="role">Micheala Swain · 4:09 pm</div>
+                            I've been feeling a lot more pain in my hip. Can you please tell me how I can relieve the pain?
+                        </div>
+                        <div class="conv-report">
+                            <h5>Report Summary</h5>
+                            <div class="row"><span>Pain</span><span style="color: #E05555; font-weight: 600;">● Severe</span></div>
+                            <div class="row"><span>Sleep</span><span style="font-weight: 600;">44%</span></div>
+                            <div style="font-size: 10px; color: #33B5B0; margin-top: 4px;">View History →</div>
+                        </div>
+                        <div class="conv-msg bot">
+                            <div class="role">RecovryAI · 4:08 pm</div>
+                            I'm sorry to hear about that. If you're experiencing worsening pain, especially if it's interfering with your daily activities and rest, it's advisable to contact your healthcare provider.
+                        </div>
+                        <div class="conv-msg patient">
+                            <div class="role">Micheala Swain · 4:09 pm</div>
+                            My pain has been getting a little worse. Can you give me some at home remedies that could help me sleep better?
+                        </div>
+                        <div class="conv-msg bot">
+                            <div class="role">RecovryAI · 4:09 pm</div>
+                            I'm sorry your pain is getting worse. I will let your care team know and will schedule an appointment for you to follow up on your pain.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="history-panel">
+                    <h4>Patient History <span class="badge">● Active</span></h4>
+                    <div class="history-event">
+                        <div class="date">12/12/2023 · 4:08 pm</div>
+                        Appointment set on <strong>December 12, 2023</strong>
+                    </div>
+                    <div class="history-event">
+                        <div class="date">12/12/2023 · 4:08 pm</div>
+                        Assigned provider: <strong>Dr. Patrice Katiban</strong>
+                        <div class="doctor">
+                            <div class="doc-avatar">PK</div>
+                            <div><div style="font-size: 11px; font-weight: 600; color: #1B1B1A;">Dr. Patrice Katiban</div><div style="font-size: 10px; color: #A3A3A0;">Post-Operative Care</div></div>
+                        </div>
+                    </div>
+                    <div class="history-event">
+                        <div class="date">12/12/2023</div>
+                        <strong>Dr. Patrice Katiban</strong> followed up with this ER Event. Expressed frustration to floor nurse that her pain has been under treated since discharge from PACU.
+                    </div>
+                    <div class="history-event">
+                        <div class="date">12/12/2023</div>
+                        Patient last seen on <strong>December 12, 2023</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="vo-strip">VO: "Providers have <em>full visibility</em> into every patient conversation from their dashboard."</div>
+</body>
+</html>

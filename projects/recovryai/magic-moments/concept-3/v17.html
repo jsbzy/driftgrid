@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Footer — Trust Indicator Options</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            padding: 40px 24px;
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
+        }
+
+        .title {
+            font-size: 14px; font-weight: 600; color: #1B1B1A;
+            margin-bottom: 8px;
+        }
+
+        .grid {
+            display: flex; flex-direction: row; flex-wrap: wrap;
+            gap: 16px; justify-content: center;
+            max-width: 1100px;
+        }
+
+        .card {
+            background: white;
+            border: 1.5px solid rgba(0,0,0,0.05);
+            border-radius: 16px;
+            width: 320px;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        .card-body {
+            padding: 24px 24px 16px;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 14px;
+        }
+
+        .card-day {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; font-weight: 500;
+            letter-spacing: 0.06em; color: #33B6B0;
+        }
+        .card-q {
+            font-size: 20px; font-weight: 300;
+            color: #1B1B1A; text-align: center;
+        }
+        .card-q strong { font-weight: 600; }
+
+        .dots {
+            display: flex; gap: 14px; padding: 8px 0;
+        }
+        .dot { border-radius: 50%; opacity: 0.4; }
+        .d1 { width: 32px; height: 32px; background: #33B6B0; }
+        .d2 { width: 32px; height: 32px; background: #7BADA6; }
+        .d3 { width: 32px; height: 32px; background: #B8A07A; }
+        .d4 { width: 32px; height: 32px; background: #C4805A; }
+        .d5 { width: 32px; height: 32px; background: #C45B4A; }
+
+        .endpoints {
+            display: flex; justify-content: space-between; width: 100%;
+            font-size: 9px; color: #ccc; font-weight: 300;
+        }
+
+        /* Footer variations */
+        .footer {
+            display: flex; align-items: center; justify-content: center;
+            gap: 6px;
+            padding: 12px 24px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .footer-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 8px; font-weight: 500;
+            letter-spacing: 0.04em;
+            color: #33B6B0;
+            position: absolute; top: -20px; left: 0;
+        }
+
+        .rx-box {
+            width: 14px; height: 14px; border-radius: 2px;
+            background: #ccc;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .rx-box span { font-size: 6px; font-weight: 700; color: white; }
+
+        .rx-box-teal { background: #33B6B0; }
+
+        .ft { font-size: 10px; color: #bbb; }
+        .ft-dim { font-size: 10px; color: #ccc; }
+        .ft-bold { font-size: 10px; font-weight: 600; color: #999; }
+        .ft-mono { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #bbb; }
+        .ft-dot { width: 3px; height: 3px; border-radius: 2px; background: #ddd; }
+
+        .option-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 8px; font-weight: 500;
+            letter-spacing: 0.04em;
+            color: #33B6B0;
+            text-align: center;
+            padding: 6px 0 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="title">Card Footer — Trust Indicator Options</div>
+
+<div class="grid">
+
+    <!-- 1. Rx Verified (current) -->
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="option-label">1 · RX VERIFIED (CURRENT)</div>
+        <div class="card">
+            <div class="card-body">
+                <div class="card-day">DAY 8 · MORNING CHECK-IN</div>
+                <div class="card-q">How's your <strong>pain</strong> today?</div>
+                <div class="dots"><div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div><div class="dot d4"></div><div class="dot d5"></div></div>
+                <div class="endpoints"><span>No pain</span><span>High pain</span></div>
+            </div>
+            <div class="footer">
+                <div class="rx-box"><span>Rx</span></div>
+                <span class="ft">Verified</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Lock + Rx Verified -->
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="option-label">2 · LOCK + RX VERIFIED</div>
+        <div class="card">
+            <div class="card-body">
+                <div class="card-day">DAY 8 · MORNING CHECK-IN</div>
+                <div class="card-q">How's your <strong>pain</strong> today?</div>
+                <div class="dots"><div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div><div class="dot d4"></div><div class="dot d5"></div></div>
+                <div class="endpoints"><span>No pain</span><span>High pain</span></div>
+            </div>
+            <div class="footer">
+                <svg width="10" height="12" viewBox="0 0 10 12" fill="none"><rect x="1" y="5" width="8" height="6" rx="1.5" fill="#ccc"/><path d="M3 5V3.5C3 2.12 3.9 1 5 1C6.1 1 7 2.12 7 3.5V5" stroke="#ccc" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>
+                <div class="rx-box"><span>Rx</span></div>
+                <span class="ft">Verified</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Rx · Dr. Morris -->
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="option-label">3 · RX · DR. MORRIS</div>
+        <div class="card">
+            <div class="card-body">
+                <div class="card-day">DAY 8 · MORNING CHECK-IN</div>
+                <div class="card-q">How's your <strong>pain</strong> today?</div>
+                <div class="dots"><div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div><div class="dot d4"></div><div class="dot d5"></div></div>
+                <div class="endpoints"><span>No pain</span><span>High pain</span></div>
+            </div>
+            <div class="footer">
+                <div class="rx-box"><span>Rx</span></div>
+                <span class="ft-dot"></span>
+                <span class="ft-dim">Dr. Morris</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. recovry.ai · Rx Verified -->
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="option-label">4 · RECOVRY.AI · RX VERIFIED</div>
+        <div class="card">
+            <div class="card-body">
+                <div class="card-day">DAY 8 · MORNING CHECK-IN</div>
+                <div class="card-q">How's your <strong>pain</strong> today?</div>
+                <div class="dots"><div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div><div class="dot d4"></div><div class="dot d5"></div></div>
+                <div class="endpoints"><span>No pain</span><span>High pain</span></div>
+            </div>
+            <div class="footer">
+                <span class="ft-mono">recovry.ai</span>
+                <span class="ft-dot"></span>
+                <div class="rx-box"><span>Rx</span></div>
+                <span class="ft">Verified</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Rx Secure -->
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="option-label">5 · RX SECURE</div>
+        <div class="card">
+            <div class="card-body">
+                <div class="card-day">DAY 8 · MORNING CHECK-IN</div>
+                <div class="card-q">How's your <strong>pain</strong> today?</div>
+                <div class="dots"><div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div><div class="dot d4"></div><div class="dot d5"></div></div>
+                <div class="endpoints"><span>No pain</span><span>High pain</span></div>
+            </div>
+            <div class="footer">
+                <svg width="10" height="12" viewBox="0 0 10 12" fill="none"><rect x="1" y="5" width="8" height="6" rx="1.5" fill="#ccc"/><path d="M3 5V3.5C3 2.12 3.9 1 5 1C6.1 1 7 2.12 7 3.5V5" stroke="#ccc" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>
+                <span class="ft-bold">Rx</span>
+                <span class="ft">Secure</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Pulse cross + Verified -->
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="option-label">6 · RECOVRYAI ICON + VERIFIED</div>
+        <div class="card">
+            <div class="card-body">
+                <div class="card-day">DAY 8 · MORNING CHECK-IN</div>
+                <div class="card-q">How's your <strong>pain</strong> today?</div>
+                <div class="dots"><div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div><div class="dot d4"></div><div class="dot d5"></div></div>
+                <div class="endpoints"><span>No pain</span><span>High pain</span></div>
+            </div>
+            <div class="footer">
+                <svg width="12" height="12" viewBox="0 0 1000 1000" fill="none" style="opacity: 0.3;">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M666.16 319.463C666.16 327.133 672.345 333.35 679.975 333.35H831.937V666.65H679.975C672.345 666.65 666.16 672.868 666.16 680.538V833.3H334.605V680.538C334.605 672.868 328.42 666.65 320.79 666.65H168.827V333.35H320.79C328.42 333.35 334.605 327.133 334.605 319.463V166.7H666.16V319.463ZM500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="#33B6B0"/>
+                </svg>
+                <span class="ft">Verified</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

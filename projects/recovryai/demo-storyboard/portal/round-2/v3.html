@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>08 — Provider Portal (Animated)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #ffffff; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        /* Slide layout */
+        .slide { display: flex; width: 100%; height: 100vh; }
+        .left { width: 42%; display: flex; align-items: center; padding-left: 100px; }
+        .right { width: 58%; display: flex; align-items: center; justify-content: center; }
+        .caption { max-width: 540px; }
+        .cap-line {
+            font-size: 48px; font-weight: 600; color: #1B1B1A; line-height: 1.25;
+            letter-spacing: -0.02em; margin-bottom: 12px;
+            opacity: 0; transform: translateY(16px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out, color 0.4s ease;
+        }
+        .cap-line.show { opacity: 1; transform: translateY(0); }
+        .cap-line.dim { color: #C8C6C1; }
+
+        /* Browser frame */
+        .browser { width: 900px; height: 560px; background: #fff; border-radius: 12px; box-shadow: 0 8px 80px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.06); display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(0,0,0,0.08); }
+
+        /* Browser chrome */
+        .browser-bar { height: 36px; background: #f4f2ee; display: flex; align-items: center; padding: 0 14px; gap: 8px; border-bottom: 1px solid #e8e6e1; flex-shrink: 0; }
+        .dots { display: flex; gap: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot.r { background: #E05555; }
+        .dot.y { background: #F5C842; }
+        .dot.g { background: #33B5B0; }
+        .url-bar { flex: 1; background: #fff; border-radius: 6px; height: 22px; margin: 0 60px; display: flex; align-items: center; padding: 0 10px; font-size: 11px; color: #a3a3a0; }
+
+        /* App layout */
+        .app { flex: 1; display: flex; overflow: hidden; }
+
+        /* Sidebar nav */
+        .sidebar { width: 52px; background: #f4f2ee; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 20px; border-right: 1px solid #e8e6e1; flex-shrink: 0; }
+        .sidebar-logo { width: 32px; height: 32px; border-radius: 8px; background: #3EB5A6; display: flex; align-items: center; justify-content: center; }
+        .sidebar-logo svg { width: 18px; height: 18px; }
+        .sidebar-icon { width: 20px; height: 20px; color: #a3a3a0; }
+        .sidebar-icon.active { color: #1b1b1a; }
+
+        /* Breadcrumb */
+        .breadcrumb { padding: 10px 20px; font-size: 11px; color: #a3a3a0; border-bottom: 1px solid #f0eeea; }
+        .breadcrumb span { color: #1b1b1a; }
+
+        /* 3-panel layout */
+        .panels { flex: 1; display: flex; overflow: hidden; }
+
+        /* Left panel, patient info */
+        .panel-left { width: 240px; border-right: 1px solid #f0eeea; padding: 16px; overflow-y: auto; flex-shrink: 0; }
+        .patient-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .patient-avatar { width: 40px; height: 40px; border-radius: 50%; background: #e8e6e1; overflow: hidden; }
+        .patient-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .patient-name { font-size: 14px; font-weight: 700; color: #1b1b1a; }
+        .patient-meta { font-size: 10px; color: #6a6a66; }
+
+        .score-block { background: #f9f8f6; border: 1px solid #e8e6e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+        .score-block-title { font-size: 11px; font-weight: 600; color: #1b1b1a; margin-bottom: 2px; }
+        .score-block-status { font-size: 10px; color: #E05555; font-weight: 600; }
+        .score-block-val { font-size: 22px; font-weight: 300; color: #1b1b1a; float: right; margin-top: -20px; }
+
+        .stat-mini { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid #f0eeea; }
+        .stat-mini-name { font-size: 11px; font-weight: 600; color: #1b1b1a; }
+        .stat-mini-sub { font-size: 9px; color: #6a6a66; }
+        .stat-mini-val { font-size: 14px; font-weight: 300; color: #1b1b1a; }
+        .stat-mini-trend { font-size: 10px; margin-right: 4px; }
+        .stat-mini-trend.up { color: #00b292; }
+        .stat-mini-trend.down { color: #E05555; }
+
+        .view-analytics { display: block; background: #1b1b1a; color: #fff; border-radius: 8px; padding: 10px; text-align: center; font-size: 12px; font-weight: 600; margin: 12px 0; }
+
+        .contact-row { padding: 6px 0; font-size: 10px; color: #6a6a66; }
+        .contact-label { font-weight: 600; color: #1b1b1a; font-size: 11px; }
+
+        /* Center panel, chat */
+        .panel-center { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #f0eeea; }
+        .chat-toggle { display: flex; background: #e8e6e1; border-radius: 100px; padding: 3px; margin: 12px 16px; }
+        .chat-tab { flex: 1; text-align: center; padding: 6px; border-radius: 100px; font-size: 11px; font-weight: 600; color: #6a6a66; }
+        .chat-tab.active { background: #fff; color: #1b1b1a; }
+        .chat-area { flex: 1; padding: 0 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .chat-ts { text-align: center; font-size: 9px; color: #a3a3a0; padding: 4px 0; }
+        .chat-sender { font-size: 9px; color: #6a6a66; margin-bottom: 2px; }
+        .chat-sender.right { text-align: right; }
+        .chat-sender strong { color: #1b1b1a; font-weight: 700; }
+        .chat-bub { padding: 8px 12px; font-size: 11px; line-height: 16px; border-radius: 8px; max-width: 85%; }
+        .chat-bub.bot { background: #f4f2ee; color: #1b1b1a; }
+        .chat-bub.user { background: #1b1b1a; color: #fff; margin-left: auto; }
+
+        /* Report card in chat */
+        .chat-report { background: #f4f2ee; border-radius: 8px; padding: 10px; max-width: 70%; margin-left: auto; }
+        .chat-report-title { font-size: 11px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+        .chat-report-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 10px; }
+        .chat-report-row:last-child { border-bottom: none; }
+        .chat-report-row .rn { font-weight: 600; }
+        .chat-report-link { text-align: center; font-size: 10px; font-weight: 700; margin-top: 6px; }
+
+        /* Right panel, history */
+        .panel-right { width: 240px; padding: 16px; overflow-y: auto; flex-shrink: 0; }
+        .history-title { font-size: 13px; font-weight: 700; color: #1b1b1a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .active-badge { font-size: 9px; font-weight: 600; color: #E05555; background: rgba(224,85,85,0.1); padding: 2px 8px; border-radius: 100px; }
+        .history-item { padding: 8px 0; border-bottom: 1px solid #f0eeea; }
+        .history-item-label { font-size: 10px; color: #6a6a66; }
+        .history-item-value { font-size: 11px; font-weight: 600; color: #1b1b1a; }
+        .history-note { background: #f9f8f6; border-radius: 8px; padding: 10px; margin: 10px 0; font-size: 10px; line-height: 14px; color: #6a6a66; }
+        .history-note strong { color: #1b1b1a; }
+        .history-provider { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
+        .history-provider-avatar { width: 28px; height: 28px; border-radius: 50%; background: #e8e6e1; }
+        .history-provider-name { font-size: 11px; font-weight: 600; color: #1b1b1a; }
+        .history-provider-role { font-size: 9px; color: #6a6a66; }
+        .add-event { display: block; background: #1b1b1a; color: #fff; border-radius: 8px; padding: 10px; text-align: center; font-size: 12px; font-weight: 600; margin-top: 12px; }
+
+        /* Animation */
+        .anim { opacity: 0; transform: translateY(16px); transition: opacity 0.4s ease-out, transform 0.4s ease-out; }
+        .anim.show { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="left">
+            <div class="caption">
+                <div class="cap-line" id="cap1">On the provider side,<br>each patient has<br>a complete profile.</div>
+                <div class="cap-line" id="cap2">Their recovery score,<br>history, and full<br>clinical context.</div>
+                <div class="cap-line" id="cap3">Every conversation with<br>the assistant is there.</div>
+                <div class="cap-line" id="cap4">Along with notes and<br>recommendations,<br>ready to act on.</div>
+            </div>
+        </div>
+        <div class="right">
+            <div class="browser">
+                <div class="browser-bar">
+                    <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+                    <div class="url-bar">provider.recovry.ai/patients/marcia-davis</div>
+                </div>
+
+                <div class="app">
+                    <div class="sidebar anim" id="el-sidebar">
+                        <div class="sidebar-logo"><svg viewBox="0 0 20 20" fill="white"><path d="M10 2C10 6.418 13.582 10 18 10C13.582 10 10 13.582 10 18C10 13.582 6.418 10 2 10C6.418 10 10 6.418 10 2Z"/></svg></div>
+                        <svg class="sidebar-icon active" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+
+                    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                        <div class="breadcrumb anim" id="el-breadcrumb">Home &gt; <span>Marcia Davis</span></div>
+                        <div class="panels">
+                            <!-- Left: Patient Info -->
+                            <div class="panel-left anim" id="el-panel-left">
+                                <div class="patient-header">
+                                    <div class="patient-avatar" style="display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#a3a3a0"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg></div>
+                                    <div>
+                                        <div class="patient-name">Marcia Davis</div>
+                                        <div class="patient-meta">TKR &middot; POD-103 &middot; Age: 62</div>
+                                    </div>
+                                </div>
+                                <div class="score-block">
+                                    <div class="score-block-title">Recovery Score</div>
+                                    <div class="score-block-status" style="color:#00b292;">Improving</div>
+                                    <div class="score-block-val">75.8%</div>
+                                </div>
+                                <div class="stat-mini"><div><div class="stat-mini-name">Activity</div><div class="stat-mini-sub">Improving</div></div><div><span class="stat-mini-trend up">&#8593;</span><span class="stat-mini-val">45%</span></div></div>
+                                <div class="stat-mini"><div><div class="stat-mini-name">Diet</div><div class="stat-mini-sub">In Decline</div></div><div><span class="stat-mini-trend down">&#8595;</span><span class="stat-mini-val">5%</span></div></div>
+                                <div class="stat-mini"><div><div class="stat-mini-name">Sleep</div><div class="stat-mini-sub">Stable</div></div><div><span class="stat-mini-val">27%</span></div></div>
+                                <div class="stat-mini"><div><div class="stat-mini-name">Medication</div><div class="stat-mini-sub">Improving</div></div><div><span class="stat-mini-trend up">&#8593;</span><span class="stat-mini-val">32%</span></div></div>
+                                <div class="view-analytics">View Analytics &rarr;</div>
+                                <div class="contact-row"><div class="contact-label">Surgery Date</div>December 12, 2023</div>
+                                <div class="contact-row"><div class="contact-label">Assigned Surgeon</div>Dr. Kwan</div>
+                            </div>
+
+                            <!-- Center: Chat -->
+                            <div class="panel-center anim" id="el-panel-center">
+                                <div class="chat-toggle"><div class="chat-tab active">&#10022; Assistant</div><div class="chat-tab">&#9787; Clinic</div></div>
+                                <div class="chat-area">
+                                    <div class="chat-ts">Today</div>
+                                    <div class="anim" id="el-chat1"><div class="chat-sender"><strong>RecovryAI</strong> &middot; 12/14/2023 &middot; 5:08 pm</div><div class="chat-bub bot">How would you rate this pain on a scale of 0 to 10?</div></div>
+                                    <div class="anim" id="el-chat2"><div class="chat-sender right"><strong>Marcia Davis</strong> &middot; 12/14/2023 &middot; 5:09 pm</div><div class="chat-bub user">Probably a 7 or 8, but not all the time.</div></div>
+                                    <div class="anim" id="el-chat3"><div class="chat-sender"><strong>RecovryAI</strong> &middot; 12/14/2023 &middot; 5:09 pm</div><div class="chat-bub bot">At 103 days post-op, that level of pain needs prompt attention. I've flagged this for Dr. Kwan's team. Rest your knee, apply ice, and avoid activities that trigger the pain.</div></div>
+                                    <div class="anim" id="el-chat4"><div class="chat-sender right"><strong>Marcia Davis</strong> &middot; 12/14/2023 &middot; 5:09 pm</div>
+                                        <div class="chat-report">
+                                            <div class="chat-report-title">Report Summary</div>
+                                            <div class="chat-report-row"><span class="rn">Pain</span><span>&#9679; Moderate</span></div>
+                                            <div class="chat-report-row"><span class="rn">Sleep</span><span>44%</span></div>
+                                            <div class="chat-report-link">View History &rarr;</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Patient History -->
+                            <div class="panel-right anim" id="el-panel-right">
+                                <div class="history-title">Patient History <span class="active-badge">&#9679; Active</span></div>
+                                <div class="history-item"><div class="history-item-label">Appointment set on</div><div class="history-item-value">December 12, 2023</div></div>
+                                <div class="history-item"><div class="history-item-label">Assigned provider</div><div class="history-item-value">Dr. Kwan</div></div>
+                                <div class="history-provider">
+                                    <div class="history-provider-avatar"></div>
+                                    <div><div class="history-provider-name">Dr. Kwan</div><div class="history-provider-role">Orthopedic Surgeon</div></div>
+                                </div>
+                                <div class="history-note anim" id="el-history-note"><strong>RecovryAI</strong> flagged elevated pain<br><br>Patient reported knee pain at 7-8/10 at 103 days post-op. VCA provided interim care guidance and notified care team for follow-up.</div>
+                                <div class="history-item"><div class="history-item-label">Patient last seen on</div><div class="history-item-value">December 14, 2023</div></div>
+                                <div class="add-event">Add New Event &#9998;</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <audio id="vo" preload="auto" src="../../audio/11-portal.mp3"></audio>
+    <script>
+        function show(id) { document.getElementById(id)?.classList.add('show'); }
+        function showCap(id) {
+            document.querySelectorAll('.cap-line.show').forEach(el => el.classList.add('dim'));
+            const el = document.getElementById(id);
+            if (el) { el.classList.add('show'); el.classList.remove('dim'); }
+        }
+        function reset() {
+            const vo = document.getElementById('vo');
+            vo.pause();
+            vo.currentTime = 0;
+            document.querySelectorAll('.anim').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('.cap-line').forEach(el => { el.classList.remove('show', 'dim'); });
+        }
+
+        const timeline = [
+            // "One patient. The complete picture."
+            // → sidebar + breadcrumb + left panel (score, stats)
+            [300, () => { show('el-sidebar'); showCap('cap1'); }],
+            [500, () => show('el-breadcrumb')],
+            // "Score, history, clinical context."
+            // → left panel with patient info + recovery score
+            [1500, () => { show('el-panel-left'); showCap('cap2'); }],
+            // "Every conversation, in full."
+            // → center panel with chat thread, messages stagger in
+            [4000, () => { show('el-panel-center'); showCap('cap3'); }],
+            [4500, () => show('el-chat1')],
+            [5000, () => show('el-chat2')],
+            [5500, () => show('el-chat3')],
+            [6000, () => show('el-chat4')],
+            // "Notes from the VCA, ready to act on."
+            // → right panel with history note
+            [7500, () => { show('el-panel-right'); showCap('cap4'); }],
+            [8500, () => show('el-history-note')],
+        ];
+
+        function run() { reset(); document.getElementById('vo').play().catch(() => {}); timeline.forEach(([ms, fn]) => setTimeout(fn, ms)); }
+        run();
+        setInterval(run, 16000);
+    </script>
+</body>
+</html>

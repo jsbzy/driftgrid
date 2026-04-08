@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#9 — Agentic Workflows</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-bar {
+            padding: 14px 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            background: #FFFFFF;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chat-header-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3EB5A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-header-avatar svg { width: 16px; height: 16px; }
+        .chat-header-info { flex: 1; }
+        .chat-header-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .chat-header-status {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 20px 20px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chat-time {
+            text-align: center;
+            font-size: 11px;
+            color: #bbb;
+            padding: 4px 0;
+        }
+
+        /* VCA message */
+        .msg-vca {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .msg-vca-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            padding-left: 4px;
+        }
+        .msg-vca-avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #3EB5A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .msg-vca-avatar svg { width: 11px; height: 11px; }
+        .msg-vca-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: #888;
+        }
+
+        .msg-vca .bubble {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.08);
+            padding: 16px 18px;
+            border-radius: 18px 18px 18px 4px;
+            font-size: 15px;
+            font-weight: 400;
+            color: #1a1a1a;
+            line-height: 1.55;
+            max-width: 90%;
+        }
+        .msg-vca .bubble strong { font-weight: 600; }
+        .msg-vca .msg-time {
+            font-size: 10px;
+            color: #bbb;
+            margin-top: 4px;
+            padding-left: 4px;
+        }
+
+        /* Action card */
+        .action-card {
+            margin-top: 12px;
+            background: #F8FAFA;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .action-card-header {
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .action-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .action-icon.schedule { background: #EDF8F7; }
+        .action-icon.rx { background: #FEF3C7; }
+        .action-icon.message { background: #EDE9FE; }
+        .action-icon svg { width: 14px; height: 14px; }
+
+        .action-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .action-subtitle {
+            font-size: 12px;
+            color: #555;
+        }
+
+        .action-details {
+            padding: 0 14px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .action-detail-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #555;
+        }
+        .action-detail-row svg { width: 14px; height: 14px; color: #888; flex-shrink: 0; }
+
+        .action-status {
+            padding: 8px 14px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .action-status.confirmed { color: #059669; }
+        .action-status.pending { color: #D97706; }
+        .action-status .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        .action-status.confirmed .status-dot { background: #059669; }
+        .action-status.pending .status-dot { background: #D97706; }
+
+        /* Patient message */
+        .msg-patient {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .msg-patient .bubble {
+            background: #1a1a1a;
+            color: #FFFFFF;
+            padding: 12px 16px;
+            border-radius: 18px 18px 4px 18px;
+            font-size: 15px;
+            font-weight: 400;
+            line-height: 1.5;
+            max-width: 85%;
+        }
+        .msg-patient .msg-time {
+            font-size: 10px;
+            color: #bbb;
+            margin-top: 4px;
+        }
+
+        .chat-input {
+            padding: 12px 20px 36px;
+            background: #FFFFFF;
+            border-top: 1px solid rgba(0,0,0,0.06);
+        }
+        .chat-input-inner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: #F5F7FA;
+            border-radius: 24px;
+        }
+        .chat-input-text {
+            flex: 1;
+            font-size: 14px;
+            color: #bbb;
+        }
+        .chat-input-send {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3EB5A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-input-send svg { width: 14px; height: 14px; }
+    </style>
+</head>
+<body>
+    <div class="status-bar">
+        <span>9:41</span>
+    </div>
+
+    <div class="chat-header">
+        <div class="chat-header-avatar">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M8 1v4M8 11v4M1 8h4M11 8h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="chat-header-info">
+            <div class="chat-header-name">Your VCA</div>
+            <div class="chat-header-status">Day 42 of 90</div>
+        </div>
+    </div>
+
+    <div class="chat-body">
+        <div class="chat-time">Today, 8:15 AM</div>
+
+        <!-- VCA takes action: scheduling -->
+        <div class="msg-vca">
+            <div class="msg-vca-header">
+                <div class="msg-vca-avatar">
+                    <svg viewBox="0 0 11 11" fill="none"><path d="M5.5 1v3M5.5 7v3M1 5.5h3M7 5.5h3" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </div>
+                <span class="msg-vca-label">Your VCA</span>
+            </div>
+            <div class="bubble">
+                <span data-drift-editable="vca-schedule" data-drift-maxlen="200">Good morning, James. Your 6-week follow-up with Dr. Morris is due. I've scheduled it for you.</span>
+
+                <div class="action-card">
+                    <div class="action-card-header">
+                        <div class="action-icon schedule">
+                            <svg viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2.5" width="11" height="10" rx="2" stroke="#3EB5A6" stroke-width="1.2"/><path d="M1.5 5.5h11M4.5 1v2.5M9.5 1v2.5" stroke="#3EB5A6" stroke-width="1.2" stroke-linecap="round"/></svg>
+                        </div>
+                        <div>
+                            <div class="action-title">Follow-up Appointment</div>
+                            <div class="action-subtitle">UCSF Orthopedics</div>
+                        </div>
+                    </div>
+                    <div class="action-details">
+                        <div class="action-detail-row">
+                            <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#888" stroke-width="1.2"/><path d="M7 4v3.5L9.5 9" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>
+                            Thursday, April 30 at 2:00 PM
+                        </div>
+                        <div class="action-detail-row">
+                            <svg viewBox="0 0 14 14" fill="none"><path d="M7 1C4 1 1 3.5 1 7s3 6 6 6 6-2.5 6-6-3-6-6-6z" stroke="#888" stroke-width="1.2"/><path d="M7 4v3h3" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>
+                            Dr. Elena Morris, MD
+                        </div>
+                    </div>
+                    <div class="action-status confirmed">
+                        <div class="status-dot"></div>
+                        Confirmed
+                    </div>
+                </div>
+            </div>
+            <div class="msg-time">8:15 AM</div>
+        </div>
+
+        <!-- Patient acknowledges -->
+        <div class="msg-patient">
+            <div class="bubble" data-drift-editable="patient-ack" data-drift-maxlen="60">Perfect, thank you.</div>
+            <div class="msg-time">8:22 AM</div>
+        </div>
+
+        <div class="chat-time">10:45 AM</div>
+
+        <!-- VCA takes action: Rx refill -->
+        <div class="msg-vca">
+            <div class="msg-vca-header">
+                <div class="msg-vca-avatar">
+                    <svg viewBox="0 0 11 11" fill="none"><path d="M5.5 1v3M5.5 7v3M1 5.5h3M7 5.5h3" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </div>
+                <span class="msg-vca-label">Your VCA</span>
+            </div>
+            <div class="bubble">
+                <span data-drift-editable="vca-rx" data-drift-maxlen="200">I noticed your pain medication is running low. I've sent a refill request to your pharmacy.</span>
+
+                <div class="action-card">
+                    <div class="action-card-header">
+                        <div class="action-icon rx">
+                            <svg viewBox="0 0 14 14" fill="none"><rect x="2" y="4" width="10" height="7" rx="1.5" stroke="#D97706" stroke-width="1.2"/><path d="M5 4V2.5A1.5 1.5 0 019 2.5V4" stroke="#D97706" stroke-width="1.2"/><circle cx="7" cy="7.5" r="1" fill="#D97706"/></svg>
+                        </div>
+                        <div>
+                            <div class="action-title">Prescription Refill</div>
+                            <div class="action-subtitle">Acetaminophen 500mg</div>
+                        </div>
+                    </div>
+                    <div class="action-details">
+                        <div class="action-detail-row">
+                            <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>
+                            Walgreens — 2100 Irving St
+                        </div>
+                        <div class="action-detail-row">
+                            <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#888" stroke-width="1.2"/><path d="M7 4v3.5L9.5 9" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>
+                            Ready for pickup by 2:00 PM
+                        </div>
+                    </div>
+                    <div class="action-status pending">
+                        <div class="status-dot"></div>
+                        Sent to pharmacy
+                    </div>
+                </div>
+            </div>
+            <div class="msg-time">10:45 AM</div>
+        </div>
+
+        <div class="chat-time">3:30 PM</div>
+
+        <!-- VCA takes action: PT summary -->
+        <div class="msg-vca">
+            <div class="msg-vca-header">
+                <div class="msg-vca-avatar">
+                    <svg viewBox="0 0 11 11" fill="none"><path d="M5.5 1v3M5.5 7v3M1 5.5h3M7 5.5h3" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </div>
+                <span class="msg-vca-label">Your VCA</span>
+            </div>
+            <div class="bubble">
+                <span data-drift-editable="vca-pt" data-drift-maxlen="200">I've shared your progress report with your physical therapist ahead of tomorrow's session.</span>
+
+                <div class="action-card">
+                    <div class="action-card-header">
+                        <div class="action-icon message">
+                            <svg viewBox="0 0 14 14" fill="none"><path d="M2.5 2.5h9a1 1 0 011 1v6a1 1 0 01-1 1H5l-2.5 2V3.5a1 1 0 011-1z" stroke="#7C3AED" stroke-width="1.2"/></svg>
+                        </div>
+                        <div>
+                            <div class="action-title">PT Progress Report</div>
+                            <div class="action-subtitle">Sent to Bay Area PT Group</div>
+                        </div>
+                    </div>
+                    <div class="action-details">
+                        <div class="action-detail-row">
+                            <svg viewBox="0 0 14 14" fill="none"><path d="M2 7L5.5 10.5L12 3.5" stroke="#888" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            ROM: 105° (up from 90° at Week 5)
+                        </div>
+                        <div class="action-detail-row">
+                            <svg viewBox="0 0 14 14" fill="none"><path d="M2 7L5.5 10.5L12 3.5" stroke="#888" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            4,200 avg daily steps this week
+                        </div>
+                    </div>
+                    <div class="action-status confirmed">
+                        <div class="status-dot"></div>
+                        Delivered
+                    </div>
+                </div>
+            </div>
+            <div class="msg-time">3:30 PM</div>
+        </div>
+    </div>
+
+    <div class="chat-input">
+        <div class="chat-input-inner">
+            <span class="chat-input-text">Ask anything...</span>
+            <div class="chat-input-send">
+                <svg viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

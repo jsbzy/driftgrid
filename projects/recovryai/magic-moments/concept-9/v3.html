@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#8 — Graduation Moment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 40px 24px;
+        }
+
+        .graduation-card {
+            background: #FFFFFF;
+            border: 1.5px solid rgba(62,181,166,0.2);
+            border-radius: 20px;
+            overflow: hidden;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Subtle celebration gradient at top */
+        .card-glow {
+            height: 120px;
+            background: linear-gradient(180deg, rgba(62,181,166,0.08) 0%, rgba(62,181,166,0) 100%);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .completion-orb-wrap {
+            position: relative; width: 72px; height: 72px;
+        }
+        .completion-orb {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: #3EB5A6;
+            display: flex; align-items: center; justify-content: center;
+            animation: completeBreathe 3s ease-in-out infinite;
+        }
+        .completion-orb svg { width: 32px; height: 32px; }
+        .completion-orb::after {
+            content: ''; position: absolute; inset: -16px;
+            border-radius: 50%; background: rgba(62,181,166,0.1);
+            filter: blur(20px); z-index: -1;
+        }
+        @keyframes completeBreathe {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(62,181,166,0.15); }
+            50% { transform: scale(1.05); box-shadow: 0 0 50px rgba(62,181,166,0.25); }
+        }
+
+        .card-body {
+            padding: 0 28px 28px;
+            text-align: center;
+        }
+
+        .grad-day {
+            font-size: 11px; font-weight: 500; color: #3EB5A6;
+            letter-spacing: 0.06em; margin-bottom: 16px;
+        }
+        .grad-title {
+            font-size: 26px; font-weight: 300; color: #1a1a1a;
+            letter-spacing: -0.02em; margin-bottom: 8px;
+            line-height: 1.2;
+        }
+        .grad-title strong { font-weight: 600; }
+        .grad-subtitle {
+            font-size: 15px; font-weight: 400; color: #888;
+            line-height: 1.5; margin-bottom: 28px;
+        }
+
+        /* Journey summary */
+        .journey-summary {
+            display: flex; justify-content: space-between;
+            padding: 20px 0; border-top: 1px solid rgba(0,0,0,0.04);
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+        }
+        .journey-stat {
+            display: flex; flex-direction: column; align-items: center;
+            flex: 1;
+        }
+        .journey-stat + .journey-stat {
+            border-left: 1px solid rgba(0,0,0,0.04);
+        }
+        .stat-value {
+            font-size: 22px; font-weight: 600; color: #1a1a1a;
+            letter-spacing: -0.02em;
+        }
+        .stat-value.teal { color: #3EB5A6; }
+        .stat-label {
+            font-size: 11px; color: #888; margin-top: 4px;
+        }
+
+        /* Completion bar */
+        .completion-bar {
+            width: 100%; height: 6px; background: rgba(62,181,166,0.1);
+            border-radius: 3px; overflow: hidden; margin-bottom: 16px;
+        }
+        .completion-fill {
+            width: 100%; height: 100%; border-radius: 3px;
+            background: linear-gradient(90deg, #3EB5A6 0%, #059669 100%);
+        }
+
+        /* VCA message */
+        .grad-message {
+            background: rgba(62,181,166,0.04);
+            border: 1px solid rgba(62,181,166,0.1);
+            border-radius: 14px; padding: 16px;
+            text-align: left; margin-bottom: 20px;
+        }
+        .grad-msg-header {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 10px;
+        }
+        .grad-msg-avatar {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .grad-msg-avatar svg { width: 11px; height: 11px; }
+        .grad-msg-name { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+        .grad-msg-rx {
+            font-size: 9px; font-weight: 500; color: #3EB5A6;
+            background: rgba(62,181,166,0.08); padding: 2px 6px;
+            border-radius: 3px; margin-left: auto;
+        }
+        .grad-msg-text {
+            font-size: 14px; font-weight: 400; color: #555;
+            line-height: 1.55;
+        }
+        .grad-msg-text strong { font-weight: 600; color: #1a1a1a; }
+
+        /* Provider note */
+        .provider-note {
+            background: rgba(0,0,0,0.02);
+            border-radius: 10px; padding: 14px;
+            text-align: left;
+        }
+        .provider-header {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 8px;
+        }
+        .provider-avatar {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: #1a1a1a; display: flex; align-items: center;
+            justify-content: center; font-size: 8px; font-weight: 700;
+            color: white;
+        }
+        .provider-name { font-size: 12px; font-weight: 500; color: #1a1a1a; }
+        .provider-text {
+            font-size: 13px; color: #888; line-height: 1.5;
+        }
+
+        .card-footer {
+            padding: 12px 28px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .rx-badge {
+            width: 16px; height: 16px; border-radius: 3px;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .rx-badge span { font-size: 7px; font-weight: 700; color: white; }
+        .footer-text { font-size: 11px; color: #3EB5A6; font-weight: 500; }
+
+        .date-stamp {
+            font-size: 11px; color: #bbb;
+            text-align: center; margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="graduation-card">
+        <div class="card-glow">
+            <div class="completion-orb-wrap">
+                <div class="completion-orb">
+                    <svg viewBox="0 0 32 32" fill="none">
+                        <path d="M8 16L14 22L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="grad-day">DAY 90 OF 90</div>
+            <h1 class="grad-title" data-drift-editable="headline" data-drift-maxlen="40">
+                <strong>Recovery complete.</strong>
+            </h1>
+            <p class="grad-subtitle" data-drift-editable="subtitle" data-drift-maxlen="120">
+                James, you've completed your 90-day post-operative recovery program. Every day counted, and you showed up for all of them.
+            </p>
+
+            <div class="journey-summary">
+                <div class="journey-stat">
+                    <div class="stat-value teal">90</div>
+                    <div class="stat-label">Days completed</div>
+                </div>
+                <div class="journey-stat">
+                    <div class="stat-value">90</div>
+                    <div class="stat-label">Check-ins</div>
+                </div>
+                <div class="journey-stat">
+                    <div class="stat-value">128°</div>
+                    <div class="stat-label">Final ROM</div>
+                </div>
+            </div>
+
+            <div class="completion-bar">
+                <div class="completion-fill"></div>
+            </div>
+
+            <div class="grad-message">
+                <div class="grad-msg-header">
+                    <div class="grad-msg-avatar">
+                        <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v4M7 9v4M1 7h4M9 7h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </div>
+                    <span class="grad-msg-name">Your VCA</span>
+                    <span class="grad-msg-rx">Rx</span>
+                </div>
+                <p class="grad-msg-text" data-drift-editable="vca-message" data-drift-maxlen="300">
+                    <strong>James, it's been a privilege.</strong> From the first morning you checked in at 8 AM on Day 1 to today, I've watched you go from 42 degrees of flexion to 128. There were hard days -- Day 6 was rough, and I know the night aching around Day 40 scared you. But you trusted the process. And you healed.
+                </p>
+            </div>
+
+            <div class="provider-note">
+                <div class="provider-header">
+                    <div class="provider-avatar">EM</div>
+                    <span class="provider-name">Dr. Elena Morris, MD</span>
+                </div>
+                <p class="provider-text" data-drift-editable="provider-note" data-drift-maxlen="200">
+                    Excellent outcome. ROM exceeds expectations. Pain resolved ahead of schedule. No complications. Cleared for full activity. Congratulations, James.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <div class="rx-badge"><span>Rx</span></div>
+            <span class="footer-text">Recovery Program Complete</span>
+        </div>
+    </div>
+
+    <div class="date-stamp">June 12, 2026 · 8:00 AM</div>
+</body>
+</html>

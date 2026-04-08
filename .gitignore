@@ -46,6 +46,7 @@ _archive/
 # User projects (client work — not committed to the public repo)
 /projects/*/
 !/projects/demo/
+!/projects/recovryai/
 
 # Thumbnail caches
 .thumbs/

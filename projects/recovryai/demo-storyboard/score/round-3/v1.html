@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>05 — Score</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Inter+Tight:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #ffffff; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .slide { display: flex; width: 100%; height: 100vh; }
+        .left { width: 46%; display: flex; align-items: center; padding-left: 120px; }
+        .right { width: 54%; display: flex; align-items: center; justify-content: center; padding-right: 60px; }
+        .caption { width: 580px; position: relative; min-height: 120px; }
+        .cap-line {
+            font-size: 40px; font-weight: 600; color: #1B1B1A; line-height: 1.3;
+            letter-spacing: -0.02em;
+            position: absolute; top: 0; left: 0; right: 0;
+            opacity: 0; transform: translateY(14px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .cap-line.show { opacity: 1; transform: translateY(0); }
+        .cap-line.hide { opacity: 0; transform: translateY(-10px); }
+
+        /* Phone, 300px = 0.8x of Figma's 375px */
+        .phone { width: 300px; height: 650px; border-radius: 40px; background: #f4f2ee; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 60px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.08); }
+
+        /* Status bar */
+        .status-bar { height: 34px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 22px 5px; flex-shrink: 0; }
+        .status-time { font-size: 12px; font-weight: 600; color: #1b1b1a; letter-spacing: -0.19px; }
+        .status-icons { font-size: 10px; color: #1b1b1a; }
+
+        /* Welcome header */
+        .welcome-header { background: #f4f2ee; padding: 8px 13px 6px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .avatar-circle { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+        .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .greeting-text { flex: 1; }
+        .greeting-name { font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 17px; line-height: 22px; color: #1b1b1a; }
+        .greeting-sub { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 12px; line-height: 15px; color: #6a6a66; letter-spacing: 0.08px; }
+        .bell-button { width: 34px; height: 34px; border-radius: 100px; background: #fff; border: 2px solid rgba(28,27,31,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
+        .bell-button .notif-dot { position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: #E05555; }
+
+        /* Scrollable content */
+        .scroll-content { flex: 1; overflow-y: auto; padding: 0 13px; }
+
+        /* Recovery score card */
+        .score-card { background: #fff; border: 2px solid rgba(73,69,79,0.12); border-radius: 16px; padding: 18px 12px; margin-top: 6px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .score-label { font-size: 11px; line-height: 14px; color: #6a6a66; letter-spacing: 0.08px; }
+        .score-row { display: flex; align-items: baseline; justify-content: center; gap: 5px; }
+        .score-number { font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 22px; line-height: 28px; color: #1c1b1f; }
+        .score-percent { font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 11px; color: #1c1b1f; align-self: flex-end; }
+        .score-improving { font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 22px; line-height: 28px; color: #00b292; }
+        .score-badge { background: rgba(0,178,146,0.15); padding: 3px 10px; border-radius: 100px; font-weight: 700; font-size: 9px; line-height: 11px; color: #1c1b1f; letter-spacing: 0.06px; }
+
+        /* Health stats card */
+        .health-card { background: #fff; border: 2px solid rgba(73,69,79,0.12); border-radius: 16px; padding: 12px 14px 2px; margin-top: 8px; display: flex; flex-direction: column; gap: 10px; }
+
+        /* Today dropdown */
+        .today-row { display: flex; justify-content: flex-end; }
+        .today-dropdown { display: flex; align-items: center; gap: 4px; border: 1px solid #dcd9d5; border-radius: 5px; padding: 3px 3px 3px 8px; }
+        .today-dropdown span { font-weight: 700; font-size: 11px; color: #1b1b1a; }
+        .today-chevron { width: 15px; height: 15px; background: #1b1b1a; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .today-chevron svg { width: 9px; height: 9px; color: #fff; }
+
+        /* Pain summary */
+        .pain-summary { display: flex; align-items: center; gap: 12px; }
+        .pain-globe { width: 44px; height: 44px; border-radius: 100px; background: #ffc632; border: 2px solid rgba(28,27,31,0.12); flex-shrink: 0; }
+        .pain-text { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+        .pain-meta { font-size: 9px; line-height: 11px; color: #6a6a66; }
+        .pain-level { font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 15px; line-height: 19px; color: #1c1b1f; }
+        .pain-stable { display: inline-flex; align-self: flex-start; background: #f4f2ee; padding: 2px 8px; border-radius: 100px; font-weight: 700; font-size: 9px; color: #6a6a66; margin-top: 1px; }
+
+        /* Stat rows */
+        .stat-row { display: flex; align-items: center; border-top: 1px solid #ecebe9; padding: 11px 0; }
+        .stat-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+        .stat-name { font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 13px; line-height: 16px; color: #1c1b1f; letter-spacing: 0.03px; }
+        .stat-status { font-size: 9px; line-height: 11px; color: #6a6a66; }
+        .stat-right { display: flex; align-items: center; gap: 6px; }
+        .trend-pill { display: flex; align-items: center; justify-content: center; padding: 3px 5px; border-radius: 100px; }
+        .trend-pill.improving { background: rgba(0,178,146,0.15); }
+        .trend-pill.declining { background: rgba(241,2,59,0.15); }
+        .stat-value { font-family: 'Inter Tight', sans-serif; font-weight: 300; font-size: 20px; line-height: 26px; color: #1c1b1f; min-width: 34px; text-align: right; }
+
+        /* Bottom nav */
+        .bottom-nav { background: #fff; padding: 6px 8px 6px; display: flex; align-items: flex-end; justify-content: center; gap: 0; flex-shrink: 0; box-shadow: 0px -12px 30px #f4f2ee; position: relative; }
+        .nav-group { display: flex; flex: 1; justify-content: space-around; align-items: flex-end; padding-bottom: 0; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+        .nav-item span { font-weight: 700; font-size: 8px; color: #b8b6b2; letter-spacing: 0.06px; }
+        .nav-item.active span { color: #1b1b1a; }
+        .nav-chat-fab { display: flex; flex-direction: column; align-items: center; gap: 1px; margin-top: -18px; }
+        .chat-circle { width: 38px; height: 38px; border-radius: 100px; background: #1b1b1a; display: flex; align-items: center; justify-content: center; }
+        .nav-chat-fab span { font-weight: 700; font-size: 8px; color: #b8b6b2; }
+
+        /* Home indicator */
+        .home-wrap { background: #fff; display: flex; justify-content: center; flex-shrink: 0; }
+        .home-bar { width: 100px; height: 4px; background: #000; border-radius: 100px; margin: 4px 0 6px; }
+
+        /* Animation classes */
+        .anim { opacity: 0; transform: translateY(12px); transition: opacity 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); }
+        .anim.show { opacity: 1; transform: translateY(0); }
+
+        /* Scale pop for badge */
+        .anim-pop { opacity: 0; transform: scale(0.85); transition: opacity 0.35s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .anim-pop.show { opacity: 1; transform: scale(1); }
+    </style>
+</head>
+<body>
+    <div class="slide">
+    <div class="left">
+        <div class="caption">
+            <div class="cap-line" id="cap1">These check-ins feed into<br>a single recovery score,<br>a shared view of progress<br>for the patient and provider.</div>
+        </div>
+    </div>
+    <div class="right">
+    <div class="phone">
+        <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <span class="status-icons">&#9679;&#9679;&#9679;&#9679; &#8250;</span>
+        </div>
+
+        <div class="welcome-header anim" id="welcome">
+            <div class="avatar-circle" style="background:#e8e6e1;display:flex;align-items:center;justify-content:center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#a3a3a0"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+            </div>
+            <div class="greeting-text">
+                <div class="greeting-name" data-drift-editable="greeting" data-drift-maxlen="30">Hi, Marcia</div>
+                <div class="greeting-sub">Let's check in today!</div>
+            </div>
+            <div class="bell-button">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b1b1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <div class="notif-dot"></div>
+            </div>
+        </div>
+
+        <div class="scroll-content">
+            <div class="score-card anim" id="scoreCard">
+                <div class="score-label">Your recovery score</div>
+                <div class="score-row">
+                    <span class="score-number" id="scoreNumber">0.0</span>
+                    <span class="score-percent">%</span>
+                    <span class="score-improving anim" id="improving">Improving</span>
+                </div>
+                <div class="score-badge anim-pop" id="scoreBadge">Great job improving your recovery score!</div>
+            </div>
+
+            <div class="health-card anim" id="healthCard">
+                <div class="today-row">
+                    <div class="today-dropdown">
+                        <span>Today</span>
+                        <div class="today-chevron">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pain-summary anim" id="painRow">
+                    <div class="pain-globe"></div>
+                    <div class="pain-text">
+                        <div class="pain-meta">*Average of pain reportings</div>
+                        <div class="pain-level" data-drift-editable="pain-level" data-drift-maxlen="20">Moderate Pain</div>
+                        <div class="pain-stable">Stable</div>
+                    </div>
+                </div>
+
+                <div class="stat-row anim" id="statActivity">
+                    <div class="stat-info"><div class="stat-name">Activity</div><div class="stat-status">Improving</div></div>
+                    <div class="stat-right">
+                        <div class="trend-pill improving"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#00b292" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+                        <div class="stat-value">45%</div>
+                    </div>
+                </div>
+                <div class="stat-row anim" id="statDiet">
+                    <div class="stat-info"><div class="stat-name">Diet</div><div class="stat-status">In Decline</div></div>
+                    <div class="stat-right">
+                        <div class="trend-pill declining"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#E05555" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+                        <div class="stat-value">5%</div>
+                    </div>
+                </div>
+                <div class="stat-row anim" id="statSleep">
+                    <div class="stat-info"><div class="stat-name">Sleep</div><div class="stat-status">Stable</div></div>
+                    <div class="stat-right"><div class="stat-value">27%</div></div>
+                </div>
+                <div class="stat-row anim" id="statMedication">
+                    <div class="stat-info"><div class="stat-name">Medication</div><div class="stat-status">Improving</div></div>
+                    <div class="stat-right">
+                        <div class="trend-pill improving"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#00b292" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+                        <div class="stat-value">32%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-nav anim" id="bottomNav">
+            <div class="nav-group">
+                <div class="nav-item active"><svg width="20" height="20" viewBox="0 0 24 24" fill="#1b1b1a"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg><span>Home</span></div>
+                <div class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b8b6b2" stroke-width="1.5"><path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg><span>Analytics</span></div>
+            </div>
+            <div class="nav-chat-fab">
+                <div class="chat-circle"><svg width="18" height="18" viewBox="0 0 1000 1000" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M666.16 319.463C666.16 327.133 672.345 333.35 679.975 333.35H831.937V666.65H679.975C672.345 666.65 666.16 672.868 666.16 680.538V833.3H334.605V680.538C334.605 672.868 328.42 666.65 320.79 666.65H168.827V333.35H320.79C328.42 333.35 334.605 327.133 334.605 319.463V166.7H666.16V319.463ZM500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="white"/></svg></div>
+                <span>Chat</span>
+            </div>
+            <div class="nav-group">
+                <div class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b8b6b2" stroke-width="1.5"><path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg><span>Resources</span></div>
+                <div class="nav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b8b6b2" stroke-width="1.5"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg><span>Report</span></div>
+            </div>
+        </div>
+        <div class="home-wrap"><div class="home-bar"></div></div>
+    </div>
+    </div><!-- .right -->
+    </div><!-- .slide -->
+
+    <audio id="vo" preload="auto" src="../../audio/05-score.mp3?v=6"></audio>
+    <script>
+        let currentCap = null;
+
+        function showCap(id) {
+            if (currentCap) {
+                currentCap.classList.remove('show');
+                currentCap.classList.add('hide');
+            }
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('hide');
+                void el.offsetHeight;
+                el.classList.add('show');
+                currentCap = el;
+            }
+        }
+
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        function animateScore(target, duration) {
+            const el = document.getElementById('scoreNumber');
+            const start = performance.now();
+
+            function tick(now) {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = easeOutCubic(progress);
+                el.textContent = (eased * target).toFixed(1);
+                if (progress < 1) requestAnimationFrame(tick);
+            }
+
+            requestAnimationFrame(tick);
+        }
+
+        function reset() {
+            const vo = document.getElementById('vo');
+            vo.pause();
+            vo.currentTime = 0;
+            currentCap = null;
+
+            // Reset all animated elements
+            document.querySelectorAll('.anim, .anim-pop').forEach(el => el.classList.remove('show'));
+            document.getElementById('scoreNumber').textContent = '0.0';
+            document.querySelectorAll('.cap-line').forEach(el => el.classList.remove('show', 'hide'));
+        }
+
+        function run() {
+            reset();
+            document.getElementById('vo').play().catch(() => {});
+
+            // Cap 1 at 400ms — "These check-ins feed into a single recovery score..."
+            setTimeout(() => showCap('cap1'), 400);
+
+            // Phone elements stagger in
+            setTimeout(() => document.getElementById('welcome').classList.add('show'), 300);
+            setTimeout(() => document.getElementById('bottomNav').classList.add('show'), 500);
+            setTimeout(() => document.getElementById('scoreCard').classList.add('show'), 800);
+            setTimeout(() => animateScore(75.8, 1500), 1200);
+            setTimeout(() => document.getElementById('improving').classList.add('show'), 2000);
+            setTimeout(() => document.getElementById('scoreBadge').classList.add('show'), 2400);
+
+            setTimeout(() => document.getElementById('healthCard').classList.add('show'), 2800);
+            setTimeout(() => document.getElementById('painRow').classList.add('show'), 3200);
+            setTimeout(() => document.getElementById('statActivity').classList.add('show'), 3600);
+            setTimeout(() => document.getElementById('statDiet').classList.add('show'), 3900);
+            setTimeout(() => document.getElementById('statSleep').classList.add('show'), 4200);
+            setTimeout(() => document.getElementById('statMedication').classList.add('show'), 4500);
+        }
+
+        const vo = document.getElementById('vo');
+        vo.addEventListener('ended', () => setTimeout(run, 2000));
+
+        run();
+
+        document.addEventListener('click', function handler() {
+            document.removeEventListener('click', handler);
+            run();
+        });
+    
+        // VO mute toggle — press H to mute/unmute, persists across slides
+        (function() {
+            var a = document.getElementById('vo');
+            if (!a) return;
+            if (localStorage.getItem('drift-vo-muted') === 'true') a.muted = true;
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'h' || e.key === 'H') {
+                    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+                    a.muted = !a.muted;
+                    localStorage.setItem('drift-vo-muted', String(a.muted));
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

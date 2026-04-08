@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#8 — Transition: Recovery Complete, Still Here</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        .status-bar {
+            padding: 14px 20px 0;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 12px; font-weight: 600; color: #1a1a1a;
+        }
+        .status-bar-icons { display: flex; gap: 6px; align-items: center; }
+        .status-bar-icons svg { width: 16px; height: 16px; }
+
+        .chat-area {
+            padding: 24px 24px 40px;
+            display: flex; flex-direction: column; gap: 16px;
+        }
+
+        /* Divider */
+        .divider {
+            display: flex; align-items: center; gap: 12px;
+            padding: 8px 0;
+        }
+        .divider-line {
+            flex: 1; height: 1px; background: rgba(0,0,0,0.06);
+        }
+        .divider-label {
+            font-size: 10px; font-weight: 500; color: #3EB5A6;
+            letter-spacing: 0.05em;
+        }
+
+        /* VCA message */
+        .msg-vca { display: flex; gap: 10px; align-items: flex-start; }
+        .vca-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0; margin-top: 2px;
+        }
+        .vca-avatar svg { width: 14px; height: 14px; }
+        .msg-bubble {
+            background: #FFFFFF; border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 16px 16px 16px 4px; padding: 14px 16px;
+            max-width: 280px;
+        }
+        .msg-bubble p {
+            font-size: 15px; font-weight: 400; color: #1a1a1a; line-height: 1.55;
+        }
+        .msg-bubble p strong { font-weight: 600; }
+        .msg-time { font-size: 11px; color: #bbb; margin-top: 6px; }
+
+        /* Completion banner inline */
+        .completion-inline {
+            background: #FFFFFF; border: 1.5px solid rgba(62,181,166,0.2);
+            border-radius: 16px; margin-left: 42px; overflow: hidden;
+        }
+        .ci-body {
+            padding: 20px; display: flex; flex-direction: column;
+            align-items: center; text-align: center;
+        }
+        .ci-check {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center; margin-bottom: 12px;
+        }
+        .ci-check svg { width: 20px; height: 20px; }
+        .ci-title {
+            font-size: 16px; font-weight: 600; color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        .ci-sub { font-size: 13px; color: #888; }
+
+        .ci-stats {
+            display: flex; gap: 0; width: 100%;
+            margin-top: 16px; padding-top: 16px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+        }
+        .ci-stat {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center;
+        }
+        .ci-stat + .ci-stat { border-left: 1px solid rgba(0,0,0,0.04); }
+        .ci-stat-val { font-size: 18px; font-weight: 600; color: #3EB5A6; }
+        .ci-stat-label { font-size: 10px; color: #888; margin-top: 2px; }
+
+        .ci-footer {
+            padding: 10px 20px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .rx-badge {
+            width: 14px; height: 14px; border-radius: 2px;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .rx-badge span { font-size: 6px; font-weight: 700; color: white; }
+        .ci-footer-text { font-size: 10px; color: #3EB5A6; font-weight: 500; }
+
+        /* Transition card — the bridge */
+        .transition-card {
+            background: #FFFFFF; border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 16px; margin-left: 42px;
+            padding: 20px;
+        }
+        .tc-header {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 14px;
+        }
+        .tc-icon {
+            width: 28px; height: 28px; border-radius: 8px;
+            background: rgba(62,181,166,0.1);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tc-icon svg { width: 14px; height: 14px; }
+        .tc-title { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+        .tc-badge {
+            margin-left: auto; font-size: 10px; font-weight: 500;
+            color: #3EB5A6; background: rgba(62,181,166,0.08);
+            padding: 3px 8px; border-radius: 100px;
+        }
+
+        .tc-options {
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .tc-option {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px; background: rgba(0,0,0,0.015);
+            border-radius: 10px;
+        }
+        .tc-opt-icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .tc-opt-icon svg { width: 16px; height: 16px; }
+        .tc-opt-name { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+        .tc-opt-desc { font-size: 11px; color: #888; margin-top: 1px; }
+        .tc-opt-arrow { margin-left: auto; color: #ccc; font-size: 14px; }
+
+        /* Patient reply */
+        .msg-patient {
+            display: flex; justify-content: flex-end;
+        }
+        .patient-bubble {
+            background: rgba(62,181,166,0.06);
+            border: 1px solid rgba(62,181,166,0.1);
+            border-radius: 16px 16px 4px 16px;
+            padding: 14px 16px; max-width: 250px;
+        }
+        .patient-bubble p {
+            font-size: 15px; font-weight: 400; color: #1a1a1a;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-bar">
+        <span>9:41</span>
+        <div class="status-bar-icons">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M1 10.5L4.5 4L8 7L11.5 2L15 6.5" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="4" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="5.5" y="2.5" width="3" height="10.5" rx="1" fill="#1a1a1a"/><rect x="10" y="1" width="3" height="12" rx="1" fill="#1a1a1a"/></svg>
+            <svg viewBox="0 0 20 16" fill="none"><rect x="0.5" y="3.5" width="16" height="9" rx="2" stroke="#1a1a1a" stroke-width="1"/><rect x="17.5" y="6" width="2" height="4" rx="0.5" fill="#1a1a1a"/><rect x="2" y="5" width="11" height="5" rx="1" fill="#1a1a1a"/></svg>
+        </div>
+    </div>
+
+    <div class="chat-area">
+        <div class="divider">
+            <div class="divider-line"></div>
+            <span class="divider-label">DAY 90 · FINAL CHECK-IN</span>
+            <div class="divider-line"></div>
+        </div>
+
+        <div class="msg-vca">
+            <div class="vca-avatar">
+                <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v4M7 9v4M1 7h4M9 7h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+                <div class="msg-bubble">
+                    <p data-drift-editable="vca-msg-1" data-drift-maxlen="200"><strong>James, today is Day 90.</strong> Your recovery program is officially complete. Let me show you how far you've come.</p>
+                </div>
+                <div class="msg-time">8:00 AM</div>
+            </div>
+        </div>
+
+        <div class="completion-inline">
+            <div class="ci-body">
+                <div class="ci-check">
+                    <svg viewBox="0 0 20 20" fill="none"><path d="M4 10L9 15L16 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="ci-title">Recovery Complete</div>
+                <div class="ci-sub">90-day program finished</div>
+                <div class="ci-stats">
+                    <div class="ci-stat">
+                        <div class="ci-stat-val">90</div>
+                        <div class="ci-stat-label">Check-ins</div>
+                    </div>
+                    <div class="ci-stat">
+                        <div class="ci-stat-val">128°</div>
+                        <div class="ci-stat-label">Final ROM</div>
+                    </div>
+                    <div class="ci-stat">
+                        <div class="ci-stat-val">0.5</div>
+                        <div class="ci-stat-label">Pain today</div>
+                    </div>
+                </div>
+            </div>
+            <div class="ci-footer">
+                <div class="rx-badge"><span>Rx</span></div>
+                <span class="ci-footer-text">Cleared by Dr. Morris</span>
+            </div>
+        </div>
+
+        <div class="msg-vca">
+            <div class="vca-avatar">
+                <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v4M7 9v4M1 7h4M9 7h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+                <div class="msg-bubble">
+                    <p data-drift-editable="vca-msg-2" data-drift-maxlen="200">Your prescribed recovery is done. But <strong>I'm still here</strong> if you need me. Here's what I can do going forward:</p>
+                </div>
+                <div class="msg-time">8:01 AM</div>
+            </div>
+        </div>
+
+        <div class="transition-card">
+            <div class="tc-header">
+                <div class="tc-icon">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="#3EB5A6" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </div>
+                <span class="tc-title">What's Next</span>
+                <span class="tc-badge">Optional</span>
+            </div>
+            <div class="tc-options">
+                <div class="tc-option">
+                    <div class="tc-opt-icon" style="background: rgba(62,181,166,0.08);">
+                        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#3EB5A6" stroke-width="1.3"/><path d="M8 5v3l2 1" stroke="#3EB5A6" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    </div>
+                    <div>
+                        <div class="tc-opt-name">Weekly check-ins</div>
+                        <div class="tc-opt-desc">Lighter cadence. I'll check in once a week.</div>
+                    </div>
+                    <span class="tc-opt-arrow">&#8250;</span>
+                </div>
+                <div class="tc-option">
+                    <div class="tc-opt-icon" style="background: rgba(62,181,166,0.08);">
+                        <svg viewBox="0 0 16 16" fill="none"><path d="M2 8c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6" stroke="#3EB5A6" stroke-width="1.3" stroke-linecap="round"/><path d="M8 5v3h3" stroke="#3EB5A6" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    </div>
+                    <div>
+                        <div class="tc-opt-name">Ask me anything</div>
+                        <div class="tc-opt-desc">Still have questions? I know your full history.</div>
+                    </div>
+                    <span class="tc-opt-arrow">&#8250;</span>
+                </div>
+                <div class="tc-option">
+                    <div class="tc-opt-icon" style="background: rgba(62,181,166,0.08);">
+                        <svg viewBox="0 0 16 16" fill="none"><path d="M4 8h8M4 5h8M4 11h5" stroke="#3EB5A6" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    </div>
+                    <div>
+                        <div class="tc-opt-name">Future procedures</div>
+                        <div class="tc-opt-desc">If you ever need surgery again, I'll be ready on Day 1.</div>
+                    </div>
+                    <span class="tc-opt-arrow">&#8250;</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="msg-patient">
+            <div class="patient-bubble">
+                <p data-drift-editable="patient-reply" data-drift-maxlen="100">Thank you. For everything. I honestly don't know how I would have done this without you.</p>
+            </div>
+        </div>
+
+        <div class="msg-vca">
+            <div class="vca-avatar">
+                <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v4M7 9v4M1 7h4M9 7h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+                <div class="msg-bubble">
+                    <p data-drift-editable="vca-msg-3" data-drift-maxlen="120">You did the hard part, James. I just paid attention. Go enjoy that knee.</p>
+                </div>
+                <div class="msg-time">8:03 AM</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

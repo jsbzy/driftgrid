@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat 7 — Deviation & Escalation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #F4F2EE;
+            display: flex; align-items: center; justify-content: center;
+            gap: 64px; padding: 0 100px;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .phone {
+            width: 280px; min-width: 280px; height: 580px;
+            border: 3px solid #D0D0CC; border-radius: 40px;
+            background: #fff; overflow: hidden;
+            display: flex; flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+        }
+        .status-bar {
+            height: 40px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; font-size: 13px; font-weight: 600; color: #1B1B1A;
+        }
+        .chat-header {
+            display: flex; align-items: center; justify-content: center;
+            padding: 4px 16px 8px; font-size: 15px; font-weight: 600; color: #1B1B1A;
+        }
+        .chat-toggle {
+            display: flex; margin: 4px 16px 8px; background: #E8E6E1; border-radius: 24px; padding: 3px;
+        }
+        .toggle-btn { flex: 1; text-align: center; padding: 7px; border-radius: 20px; font-size: 11px; font-weight: 500; color: #6B6B68; }
+        .toggle-btn.active { background: #fff; color: #1B1B1A; font-weight: 600; }
+
+        .chat-body { flex: 1; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+
+        .msg { padding: 10px 12px; font-size: 12px; line-height: 1.5; max-width: 88%; border-radius: 14px; }
+        .msg.bot { background: #F4F2EE; color: #1B1B1A; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .msg.user { background: #1B1B1A; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .msg.alert {
+            background: #FFF7ED; border: 1.5px solid #D4915040; color: #92610E;
+            align-self: flex-start; border-bottom-left-radius: 4px;
+        }
+        .msg .sender { font-size: 10px; font-weight: 600; color: #33B5B0; margin-bottom: 3px; }
+
+        .report-card {
+            background: #fff; border: 1px solid #E8E6E1; border-radius: 12px;
+            padding: 10px 12px; margin: 4px 0; align-self: flex-start;
+        }
+        .report-card h5 { font-size: 11px; font-weight: 600; color: #1B1B1A; margin-bottom: 6px; }
+        .report-row { display: flex; justify-content: space-between; font-size: 11px; padding: 3px 0; }
+        .report-row .label { color: #6B6B68; }
+        .report-row .val { font-weight: 600; }
+        .report-row .val.severe { color: #E05555; }
+
+        .text-side { max-width: 480px; display: flex; flex-direction: column; gap: 24px; }
+        .text-side h2 {
+            font-size: 36px; font-weight: 600; color: #1B1B1A;
+            line-height: 1.2; letter-spacing: -0.02em;
+        }
+        .text-side h2 span { color: #D49150; }
+        .text-side p { font-size: 17px; color: #6B6B68; line-height: 1.6; }
+
+        .escalation-steps { display: flex; flex-direction: column; gap: 0; }
+        .step {
+            display: flex; align-items: flex-start; gap: 14px;
+            padding: 14px 0;
+        }
+        .step-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 700; flex-shrink: 0;
+        }
+        .step-icon.amber { background: #FFF7ED; color: #D49150; border: 1px solid #D4915030; }
+        .step-icon.teal { background: #E6F7F5; color: #33B5B0; border: 1px solid #33B5B030; }
+        .step-text { font-size: 14px; color: #3A3A38; line-height: 1.5; }
+        .step-text strong { font-weight: 600; color: #1B1B1A; }
+        .step-connector { width: 2px; height: 12px; background: #E8E6E1; margin-left: 17px; }
+
+        .vo-strip {
+            position: absolute; bottom: 48px; left: 0; right: 0;
+            text-align: center; font-size: 13px; font-weight: 400; color: #A3A3A0;
+        }
+        .vo-strip em { font-style: normal; color: #33B5B0; }
+    </style>
+</head>
+<body>
+    <div class="phone">
+        <div class="status-bar"><span>9:41</span><span style="font-size: 11px;">●●● ⟩</span></div>
+        <div class="chat-header">AI Assistant</div>
+        <div class="chat-toggle">
+            <div class="toggle-btn active">✦ Assistant</div>
+            <div class="toggle-btn">👤 Clinic</div>
+        </div>
+        <div class="chat-body">
+            <div class="msg bot"><div class="sender">RecovryAI</div>How would you rate your pain today?</div>
+            <div class="msg user">It's been really bad, maybe 8 out of 10. The pain is around my incision and my knee is really swollen.</div>
+            <div class="msg bot">
+                <div class="sender">RecovryAI</div>
+                I'm sorry to hear that. That's higher than your recent reports. I want to make sure your care team is aware of this change.
+            </div>
+            <div class="report-card">
+                <h5>Report Summary</h5>
+                <div class="report-row"><span class="label">Pain</span><span class="val severe">● Severe</span></div>
+                <div class="report-row"><span class="label">Sleep</span><span class="val">44%</span></div>
+                <div style="font-size: 11px; color: #33B5B0; margin-top: 6px; font-weight: 500;">View History →</div>
+            </div>
+            <div class="msg alert">
+                I've shared the details of your check-in with Dr. Kwan's office. They'll reach out if a follow-up is needed. In the meantime, elevate your leg and apply ice for 20 minutes.
+            </div>
+        </div>
+    </div>
+
+    <div class="text-side">
+        <h2 data-drift-editable="headline" data-drift-maxlen="80">When recovery <span>deviates</span>, the VCA escalates immediately</h2>
+        <p data-drift-editable="body" data-drift-maxlen="200">The VCA monitors recovery patterns and escalates to the care team with full clinical context when something needs attention.</p>
+        <div class="escalation-steps">
+            <div class="step">
+                <div class="step-icon amber">⚠</div>
+                <div class="step-text"><strong>Deviation detected.</strong> Pain 8/10, swelling at incision — outside expected recovery pattern.</div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step">
+                <div class="step-icon teal">↑</div>
+                <div class="step-text"><strong>Escalated to care team.</strong> Full conversation history and clinical summary shared with Dr. Kwan's office.</div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step">
+                <div class="step-icon teal">✓</div>
+                <div class="step-text"><strong>Patient guided.</strong> VCA provides interim care instructions while the provider reviews.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="vo-strip">VO: "When recovery <em>deviates from expected patterns</em>, the VCA escalates to the care team with full clinical context."</div>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#12 — Provider Alerts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px 0;
+        }
+
+        .lock-context {
+            text-align: center;
+            padding: 0 24px 24px;
+        }
+        .lock-time {
+            font-size: 48px;
+            font-weight: 300;
+            color: #1a1a1a;
+            letter-spacing: -0.03em;
+            margin-bottom: 2px;
+        }
+        .lock-date {
+            font-size: 15px;
+            font-weight: 400;
+            color: #555;
+        }
+
+        /* Alert notification */
+        .alert-notification {
+            margin: 0 16px;
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .an-header {
+            padding: 16px 18px 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .an-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #FEF2F2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .an-icon svg { width: 20px; height: 20px; }
+        .an-app-info { flex: 1; }
+        .an-app-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 1px;
+        }
+        .an-app-type {
+            font-size: 11px;
+            font-weight: 500;
+            color: #DC2626;
+        }
+        .an-time {
+            font-size: 11px;
+            font-weight: 400;
+            color: #bbb;
+        }
+
+        .an-body {
+            padding: 0 18px 16px;
+        }
+        .an-patient {
+            font-size: 17px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+            letter-spacing: -0.01em;
+        }
+        .an-patient-detail {
+            font-size: 12px;
+            font-weight: 400;
+            color: #888;
+            margin-bottom: 14px;
+        }
+
+        .an-findings {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .an-finding {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: #FEF2F2;
+            border-radius: 10px;
+        }
+        .an-finding-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #DC2626;
+            flex-shrink: 0;
+        }
+        .an-finding-label {
+            font-size: 13px;
+            font-weight: 400;
+            color: #1a1a1a;
+            flex: 1;
+        }
+        .an-finding-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #DC2626;
+            flex-shrink: 0;
+        }
+
+        .an-recommendation {
+            padding: 12px 14px;
+            background: #FFFBEB;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #92400E;
+            line-height: 1.45;
+        }
+        .an-rec-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #D97706;
+            margin-bottom: 4px;
+        }
+
+        .an-actions {
+            padding: 4px 18px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .an-action {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .an-action.call {
+            background: #1a1a1a;
+            color: #FFFFFF;
+        }
+        .an-action.dashboard {
+            background: rgba(0,0,0,0.04);
+            color: #1a1a1a;
+        }
+        .an-action.dismiss {
+            background: transparent;
+            color: #888;
+            font-weight: 400;
+            padding: 8px 0;
+        }
+        .an-action svg { width: 16px; height: 16px; }
+
+        .an-footer {
+            padding: 10px 18px 14px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #bbb;
+        }
+        .an-footer svg { width: 12px; height: 12px; }
+    </style>
+</head>
+<body>
+    <div class="lock-context">
+        <div class="lock-time">3:47 PM</div>
+        <div class="lock-date">Wednesday, April 25</div>
+    </div>
+
+    <div class="alert-notification">
+        <div class="an-header">
+            <div class="an-icon">
+                <svg viewBox="0 0 20 20" fill="none">
+                    <path d="M10 2v5M10 13v5M2 10h5M13 10h5" stroke="#DC2626" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="an-app-info">
+                <div class="an-app-name">recovry.ai</div>
+                <div class="an-app-type">Provider Alert</div>
+            </div>
+            <div class="an-time">now</div>
+        </div>
+
+        <div class="an-body">
+            <div class="an-patient" data-drift-editable="patient-name" data-drift-maxlen="40">James Park</div>
+            <div class="an-patient-detail">R Total Knee Arthroplasty · Day 42 · UCSF</div>
+
+            <div class="an-findings">
+                <div class="an-finding">
+                    <div class="an-finding-icon"></div>
+                    <div class="an-finding-label">Activity drop from baseline</div>
+                    <div class="an-finding-value">-62%</div>
+                </div>
+                <div class="an-finding">
+                    <div class="an-finding-icon"></div>
+                    <div class="an-finding-label">Heart rate elevated</div>
+                    <div class="an-finding-value">94 bpm</div>
+                </div>
+                <div class="an-finding">
+                    <div class="an-finding-icon"></div>
+                    <div class="an-finding-label">Knee temperature</div>
+                    <div class="an-finding-value">101.2°F</div>
+                </div>
+            </div>
+
+            <div class="an-recommendation">
+                <div class="an-rec-label">VCA Recommendation</div>
+                <div data-drift-editable="recommendation" data-drift-maxlen="120">Follow-up recommended. Pattern suggests possible infection or inflammatory response. Patient reported increased pain at last check-in.</div>
+            </div>
+        </div>
+
+        <div class="an-actions">
+            <div class="an-action call">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M3.5 1.5C3.5 1.5 5 1 5.5 2.5S5 5.5 5 5.5L3.5 7C4.5 9 7 11.5 9 12.5l1.5-1.5s2-.5 3 0 1 2 1 2-1 2-3 2S2.5 10.5 1.5 6.5s2-5 2-5z" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Call Patient
+            </div>
+            <div class="an-action dashboard">
+                <svg viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="5" height="5" rx="1" stroke="#1a1a1a" stroke-width="1.2"/><rect x="9.5" y="1.5" width="5" height="5" rx="1" stroke="#1a1a1a" stroke-width="1.2"/><rect x="1.5" y="9.5" width="5" height="5" rx="1" stroke="#1a1a1a" stroke-width="1.2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1" stroke="#1a1a1a" stroke-width="1.2"/></svg>
+                View Dashboard
+            </div>
+            <div class="an-action dismiss">Dismiss</div>
+        </div>
+
+        <div class="an-footer">
+            <svg viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#bbb" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            VCA-generated alert · FDA Breakthrough Device
+        </div>
+    </div>
+</body>
+</html>

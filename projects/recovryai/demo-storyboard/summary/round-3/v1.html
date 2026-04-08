@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>15 — Summary</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #ffffff; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .center {
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 16px;
+            height: 100vh; text-align: center;
+        }
+
+        .headline {
+            font-size: 40px; font-weight: 600; color: #1B1B1A;
+            line-height: 1.25; letter-spacing: -0.02em;
+            opacity: 0; transform: translateY(12px);
+            transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .headline.show { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <div class="headline" id="headline">Physician-prescribed AI<br>for post-operative recovery.</div>
+    </div>
+
+    <script>
+        setTimeout(() => document.getElementById('headline').classList.add('show'), 400);
+    </script>
+</body>
+</html>

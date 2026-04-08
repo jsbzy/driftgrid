@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#13 — Ongoing: Next Surgery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        .status-bar {
+            padding: 14px 20px 0;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 12px; font-weight: 600; color: #1a1a1a;
+        }
+        .status-bar-icons { display: flex; gap: 6px; align-items: center; }
+        .status-bar-icons svg { width: 16px; height: 16px; }
+
+        .header { padding: 20px 24px 16px; }
+        .header-label {
+            font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+            text-transform: uppercase; color: #3EB5A6; margin-bottom: 4px;
+        }
+        .header-title {
+            font-size: 22px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.02em;
+        }
+
+        .chat-area {
+            padding: 0 24px 40px;
+            display: flex; flex-direction: column; gap: 14px;
+        }
+
+        .msg-vca { display: flex; gap: 10px; align-items: flex-start; }
+        .vca-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0; margin-top: 2px;
+        }
+        .vca-avatar svg { width: 14px; height: 14px; }
+        .bubble {
+            background: #FFFFFF; border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 16px 16px 16px 4px; padding: 14px 16px;
+            max-width: 280px;
+        }
+        .bubble p { font-size: 15px; font-weight: 400; color: #1a1a1a; line-height: 1.5; }
+        .bubble p strong { font-weight: 600; }
+        .msg-time { font-size: 11px; color: #bbb; margin-top: 6px; }
+
+        /* Context card — what VCA already knows */
+        .context-card {
+            background: #FFFFFF; border: 1.5px solid rgba(62,181,166,0.15);
+            border-radius: 14px; margin-left: 42px; overflow: hidden;
+        }
+        .context-header {
+            padding: 12px 14px; display: flex; align-items: center; gap: 8px;
+            background: rgba(62,181,166,0.03);
+            border-bottom: 1px solid rgba(62,181,166,0.08);
+        }
+        .context-icon {
+            width: 24px; height: 24px; border-radius: 6px;
+            background: rgba(62,181,166,0.1);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .context-icon svg { width: 12px; height: 12px; }
+        .context-title { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+        .context-badge {
+            margin-left: auto; font-size: 10px; font-weight: 500;
+            color: #3EB5A6; background: rgba(62,181,166,0.08);
+            padding: 3px 8px; border-radius: 100px;
+        }
+
+        .context-body { padding: 14px; }
+        .context-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.03);
+        }
+        .context-item:last-child { border-bottom: none; }
+        .context-check {
+            width: 18px; height: 18px; border-radius: 50%;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0; margin-top: 1px;
+        }
+        .context-check svg { width: 9px; height: 9px; }
+        .context-text { font-size: 13px; color: #555; line-height: 1.4; }
+        .context-text strong { color: #1a1a1a; }
+
+        .context-footer {
+            padding: 10px 14px;
+            border-top: 1px solid rgba(0,0,0,0.03);
+            display: flex; align-items: center; gap: 5px;
+        }
+        .rx-badge {
+            width: 14px; height: 14px; border-radius: 2px;
+            background: #3EB5A6; display: flex; align-items: center; justify-content: center;
+        }
+        .rx-badge span { font-size: 6px; font-weight: 700; color: white; }
+        .footer-text { font-size: 10px; color: #3EB5A6; font-weight: 500; }
+
+        .msg-patient { display: flex; justify-content: flex-end; }
+        .patient-bubble {
+            background: rgba(62,181,166,0.06);
+            border: 1px solid rgba(62,181,166,0.1);
+            border-radius: 16px 16px 4px 16px;
+            padding: 14px 16px; max-width: 260px;
+        }
+        .patient-bubble p { font-size: 15px; font-weight: 400; color: #1a1a1a; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="status-bar">
+        <span>9:41</span>
+        <div class="status-bar-icons">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M1 10.5L4.5 4L8 7L11.5 2L15 6.5" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="4" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="5.5" y="2.5" width="3" height="10.5" rx="1" fill="#1a1a1a"/><rect x="10" y="1" width="3" height="12" rx="1" fill="#1a1a1a"/></svg>
+            <svg viewBox="0 0 20 16" fill="none"><rect x="0.5" y="3.5" width="16" height="9" rx="2" stroke="#1a1a1a" stroke-width="1"/><rect x="17.5" y="6" width="2" height="4" rx="0.5" fill="#1a1a1a"/><rect x="2" y="5" width="11" height="5" rx="1" fill="#1a1a1a"/></svg>
+        </div>
+    </div>
+
+    <div class="header">
+        <div class="header-label">NEW PRESCRIPTION</div>
+        <div class="header-title" data-drift-editable="headline" data-drift-maxlen="40">I already know you</div>
+    </div>
+
+    <div class="chat-area">
+        <div class="msg-vca">
+            <div class="vca-avatar">
+                <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v4M7 9v4M1 7h4M9 7h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+                <div class="bubble">
+                    <p data-drift-editable="vca-msg-1" data-drift-maxlen="200">James, welcome back. Dr. Morris just prescribed me for your <strong>left hip replacement</strong> on October 15. And because we've worked together before, <strong>I already know a lot about you.</strong></p>
+                </div>
+                <div class="msg-time">10:00 AM</div>
+            </div>
+        </div>
+
+        <div class="context-card">
+            <div class="context-header">
+                <div class="context-icon">
+                    <svg viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4" stroke="#3EB5A6" stroke-width="1.2"/><path d="M6 4v2l1.5 1" stroke="#3EB5A6" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </div>
+                <span class="context-title">What I Already Know</span>
+                <span class="context-badge">From your knee recovery</span>
+            </div>
+            <div class="context-body">
+                <div class="context-item">
+                    <div class="context-check">
+                        <svg viewBox="0 0 9 9" fill="none"><path d="M2 4.5L3.5 6L7 2.5" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span class="context-text"><strong>Pain tolerance:</strong> You tend to underreport by about 1 point. I'll account for that.</span>
+                </div>
+                <div class="context-item">
+                    <div class="context-check">
+                        <svg viewBox="0 0 9 9" fill="none"><path d="M2 4.5L3.5 6L7 2.5" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span class="context-text"><strong>Sleep pattern:</strong> You sleep better on your right side. I'll adjust pillow guidance for hip recovery.</span>
+                </div>
+                <div class="context-item">
+                    <div class="context-check">
+                        <svg viewBox="0 0 9 9" fill="none"><path d="M2 4.5L3.5 6L7 2.5" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span class="context-text"><strong>Activity level:</strong> You respond well to progressive walking. We'll start earlier this time.</span>
+                </div>
+                <div class="context-item">
+                    <div class="context-check">
+                        <svg viewBox="0 0 9 9" fill="none"><path d="M2 4.5L3.5 6L7 2.5" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span class="context-text"><strong>Communication:</strong> You prefer direct answers. You ask great questions. I'll keep being straightforward.</span>
+                </div>
+                <div class="context-item">
+                    <div class="context-check">
+                        <svg viewBox="0 0 9 9" fill="none"><path d="M2 4.5L3.5 6L7 2.5" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span class="context-text"><strong>Caregiver:</strong> Sarah is already set up. She'll get daily digests starting Day 1.</span>
+                </div>
+            </div>
+            <div class="context-footer">
+                <div class="rx-badge"><span>Rx</span></div>
+                <span class="footer-text">Personalized from 90 days of data</span>
+            </div>
+        </div>
+
+        <div class="msg-vca">
+            <div class="vca-avatar">
+                <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v4M7 9v4M1 7h4M9 7h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+                <div class="bubble">
+                    <p data-drift-editable="vca-msg-2" data-drift-maxlen="200">Your recovery starts the moment you wake up from surgery. <strong>No setup, no learning curve.</strong> We pick up right where we left off.</p>
+                </div>
+                <div class="msg-time">10:01 AM</div>
+            </div>
+        </div>
+
+        <div class="msg-patient">
+            <div class="patient-bubble">
+                <p data-drift-editable="patient-reply" data-drift-maxlen="100">That's amazing. I was dreading going through the whole setup again. This is such a relief.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

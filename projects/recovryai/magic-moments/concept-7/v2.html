@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#5 — VCA Response Pathways (Compact)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        .status-bar {
+            padding: 14px 20px 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .header {
+            padding: 20px 24px 16px;
+        }
+        .header-label {
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        .header-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a1a1a;
+            letter-spacing: -0.02em;
+        }
+
+        /* Single current status view */
+        .current-status {
+            margin: 0 24px 24px;
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 16px;
+            padding: 24px 20px;
+        }
+
+        .cs-top {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+        .cs-indicator {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #059669;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cs-indicator svg { width: 24px; height: 24px; }
+        .cs-info {}
+        .cs-level {
+            font-size: 18px;
+            font-weight: 700;
+            color: #059669;
+        }
+        .cs-desc {
+            font-size: 13px;
+            font-weight: 400;
+            color: #555;
+        }
+
+        .cs-message {
+            padding: 16px;
+            background: #F0FDF9;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        .cs-msg-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .cs-msg-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3EB5A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cs-msg-avatar svg { width: 10px; height: 10px; }
+        .cs-msg-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .cs-msg-text {
+            font-size: 14px;
+            font-weight: 400;
+            color: #1a1a1a;
+            line-height: 1.55;
+        }
+
+        .cs-time {
+            font-size: 11px;
+            color: #bbb;
+            text-align: right;
+        }
+
+        /* Tier overview */
+        .tier-section {
+            padding: 0 24px 12px;
+        }
+        .tier-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .tier-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .tier-row.active {
+            border-color: rgba(5,150,105,0.2);
+            background: #FAFFFE;
+        }
+
+        .tier-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .tier-dot.green { background: #059669; }
+        .tier-dot.yellow { background: #D97706; }
+        .tier-dot.red { background: #DC2626; }
+
+        .tier-info { flex: 1; }
+        .tier-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .tier-when {
+            font-size: 12px;
+            font-weight: 400;
+            color: #888;
+        }
+
+        .tier-response {
+            font-size: 11px;
+            font-weight: 500;
+            color: #888;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .tier-response.active-r { color: #059669; }
+
+        /* What happens section */
+        .what-happens {
+            padding: 16px 24px 40px;
+        }
+        .wh-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .wh-card {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .wh-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+        }
+        .wh-row + .wh-row {
+            border-top: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .wh-dot-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 2px;
+        }
+        .wh-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .wh-dot.green { background: #059669; }
+        .wh-dot.yellow { background: #D97706; }
+        .wh-dot.red { background: #DC2626; }
+
+        .wh-content { flex: 1; }
+        .wh-trigger {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 2px;
+        }
+        .wh-action {
+            font-size: 12px;
+            font-weight: 400;
+            color: #888;
+            line-height: 1.45;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-bar">9:41</div>
+
+    <div class="header">
+        <div class="header-label">Day 42 of 90</div>
+        <div class="header-title" data-drift-editable="headline" data-drift-maxlen="40">Your Status Right Now</div>
+    </div>
+
+    <!-- Current status — hero card -->
+    <div class="current-status">
+        <div class="cs-top">
+            <div class="cs-indicator">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M7 12L11 16L17 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="cs-info">
+                <div class="cs-level" data-drift-editable="status-level" data-drift-maxlen="20">All Clear</div>
+                <div class="cs-desc">Everything looks good today</div>
+            </div>
+        </div>
+
+        <div class="cs-message">
+            <div class="cs-msg-header">
+                <div class="cs-msg-avatar">
+                    <svg viewBox="0 0 10 10" fill="none"><path d="M5 1v2.5M5 6.5v2.5M1 5h2.5M6.5 5h2.5" stroke="white" stroke-width="1" stroke-linecap="round"/></svg>
+                </div>
+                <span class="cs-msg-name">Your VCA</span>
+            </div>
+            <div class="cs-msg-text" data-drift-editable="vca-msg" data-drift-maxlen="160">Good morning, James. Your vitals look great overnight. Heart rate steady, knee mobility up 2 degrees. Keep doing what you're doing.</div>
+        </div>
+
+        <div class="cs-time">Today at 7:12 AM</div>
+    </div>
+
+    <!-- Three tiers overview -->
+    <div class="tier-section">
+        <div class="tier-label">How Response Tiers Work</div>
+
+        <div class="tier-row active">
+            <div class="tier-dot green"></div>
+            <div class="tier-info">
+                <div class="tier-name">All Clear</div>
+                <div class="tier-when">Daily encouragement and tips</div>
+            </div>
+            <div class="tier-response active-r">Active</div>
+        </div>
+
+        <div class="tier-row">
+            <div class="tier-dot yellow"></div>
+            <div class="tier-info">
+                <div class="tier-name">Watch</div>
+                <div class="tier-when">Provider notified within 1 hour</div>
+            </div>
+            <div class="tier-response">Standby</div>
+        </div>
+
+        <div class="tier-row">
+            <div class="tier-dot red"></div>
+            <div class="tier-info">
+                <div class="tier-name">Urgent</div>
+                <div class="tier-when">Immediate provider + emergency alert</div>
+            </div>
+            <div class="tier-response">Standby</div>
+        </div>
+    </div>
+
+    <!-- What triggers each -->
+    <div class="what-happens">
+        <div class="wh-title">What Triggers Each Level</div>
+        <div class="wh-card">
+            <div class="wh-row">
+                <div class="wh-dot-col"><div class="wh-dot green"></div></div>
+                <div class="wh-content">
+                    <div class="wh-trigger">All metrics within expected range</div>
+                    <div class="wh-action">VCA sends daily encouragement, exercise reminders, and progress updates</div>
+                </div>
+            </div>
+            <div class="wh-row">
+                <div class="wh-dot-col"><div class="wh-dot yellow"></div></div>
+                <div class="wh-content">
+                    <div class="wh-trigger">Activity drop, elevated temp, or missed check-ins</div>
+                    <div class="wh-action">VCA flags for Dr. Morris's team. You're asked additional questions. Monitoring increases.</div>
+                </div>
+            </div>
+            <div class="wh-row">
+                <div class="wh-dot-col"><div class="wh-dot red"></div></div>
+                <div class="wh-content">
+                    <div class="wh-trigger">Sustained elevated HR, sudden pain spike, or fall detected</div>
+                    <div class="wh-action">Provider alerted immediately. Emergency contacts notified. 911 guidance if symptoms present.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat 4 — VCA Conversation (Wireframe)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #F5F7FA; color: #1a1a1a; display: flex; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        .meta-strip { width: 280px; min-width: 280px; background: #EBEEF2; padding: 48px 32px; display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid #D0D5DC; }
+        .beat-num { font-size: 48px; font-weight: 700; color: #3EB5A6; line-height: 1; }
+        .beat-title { font-size: 20px; font-weight: 600; margin-top: 8px; color: #1a1a1a; }
+        .beat-time { font-size: 12px; color: #999; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .vo-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #3EB5A6; margin-bottom: 8px; }
+        .vo-text { font-size: 14px; font-weight: 300; line-height: 1.6; color: #555; }
+        .vo-text em { font-style: normal; color: #3EB5A6; font-weight: 500; }
+        .canvas { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px; }
+        .frame-area { display: flex; align-items: center; justify-content: center; gap: 60px; }
+
+        .wf-phone { width: 260px; height: 520px; border: 2px solid #D0D5DC; border-radius: 32px; display: flex; flex-direction: column; padding: 14px 12px; background: #FFFFFF; }
+        .wf-phone-notch { width: 70px; height: 5px; background: #D0D5DC; border-radius: 3px; align-self: center; margin-bottom: 8px; }
+        .wf-phone-bar { width: 36px; height: 3px; background: #D0D5DC; border-radius: 2px; align-self: center; margin-top: 6px; }
+        .wf-header { height: 28px; display: flex; align-items: center; padding: 0 8px; margin-bottom: 8px; }
+        .wf-header span { font-size: 9px; color: #333; }
+        .wf-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+        .wf-tab { flex: 1; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 8px; }
+        .wf-tab.active { background: #3EB5A6; color: #fff; }
+        .wf-tab.inactive { background: #E8ECF0; color: #333; }
+
+        .wf-chat { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow: hidden; padding: 4px; }
+        .wf-msg { padding: 8px 10px; border-radius: 10px; font-size: 9px; line-height: 1.5; max-width: 88%; }
+        .wf-msg.bot { background: #E8ECF0; color: #888; align-self: flex-start; }
+        .wf-msg.user { background: #E6F7F5; color: #3EB5A6; align-self: flex-end; }
+        .wf-msg.thinking { background: #E8ECF0; color: #3EB5A6; align-self: flex-start; font-style: italic; }
+
+        .wf-input { height: 32px; background: #E8ECF0; border-radius: 16px; display: flex; align-items: center; padding: 0 12px; margin-top: 4px; }
+        .wf-input span { font-size: 8px; color: #333; }
+
+        .annotation { max-width: 320px; display: flex; flex-direction: column; gap: 16px; }
+        .ann-item { display: flex; gap: 10px; align-items: flex-start; }
+        .ann-num { width: 20px; height: 20px; border-radius: 50%; border: 1px solid #3EB5A6; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #3EB5A6; flex-shrink: 0; }
+        .ann-text { font-size: 11px; color: #555; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="meta-strip">
+        <div>
+            <div class="beat-num">04</div>
+            <div class="beat-title">VCA Conversation</div>
+            <div class="beat-time">28 – 38 sec</div>
+        </div>
+        <div>
+            <div class="vo-label">Voiceover</div>
+            <div class="vo-text">"Patients can ask questions about their recovery. The VCA provides guidance based on <em>procedure-specific clinical protocols</em>."</div>
+        </div>
+    </div>
+    <div class="canvas">
+        <div class="frame-area">
+            <div class="wf-phone">
+                <div class="wf-phone-notch"></div>
+                <div class="wf-header"><span>← AI Assistant</span></div>
+                <div class="wf-tabs">
+                    <div class="wf-tab active">Chat</div>
+                    <div class="wf-tab inactive">Clinical</div>
+                </div>
+                <div class="wf-chat">
+                    <div class="wf-msg bot">Your check-in is complete for today. Your recovery is progressing well. Do you have any questions?</div>
+                    <div class="wf-msg user">Is it normal for my knee to feel stiff in the morning?</div>
+                    <div class="wf-msg thinking">● ● ●</div>
+                    <div class="wf-msg bot">Yes, morning stiffness is very common after knee replacement surgery, especially in the first 2-3 weeks. Gentle range-of-motion exercises before getting out of bed can help. Your prescribed physical therapy exercises include...</div>
+                </div>
+                <div class="wf-input"><span>Ask a question...</span></div>
+                <div class="wf-phone-bar"></div>
+            </div>
+
+            <div class="annotation">
+                <div style="font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Animation Sequence</div>
+                <div class="ann-item">
+                    <div class="ann-num">1</div>
+                    <div class="ann-text">Patient types question — keyboard visible briefly, text appears</div>
+                </div>
+                <div class="ann-item">
+                    <div class="ann-num">2</div>
+                    <div class="ann-text">Thinking dots animate — shows the VCA processing</div>
+                </div>
+                <div class="ann-item">
+                    <div class="ann-num">3</div>
+                    <div class="ann-text">VCA response types in — clinical but warm, procedure-specific</div>
+                </div>
+                <div class="ann-item">
+                    <div class="ann-num">4</div>
+                    <div class="ann-text">Key phrase highlight: "procedure-specific clinical protocols"</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

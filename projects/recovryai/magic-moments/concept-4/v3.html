@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recovery Status — Chat as Timeline</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            display: flex; align-items: flex-start; justify-content: center;
+        }
+
+        .phone {
+            width: 380px; height: 720px;
+            background: #F5F7FA;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            margin-top: 24px;
+        }
+
+        /* ── Persistent header ── */
+        .header {
+            padding: 16px 20px 12px;
+            background: white;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .header-title { font-size: 15px; font-weight: 500; color: #1B1B1A; }
+        .header-day {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; color: #33B6B0; font-weight: 500; letter-spacing: 0.04em;
+        }
+        .header-bar { width: 100%; height: 3px; background: rgba(0,0,0,0.04); border-radius: 2px; }
+        .header-fill { height: 100%; border-radius: 2px; transition: background 0.4s ease; }
+
+        /* ── Chat area ── */
+        .chat {
+            flex: 1; overflow-y: auto; padding: 12px 20px 20px;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+
+        /* ── Day node (collapsed) ── */
+        .day-node {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px; background: white;
+            border: 1px solid rgba(0,0,0,0.04); border-radius: 12px;
+            cursor: pointer; transition: all 0.2s ease;
+            margin: 4px 0;
+        }
+        .day-node:hover { border-color: rgba(0,0,0,0.08); box-shadow: 0 1px 6px rgba(0,0,0,0.03); }
+        .day-node.yellow-node { border-left: 3px solid rgba(217,119,6,0.3); }
+        .dn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .dn-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px; color: #999; font-weight: 500; letter-spacing: 0.02em;
+            width: 42px; flex-shrink: 0;
+        }
+        .dn-dims { display: flex; gap: 3px; flex-shrink: 0; }
+        .dn-mini { width: 5px; height: 5px; border-radius: 50%; }
+        .dn-status { font-size: 12px; font-weight: 300; color: #bbb; flex: 1; }
+        .dn-chev { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; transition: transform 0.3s ease; flex-shrink: 0; }
+        .dn-chev.open { transform: rotate(180deg); }
+
+        /* Day expanded content */
+        .day-expand {
+            max-height: 0; opacity: 0; overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;
+        }
+        .day-expand.open { max-height: 600px; opacity: 1; }
+        .day-detail {
+            padding: 12px 16px 8px;
+            margin: -4px 0 4px;
+            background: white;
+            border: 1px solid rgba(0,0,0,0.04); border-top: none;
+            border-radius: 0 0 12px 12px;
+        }
+        .dd-msg { font-size: 13px; font-weight: 300; color: #777; line-height: 1.5; margin-bottom: 10px; }
+        .dd-dims { display: flex; gap: 0; justify-content: space-between; margin-bottom: 8px; }
+        .dd-dim { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+        .dd-dim-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .dd-dim-name { font-size: 8px; color: #bbb; }
+        .dd-dim-val { font-size: 9px; font-weight: 300; color: #999; }
+
+        /* ── Day separator ── */
+        .day-sep {
+            display: flex; align-items: center; gap: 12px;
+            padding: 16px 0 8px;
+        }
+        .day-sep-line { flex: 1; height: 1px; background: rgba(0,0,0,0.06); }
+        .day-sep-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; color: #33B6B0; font-weight: 500; letter-spacing: 0.05em;
+        }
+
+        /* ── VCA messages ── */
+        .vca-msg {
+            display: flex; gap: 8px; align-items: flex-start;
+            margin: 6px 0;
+        }
+        .vca-av {
+            width: 24px; height: 24px; border-radius: 12px;
+            background: rgba(51,182,176,0.12);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .vca-av span { font-size: 7px; font-weight: 700; color: #33B6B0; }
+        .vca-bubble {
+            background: white; border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 14px 14px 14px 4px;
+            padding: 12px 16px; max-width: 280px;
+        }
+        .vca-bubble p { font-size: 14px; font-weight: 300; color: #555; line-height: 1.5; }
+        .vca-bubble .time {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px; color: #ccc; margin-top: 4px;
+        }
+
+        /* ── Status card (today) ── */
+        .status-card {
+            background: white; border: 1.5px solid rgba(0,0,0,0.05);
+            border-radius: 16px; overflow: hidden;
+            margin: 6px 0 6px 32px; max-width: 300px;
+        }
+        .sc-body { padding: 20px 20px 16px; display: flex; flex-direction: column; align-items: center; gap: 0; }
+        .sc-dot-wrap { position: relative; width: 48px; height: 48px; margin-bottom: 12px; }
+        .sc-dot {
+            width: 40px; height: 40px; border-radius: 50%;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            transition: background 0.5s ease, box-shadow 0.5s ease;
+        }
+        .sc-dot.green {
+            background: #33B6B0;
+            animation: pulse 3.5s ease-in-out infinite;
+        }
+        .sc-dot.yellow {
+            background: #D97706;
+            animation: pulse 2.8s ease-in-out infinite;
+        }
+        .sc-dot.red {
+            background: #DC2626;
+            animation: pulse 2.2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,100% { transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 20px rgba(0,0,0,0.06); }
+            50% { transform: translate(-50%,-50%) scale(1.08); box-shadow: 0 0 32px rgba(0,0,0,0.1); }
+        }
+        .sc-dot::after {
+            content: ''; position: absolute; inset: -8px; border-radius: 50%;
+            background: inherit; opacity: 0.08; filter: blur(10px); z-index: -1;
+        }
+        .sc-label { font-size: 18px; font-weight: 300; color: #1B1B1A; margin-bottom: 4px; }
+        .sc-sub { font-size: 12px; font-weight: 300; color: #999; text-align: center; line-height: 1.5; margin-bottom: 16px; max-width: 240px; }
+        .sc-dims { display: flex; width: 100%; justify-content: space-between; }
+        .sc-dim { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+        .sc-dim-dot { width: 8px; height: 8px; border-radius: 50%; transition: background 0.3s ease; }
+        .sc-dim-name { font-size: 8px; color: #bbb; }
+        .sc-dim-val { font-size: 9px; font-weight: 300; color: #999; }
+        .sc-footer {
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+            padding: 10px 20px; border-top: 1px solid rgba(0,0,0,0.04);
+        }
+        .rx-box {
+            width: 12px; height: 12px; border-radius: 2px; background: #ccc;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .rx-box span { font-size: 5px; font-weight: 700; color: white; }
+        .ft { font-size: 9px; color: #bbb; }
+
+        /* ── Check-in summary (answered) ── */
+        .checkin-done {
+            background: white; border: 1px solid rgba(0,0,0,0.04);
+            border-radius: 12px; padding: 12px 16px;
+            margin: 4px 0 4px 32px; max-width: 300px;
+        }
+        .ci-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 8px; color: #33B6B0; font-weight: 500; letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+        .ci-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+        .ci-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .ci-name { font-size: 12px; color: #555; flex: 1; }
+        .ci-val { font-size: 12px; font-weight: 300; color: #999; }
+
+        /* Controls */
+        .state-toggle { position: fixed; top: 20px; right: 20px; display: flex; gap: 6px; }
+        .state-btn {
+            font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #999;
+            background: none; border: 1px solid #ddd; padding: 5px 10px; border-radius: 5px;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .state-btn:hover { border-color: #aaa; color: #666; }
+        .state-btn.active { border-color: #888; color: #555; background: rgba(0,0,0,0.02); }
+        .concept-label {
+            position: fixed; top: 20px; left: 20px;
+            font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #ccc; letter-spacing: 0.04em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="concept-label">CONCEPT B · CHAT AS TIMELINE</div>
+
+<div class="phone">
+    <!-- Header -->
+    <div class="header">
+        <div class="header-top">
+            <span class="header-title">recovry.ai</span>
+            <span class="header-day">DAY 8 OF 90</span>
+        </div>
+        <div class="header-bar"><div class="header-fill" id="headerFill" style="width:8.9%;background:#33B6B0;"></div></div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat" id="chat">
+        <!-- Day 4 -->
+        <div class="day-node" onclick="toggleDay(this,'d4')">
+            <span class="dn-label">Day 4</span>
+            <div class="dn-dot" style="background:#33B6B0;"></div>
+            <div class="dn-dims">
+                <div class="dn-mini" style="background:#7BADA6;"></div>
+                <div class="dn-mini" style="background:#33B6B0;"></div>
+                <div class="dn-mini" style="background:#7BADA6;"></div>
+                <div class="dn-mini" style="background:#33B6B0;"></div>
+                <div class="dn-mini" style="background:#33B6B0;"></div>
+            </div>
+            <span class="dn-status">On track</span>
+            <div class="dn-chev" id="d4chev"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#ccc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+        <div class="day-expand" id="d4">
+            <div class="day-detail">
+                <div class="dd-msg">"Good morning! Check-in complete. Everything looks normal for Day 4."</div>
+                <div class="dd-dims">
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#7BADA6;"></div><span class="dd-dim-name">Pain</span><span class="dd-dim-val">Mild</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#33B6B0;"></div><span class="dd-dim-name">Sleep</span><span class="dd-dim-val">Good</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#7BADA6;"></div><span class="dd-dim-name">Mobility</span><span class="dd-dim-val">Fair</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#33B6B0;"></div><span class="dd-dim-name">Meds</span><span class="dd-dim-val">On track</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#33B6B0;"></div><span class="dd-dim-name">Appetite</span><span class="dd-dim-val">Good</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 5 -->
+        <div class="day-node" onclick="toggleDay(this,'d5')">
+            <span class="dn-label">Day 5</span>
+            <div class="dn-dot" style="background:#33B6B0;"></div>
+            <div class="dn-dims">
+                <div class="dn-mini" style="background:#B8A07A;"></div>
+                <div class="dn-mini" style="background:#33B6B0;"></div>
+                <div class="dn-mini" style="background:#7BADA6;"></div>
+                <div class="dn-mini" style="background:#33B6B0;"></div>
+                <div class="dn-mini" style="background:#33B6B0;"></div>
+            </div>
+            <span class="dn-status">On track</span>
+            <div class="dn-chev" id="d5chev"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#ccc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+        <div class="day-expand" id="d5">
+            <div class="day-detail">
+                <div class="dd-msg">"Pain is a bit higher today — that's common around Day 5. Keep icing and stay ahead of your meds."</div>
+                <div class="dd-dims">
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#B8A07A;"></div><span class="dd-dim-name">Pain</span><span class="dd-dim-val">Moderate</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#33B6B0;"></div><span class="dd-dim-name">Sleep</span><span class="dd-dim-val">Good</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#7BADA6;"></div><span class="dd-dim-name">Mobility</span><span class="dd-dim-val">Fair</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#33B6B0;"></div><span class="dd-dim-name">Meds</span><span class="dd-dim-val">On track</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#33B6B0;"></div><span class="dd-dim-name">Appetite</span><span class="dd-dim-val">Good</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 6 — yellow blip -->
+        <div class="day-node yellow-node" onclick="toggleDay(this,'d6')">
+            <span class="dn-label">Day 6</span>
+            <div class="dn-dot" style="background:#D97706;"></div>
+            <div class="dn-dims">
+                <div class="dn-mini" style="background:#C4805A;"></div>
+                <div class="dn-mini" style="background:#C4805A;"></div>
+                <div class="dn-mini" style="background:#B8A07A;"></div>
+                <div class="dn-mini" style="background:#33B6B0;"></div>
+                <div class="dn-mini" style="background:#C4805A;"></div>
+            </div>
+            <span class="dn-status">Needs attention</span>
+            <div class="dn-chev" id="d6chev"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#ccc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+        <div class="day-expand" id="d6">
+            <div class="day-detail">
+                <div class="dd-msg">"Pain and sleep are both elevated. I've notified your care team. Dr. Chen will check in this afternoon."</div>
+                <div class="dd-dims">
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#C4805A;"></div><span class="dd-dim-name">Pain</span><span class="dd-dim-val">Significant</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#C4805A;"></div><span class="dd-dim-name">Sleep</span><span class="dd-dim-val">Poor</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#B8A07A;"></div><span class="dd-dim-name">Mobility</span><span class="dd-dim-val">Limited</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#33B6B0;"></div><span class="dd-dim-name">Meds</span><span class="dd-dim-val">On track</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#C4805A;"></div><span class="dd-dim-name">Appetite</span><span class="dd-dim-val">Low</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 7 -->
+        <div class="day-node" onclick="toggleDay(this,'d7')">
+            <span class="dn-label">Day 7</span>
+            <div class="dn-dot" style="background:#33B6B0;"></div>
+            <div class="dn-dims">
+                <div class="dn-mini" style="background:#B8A07A;"></div>
+                <div class="dn-mini" style="background:#B8A07A;"></div>
+                <div class="dn-mini" style="background:#33B6B0;"></div>
+                <div class="dn-mini" style="background:#33B6B0;"></div>
+                <div class="dn-mini" style="background:#7BADA6;"></div>
+            </div>
+            <span class="dn-status">On track</span>
+            <div class="dn-chev" id="d7chev"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#ccc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+        <div class="day-expand" id="d7">
+            <div class="day-detail">
+                <div class="dd-msg">"Better today. Pain is coming down and sleep improved. The adjustment Dr. Chen made is helping."</div>
+                <div class="dd-dims">
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#B8A07A;"></div><span class="dd-dim-name">Pain</span><span class="dd-dim-val">Moderate</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#B8A07A;"></div><span class="dd-dim-name">Sleep</span><span class="dd-dim-val">Fair</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#33B6B0;"></div><span class="dd-dim-name">Mobility</span><span class="dd-dim-val">Good</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#33B6B0;"></div><span class="dd-dim-name">Meds</span><span class="dd-dim-val">On track</span></div>
+                    <div class="dd-dim"><div class="dd-dim-dot" style="background:#7BADA6;"></div><span class="dd-dim-name">Appetite</span><span class="dd-dim-val">Fair</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today separator -->
+        <div class="day-sep">
+            <div class="day-sep-line"></div>
+            <span class="day-sep-label">TODAY · DAY 8</span>
+            <div class="day-sep-line"></div>
+        </div>
+
+        <!-- VCA greeting -->
+        <div class="vca-msg">
+            <div class="vca-av"><span>Rx</span></div>
+            <div class="vca-bubble">
+                <p>Good morning! Time for your check-in.</p>
+                <div class="time">8:02 AM</div>
+            </div>
+        </div>
+
+        <!-- Completed check-in -->
+        <div class="checkin-done" id="checkinCard">
+            <div class="ci-label">CHECK-IN COMPLETE</div>
+            <div id="ciRows"></div>
+        </div>
+
+        <!-- VCA follow-up -->
+        <div class="vca-msg">
+            <div class="vca-av"><span>Rx</span></div>
+            <div class="vca-bubble">
+                <p id="vcaFollowup" data-drift-editable="vca-followup" data-drift-maxlen="120">Here's your morning update.</p>
+                <div class="time">8:05 AM</div>
+            </div>
+        </div>
+
+        <!-- Status card -->
+        <div class="status-card" style="margin-left: 32px;">
+            <div class="sc-body">
+                <div class="sc-dot-wrap"><div class="sc-dot green" id="scDot"></div></div>
+                <div class="sc-label" id="scLabel" data-drift-editable="status-label" data-drift-maxlen="30">On track</div>
+                <div class="sc-sub" id="scSub" data-drift-editable="status-sub" data-drift-maxlen="120">Your recovery is progressing as expected. Keep it up.</div>
+                <div class="sc-dims" id="scDims"></div>
+            </div>
+            <div class="sc-footer">
+                <div class="rx-box"><span>Rx</span></div><span class="ft">Verified</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="state-toggle">
+    <button class="state-btn active" onclick="setState('green',this)">Green</button>
+    <button class="state-btn" onclick="setState('yellow',this)">Yellow</button>
+    <button class="state-btn" onclick="setState('red',this)">Red</button>
+</div>
+
+<script>
+const SC = { green:'#33B6B0', yellow:'#D97706', red:'#DC2626' };
+const names = ['Pain','Sleep','Mobility','Meds','Appetite'];
+
+const states = {
+    green: {
+        label:'On track',
+        sub:'Your recovery is progressing as expected. Keep it up.',
+        followup:'Here\u2019s your morning update.',
+        dims:[{c:'#7BADA6',v:'Mild'},{c:'#33B6B0',v:'Good'},{c:'#33B6B0',v:'Good'},{c:'#33B6B0',v:'On track'},{c:'#7BADA6',v:'Fair'}]
+    },
+    yellow: {
+        label:'Needs attention',
+        sub:'We\u2019ve noticed some changes. Your care team has been notified.',
+        followup:'I want to flag a few things from your check-in.',
+        dims:[{c:'#C4805A',v:'Significant'},{c:'#B8A07A',v:'Fair'},{c:'#B8A07A',v:'Limited'},{c:'#33B6B0',v:'On track'},{c:'#C4805A',v:'Low'}]
+    },
+    red: {
+        label:'Contact your doctor',
+        sub:'Please reach out to your care team as soon as possible.',
+        followup:'This needs your attention right away.',
+        dims:[{c:'#C45B4A',v:'High'},{c:'#C45B4A',v:'Very poor'},{c:'#C4805A',v:'Limited'},{c:'#B8A07A',v:'Missed'},{c:'#C4805A',v:'Low'}]
+    }
+};
+
+function toggleDay(node, id) {
+    const el = document.getElementById(id);
+    const chev = document.getElementById(id+'chev');
+    const isOpen = el.classList.contains('open');
+    el.classList.toggle('open', !isOpen);
+    chev.classList.toggle('open', !isOpen);
+    if (!isOpen) {
+        node.style.borderRadius = '12px 12px 0 0';
+    } else {
+        node.style.borderRadius = '12px';
+    }
+}
+
+function renderCI(state) {
+    const d = states[state].dims;
+    let h = '';
+    d.forEach((dim,i) => {
+        h += '<div class="ci-row"><div class="ci-dot" style="background:'+dim.c+'"></div><span class="ci-name">'+names[i]+'</span><span class="ci-val">'+dim.v+'</span></div>';
+    });
+    document.getElementById('ciRows').innerHTML = h;
+}
+
+function renderSC(state) {
+    const s = states[state];
+    let h = '';
+    s.dims.forEach((dim,i) => {
+        h += '<div class="sc-dim"><div class="sc-dim-dot" style="background:'+dim.c+'"></div><span class="sc-dim-name">'+names[i]+'</span><span class="sc-dim-val">'+dim.v+'</span></div>';
+    });
+    document.getElementById('scDims').innerHTML = h;
+}
+
+function setState(state, btn) {
+    const s = states[state];
+    document.getElementById('scDot').className = 'sc-dot ' + state;
+    document.getElementById('scLabel').textContent = s.label;
+    document.getElementById('scSub').textContent = s.sub;
+    document.getElementById('vcaFollowup').textContent = s.followup;
+    document.getElementById('headerFill').style.background = SC[state];
+    renderCI(state);
+    renderSC(state);
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// Scroll to bottom
+function scrollBottom() {
+    const chat = document.getElementById('chat');
+    chat.scrollTop = chat.scrollHeight;
+}
+
+renderCI('green');
+renderSC('green');
+setTimeout(scrollBottom, 100);
+</script>
+
+</body>
+</html>

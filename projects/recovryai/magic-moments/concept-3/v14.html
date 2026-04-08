@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-In — Full Flow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+            display: flex; align-items: flex-start; justify-content: center;
+            padding-top: 60px;
+        }
+
+        .flow { display: flex; flex-direction: column; gap: 12px; max-width: 380px; width: 100%; padding: 20px; }
+
+        /* ── Card ── */
+        .card {
+            background: white; border: 1.5px solid rgba(0,0,0,0.05); border-radius: 16px;
+            overflow: hidden; transition: all 0.4s ease;
+        }
+        .card.hidden { display: none; }
+        .card-body {
+            padding: 28px 28px 16px;
+            display: flex; flex-direction: column; align-items: center; gap: 16px;
+        }
+        .card-day { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 500; letter-spacing: 0.06em; color: #33B6B0; }
+        .card-q { font-size: 22px; font-weight: 300; color: #1B1B1A; text-align: center; line-height: 1.2; }
+        .card-q strong { font-weight: 600; }
+        .card-sel { font-size: 20px; font-weight: 200; color: #1B1B1A; text-align: center; min-height: 26px; transition: all 0.25s ease; }
+        .card-sel.prompt { font-size: 11px; font-weight: 400; color: #d0d0d0; }
+
+        /* Dots */
+        .dots { display: flex; gap: 16px; padding: 8px 0 4px; cursor: pointer; width: 100%; justify-content: center; }
+        .dp { display: flex; flex-direction: column; align-items: center; position: relative; }
+        .dl { font-size: 9px; font-weight: 300; color: #ccc; white-space: nowrap; opacity: 0; transition: all 0.2s ease; pointer-events: none; margin-top: 8px; }
+        .dc { width: 36px; height: 36px; border-radius: 18px; transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1); cursor: pointer; position: relative; opacity: 0.35; transform: scale(0.8); }
+        /* Endpoint dots (first/last): labels always visible */
+        .dp:first-child .dl, .dp:last-child .dl { opacity: 1; }
+        .dp:first-child:hover .dl, .dp:last-child:hover .dl { color: #888; font-weight: 500; }
+        /* Middle dots: labels appear on hover */
+        .dp:hover .dc { opacity: 0.6; transform: scale(0.95); }
+        .dp:hover .dl { opacity: 1; }
+        .dp.lit .dc { opacity: 0.5; transform: scale(0.85); }
+        .dp.active .dc { opacity: 1; transform: scale(1.1); box-shadow: 0 0 16px rgba(0,0,0,0.05); }
+        .dp.active .dl { opacity: 1; font-weight: 600; color: #555; }
+        .dp.active .dc::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 170%; height: 170%; border-radius: 50%; background: inherit; opacity: 0.1; filter: blur(8px); z-index: -1; }
+
+        .voice-row { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 4px 0; cursor: pointer; }
+        .voice-row span { font-size: 10px; color: #d0d0d0; }
+        .card-footer { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 14px 28px; border-top: 1px solid rgba(0,0,0,0.04); }
+        .rx-box { width: 14px; height: 14px; border-radius: 2px; background: #ccc; display: flex; align-items: center; justify-content: center; }
+        .rx-box span { font-size: 6px; font-weight: 700; color: white; }
+        .ft { font-size: 10px; color: #bbb; }
+
+        /* ── Listening + transcription state ── */
+        .listening { display: none; flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px 0; width: 100%; }
+        .listening.show { display: flex; }
+        .listen-header { display: flex; align-items: center; gap: 8px; }
+        .pulse-circle { width: 28px; height: 28px; border-radius: 14px; background: rgba(51,182,176,0.15); display: flex; align-items: center; justify-content: center; animation: pulse 1.5s ease-in-out infinite; flex-shrink: 0; }
+        .pulse-inner { width: 10px; height: 10px; border-radius: 5px; background: #33B6B0; }
+        @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: 0.7; } }
+        .listen-label { font-size: 11px; color: #33B6B0; font-weight: 500; }
+        .transcript { font-size: 15px; font-weight: 300; color: #888; line-height: 1.5; min-height: 48px; font-style: italic; }
+        .transcript .cursor { display: inline-block; width: 2px; height: 14px; background: #33B6B0; margin-left: 2px; animation: blink 0.8s ease-in-out infinite; vertical-align: middle; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* Processing state */
+        .processing { display: none; flex-direction: column; align-items: center; gap: 10px; padding: 20px 0; }
+        .processing.show { display: flex; }
+        .process-dots { display: flex; gap: 6px; }
+        .process-dot { width: 6px; height: 6px; border-radius: 3px; background: #33B6B0; animation: processPulse 1s ease-in-out infinite; }
+        .process-dot:nth-child(2) { animation-delay: 0.2s; }
+        .process-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes processPulse { 0%,100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+        .process-text { font-size: 11px; color: #bbb; }
+
+        /* Interpreted result */
+        .interpreted { display: none; flex-direction: column; align-items: center; gap: 12px; padding: 12px 0; }
+        .interpreted.show { display: flex; }
+        .interp-text { font-size: 14px; color: #555; text-align: center; line-height: 1.4; }
+        .interp-text strong { color: #1B1B1A; font-weight: 600; }
+        .interp-actions { display: flex; gap: 10px; }
+        .interp-btn { padding: 10px 20px; border-radius: 10px; border: none; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+        .interp-confirm { background: #33B6B0; color: white; }
+        .interp-confirm:hover { transform: translateY(-1px); }
+        .interp-adjust { background: #F0F0EE; color: #555; }
+
+        /* ── Collapsed/answered ── */
+        .answered {
+            background: white; border: 1.5px solid rgba(0,0,0,0.04); border-radius: 14px;
+            padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .answered:hover { border-color: rgba(0,0,0,0.08); }
+        .answered.hidden { display: none; }
+        .ans-left { display: flex; align-items: center; gap: 10px; }
+        .ans-dot { width: 12px; height: 12px; border-radius: 6px; }
+        .ans-label { font-size: 14px; font-weight: 500; color: #1B1B1A; }
+        .ans-dim { font-size: 14px; font-weight: 300; color: #999; }
+        .ans-time { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #bbb; }
+
+        .replay { position: fixed; top: 20px; right: 20px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #999; background: none; border: 1px solid #ddd; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="flow">
+    <!-- Pain answered (collapsed) — hidden initially -->
+    <div class="answered hidden" id="painAns" onclick="editPain()">
+        <div class="ans-left">
+            <div class="ans-dot" id="painAnsDot"></div>
+            <span class="ans-label">Pain</span>
+            <span class="ans-dim" id="painAnsText"></span>
+        </div>
+        <span class="ans-time">8:04 AM</span>
+    </div>
+
+    <!-- Pain card -->
+    <div class="card" id="painCard">
+        <div class="card-body" id="painBody">
+            <div class="card-day">DAY 8 · MORNING CHECK-IN</div>
+            <div class="card-q">How's your <strong>pain</strong> today?</div>
+            <div class="card-sel prompt" id="painSel">Tap or slide</div>
+
+            <!-- Dots (normal state) -->
+            <div class="dots" id="painDots">
+                <div class="dp" data-level="1"><div class="dc" style="background:#33B6B0;"></div><span class="dl">No pain</span></div>
+                <div class="dp" data-level="2"><div class="dc" style="background:#7BADA6;"></div><span class="dl">Mild</span></div>
+                <div class="dp" data-level="3"><div class="dc" style="background:#B8A07A;"></div><span class="dl">Moderate</span></div>
+                <div class="dp" data-level="4"><div class="dc" style="background:#C4805A;"></div><span class="dl">Significant</span></div>
+                <div class="dp" data-level="5"><div class="dc" style="background:#C45B4A;"></div><span class="dl">High pain</span></div>
+            </div>
+
+            <!-- Listening + transcription state (hidden) -->
+            <div class="listening" id="painListen">
+                <div class="listen-header">
+                    <div class="pulse-circle"><div class="pulse-inner"></div></div>
+                    <span class="listen-label">Listening</span>
+                </div>
+                <div class="transcript" id="painTranscript"><span class="cursor"></span></div>
+            </div>
+
+            <!-- Processing state (hidden) -->
+            <div class="processing" id="painProcess">
+                <div class="process-dots"><div class="process-dot"></div><div class="process-dot"></div><div class="process-dot"></div></div>
+                <div class="process-text">Understanding...</div>
+            </div>
+
+            <!-- Interpreted result (hidden) -->
+            <div class="interpreted" id="painInterp">
+                <div class="interp-text">It sounds like your pain is<br><strong id="painInterpLevel">significant</strong> today</div>
+                <div style="font-size: 11px; color: #aaa; margin-top: -4px;">Worse than yesterday</div>
+                <div class="interp-actions">
+                    <button class="interp-btn interp-confirm" onclick="confirmVoice('pain', 4)">That's right</button>
+                    <button class="interp-btn interp-adjust" onclick="adjustVoice('pain')">Adjust</button>
+                </div>
+            </div>
+
+            <div class="voice-row" id="painVoice" onclick="startListening('pain')">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" style="opacity:0.25;"><rect x="5" y="1" width="4" height="7" rx="2" stroke="#33B6B0" stroke-width="1.2" fill="none"/><path d="M3 7.5C3 9.7 4.8 11.5 7 11.5C9.2 11.5 11 9.7 11 7.5" stroke="#33B6B0" stroke-width="1.2" stroke-linecap="round"/><line x1="7" y1="11.5" x2="7" y2="13" stroke="#33B6B0" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <span>Or just tell me</span>
+            </div>
+        </div>
+        <div class="card-footer"><div class="rx-box"><span>Rx</span></div><span class="ft">Verified</span></div>
+    </div>
+
+    <!-- Sleep answered (collapsed) — hidden -->
+    <div class="answered hidden" id="sleepAns" onclick="editSleep()">
+        <div class="ans-left">
+            <div class="ans-dot" id="sleepAnsDot"></div>
+            <span class="ans-label">Sleep</span>
+            <span class="ans-dim" id="sleepAnsText"></span>
+        </div>
+        <span class="ans-time">8:04 AM</span>
+    </div>
+
+    <!-- Sleep card — hidden initially -->
+    <div class="card hidden" id="sleepCard">
+        <div class="card-body">
+            <div class="card-q">How did you <strong>sleep</strong> last night?</div>
+            <div class="card-sel prompt" id="sleepSel">Tap or slide</div>
+            <div class="dots" id="sleepDots">
+                <div class="dp" data-level="1"><div class="dc" style="background:#33B6B0;"></div><span class="dl">Well rested</span></div>
+                <div class="dp" data-level="2"><div class="dc" style="background:#7BADA6;"></div><span class="dl">Good</span></div>
+                <div class="dp" data-level="3"><div class="dc" style="background:#B8A07A;"></div><span class="dl">Fair</span></div>
+                <div class="dp" data-level="4"><div class="dc" style="background:#C4805A;"></div><span class="dl">Poor</span></div>
+                <div class="dp" data-level="5"><div class="dc" style="background:#C45B4A;"></div><span class="dl">No sleep</span></div>
+            </div>
+            <div class="voice-row" onclick="startListening('sleep')">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" style="opacity:0.25;"><rect x="5" y="1" width="4" height="7" rx="2" stroke="#33B6B0" stroke-width="1.2" fill="none"/><path d="M3 7.5C3 9.7 4.8 11.5 7 11.5C9.2 11.5 11 9.7 11 7.5" stroke="#33B6B0" stroke-width="1.2" stroke-linecap="round"/><line x1="7" y1="11.5" x2="7" y2="13" stroke="#33B6B0" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <span>Or just tell me</span>
+            </div>
+        </div>
+        <div class="card-footer"><div class="rx-box"><span>Rx</span></div><span class="ft">Verified</span></div>
+    </div>
+</div>
+
+<button class="replay" onclick="location.reload()">Replay</button>
+
+<script>
+const colors = ['#33B6B0','#7BADA6','#B8A07A','#C4805A','#C45B4A'];
+const painLabels = ['No pain','Mild','Moderate','Significant','High pain'];
+const sleepLabels = ['Well rested','Good','Fair','Poor','No sleep'];
+
+let painLevel = null, sleepLevel = null;
+let painEditing = false, sleepEditing = false;
+
+// ── Dot interaction ──
+function setupDots(trackId, selId, labels, onSelect) {
+    const track = document.getElementById(trackId);
+    const dots = track.querySelectorAll('.dp');
+    const sel = document.getElementById(selId);
+
+    dots.forEach((d, i) => {
+        d.addEventListener('click', () => {
+            dots.forEach((dd, j) => { dd.classList.remove('active','lit'); if (j < i) dd.classList.add('lit'); if (j === i) dd.classList.add('active'); });
+            sel.textContent = labels[i];
+            sel.classList.remove('prompt');
+            sel.style.color = colors[i];
+            setTimeout(() => onSelect(i + 1), 450);
+        });
+    });
+}
+
+// ── Pain ──
+function collapsePain(level) {
+    painLevel = level;
+    document.getElementById('painCard').classList.add('hidden');
+    const ans = document.getElementById('painAns');
+    ans.querySelector('#painAnsDot').style.background = colors[level - 1];
+    ans.querySelector('#painAnsText').textContent = painLabels[level - 1];
+    ans.classList.remove('hidden');
+
+    // Show sleep card
+    document.getElementById('sleepCard').classList.remove('hidden');
+    painEditing = false;
+}
+
+function editPain() {
+    painEditing = true;
+    document.getElementById('painAns').classList.add('hidden');
+    const card = document.getElementById('painCard');
+    card.classList.remove('hidden');
+
+    // Re-highlight the previous selection
+    if (painLevel) {
+        const dots = document.querySelectorAll('#painDots .dp');
+        dots.forEach((d, i) => { d.classList.remove('active','lit'); if (i < painLevel - 1) d.classList.add('lit'); if (i === painLevel - 1) d.classList.add('active'); });
+        document.getElementById('painSel').textContent = painLabels[painLevel - 1];
+        document.getElementById('painSel').classList.remove('prompt');
+        document.getElementById('painSel').style.color = colors[painLevel - 1];
+    }
+}
+
+setupDots('painDots', 'painSel', painLabels, collapsePain);
+
+// ── Sleep ──
+function collapseSleep(level) {
+    sleepLevel = level;
+    document.getElementById('sleepCard').classList.add('hidden');
+    const ans = document.getElementById('sleepAns');
+    ans.querySelector('#sleepAnsDot').style.background = colors[level - 1];
+    ans.querySelector('#sleepAnsText').textContent = sleepLabels[level - 1];
+    ans.classList.remove('hidden');
+    sleepEditing = false;
+}
+
+function editSleep() {
+    sleepEditing = true;
+    document.getElementById('sleepAns').classList.add('hidden');
+    document.getElementById('sleepCard').classList.remove('hidden');
+
+    if (sleepLevel) {
+        const dots = document.querySelectorAll('#sleepDots .dp');
+        dots.forEach((d, i) => { d.classList.remove('active','lit'); if (i < sleepLevel - 1) d.classList.add('lit'); if (i === sleepLevel - 1) d.classList.add('active'); });
+        document.getElementById('sleepSel').textContent = sleepLabels[sleepLevel - 1];
+        document.getElementById('sleepSel').classList.remove('prompt');
+        document.getElementById('sleepSel').style.color = colors[sleepLevel - 1];
+    }
+}
+
+setupDots('sleepDots', 'sleepSel', sleepLabels, collapseSleep);
+
+// ── Voice ──
+const simSpeech = "Yeah it's um... it's been pretty rough today actually. I woke up and my knee was really stiff and the pain was worse than yesterday, maybe like a 4 I don't know";
+
+function startListening(card) {
+    const dotsEl = document.getElementById(card + 'Dots');
+    const sel = document.getElementById(card + 'Sel');
+    const listen = document.getElementById(card + 'Listen');
+    const voice = document.getElementById(card + 'Voice');
+    const transcript = document.getElementById(card + 'Transcript');
+    const process = document.getElementById(card + 'Process');
+
+    // Hide dots, selection label, voice row
+    dotsEl.style.display = 'none';
+    sel.style.display = 'none';
+    voice.style.display = 'none';
+
+    // Show listening with empty transcript
+    transcript.innerHTML = '<span class="cursor"></span>';
+    listen.classList.add('show');
+
+    // Simulate word-by-word transcription
+    const words = simSpeech.split(' ');
+    let wordIndex = 0;
+    const typeInterval = setInterval(() => {
+        if (wordIndex < words.length) {
+            transcript.innerHTML = words.slice(0, wordIndex + 1).join(' ') + '<span class="cursor"></span>';
+            wordIndex++;
+        } else {
+            clearInterval(typeInterval);
+
+            // Pause, then transition to processing
+            setTimeout(() => {
+                listen.classList.remove('show');
+
+                // Show processing
+                if (process) {
+                    process.classList.add('show');
+
+                    // After processing, show interpreted
+                    setTimeout(() => {
+                        process.classList.remove('show');
+                        const interp = document.getElementById(card + 'Interp');
+                        if (interp) {
+                            interp.classList.add('show');
+                        }
+                    }, 1200);
+                } else {
+                    // For sleep, just pick level 2
+                    dotsEl.style.display = '';
+                    sel.style.display = '';
+                    voice.style.display = '';
+                    const dots = dotsEl.querySelectorAll('.dp');
+                    dots[1].click();
+                }
+            }, 800);
+        }
+    }, 120);
+}
+
+function confirmVoice(card, level) {
+    document.getElementById(card + 'Interp').classList.remove('show');
+    document.getElementById(card + 'Dots').style.display = '';
+    document.getElementById(card + 'Sel').style.display = '';
+    document.getElementById(card + 'Voice').style.display = '';
+
+    if (card === 'pain') collapsePain(level);
+    if (card === 'sleep') collapseSleep(level);
+}
+
+function adjustVoice(card) {
+    document.getElementById(card + 'Interp').classList.remove('show');
+    const dotsEl = document.getElementById(card + 'Dots');
+    const sel = document.getElementById(card + 'Sel');
+    const voice = document.getElementById(card + 'Voice');
+
+    dotsEl.style.display = '';
+    sel.style.display = '';
+    voice.style.display = '';
+
+    // Pre-select the interpreted level
+    const dots = dotsEl.querySelectorAll('.dp');
+    dots.forEach((d, i) => { d.classList.remove('active','lit'); if (i < 2) d.classList.add('lit'); if (i === 2) d.classList.add('active'); });
+    sel.textContent = card === 'pain' ? painLabels[2] : sleepLabels[2];
+    sel.classList.remove('prompt');
+    sel.style.color = colors[2];
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,184 @@
+{
+  "project": {
+    "name": "Social Quote Cards — March 2026",
+    "slug": "social-quotes-march2026",
+    "client": "recovryai",
+    "canvas": {
+      "type": "freeform",
+      "width": 1200,
+      "height": 627
+    },
+    "created": "2026-03-16",
+    "links": [
+      {
+        "label": "Brand Guidelines",
+        "url": "../brand/guidelines.md"
+      },
+      {
+        "label": "STAT News Article",
+        "url": "https://www.statnews.com"
+      }
+    ]
+  },
+  "workingSets": [],
+  "comments": [],
+  "clientEdits": [],
+  "rounds": [
+    {
+      "id": "round-1",
+      "number": 1,
+      "name": "Round 1",
+      "createdAt": "2026-03-16",
+      "selects": [],
+      "concepts": [
+        {
+          "id": "concept-1",
+          "label": "Bright Line",
+          "description": "Scott Walchek on influencing patient care as the regulatory bright line",
+          "position": 0,
+          "visible": true,
+          "versions": [
+            {
+              "id": "concept-1--v1",
+              "number": 1,
+              "file": "concept-1/v1.html",
+              "parentId": null,
+              "changelog": "Ported from original social cards",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-16",
+              "thumbnail": ".thumbs/concept-1-concept-1--v1.png"
+            }
+          ],
+          "slug": "bright-line"
+        },
+        {
+          "id": "concept-2",
+          "label": "Train Has Left",
+          "description": "Dr. Watson on FDA being outpaced by generative AI momentum",
+          "position": 1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "concept-2--v1",
+              "number": 1,
+              "file": "concept-2/v1.html",
+              "parentId": null,
+              "changelog": "Ported from original social cards",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-16",
+              "thumbnail": ".thumbs/concept-2-concept-2--v1.png"
+            }
+          ],
+          "slug": "train-has-left"
+        },
+        {
+          "id": "concept-3",
+          "label": "FDA Hints",
+          "description": "Katie Palmer on FDA breakthrough designation hinting at chatbot regulation approach",
+          "position": 2,
+          "visible": true,
+          "versions": [
+            {
+              "id": "concept-3--v1",
+              "number": 1,
+              "file": "concept-3/v1.html",
+              "parentId": null,
+              "changelog": "Ported from original social cards",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-16",
+              "thumbnail": ".thumbs/concept-3-concept-3--v1.png"
+            }
+          ],
+          "slug": "fda-hints"
+        },
+        {
+          "id": "concept-4",
+          "label": "Out of Stealth",
+          "description": "Katie Palmer on FDA quietly granting breakthrough designation to a chatbot",
+          "position": 3,
+          "visible": true,
+          "versions": [
+            {
+              "id": "concept-4--v1",
+              "number": 1,
+              "file": "concept-4/v1.html",
+              "parentId": null,
+              "changelog": "Ported from original social cards",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-16",
+              "thumbnail": ".thumbs/concept-4-concept-4--v1.png"
+            }
+          ],
+          "slug": "out-of-stealth"
+        },
+        {
+          "id": "concept-5",
+          "label": "Unregulated Tools",
+          "description": "Palmer on health systems relying on unregulated generative AI tools",
+          "position": 4,
+          "visible": true,
+          "versions": [
+            {
+              "id": "concept-5--v1",
+              "number": 1,
+              "file": "concept-5/v1.html",
+              "parentId": null,
+              "changelog": "Ported from original social cards",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-16",
+              "thumbnail": ".thumbs/concept-5-concept-5--v1.png"
+            }
+          ],
+          "slug": "unregulated-tools"
+        },
+        {
+          "id": "concept-6",
+          "label": "Fraught With Problems",
+          "description": "Dr. Watson on the challenge of regulating fast-moving generative AI products",
+          "position": 5,
+          "visible": true,
+          "versions": [
+            {
+              "id": "concept-6--v1",
+              "number": 1,
+              "file": "concept-6/v1.html",
+              "parentId": null,
+              "changelog": "Ported from original social cards",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-16",
+              "thumbnail": ".thumbs/concept-6-concept-6--v1.png"
+            }
+          ],
+          "slug": "fraught-with-problems"
+        },
+        {
+          "id": "concept-7",
+          "label": "Governance Standard",
+          "description": "Dr. Cumano on RecovryAI's governance frameworks setting the standard for patient-facing AI",
+          "position": 6,
+          "visible": true,
+          "versions": [
+            {
+              "id": "concept-7--v1",
+              "number": 1,
+              "file": "concept-7/v1.html",
+              "parentId": null,
+              "changelog": "New card — LinkedIn quote from Dr. Zdenka Cumano",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-16",
+              "thumbnail": ".thumbs/concept-7-concept-7--v1.png"
+            }
+          ],
+          "slug": "governance-standard"
+        }
+      ]
+    }
+  ]
+}

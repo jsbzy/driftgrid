@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#12 — Provider Alert: In-App Notification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .notif-card {
+            background: #FFFFFF;
+            border: 1px solid rgba(220,38,38,0.12);
+            border-radius: 16px; width: 100%; overflow: hidden;
+        }
+
+        .notif-bar {
+            padding: 12px 16px;
+            background: #DC2626;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .notif-bar-icon {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            animation: urgPulse 1.5s ease-in-out infinite;
+        }
+        .notif-bar-icon svg { width: 12px; height: 12px; }
+        @keyframes urgPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.3); }
+            50% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
+        }
+        .notif-bar-text { font-size: 12px; font-weight: 600; color: white; }
+        .notif-bar-time { font-size: 11px; color: rgba(255,255,255,0.7); margin-left: auto; }
+
+        .notif-patient {
+            padding: 16px; display: flex; align-items: center; gap: 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .notif-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, #3EB5A6, #2a9a8d);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 600; color: white;
+        }
+        .notif-name { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+        .notif-meta { font-size: 12px; color: #888; margin-top: 1px; }
+
+        .notif-body { padding: 16px; }
+        .notif-summary {
+            font-size: 14px; color: #555; line-height: 1.55;
+            margin-bottom: 16px;
+        }
+        .notif-summary strong { color: #1a1a1a; }
+
+        /* Data grid */
+        .data-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 8px; margin-bottom: 16px;
+        }
+        .data-cell {
+            padding: 10px; background: rgba(0,0,0,0.015);
+            border-radius: 8px;
+        }
+        .data-cell-label { font-size: 10px; color: #888; margin-bottom: 4px; }
+        .data-cell-value { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+        .data-cell-value.red { color: #DC2626; }
+        .data-cell-value.amber { color: #D97706; }
+        .data-cell-change { font-size: 10px; color: #DC2626; margin-top: 2px; }
+
+        /* VCA assessment */
+        .vca-assessment {
+            background: rgba(0,0,0,0.02);
+            border-radius: 10px; padding: 12px;
+            margin-bottom: 16px;
+        }
+        .vca-assess-header {
+            display: flex; align-items: center; gap: 6px;
+            margin-bottom: 8px;
+        }
+        .vca-assess-av {
+            width: 18px; height: 18px; border-radius: 50%;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .vca-assess-av svg { width: 8px; height: 8px; }
+        .vca-assess-label { font-size: 10px; font-weight: 600; color: #888; letter-spacing: 0.03em; }
+        .vca-assess-text { font-size: 13px; color: #555; line-height: 1.5; }
+
+        /* One-tap actions */
+        .action-buttons {
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .action-btn {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 14px; border-radius: 10px;
+            font-family: 'Inter', sans-serif; font-size: 14px;
+            font-weight: 500; cursor: pointer; border: none;
+        }
+        .action-btn.primary { background: #DC2626; color: white; }
+        .action-btn.secondary { background: #1a1a1a; color: white; }
+        .action-btn.tertiary { background: rgba(0,0,0,0.04); color: #555; }
+        .action-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .action-btn span { flex: 1; }
+
+        .notif-footer {
+            padding: 10px 16px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .rx-badge {
+            width: 14px; height: 14px; border-radius: 2px;
+            background: #ccc; display: flex; align-items: center; justify-content: center;
+        }
+        .rx-badge span { font-size: 6px; font-weight: 700; color: white; }
+        .footer-text { font-size: 10px; color: #bbb; }
+    </style>
+</head>
+<body>
+    <div class="notif-card">
+        <div class="notif-bar">
+            <div class="notif-bar-icon">
+                <svg viewBox="0 0 12 12" fill="none"><path d="M6 2v4M6 8h.01" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <span class="notif-bar-text">Urgent Patient Alert</span>
+            <span class="notif-bar-time">3 min ago</span>
+        </div>
+
+        <div class="notif-patient">
+            <div class="notif-avatar">JP</div>
+            <div>
+                <div class="notif-name">James Park</div>
+                <div class="notif-meta">Right TKA · Day 42 · UCSF Medical Center</div>
+            </div>
+        </div>
+
+        <div class="notif-body">
+            <p class="notif-summary" data-drift-editable="summary" data-drift-maxlen="200">
+                <strong>Significant pain increase</strong> with elevated temperature at surgical site. Patient reports warmth and is concerned. VCA has instructed ice and elevation.
+            </p>
+
+            <div class="data-grid">
+                <div class="data-cell">
+                    <div class="data-cell-label">Pain Score</div>
+                    <div class="data-cell-value red">5.8</div>
+                    <div class="data-cell-change">+3.7 from yesterday</div>
+                </div>
+                <div class="data-cell">
+                    <div class="data-cell-label">Site Temperature</div>
+                    <div class="data-cell-value amber">99.4°F</div>
+                    <div class="data-cell-change">+1.3°F from baseline</div>
+                </div>
+                <div class="data-cell">
+                    <div class="data-cell-label">Heart Rate</div>
+                    <div class="data-cell-value amber">92 bpm</div>
+                    <div class="data-cell-change">+24 from resting avg</div>
+                </div>
+                <div class="data-cell">
+                    <div class="data-cell-label">ROM</div>
+                    <div class="data-cell-value">118°</div>
+                </div>
+            </div>
+
+            <div class="vca-assessment">
+                <div class="vca-assess-header">
+                    <div class="vca-assess-av">
+                        <svg viewBox="0 0 8 8" fill="none"><path d="M4 1v2M4 5v2M1 4h2M5 4h2" stroke="white" stroke-width="1" stroke-linecap="round"/></svg>
+                    </div>
+                    <span class="vca-assess-label">VCA ASSESSMENT</span>
+                </div>
+                <p class="vca-assess-text" data-drift-editable="assessment" data-drift-maxlen="200">
+                    Likely post-activity flare following 20-min walk on Day 41. However, combined fever + pain elevation warrants provider evaluation to rule out infection. Patient has been instructed to ice and elevate. Caregiver notified.
+                </p>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn primary">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 2C3 2 4 6 7 8s5 4 5 4" stroke="white" stroke-width="1.3" stroke-linecap="round"/><path d="M11 2C11 2 10 6 7 8S2 12 2 12" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    <span>Call James Park</span>
+                </button>
+                <button class="action-btn secondary">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M2 4l6 4 6-4" stroke="white" stroke-width="1.3" stroke-linecap="round"/><rect x="1" y="3" width="14" height="10" rx="2" stroke="white" stroke-width="1.3"/></svg>
+                    <span>Send Secure Message</span>
+                </button>
+                <button class="action-btn tertiary">
+                    <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="#555" stroke-width="1.3"/><path d="M2.5 14c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5" stroke="#555" stroke-width="1.3"/></svg>
+                    <span>Open Full Record</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="notif-footer">
+            <div class="rx-badge"><span>Rx</span></div>
+            <span class="footer-text">Alert generated by recovry.ai VCA</span>
+        </div>
+    </div>
+</body>
+</html>

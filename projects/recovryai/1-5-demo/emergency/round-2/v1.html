@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10 — Emergency</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #F4F2EE; display: flex; align-items: center; justify-content: center; gap: 40px; padding: 0 80px; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .phone { width: 250px; height: 500px; border: 2.5px solid #E05555; border-radius: 36px; background: #fff; display: flex; flex-direction: column; padding: 16px 14px; }
+        .notch { width: 54px; height: 5px; background: #E8E6E1; border-radius: 3px; align-self: center; margin-bottom: 10px; }
+        .p-header { height: 18px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
+        .p-hl { width: 80px; height: 6px; background: #E8E6E1; border-radius: 3px; }
+        .p-toggle { display: flex; background: #F0EEEA; border-radius: 14px; padding: 2px; margin-bottom: 8px; }
+        .p-tab { flex: 1; height: 20px; border-radius: 12px; }
+        .p-tab.active { background: #fff; }
+        .p-chat { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        .p-msg { border-radius: 10px; }
+        .p-msg.bot { background: #F0EEEA; align-self: flex-start; border-bottom-left-radius: 3px; }
+        .p-msg.user { background: #1B1B1A; align-self: flex-end; border-bottom-right-radius: 3px; }
+        .p-msg.em { background: #FEF2F2; border: 2px solid #E05555; align-self: flex-start; border-bottom-left-radius: 3px; }
+        .p-msg.s1 { width: 55%; height: 24px; }
+        .p-msg.s2 { width: 70%; height: 32px; }
+        .p-msg.s3 { width: 75%; height: 40px; }
+        .p-cta { height: 44px; background: #E05555; border-radius: 12px; margin-top: 4px; }
+        .p-hb { width: 30px; height: 3px; background: #D0D0CC; border-radius: 2px; align-self: center; margin-top: 6px; }
+
+        .conn { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 50px; }
+        .conn-line { width: 36px; height: 2px; background: #E05555; }
+        .conn-label { font-size: 9px; color: #E05555; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+
+        .desktop { width: 480px; border: 2px solid #C8C6C1; border-radius: 10px; background: #fff; overflow: hidden; }
+        .d-bar { height: 26px; background: #F0EEEA; border-bottom: 1px solid #E8E6E1; display: flex; align-items: center; padding: 0 10px; gap: 4px; }
+        .dd { width: 7px; height: 7px; border-radius: 50%; }
+        .dd.r { background: #FF5F56; } .dd.y { background: #FFBD2E; } .dd.g { background: #27C93F; }
+        .d-banner { background: #FEF2F2; border-bottom: 1px solid #E0555520; padding: 10px 14px; display: flex; align-items: center; gap: 8px; }
+        .d-icon { width: 22px; height: 22px; background: #E05555; border-radius: 50%; }
+        .d-banner-lines { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+        .dbl { background: #E8E6E1; border-radius: 2px; }
+        .dbl.a { width: 200px; height: 6px; }
+        .dbl.b { width: 40px; height: 4px; }
+        .d-content { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+        .d-details { background: #F9F8F6; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 5px; }
+        .dl { background: #E8E6E1; border-radius: 2px; }
+        .dl.a { width: 80px; height: 5px; }
+        .dl.b { width: 180px; height: 4px; }
+        .dl.c { width: 140px; height: 4px; }
+        .d-actions { display: flex; gap: 6px; }
+        .d-btn { height: 32px; border-radius: 6px; flex: 1; }
+        .d-btn.primary { background: #E05555; }
+        .d-btn.secondary { background: #F0EEEA; }
+
+        .caption { position: absolute; bottom: 56px; left: 0; right: 0; text-align: center; padding: 0 180px; font-size: 19px; font-weight: 400; color: #8A8A86; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="phone">
+        <div class="notch"></div>
+        <div class="p-header"><div class="p-hl"></div></div>
+        <div class="p-toggle"><div class="p-tab active"></div><div class="p-tab"></div></div>
+        <div class="p-chat">
+            <div class="p-msg bot s1"></div>
+            <div class="p-msg user s2"></div>
+            <div class="p-msg em s3"></div>
+        </div>
+        <div class="p-cta"></div>
+        <div class="p-hb"></div>
+    </div>
+
+    <div class="conn"><div class="conn-label">Simultaneous</div><div class="conn-line"></div></div>
+
+    <div class="desktop">
+        <div class="d-bar"><div class="dd r"></div><div class="dd y"></div><div class="dd g"></div></div>
+        <div class="d-banner"><div class="d-icon"></div><div class="d-banner-lines"><div class="dbl a"></div><div class="dbl b"></div></div></div>
+        <div class="d-content">
+            <div class="d-details"><div class="dl a"></div><div class="dl b"></div><div class="dl c"></div><div class="dl b"></div></div>
+            <div class="d-actions"><div class="d-btn primary"></div><div class="d-btn secondary"></div><div class="d-btn secondary"></div></div>
+        </div>
+    </div>
+
+    <div class="caption">For critical symptoms, the VCA advises the patient to call 911 immediately — and alerts the care team at the same time. Patient safety comes first.</div>
+</body>
+</html>

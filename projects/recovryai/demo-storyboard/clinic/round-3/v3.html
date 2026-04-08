@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>14 — Clinic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #ffffff; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        /* Slide layout */
+        .slide { display: flex; width: 100%; height: 100vh; }
+        .left { width: 46%; display: flex; align-items: center; padding-left: 120px; }
+        .right { width: 54%; display: flex; align-items: center; justify-content: center; padding-right: 60px; }
+        /* === TEXT BLOCK === */
+        .text-block { width: 500px; }
+        .breadcrumb {
+            font-size: 12px; font-weight: 500; color: #A3A3A0;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            margin-bottom: 16px;
+            opacity: 0; transform: translateY(8px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .headline {
+            font-size: 40px; font-weight: 600; color: #1B1B1A;
+            line-height: 1.25; letter-spacing: -0.02em;
+            margin-bottom: 22px;
+            opacity: 0; transform: translateY(12px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .detail {
+            font-size: 17px; font-weight: 400; color: #3A3A38;
+            line-height: 1.6; letter-spacing: 0.01em;
+            opacity: 0; transform: translateY(12px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .text-block .show { opacity: 1; transform: translateY(0); }
+
+        .browser { width: 900px; height: 560px; background: #fff; border-radius: 12px; box-shadow: 0 8px 80px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.06); display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(0,0,0,0.08); }
+
+        .browser-bar { height: 36px; background: #f4f2ee; display: flex; align-items: center; padding: 0 14px; gap: 8px; border-bottom: 1px solid #e8e6e1; flex-shrink: 0; }
+        .dots { display: flex; gap: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot.r { background: #E05555; }
+        .dot.y { background: #F5C842; }
+        .dot.g { background: #33B5B0; }
+        .url-bar { flex: 1; background: #fff; border-radius: 6px; height: 22px; margin: 0 60px; display: flex; align-items: center; padding: 0 10px; font-size: 11px; color: #a3a3a0; }
+
+        .app { flex: 1; display: flex; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: 52px; background: #f4f2ee; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 20px; border-right: 1px solid #e8e6e1; flex-shrink: 0; }
+        .sidebar-logo { width: 32px; height: 32px; border-radius: 8px; background: #3EB5A6; display: flex; align-items: center; justify-content: center; }
+        .sidebar-logo svg { width: 18px; height: 18px; }
+        .sidebar-icon { width: 20px; height: 20px; color: #a3a3a0; }
+        .sidebar-icon.active { color: #1b1b1a; }
+
+        /* Main content, 4 column kanban */
+        .main { flex: 1; padding: 16px; overflow-x: auto; display: flex; gap: 14px; }
+
+        /* Column */
+        .col { width: 240px; min-width: 240px; display: flex; flex-direction: column; gap: 10px; }
+        .col-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .col-title { font-size: 12px; font-weight: 700; color: #1b1b1a; }
+        .col-badge { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 100px; }
+        .col-badge.red { background: rgba(224,85,85,0.1); color: #E05555; }
+        .col-badge.teal { background: rgba(51,181,176,0.1); color: #33B5B0; }
+        .col-badge.gray { background: #f0eeea; color: #6a6a66; }
+
+        /* Patient card */
+        .card { background: #fff; border: 1px solid #e8e6e1; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+        .card-header { display: flex; align-items: center; gap: 8px; }
+        .card-avatar { width: 28px; height: 28px; border-radius: 50%; background: #e8e6e1; flex-shrink: 0; }
+        .card-name { font-size: 12px; font-weight: 700; color: #1b1b1a; }
+        .card-meta { font-size: 9px; color: #6a6a66; }
+        .card-status { font-size: 9px; font-weight: 600; color: #00b292; margin-left: auto; display: flex; align-items: center; gap: 3px; }
+        .card-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #00b292; }
+        .card-desc { font-size: 10px; line-height: 14px; color: #6a6a66; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; }
+        .card-time { font-size: 9px; color: #a3a3a0; }
+        .card-action { font-size: 9px; font-weight: 700; color: #1b1b1a; display: flex; align-items: center; gap: 3px; }
+
+        /* Resolved items */
+        .resolved-item { background: #fff; border: 1px solid #e8e6e1; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+        .resolved-header { display: flex; align-items: center; gap: 8px; }
+        .resolved-name { font-size: 11px; font-weight: 700; color: #1b1b1a; }
+        .resolved-badge { font-size: 8px; font-weight: 600; color: #6a6a66; background: #f0eeea; padding: 2px 6px; border-radius: 100px; margin-left: auto; }
+        .resolved-detail { font-size: 9px; color: #6a6a66; }
+
+        /* Messages column */
+        .msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .msg-badge { font-size: 8px; font-weight: 700; background: #1b1b1a; color: #fff; padding: 2px 6px; border-radius: 100px; white-space: nowrap; }
+        .msg-badge.outline { background: transparent; border: 1px solid #1b1b1a; color: #1b1b1a; }
+        .msg-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f0eeea; }
+        .msg-avatar { width: 28px; height: 28px; border-radius: 50%; background: #e8e6e1; flex-shrink: 0; position: relative; }
+        .msg-dot { width: 8px; height: 8px; border-radius: 50%; background: #33B5B0; position: absolute; top: -1px; right: -1px; border: 2px solid #fff; }
+        .msg-content { flex: 1; }
+        .msg-name { font-size: 11px; font-weight: 700; color: #1b1b1a; }
+        .msg-preview { font-size: 10px; color: #6a6a66; line-height: 14px; }
+        .msg-time { font-size: 9px; color: #a3a3a0; margin-top: 2px; }
+
+        /* Animation */
+        .anim { opacity: 0; transform: translateY(12px); transition: opacity 0.35s ease-out, transform 0.35s ease-out; }
+        .anim.show { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="left">
+            <div class="text-block">
+                <div class="breadcrumb" id="tb-breadcrumb">14 / CLINIC</div>
+                <div class="headline" id="tb-headline">At a glance, every<br>patient organized<br>by urgency.</div>
+                <div class="detail" id="tb-detail">At the clinic level, providers see all their patients organized into actionable columns: ER recommendations for the most urgent cases, provider connect for active follow-ups, resolved events, and messages. Each card surfaces the key clinical context so the care team can prioritize effectively without clicking through individual records.</div>
+            </div>
+        </div>
+        <div class="right">
+            <div class="browser">
+                <div class="browser-bar">
+                    <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+                    <div class="url-bar">provider.recovry.ai/dashboard</div>
+                </div>
+
+                <div class="app">
+                    <div class="sidebar anim" id="el-sidebar">
+                        <div class="sidebar-logo"><svg viewBox="0 0 20 20" fill="white"><path d="M10 2C10 6.418 13.582 10 18 10C13.582 10 10 13.582 10 18C10 13.582 6.418 10 2 10C6.418 10 10 6.418 10 2Z"/></svg></div>
+                        <svg class="sidebar-icon active" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+
+                    <div class="main">
+                        <!-- ER Recommendations -->
+                        <div class="col anim" id="el-col1">
+                            <div class="col-header">
+                                <div class="col-title">ER Recommendations</div>
+                                <div class="col-badge red">8 Active Cases</div>
+                            </div>
+                            <div class="card anim" id="el-card1-1">
+                                <div class="card-header"><div class="card-avatar"></div><div><div class="card-name">Marcia Davis</div><div class="card-meta">POD-103 &middot; TKR</div></div><div class="card-status">Active</div></div>
+                                <div class="card-desc">Post-operative total knee replacement patient reporting elevated pain levels (7-8/10). VCA flagged for care team follow-up.</div>
+                                <div class="card-footer"><div class="card-time">12/14/2023 &middot; 2 Hours Ago</div><div class="card-action">View Response &#8599;</div></div>
+                            </div>
+                            <div class="card anim" id="el-card1-2">
+                                <div class="card-header"><div class="card-avatar"></div><div><div class="card-name">James Okafor</div><div class="card-meta">POD-6 &middot; TKR</div></div><div class="card-status">Active</div></div>
+                                <div class="card-desc">Post-operative Total Knee Replacement patient reporting acute onset of severe symptoms requiring immediate provider evaluation.</div>
+                                <div class="card-footer"><div class="card-time">12/12/2023 &middot; 2h 45 Mins Ago</div><div class="card-action">View Response &#8599;</div></div>
+                            </div>
+                            <div class="card anim" id="el-card1-3">
+                                <div class="card-header"><div class="card-avatar"></div><div><div class="card-name">Margaret Delacroix</div><div class="card-meta">POD-6 &middot; TKR</div></div><div class="card-status">Active</div></div>
+                                <div class="card-desc">Post-operative Total Knee Replacement patient reporting acute cardiac and respiratory symptoms requiring immediate medical evaluation.</div>
+                                <div class="card-footer"><div class="card-time">12/12/2023 &middot; 45 Mins Ago</div><div class="card-action">View Response &#8599;</div></div>
+                            </div>
+                        </div>
+
+                        <!-- PR Connect -->
+                        <div class="col anim" id="el-col2">
+                            <div class="col-header">
+                                <div class="col-title">PR Connect</div>
+                                <div class="col-badge teal">5 Active Cases</div>
+                            </div>
+                            <div class="card anim" id="el-card2-1">
+                                <div class="card-header"><div class="card-avatar"></div><div><div class="card-name">Harold Benson</div><div class="card-meta">POD-6 &middot; TKR</div></div><div class="card-status">Active</div></div>
+                                <div class="card-desc">A Total Knee Replacement patient is experiencing post-surgical issues 10 days after the procedure.</div>
+                                <div class="card-footer"><div class="card-time">12/12/2023 &middot; 1h 22 Mins Ago</div><div class="card-action">View Response &#8599;</div></div>
+                            </div>
+                            <div class="card anim" id="el-card2-2">
+                                <div class="card-header"><div class="card-avatar"></div><div><div class="card-name">Dorothy Flanagan</div><div class="card-meta">POD-6 &middot; TKR</div></div><div class="card-status">Active</div></div>
+                                <div class="card-desc">A Total Knee Replacement patient is experiencing post-surgical issues that require immediate attention.</div>
+                                <div class="card-footer"><div class="card-time">12/12/2023 &middot; 45 Mins Ago</div><div class="card-action">View Response &#8599;</div></div>
+                            </div>
+                            <div class="card anim" id="el-card2-3">
+                                <div class="card-header"><div class="card-avatar"></div><div><div class="card-name">Patrice Katiban</div><div class="card-meta">POD-6 &middot; TKR</div></div><div class="card-status">Active</div></div>
+                                <div class="card-desc">A follow-up communication regarding a Total Hip Replacement patient experiencing new gastrointestinal symptoms.</div>
+                                <div class="card-footer"><div class="card-time">12/12/2023 &middot; 33 Mins Ago</div><div class="card-action">View Response &#8599;</div></div>
+                            </div>
+                        </div>
+
+                        <!-- Resolved Events -->
+                        <div class="col anim" id="el-col3">
+                            <div class="col-header">
+                                <div class="col-title">Resolved Events</div>
+                                <div class="col-badge gray">ER Events &middot; Today</div>
+                            </div>
+                            <div class="resolved-item anim" id="el-card3-1"><div class="resolved-header"><div class="card-avatar" style="width:24px;height:24px;"></div><div class="resolved-name">Raymond Castellano</div><div class="resolved-badge">Resolved</div></div><div class="resolved-detail">Dr. James Whitfield resolved this ER Event</div><div class="resolved-detail" style="color:#a3a3a0;">Resolved 12/12/2023 &middot; Duration 8 Days</div></div>
+                            <div class="resolved-item anim" id="el-card3-2"><div class="resolved-header"><div class="card-avatar" style="width:24px;height:24px;"></div><div class="resolved-name">Raymond Castellano</div><div class="resolved-badge">Resolved</div></div><div class="resolved-detail">Dr. James Whitfield resolved this ER Event</div><div class="resolved-detail" style="color:#a3a3a0;">Resolved 12/12/2023 &middot; Duration 8 Days</div></div>
+                            <div class="resolved-item"><div class="resolved-header"><div class="card-avatar" style="width:24px;height:24px;"></div><div class="resolved-name">Raymond Castellano</div><div class="resolved-badge">Resolved</div></div><div class="resolved-detail">Dr. James Whitfield resolved this ER Event</div><div class="resolved-detail" style="color:#a3a3a0;">Resolved 12/12/2023 &middot; Duration 8 Days</div></div>
+                        </div>
+
+                        <!-- Messages -->
+                        <div class="col anim" id="el-col4">
+                            <div class="msg-header">
+                                <div class="col-title">Messages</div>
+                                <div class="msg-badge">New Chat Requests 6</div>
+                                <div class="msg-badge outline">Unread 4</div>
+                            </div>
+                            <div class="msg-item anim" id="el-msg1"><div class="msg-avatar"><div class="msg-dot"></div></div><div class="msg-content"><div class="msg-name">Heidi Lee</div><div class="msg-preview">I've been feeling a lot of pain in my hip o...</div><div class="msg-time">12/03/25 &middot; 4:09 pm</div></div></div>
+                            <div class="msg-item anim" id="el-msg2"><div class="msg-avatar"><div class="msg-dot"></div></div><div class="msg-content"><div class="msg-name">Romero Suarez</div><div class="msg-preview">It isn't too bad... But I think the pain cont...</div><div class="msg-time">12/03/25 &middot; 3:28 pm</div></div></div>
+                            <div class="msg-item anim" id="el-msg3"><div class="msg-avatar"><div class="msg-dot"></div></div><div class="msg-content"><div class="msg-name">Jennifer Wu</div><div class="msg-preview">I went for a walk yesterday and I felt a lo...</div><div class="msg-time">12/03/25 &middot; 3:24 pm</div></div></div>
+                            <div class="msg-item anim" id="el-msg4"><div class="msg-avatar"></div><div class="msg-content"><div class="msg-name">Claudia Bennet</div><div class="msg-preview">I was wondering if you can help point m...</div><div class="msg-time">12/01/25 &middot; 5:10 pm</div></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function show(id) { document.getElementById(id)?.classList.add('show'); }
+
+        function reset() {
+            document.querySelectorAll('.anim').forEach(el => el.classList.remove('show'));
+        }
+
+        function showText() {
+            setTimeout(() => document.getElementById('tb-breadcrumb').classList.add('show'), 200);
+            setTimeout(() => document.getElementById('tb-headline').classList.add('show'), 400);
+            setTimeout(() => document.getElementById('tb-detail').classList.add('show'), 700);
+        }
+
+        function run() {
+            reset();
+            // Sidebar
+            setTimeout(() => show('el-sidebar'), 300);
+            // Column 1: ER Recommendations + cards
+            setTimeout(() => show('el-col1'), 800);
+            setTimeout(() => show('el-card1-1'), 1200);
+            setTimeout(() => show('el-card1-2'), 1600);
+            setTimeout(() => show('el-card1-3'), 2000);
+            // Column 2: PR Connect + cards
+            setTimeout(() => show('el-col2'), 3000);
+            setTimeout(() => show('el-card2-1'), 3400);
+            setTimeout(() => show('el-card2-2'), 3800);
+            setTimeout(() => show('el-card2-3'), 4200);
+            // Columns 3 & 4: Resolved + Messages
+            setTimeout(() => { show('el-col3'); show('el-col4'); }, 5200);
+            setTimeout(() => show('el-card3-1'), 5600);
+            setTimeout(() => show('el-msg1'), 5800);
+            setTimeout(() => show('el-card3-2'), 6000);
+            setTimeout(() => show('el-msg2'), 6200);
+            setTimeout(() => show('el-msg3'), 6600);
+            setTimeout(() => show('el-msg4'), 7000);
+        }
+
+        // Text fades in once on load
+        showText();
+
+        // Dashboard animation auto-loops
+        run();
+        setInterval(() => run(), 9000);
+    </script>
+</body>
+</html>

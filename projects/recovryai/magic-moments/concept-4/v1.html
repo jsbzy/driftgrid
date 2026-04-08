@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recovery Status</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            display: flex; align-items: flex-start; justify-content: center;
+            padding-top: 60px;
+        }
+
+        .container { max-width: 380px; width: 100%; padding: 20px; }
+
+        /* ── Card ── */
+        .card {
+            background: white;
+            border: 1.5px solid rgba(0,0,0,0.05);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .card-body {
+            padding: 32px 28px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Meta label */
+        .card-meta {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            color: #33B6B0;
+            margin-bottom: 28px;
+        }
+
+        /* ── Orb ── */
+        .orb-wrap {
+            position: relative;
+            width: 88px;
+            height: 88px;
+            margin-bottom: 24px;
+        }
+        .orb {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            transition: background 0.6s ease, box-shadow 0.6s ease;
+        }
+        .orb::after {
+            content: '';
+            position: absolute;
+            inset: -12px;
+            border-radius: 50%;
+            background: inherit;
+            opacity: 0.08;
+            filter: blur(16px);
+            z-index: -1;
+        }
+        .orb.green {
+            background: #33B6B0;
+            animation: breatheGreen 3.5s ease-in-out infinite;
+        }
+        .orb.yellow {
+            background: #D97706;
+            animation: breatheYellow 2.8s ease-in-out infinite;
+        }
+        .orb.red {
+            background: #DC2626;
+            animation: breatheRed 2.2s ease-in-out infinite;
+        }
+        @keyframes breatheGreen {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 0 32px rgba(51,182,176,0.18), 0 0 72px rgba(51,182,176,0.06);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.06);
+                box-shadow: 0 0 48px rgba(51,182,176,0.28), 0 0 96px rgba(51,182,176,0.1);
+            }
+        }
+        @keyframes breatheYellow {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 0 32px rgba(217,119,6,0.18), 0 0 72px rgba(217,119,6,0.06);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.05);
+                box-shadow: 0 0 44px rgba(217,119,6,0.26), 0 0 88px rgba(217,119,6,0.09);
+            }
+        }
+        @keyframes breatheRed {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 0 32px rgba(220,38,38,0.18), 0 0 72px rgba(220,38,38,0.06);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.04);
+                box-shadow: 0 0 40px rgba(220,38,38,0.24), 0 0 84px rgba(220,38,38,0.08);
+            }
+        }
+
+        /* ── Status text ── */
+        .status-label {
+            font-size: 24px;
+            font-weight: 300;
+            color: #1B1B1A;
+            margin-bottom: 6px;
+            transition: all 0.4s ease;
+        }
+        .status-sub {
+            font-size: 13px;
+            font-weight: 300;
+            color: #999;
+            text-align: center;
+            line-height: 1.55;
+            max-width: 260px;
+            margin-bottom: 28px;
+            transition: all 0.4s ease;
+        }
+
+        /* ── Progress bar ── */
+        .progress-row {
+            width: 100%;
+            margin-bottom: 28px;
+        }
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .progress-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px;
+            font-weight: 400;
+            color: #ccc;
+            letter-spacing: 0.03em;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 2px;
+            background: rgba(0,0,0,0.04);
+            border-radius: 1px;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 1px;
+            transition: width 0.6s ease, background 0.6s ease;
+        }
+        .progress-dot {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            transition: left 0.6s ease, background 0.6s ease;
+        }
+
+        /* ── Dimension dots ── */
+        .dimensions {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+        }
+        .dim {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+        .dim-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            transition: background 0.4s ease;
+        }
+        .dim-name {
+            font-size: 9px;
+            font-weight: 400;
+            color: #bbb;
+            letter-spacing: 0.01em;
+        }
+        .dim-val {
+            font-size: 10px;
+            font-weight: 300;
+            color: #999;
+            transition: all 0.3s ease;
+        }
+
+        /* ── Footer ── */
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 14px 28px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+        }
+        .rx-box {
+            width: 14px; height: 14px;
+            border-radius: 2px;
+            background: #ccc;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .rx-box span { font-size: 6px; font-weight: 700; color: white; }
+        .ft { font-size: 10px; color: #bbb; }
+
+        /* ── State toggle (demo) ── */
+        .state-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 6px;
+        }
+        .state-btn {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: #999;
+            background: none;
+            border: 1px solid #ddd;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .state-btn:hover { border-color: #aaa; color: #666; }
+        .state-btn.active { border-color: #888; color: #555; background: rgba(0,0,0,0.02); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+            <div class="card-meta">DAY 8 · RECOVERY STATUS</div>
+
+            <!-- Breathing orb -->
+            <div class="orb-wrap">
+                <div class="orb green" id="orb"></div>
+            </div>
+
+            <div class="status-label" id="statusLabel" data-drift-editable="status-label" data-drift-maxlen="30">On track</div>
+            <div class="status-sub" id="statusSub" data-drift-editable="status-sub" data-drift-maxlen="120">Your recovery is progressing as expected. Keep it up.</div>
+
+            <!-- 90-day progress -->
+            <div class="progress-row">
+                <div class="progress-labels">
+                    <span class="progress-label">Day 8</span>
+                    <span class="progress-label">Day 90</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 8.9%; background: #33B6B0;"></div>
+                    <div class="progress-dot" id="progressDot" style="left: 8.9%; background: #33B6B0;"></div>
+                </div>
+            </div>
+
+            <!-- Dimension breakdown -->
+            <div class="dimensions" id="dims">
+                <div class="dim">
+                    <div class="dim-dot" style="background: #7BADA6;"></div>
+                    <span class="dim-name">Pain</span>
+                    <span class="dim-val">Mild</span>
+                </div>
+                <div class="dim">
+                    <div class="dim-dot" style="background: #33B6B0;"></div>
+                    <span class="dim-name">Sleep</span>
+                    <span class="dim-val">Good</span>
+                </div>
+                <div class="dim">
+                    <div class="dim-dot" style="background: #33B6B0;"></div>
+                    <span class="dim-name">Mobility</span>
+                    <span class="dim-val">Good</span>
+                </div>
+                <div class="dim">
+                    <div class="dim-dot" style="background: #33B6B0;"></div>
+                    <span class="dim-name">Meds</span>
+                    <span class="dim-val">On track</span>
+                </div>
+                <div class="dim">
+                    <div class="dim-dot" style="background: #7BADA6;"></div>
+                    <span class="dim-name">Appetite</span>
+                    <span class="dim-val">Fair</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="rx-box"><span>Rx</span></div>
+            <span class="ft">Verified</span>
+        </div>
+    </div>
+</div>
+
+<!-- Demo state toggle -->
+<div class="state-toggle">
+    <button class="state-btn active" onclick="setState('green')">Green</button>
+    <button class="state-btn" onclick="setState('yellow')">Yellow</button>
+    <button class="state-btn" onclick="setState('red')">Red</button>
+</div>
+
+<script>
+const states = {
+    green: {
+        label: 'On track',
+        sub: 'Your recovery is progressing as expected. Keep it up.',
+        color: '#33B6B0',
+        orbClass: 'green',
+        dims: [
+            { color: '#7BADA6', value: 'Mild' },
+            { color: '#33B6B0', value: 'Good' },
+            { color: '#33B6B0', value: 'Good' },
+            { color: '#33B6B0', value: 'On track' },
+            { color: '#7BADA6', value: 'Fair' }
+        ]
+    },
+    yellow: {
+        label: 'Needs attention',
+        sub: 'We\u2019ve noticed some changes. Your care team has been notified.',
+        color: '#D97706',
+        orbClass: 'yellow',
+        dims: [
+            { color: '#C4805A', value: 'Significant' },
+            { color: '#B8A07A', value: 'Fair' },
+            { color: '#B8A07A', value: 'Limited' },
+            { color: '#33B6B0', value: 'On track' },
+            { color: '#C4805A', value: 'Low' }
+        ]
+    },
+    red: {
+        label: 'Contact your doctor',
+        sub: 'Please reach out to your care team as soon as possible.',
+        color: '#DC2626',
+        orbClass: 'red',
+        dims: [
+            { color: '#C45B4A', value: 'High' },
+            { color: '#C45B4A', value: 'Very poor' },
+            { color: '#C4805A', value: 'Limited' },
+            { color: '#B8A07A', value: 'Missed' },
+            { color: '#C4805A', value: 'Low' }
+        ]
+    }
+};
+
+function setState(state) {
+    const s = states[state];
+
+    // Orb
+    const orb = document.getElementById('orb');
+    orb.className = 'orb ' + s.orbClass;
+
+    // Text
+    document.getElementById('statusLabel').textContent = s.label;
+    document.getElementById('statusSub').textContent = s.sub;
+
+    // Progress bar + dot
+    document.getElementById('progressFill').style.background = s.color;
+    document.getElementById('progressDot').style.background = s.color;
+
+    // Dimension dots
+    const dims = document.querySelectorAll('#dims .dim');
+    dims.forEach((dim, i) => {
+        dim.querySelector('.dim-dot').style.background = s.dims[i].color;
+        dim.querySelector('.dim-val').textContent = s.dims[i].value;
+    });
+
+    // Toggle buttons
+    document.querySelectorAll('.state-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

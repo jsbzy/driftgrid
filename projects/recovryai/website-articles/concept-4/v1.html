@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three-Lane Diagram — Vertical Lanes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --bg-light: #e8e8e8;
+            --teal: #3EB5A6;
+            --teal-text: #0b6b60;
+            --text: #1a1a1a;
+            --text-dim: #666;
+            --text-mid: #444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            max-width: 1440px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 60px;
+        }
+
+        .diagram-wrap {
+            max-width: 540px;
+            width: 100%;
+        }
+
+        .diagram-title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.6rem;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 2rem;
+        }
+
+        /* Vertical lane stack */
+        .lanes {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+        }
+
+        /* Connecting line */
+        .lanes::before {
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 24px;
+            bottom: 24px;
+            width: 1px;
+            background: var(--bg-light);
+        }
+
+        .lane {
+            display: flex;
+            gap: 1.5rem;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--bg-light);
+            position: relative;
+        }
+
+        .lane:first-child {
+            border-top: 1px solid var(--bg-light);
+        }
+
+        /* Lane indicator dot */
+        .lane-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .lane-dot-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--text-dim);
+        }
+
+        .lane--active .lane-dot {
+            background: rgba(62, 181, 166, 0.12);
+            outline: 2px solid var(--teal);
+            outline-offset: 2px;
+        }
+
+        .lane--active .lane-dot-num {
+            color: var(--teal-text);
+        }
+
+        .lane-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding-top: 0.15rem;
+        }
+
+        .lane-number {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.5rem;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .lane--active .lane-number {
+            color: var(--teal);
+        }
+
+        .lane-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.35;
+        }
+
+        .lane-desc {
+            font-size: 0.72rem;
+            color: var(--text-mid);
+            line-height: 1.6;
+            margin-top: 0.15rem;
+        }
+
+        .lane-detail {
+            display: flex;
+            gap: 0.4rem;
+            align-items: baseline;
+        }
+
+        .lane-detail-label {
+            font-size: 0.5rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+
+        .lane-detail-value {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+        }
+
+        .lane-examples {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            font-style: italic;
+            margin-top: 0.15rem;
+        }
+
+        .lane-marker {
+            display: inline-block;
+            font-size: 0.5rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--teal);
+            background: rgba(62, 181, 166, 0.08);
+            padding: 0.2rem 0.55rem;
+            border-radius: 2px;
+            align-self: flex-start;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagram-wrap">
+        <div class="diagram-title">Three Lanes of Healthcare AI</div>
+
+        <div class="lanes">
+            <div class="lane">
+                <div class="lane-dot"><span class="lane-dot-num">1</span></div>
+                <div class="lane-content">
+                    <div class="lane-number">Lane One</div>
+                    <div class="lane-title">Provider-Facing Clinical Support</div>
+                    <div class="lane-desc">Tools that sit behind licensed clinicians. The clinician remains present, directs care, and retains responsibility. The AI functions as a productivity multiplier within existing professional&nbsp;oversight.</div>
+                    <div class="lane-detail">
+                        <span class="lane-detail-label">Regulatory:</span>
+                        <span class="lane-detail-value">Exempt under &sect;520(o)(1)(E)</span>
+                    </div>
+                    <div class="lane-examples">Abridge, Nuance, Rad AI, OpenEvidence, UpToDate</div>
+                </div>
+            </div>
+
+            <div class="lane">
+                <div class="lane-dot"><span class="lane-dot-num">2</span></div>
+                <div class="lane-content">
+                    <div class="lane-number">Lane Two</div>
+                    <div class="lane-title">Consumer-Facing Health &amp; Wellness AI</div>
+                    <div class="lane-desc">Systems that help individuals interpret health information and arrive at clinical encounters better prepared. They include explicit disclaimers and are designed to stay wide of the regulatory&nbsp;line.</div>
+                    <div class="lane-detail">
+                        <span class="lane-detail-label">Regulatory:</span>
+                        <span class="lane-detail-value">Disclaimers, not authorization</span>
+                    </div>
+                    <div class="lane-examples">OpenAI, Anthropic, Amazon health assistants</div>
+                </div>
+            </div>
+
+            <div class="lane lane--active">
+                <div class="lane-dot"><span class="lane-dot-num">3</span></div>
+                <div class="lane-content">
+                    <div class="lane-number">Lane Three</div>
+                    <div class="lane-title">Regulated, Patient-Facing Clinical AI</div>
+                    <div class="lane-desc">Physician-prescribed AI inside the care pathway. When the end point of the clinical interaction is a patient, the clinician&rsquo;s license is no longer standing behind the output. FDA authorization provides the accountability&nbsp;structure.</div>
+                    <div class="lane-detail">
+                        <span class="lane-detail-label">Regulatory:</span>
+                        <span class="lane-detail-value">Meets device definition &mdash; De Novo pathway</span>
+                    </div>
+                    <span class="lane-marker">Where we&rsquo;re building</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+{
+  "project": {
+    "name": "1-Pager March 2026",
+    "slug": "1-pager-march2026",
+    "client": "recovryai",
+    "canvas": "landscape-16-9",
+    "created": "2026-03-14",
+    "links": [
+      {
+        "label": "Brand Guidelines",
+        "url": "../brand/guidelines.md"
+      },
+      {
+        "label": "Website",
+        "url": "https://recovry.ai"
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "concept-1",
+      "label": "Teal Header",
+      "description": "Teal-wash banded layout with 3-column middle row",
+      "position": 0,
+      "visible": true,
+      "versions": [
+        {
+          "id": "concept-1--v1",
+          "number": 1,
+          "file": "concept-1/v1.html",
+          "parentId": null,
+          "changelog": "Ported v4 from original one-pager deck",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-14",
+          "thumbnail": ".thumbs/concept-1-concept-1--v1.png"
+        },
+        {
+          "id": "concept-1--v2",
+          "number": 2,
+          "file": "concept-1/v2.html",
+          "parentId": "concept-1--v1",
+          "changelog": "Two-tone headline: bold black + teal subtitle",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-16",
+          "thumbnail": ".thumbs/concept-1-concept-1--v2.png"
+        },
+        {
+          "id": "concept-1--v3",
+          "number": 3,
+          "file": "concept-1/v3.html",
+          "parentId": "concept-1--v1",
+          "changelog": "Simplified headline: 'Recover Better. Every Time.'",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-17",
+          "thumbnail": ".thumbs/concept-1-concept-1--v3.png"
+        },
+        {
+          "id": "concept-1--v4",
+          "number": 4,
+          "file": "concept-1/v4.html",
+          "parentId": "concept-1--v3",
+          "changelog": "New version with updated headline: 'Recover Better. Every Time.'",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-17",
+          "thumbnail": ".thumbs/concept-1-concept-1--v4.png"
+        }
+      ]
+    }
+  ],
+  "workingSets": [],
+  "comments": [],
+  "clientEdits": []
+}

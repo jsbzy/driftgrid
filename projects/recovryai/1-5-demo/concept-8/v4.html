@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat 8 — Provider Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased;
+            background: #F4F2EE;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 40px 80px; gap: 20px;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        .slide-header h2 { font-size: 30px; font-weight: 600; color: #1B1B1A; letter-spacing: -0.02em; text-align: center; }
+        .slide-header h2 span { color: #33B5B0; }
+
+        .browser { width: 100%; max-width: 1400px; flex: 1; max-height: 640px; border: 2px solid #C8C6C1; border-radius: 10px; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
+        .bbar { height: 32px; background: #F0EEEA; border-bottom: 1px solid #E8E6E1; display: flex; align-items: center; padding: 0 12px; gap: 6px; }
+        .bdot { width: 8px; height: 8px; border-radius: 50%; }
+        .bdot.r { background: #FF5F56; } .bdot.y { background: #FFBD2E; } .bdot.g { background: #27C93F; }
+        .burl { margin-left: 14px; font-size: 10px; color: #A3A3A0; background: #fff; padding: 3px 12px; border-radius: 4px; }
+
+        .portal { flex: 1; display: flex; overflow: hidden; }
+        .sidebar { width: 48px; background: #F9F8F6; border-right: 1px solid #E8E6E1; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 2px; }
+        .sb-logo { width: 28px; height: 28px; background: #33B5B0; border-radius: 7px; margin-bottom: 12px; }
+        .sb-item { width: 28px; height: 28px; border-radius: 6px; border: 1px solid transparent; }
+        .sb-item.active { background: #E8E6E1; }
+
+        .panel-left { width: 240px; border-right: 1px solid #E8E6E1; padding: 16px; overflow: hidden; }
+        .breadcrumb { font-size: 10px; color: #A3A3A0; margin-bottom: 10px; }
+        .pt-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .pt-avatar { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid #C8C6C1; }
+        .pt-name { font-size: 14px; font-weight: 600; color: #1B1B1A; }
+        .pt-meta { font-size: 10px; color: #A3A3A0; }
+
+        .info-card { background: #F9F8F6; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+        .info-card .label { font-size: 10px; color: #A3A3A0; }
+        .info-card .val { font-size: 22px; font-weight: 700; }
+        .info-card .val.red { color: #E05555; }
+        .info-card .sub { font-size: 10px; color: #E05555; }
+
+        .stat-mini { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #F0EEEA; font-size: 11px; }
+        .stat-mini .n { color: #6B6B68; }
+        .stat-mini .v { font-weight: 600; color: #1B1B1A; }
+
+        .contact { margin-top: 12px; font-size: 10px; color: #6B6B68; line-height: 1.7; }
+        .contact strong { color: #1B1B1A; display: block; }
+
+        .panel-center { flex: 1; display: flex; flex-direction: column; }
+        .conv-bar { padding: 10px 16px; border-bottom: 1px solid #E8E6E1; display: flex; align-items: center; }
+        .conv-toggle { display: flex; background: #F0EEEA; border-radius: 16px; padding: 2px; }
+        .ct { padding: 5px 14px; border-radius: 14px; font-size: 11px; color: #8A8A86; }
+        .ct.active { background: #fff; color: #1B1B1A; font-weight: 600; }
+
+        .conv-body { flex: 1; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+        .conv-ts { text-align: center; font-size: 9px; color: #C8C6C1; }
+        .conv-msg { max-width: 65%; padding: 8px 12px; border-radius: 12px; font-size: 11px; line-height: 1.5; }
+        .conv-msg.bot { background: #F4F2EE; color: #3A3A38; align-self: flex-start; border-bottom-left-radius: 3px; }
+        .conv-msg.pt { background: #1B1B1A; color: #fff; align-self: flex-end; border-bottom-right-radius: 3px; }
+        .conv-msg .role { font-size: 9px; font-weight: 600; color: #33B5B0; margin-bottom: 2px; }
+        .conv-msg.pt .role { color: #A3A3A0; text-align: right; }
+        .conv-report { max-width: 55%; border: 1px solid #E8E6E1; border-radius: 8px; padding: 8px 10px; align-self: flex-start; }
+        .conv-report h5 { font-size: 10px; font-weight: 600; margin-bottom: 3px; }
+        .conv-report .row { display: flex; justify-content: space-between; font-size: 10px; color: #6B6B68; }
+        .conv-report .severe { color: #E05555; font-weight: 600; }
+
+        .panel-right { width: 220px; border-left: 1px solid #E8E6E1; padding: 14px; overflow: hidden; }
+        .panel-right h4 { font-size: 12px; font-weight: 600; color: #1B1B1A; margin-bottom: 10px; }
+        .history-ev { padding: 8px 0; border-bottom: 1px solid #F0EEEA; font-size: 10px; color: #6B6B68; line-height: 1.5; }
+        .history-ev .date { font-size: 9px; color: #A3A3A0; }
+        .history-ev strong { color: #1B1B1A; }
+
+        .vo {
+            position: absolute; bottom: 32px; left: 0; right: 0;
+            text-align: center; padding: 0 200px;
+            font-size: 17px; font-weight: 400; color: #8A8A86; line-height: 1.6;
+        }
+        .vo em { font-style: normal; color: #33B5B0; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="slide-header"><h2>The other side of the conversation: <span>the provider portal</span></h2></div>
+    <div class="browser">
+        <div class="bbar"><div class="bdot r"></div><div class="bdot y"></div><div class="bdot g"></div><div class="burl">portal.recovry.ai / patients / micheala-swain</div></div>
+        <div class="portal">
+            <div class="sidebar"><div class="sb-logo"></div><div class="sb-item"></div><div class="sb-item active"></div><div class="sb-item"></div><div class="sb-item"></div></div>
+            <div class="panel-left">
+                <div class="breadcrumb">Home > Micheala Swain</div>
+                <div class="pt-header"><div class="pt-avatar"></div><div><div class="pt-name">Micheala Swain</div><div class="pt-meta">THR — POD-9 — Age 48</div></div></div>
+                <div class="info-card"><div class="label">Recovery Score</div><div class="val red">43%</div><div class="sub">Declining</div></div>
+                <div class="stat-mini"><span class="n">Activity</span><span class="v">45%</span></div>
+                <div class="stat-mini"><span class="n">Diet</span><span class="v">5%</span></div>
+                <div class="stat-mini"><span class="n">Sleep</span><span class="v">27%</span></div>
+                <div class="stat-mini"><span class="n">Medication</span><span class="v">32%</span></div>
+                <div class="contact"><strong>Surgery</strong>December 12, 2023<strong>Surgeon</strong>Dr. Ryan Kwan</div>
+            </div>
+            <div class="panel-center">
+                <div class="conv-bar"><div class="conv-toggle"><div class="ct active">Assistant</div><div class="ct">Clinic</div></div></div>
+                <div class="conv-body">
+                    <div class="conv-ts">Yesterday</div>
+                    <div class="conv-msg bot"><div class="role">RecovryAI</div>Can you describe the nature and location of your pain?</div>
+                    <div class="conv-msg pt"><div class="role">Micheala Swain</div>I've been feeling a lot more pain in my hip. Can you tell me how to relieve it?</div>
+                    <div class="conv-report"><h5>Report Summary</h5><div class="row"><span>Pain</span><span class="severe">Severe</span></div><div class="row"><span>Sleep</span><span>44%</span></div></div>
+                    <div class="conv-msg bot"><div class="role">RecovryAI</div>I'm sorry to hear that. It's advisable to contact your healthcare provider. I'll let your care team know.</div>
+                    <div class="conv-msg pt"><div class="role">Micheala Swain</div>My pain has been getting worse. Can you help me sleep better?</div>
+                    <div class="conv-msg bot"><div class="role">RecovryAI</div>I will let your care team know and schedule an appointment to follow up.</div>
+                </div>
+            </div>
+            <div class="panel-right">
+                <h4>Patient History</h4>
+                <div class="history-ev"><div class="date">12/12/2023</div>Appointment set on <strong>December 12, 2023</strong></div>
+                <div class="history-ev"><div class="date">12/12/2023</div>Assigned: <strong>Dr. Patrice Katiban</strong></div>
+                <div class="history-ev"><div class="date">12/12/2023</div><strong>Dr. Katiban</strong> followed up. Patient expressed frustration about undertreated pain since discharge.</div>
+            </div>
+        </div>
+    </div>
+    <div class="vo">"Every conversation the VCA has with a patient is <em>visible to the care team in real time</em> — recovery scores, clinical summaries, and the full chat history."</div>
+</body>
+</html>

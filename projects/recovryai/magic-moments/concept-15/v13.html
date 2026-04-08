@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecovryAI — The Patient Journey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: #FFF; -webkit-font-smoothing: antialiased; color: #1B1B1A; }
+
+        .page { width: 100%; height: 100vh; display: flex; flex-direction: column; }
+
+        /* Header */
+        .hdr { display: flex; align-items: baseline; justify-content: space-between; padding: 32px 44px 0; flex-shrink: 0; }
+        .wm { font-size: 13px; font-weight: 600; }
+        .wm .d { color: #3EB5A6; }
+        .hdr-r { font-size: 9px; font-weight: 500; color: #C0C0BC; letter-spacing: 0.1em; text-transform: uppercase; }
+
+        /* 3-column layout */
+        .body { display: flex; flex: 1; padding: 24px 44px; min-height: 0; gap: 0; }
+
+        /* Left + Right bookend columns */
+        .bookend { flex: 0 0 14%; display: flex; flex-direction: column; justify-content: center; }
+        .bookend-left { padding-right: 32px; border-right: 1px solid #F0F0EE; }
+        .bookend-right { padding-left: 32px; border-left: 1px solid #F0F0EE; }
+
+        .bk-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 2px; }
+        .bk-sub { font-size: 9px; font-weight: 500; color: #B0B0AE; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 20px; }
+
+        .bk-moment { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 5px 0; }
+        .bk-moment:hover .bk-mt { color: #1B1B1A; }
+        .bk-moment:hover .dot { background: #3EB5A6; border-color: #3EB5A6; }
+        .bk-mt { font-size: 11px; font-weight: 600; color: #4A4A48; line-height: 1.3; margin-bottom: 1px; transition: color 0.15s; }
+        .bk-md { font-size: 9.5px; color: #A3A3A0; line-height: 1.4; }
+
+        .dot { width: 6px; height: 6px; border-radius: 50%; border: 1.5px solid #D0D0CC; background: #FFF; transition: all 0.15s; flex-shrink: 0; margin-top: 4px; }
+        .dot.t { background: #3EB5A6; border-color: #3EB5A6; }
+
+        .trail { margin-top: 16px; display: flex; align-items: center; gap: 6px; font-size: 9px; color: #D0D0CC; }
+        .trail-line { flex: 1; border-top: 1px dashed #E4E4E2; }
+
+        /* Center: The Recovery Journey */
+        .center { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 32px; min-width: 0; }
+
+        .center-label { font-size: 9px; font-weight: 600; color: #3EB5A6; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+        .center-title { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 24px; }
+
+        /* Three horizontal rows */
+        .rows { display: flex; flex-direction: column; gap: 0; }
+
+        .row { display: flex; align-items: flex-start; padding: 16px 0; }
+        .row + .row { border-top: 1px solid #F5F5F3; }
+
+        .row-label { flex: 0 0 140px; padding-right: 20px; padding-top: 2px; }
+        .row-title { font-size: 12px; font-weight: 700; color: #1B1B1A; letter-spacing: -0.01em; margin-bottom: 1px; }
+        .row-sub { font-size: 9px; color: #B0B0AE; letter-spacing: 0.04em; text-transform: uppercase; }
+
+        .row-items { flex: 1; display: flex; gap: 32px; }
+
+        .item { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; flex: 1; min-width: 0; }
+        .item:hover .item-title { color: #1B1B1A; }
+        .item:hover .dot { background: #3EB5A6; border-color: #3EB5A6; }
+
+        .dot.a { border-color: #D97706; }
+        .dot.r { border-color: #DC2626; }
+
+        .item-title { font-size: 11px; font-weight: 600; color: #4A4A48; line-height: 1.3; margin-bottom: 1px; transition: color 0.15s; }
+        .item-desc { font-size: 9.5px; color: #A3A3A0; line-height: 1.4; }
+
+        /* Horizontal connector dots between items */
+        .row-items .item + .item { position: relative; }
+        .row-items .item + .item::before {
+            content: '';
+            position: absolute;
+            left: -16px;
+            top: 6px;
+            width: 1px;
+            height: calc(100% - 4px);
+            background: transparent;
+        }
+
+        /* Footer */
+        .ftr { padding: 0 44px 24px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; }
+        .fl { font-size: 8px; color: #C8C8C4; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+        .fb { flex: 1; height: 1px; background: #EBEBEA; position: relative; }
+        .ff { position: absolute; top: 0; left: 0; width: 47%; height: 100%; background: #3EB5A6; }
+        .fd { position: absolute; top: -2px; left: 47%; width: 5px; height: 5px; border-radius: 50%; background: #3EB5A6; }
+
+        /* Overlay */
+        .ov { position: fixed; inset: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 100; }
+        .ov.on { opacity: 1; pointer-events: all; }
+        .pn { max-width: 500px; width: 90%; transform: translateY(6px); transition: transform 0.2s; }
+        .ov.on .pn { transform: translateY(0); }
+        .px { position: fixed; top: 24px; right: 32px; font-size: 11px; color: #B0B0AE; cursor: pointer; border: none; background: none; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 500; font-family: inherit; }
+        .px:hover { color: #1B1B1A; }
+        .pz { font-size: 9px; font-weight: 600; color: #3EB5A6; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+        .pt { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 12px; }
+        .pp { font-size: 14px; color: #6B6B68; line-height: 1.65; margin-bottom: 24px; }
+        .pl { list-style: none; border-top: 1px solid #F0F0EE; margin-bottom: 28px; }
+        .pl li { font-size: 12px; color: #6B6B68; line-height: 1.5; padding: 8px 0; border-bottom: 1px solid #F0F0EE; }
+        .pc { font-size: 11px; font-weight: 600; color: #3EB5A6; cursor: pointer; border: none; background: none; padding: 0; font-family: inherit; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="hdr">
+        <div class="wm">recovry<span class="d">.</span>ai</div>
+        <div class="hdr-r">The Patient Journey</div>
+    </div>
+
+    <div class="body">
+        <!-- LEFT: The Prescription -->
+        <div class="bookend bookend-left">
+            <div class="bk-title">The Prescription</div>
+            <div class="bk-sub">One-time activation</div>
+            <div class="bk-moment" onclick="S('rx')">
+                <div class="dot t"></div>
+                <div><div class="bk-mt">Living Prescription</div><div class="bk-md">Doctor prescribes AI. A new category of medicine.</div></div>
+            </div>
+            <div class="bk-moment" onclick="S('sync')" style="margin-top: 8px;">
+                <div class="dot t"></div>
+                <div><div class="bk-mt">Sensor Sync</div><div class="bk-md">Devices connect. 24/7 monitoring begins.</div></div>
+            </div>
+        </div>
+
+        <!-- CENTER: The Recovery Journey -->
+        <div class="center">
+            <div class="center-label">Days 1–90</div>
+            <div class="center-title">The Recovery Journey</div>
+
+            <div class="rows">
+                <!-- Row 1: The Companion -->
+                <div class="row">
+                    <div class="row-label">
+                        <div class="row-title">The Companion</div>
+                        <div class="row-sub">Every day</div>
+                    </div>
+                    <div class="row-items">
+                        <div class="item" onclick="S('checkin')">
+                            <div class="dot t"></div>
+                            <div><div class="item-title">Check-In</div><div class="item-desc">Pain, sleep, mobility. One question at a time.</div></div>
+                        </div>
+                        <div class="item" onclick="S('status')">
+                            <div class="dot"></div>
+                            <div><div class="item-title">Recovery Status</div><div class="item-desc">One glance — how you're doing right now.</div></div>
+                        </div>
+                        <div class="item" onclick="S('normal')">
+                            <div class="dot"></div>
+                            <div><div class="item-title">"Is This Normal?"</div><div class="item-desc">Ask anything. Trusted, data-backed answers.</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: The Guardian -->
+                <div class="row">
+                    <div class="row-label">
+                        <div class="row-title">The Guardian</div>
+                        <div class="row-sub">When needed</div>
+                    </div>
+                    <div class="row-items">
+                        <div class="item" onclick="S('pathways')">
+                            <div class="dot a"></div>
+                            <div><div class="item-title">Response Pathways</div><div class="item-desc">Green, yellow, red. Calm, clear, escalated.</div></div>
+                        </div>
+                        <div class="item" onclick="S('alerts')">
+                            <div class="dot r"></div>
+                            <div><div class="item-title">Provider Alerts</div><div class="item-desc">Real-time. Full context. One-tap actions.</div></div>
+                        </div>
+                        <div class="item" onclick="S('agentic')">
+                            <div class="dot t"></div>
+                            <div><div class="item-title">Agentic Actions</div><div class="item-desc">VCA schedules, refills, coordinates autonomously.</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: The Network -->
+                <div class="row">
+                    <div class="row-label">
+                        <div class="row-title">The Network</div>
+                        <div class="row-sub">In parallel</div>
+                    </div>
+                    <div class="row-items">
+                        <div class="item" onclick="S('circle')">
+                            <div class="dot t"></div>
+                            <div><div class="item-title">Circle of Care</div><div class="item-desc">Daily updates for Sarah. Peace of mind.</div></div>
+                        </div>
+                        <div class="item" onclick="S('dashboard')">
+                            <div class="dot"></div>
+                            <div><div class="item-title">Provider Dashboard</div><div class="item-desc">Patient → cohort → health system.</div></div>
+                        </div>
+                        <div class="item" style="flex:1;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: The Outcome -->
+        <div class="bookend bookend-right">
+            <div class="bk-title">The Outcome</div>
+            <div class="bk-sub">Day 90 + beyond</div>
+            <div class="bk-moment" onclick="S('graduation')">
+                <div class="dot t"></div>
+                <div><div class="bk-mt">Recovery Complete</div><div class="bk-md">The emotional graduation. 90 days of showing up.</div></div>
+            </div>
+            <div class="bk-moment" onclick="S('ongoing')" style="margin-top: 8px;">
+                <div class="dot"></div>
+                <div><div class="bk-mt">Ongoing Relationship</div><div class="bk-md">Wellness. Future surgeries. A lifelong partner.</div></div>
+            </div>
+            <div class="trail"><div class="trail-line"></div>future</div>
+        </div>
+    </div>
+
+    <div class="ftr">
+        <span class="fl">Surgery</span>
+        <div class="fb"><div class="ff"></div><div class="fd"></div></div>
+        <span class="fl">Day 90 →</span>
+    </div>
+</div>
+
+<div class="ov" id="O" onclick="H(event)">
+    <button class="px" onclick="H()">Close</button>
+    <div class="pn" onclick="event.stopPropagation()">
+        <div class="pz" id="Z"></div>
+        <div class="pt" id="T"></div>
+        <div class="pp" id="P"></div>
+        <ul class="pl" id="L"></ul>
+        <button class="pc">View designs →</button>
+    </div>
+</div>
+
+<script>
+const D={
+rx:{z:'The Prescription',t:'Living Prescription',d:'The first-ever physician-prescribed AI for post-operative recovery. A doctor signs a prescription for a Virtual Care Assistant — not an app you download, but medicine your doctor orders.',l:['Prescription is digitally signed and authenticated','Patient details, procedure, and recovery protocol pre-loaded','The VCA activates immediately — no manual setup','The prescription is a living document that tracks recovery progress']},
+sync:{z:'The Prescription',t:'Sensor Sync',d:'The patient\'s devices connect to RecovryAI. Apple Watch, knee sensor — detected automatically, paired with one tap. The safety net is real.',l:['Automatic device detection — no manual configuration','Consumer sensors: Apple Watch, activity trackers, smart rings','Medical sensors: Stryker knee tracker, specialized devices','"I can see you now. Your recovery is being monitored 24/7."']},
+checkin:{z:'The Companion',t:'Daily Check-In',d:'Every day, the VCA checks in. One question at a time. How\'s your pain? How did you sleep? The patient feels seen — someone is paying attention, even at 2am.',l:['Five dimensions: pain, sleep, mobility, meds, nutrition','Cognitive gentleness — one question at a time, large touch targets','Patient-initiated or VCA-initiated','Data feeds into recovery status and provider dashboard']},
+status:{z:'The Companion',t:'Recovery Status',d:'A single, comprehensible view of how you\'re doing right now. Recovery is abstract and scary — a clear status turns anxiety into awareness.',l:['Day counter with 90-day timeline','Traffic light status: green, yellow, red','Aggregates check-in data + sensor readings','The anchor that the response pathways branch from']},
+normal:{z:'The Companion',t:'"Is This Normal?"',d:'Every surgery patient Googles symptoms at 2am and spirals. The VCA intercepts that anxiety with trusted, personalized, physician-backed context.',l:['Proactive: "Day 42 — mild stiffness is typical at this stage"','Reactive: "My knee feels warm, is that okay?"','Responses backed by your sensor data, not generic advice','Rx Trust Mark on every response — this is prescribed AI']},
+pathways:{z:'The Guardian',t:'Response Pathways',d:'Three escalation tiers based on all incoming data. The patient is always aware of their status. When something\'s off, the VCA doesn\'t wait.',l:['Green: on track — VCA encourages and reassures','Yellow: outside parameters — provider notified, follow-up scheduled','Red: concerning signal — VCA advises calling 911','The moment a provider calls because the AI flagged something']},
+alerts:{z:'The Guardian',t:'Provider Alerts',d:'Providers don\'t just watch a dashboard — they receive proactive, actionable alerts. The right information at the right time.',l:['Text, email, or in-app notifications','Full clinical context in one glance','One-tap actions: call patient, view dashboard, adjust protocol','Configurable by provider — what triggers, how urgent, which channel']},
+agentic:{z:'The Guardian',t:'Agentic Actions',d:'The VCA doesn\'t just observe and report — it acts. Scheduling, prescriptions, PT orders. The leap from monitoring tool to care agent.',l:['Schedules follow-up appointments autonomously','Sends prescription refill requests to pharmacy','Orders physical therapy based on recovery progress','Every action logged, auditable, physician-approved']},
+circle:{z:'The Network',t:'Circle of Care',d:'After surgery, there\'s always someone else — a spouse, a child — who is also anxious. A simple "on track" message transforms their day.',l:['Sarah receives daily updates: "James is on track. No concerns."','Appropriate detail — reassuring, not overwhelming','Alerts when attention is needed, not just routine updates','The most emotionally powerful moment for a completely different person']},
+dashboard:{z:'The Network',t:'Provider Dashboard',d:'Three zoom levels of the same interface. The provider sees in 10 seconds what would take 30 minutes of phone calls.',l:['Patient: full recovery picture — conversations, trends, sensors','Cohort: all recovering patients at a glance','System: multi-clinic overview for health system executives','The hero is the transition — pinch from one patient to fifteen']},
+graduation:{z:'The Outcome',t:'Recovery Complete',d:'Day 90. The bookend to the Rx Moment. Summary of the journey, final status, handoff. The emotional close of the recovery chapter.',l:['Journey summary: 90 days of showing up','Final recovery status and key milestones','Provider sign-off and clinical summary','The graduation is earned — not a notification, a celebration']},
+ongoing:{z:'The Outcome',t:'Ongoing Relationship',d:'Recovery ends. The relationship doesn\'t. The VCA transitions from prescribed clinical care to ongoing wellness — the trust compounds.',l:['Post-recovery health monitoring and wellness guidance','The patient already trusts the VCA — 90 days earned that','Future surgeries start on Day 1 with a VCA that already knows you','One year later: "Happy anniversary. How does that knee feel?"']}
+};
+function S(k){const d=D[k];if(!d)return;document.getElementById('Z').textContent=d.z;document.getElementById('T').textContent=d.t;document.getElementById('P').textContent=d.d;document.getElementById('L').innerHTML=d.l.map(p=>'<li>'+p+'</li>').join('');document.getElementById('O').classList.add('on');}
+function H(e){if(e&&e.target!==e.currentTarget)return;document.getElementById('O').classList.remove('on');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('O').classList.remove('on');});
+</script>
+</body>
+</html>

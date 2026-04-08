@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#6 — Is This Normal?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-bar {
+            padding: 14px 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            background: #FFFFFF;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .chat-header-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chat-header-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3EB5A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-header-avatar svg { width: 16px; height: 16px; }
+        .chat-header-info { flex: 1; }
+        .chat-header-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .chat-header-status {
+            font-size: 11px;
+            font-weight: 400;
+            color: #059669;
+        }
+        .chat-header-rx {
+            font-size: 10px;
+            font-weight: 500;
+            color: #3EB5A6;
+            background: #EDF8F7;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 20px 20px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chat-time {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 400;
+            color: #bbb;
+            padding: 4px 0;
+        }
+
+        /* Patient message */
+        .msg-patient {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .msg-patient .bubble {
+            background: #1a1a1a;
+            color: #FFFFFF;
+            padding: 12px 16px;
+            border-radius: 18px 18px 4px 18px;
+            font-size: 15px;
+            font-weight: 400;
+            line-height: 1.5;
+            max-width: 85%;
+        }
+        .msg-patient .msg-time {
+            font-size: 10px;
+            color: #bbb;
+            margin-top: 4px;
+            padding-right: 4px;
+        }
+
+        /* VCA message */
+        .msg-vca {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .msg-vca-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            padding-left: 4px;
+        }
+        .msg-vca-avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #3EB5A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .msg-vca-avatar svg { width: 11px; height: 11px; }
+        .msg-vca-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: #888;
+        }
+
+        .msg-vca .bubble {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.08);
+            padding: 16px 18px;
+            border-radius: 18px 18px 18px 4px;
+            font-size: 15px;
+            font-weight: 400;
+            color: #1a1a1a;
+            line-height: 1.6;
+            max-width: 90%;
+            position: relative;
+        }
+        .msg-vca .bubble strong { font-weight: 600; }
+        .msg-vca .msg-time {
+            font-size: 10px;
+            color: #bbb;
+            margin-top: 4px;
+            padding-left: 4px;
+        }
+
+        /* Rx trust badge */
+        .rx-trust {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 12px;
+            padding: 5px 10px;
+            background: #F0FDF9;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #059669;
+        }
+        .rx-trust svg { width: 12px; height: 12px; }
+
+        /* Data context card inside VCA message */
+        .data-context {
+            margin-top: 14px;
+            padding: 14px;
+            background: #F8FAFA;
+            border-radius: 10px;
+        }
+        .data-context-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+        .data-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+        }
+        .data-row + .data-row {
+            border-top: 1px solid rgba(0,0,0,0.04);
+        }
+        .data-label {
+            font-size: 13px;
+            font-weight: 400;
+            color: #555;
+        }
+        .data-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .data-value.normal { color: #059669; }
+
+        /* Chat input */
+        .chat-input {
+            padding: 12px 20px 36px;
+            background: #FFFFFF;
+            border-top: 1px solid rgba(0,0,0,0.06);
+        }
+        .chat-input-inner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: #F5F7FA;
+            border-radius: 24px;
+        }
+        .chat-input-text {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 400;
+            color: #bbb;
+        }
+        .chat-input-send {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3EB5A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-input-send svg { width: 14px; height: 14px; }
+    </style>
+</head>
+<body>
+    <div class="status-bar">
+        <span>2:14 AM</span>
+    </div>
+
+    <div class="chat-header">
+        <div class="chat-header-top">
+            <div class="chat-header-avatar">
+                <svg viewBox="0 0 1000 1000" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M666.16 319.463C666.16 327.133 672.345 333.35 679.975 333.35H831.937V666.65H679.975C672.345 666.65 666.16 672.868 666.16 680.538V833.3H334.605V680.538C334.605 672.868 328.42 666.65 320.79 666.65H168.827V333.35H320.79C328.42 333.35 334.605 327.133 334.605 319.463V166.7H666.16V319.463ZM500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="white"/></svg>
+            </div>
+            <div class="chat-header-info">
+                <div class="chat-header-name">Virtual Care Assistant</div>
+                <div class="chat-header-status">Always available</div>
+            </div>
+            <div class="chat-header-rx">Rx Verified</div>
+        </div>
+    </div>
+
+    <div class="chat-body">
+        <div class="chat-time">Today, 2:14 AM</div>
+
+        <!-- Patient asks -->
+        <div class="msg-patient">
+            <div class="bubble" data-drift-editable="patient-q" data-drift-maxlen="100">My knee feels warm. Is that okay?</div>
+            <div class="msg-time">2:14 AM</div>
+        </div>
+
+        <!-- VCA responds -->
+        <div class="msg-vca">
+            <div class="msg-vca-header">
+                <div class="msg-vca-avatar">
+                    <svg viewBox="0 0 1000 1000" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M666.16 319.463C666.16 327.133 672.345 333.35 679.975 333.35H831.937V666.65H679.975C672.345 666.65 666.16 672.868 666.16 680.538V833.3H334.605V680.538C334.605 672.868 328.42 666.65 320.79 666.65H168.827V333.35H320.79C328.42 333.35 334.605 327.133 334.605 319.463V166.7H666.16V319.463ZM500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="white"/></svg>
+                </div>
+                <span class="msg-vca-label">Virtual Care Assistant</span>
+            </div>
+            <div class="bubble">
+                <div data-drift-editable="vca-response" data-drift-maxlen="300"><strong>Warmth around your knee is normal at this stage.</strong> After a total knee replacement, mild warmth typically persists for 6 to 8 weeks as your body heals. Your knee sensor shows a surface temperature of 99.1°F — within the expected range for Day 42.</div>
+
+                <div class="data-context">
+                    <div class="data-context-title">Your data right now</div>
+                    <div class="data-row">
+                        <span class="data-label">Knee surface temp</span>
+                        <span class="data-value normal">99.1°F</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Expected range</span>
+                        <span class="data-value">98.0 – 100.5°F</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Swelling trend</span>
+                        <span class="data-value normal">Decreasing</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Redness</span>
+                        <span class="data-value normal">None detected</span>
+                    </div>
+                </div>
+
+                <div class="rx-trust">
+                    <svg viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#059669" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Clinically verified by Dr. Morris's care protocol
+                </div>
+            </div>
+            <div class="msg-time">2:14 AM</div>
+        </div>
+
+        <!-- Follow-up -->
+        <div class="msg-vca">
+            <div class="bubble" data-drift-editable="vca-followup" data-drift-maxlen="200">
+                <strong>When to reach out:</strong> If the warmth is accompanied by increasing redness, significant swelling, or fever above 101°F, let me know right away. Otherwise, this is your body healing as expected.
+            </div>
+        </div>
+
+        <!-- Patient relieved -->
+        <div class="msg-patient">
+            <div class="bubble" data-drift-editable="patient-reply" data-drift-maxlen="60">Thank you. That helps a lot.</div>
+            <div class="msg-time">2:15 AM</div>
+        </div>
+
+        <!-- VCA closing -->
+        <div class="msg-vca">
+            <div class="msg-vca-header">
+                <div class="msg-vca-avatar">
+                    <svg viewBox="0 0 1000 1000" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M666.16 319.463C666.16 327.133 672.345 333.35 679.975 333.35H831.937V666.65H679.975C672.345 666.65 666.16 672.868 666.16 680.538V833.3H334.605V680.538C334.605 672.868 328.42 666.65 320.79 666.65H168.827V333.35H320.79C328.42 333.35 334.605 327.133 334.605 319.463V166.7H666.16V319.463ZM500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="white"/></svg>
+                </div>
+                <span class="msg-vca-label">Virtual Care Assistant</span>
+            </div>
+            <div class="bubble" data-drift-editable="vca-closing" data-drift-maxlen="120">
+                Of course, James. I'm here anytime. Get some rest — you're doing really well.
+            </div>
+            <div class="msg-time">2:15 AM</div>
+        </div>
+    </div>
+
+    <div class="chat-input">
+        <div class="chat-input-inner">
+            <span class="chat-input-text">Ask anything...</span>
+            <div class="chat-input-send">
+                <svg viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

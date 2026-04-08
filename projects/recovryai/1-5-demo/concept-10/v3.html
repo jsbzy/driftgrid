@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat 10 — Emergency</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #F4F2EE;
+            display: flex; align-items: center; justify-content: center;
+            gap: 48px; padding: 0 80px;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        /* Phone */
+        .phone {
+            width: 280px; min-width: 280px; height: 580px;
+            border: 3px solid #E05555; border-radius: 40px;
+            background: #fff; overflow: hidden;
+            display: flex; flex-direction: column;
+            box-shadow: 0 20px 60px rgba(224, 85, 85, 0.12);
+        }
+        .status-bar {
+            height: 40px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; font-size: 13px; font-weight: 600; color: #1B1B1A;
+        }
+        .chat-header { text-align: center; padding: 4px 16px 8px; font-size: 15px; font-weight: 600; color: #1B1B1A; }
+        .chat-toggle { display: flex; margin: 4px 16px 8px; background: #E8E6E1; border-radius: 24px; padding: 3px; }
+        .toggle-btn { flex: 1; text-align: center; padding: 6px; border-radius: 20px; font-size: 11px; font-weight: 500; color: #6B6B68; }
+        .toggle-btn.active { background: #fff; color: #1B1B1A; font-weight: 600; }
+
+        .chat-body { flex: 1; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+        .msg { padding: 8px 12px; font-size: 12px; line-height: 1.5; max-width: 88%; border-radius: 14px; }
+        .msg.bot { background: #F4F2EE; color: #1B1B1A; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .msg.user { background: #1B1B1A; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .msg.emergency {
+            background: #FEF2F2; border: 2px solid #E05555; color: #991B1B;
+            align-self: flex-start; border-bottom-left-radius: 4px; font-weight: 500;
+        }
+        .msg .sender { font-size: 10px; font-weight: 600; color: #33B5B0; margin-bottom: 2px; }
+        .msg .sender.urgent { color: #E05555; }
+
+        .emergency-cta {
+            background: #E05555; color: #fff; border-radius: 14px;
+            padding: 14px; text-align: center; margin: 4px 12px;
+            font-size: 16px; font-weight: 700;
+        }
+        .emergency-cta span { font-size: 12px; font-weight: 400; display: block; margin-top: 2px; opacity: 0.9; }
+
+        .phone-label {
+            text-align: center; font-size: 11px; color: #E05555;
+            text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
+            margin-top: 8px;
+        }
+
+        /* Connector */
+        .connector {
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            min-width: 80px;
+        }
+        .connector-label {
+            font-size: 10px; color: #E05555; text-transform: uppercase;
+            letter-spacing: 0.1em; font-weight: 600;
+        }
+        .connector-line { width: 60px; height: 2px; background: #E05555; }
+
+        /* Desktop alert */
+        .desktop-alert {
+            width: 540px; min-width: 540px;
+            border: 2px solid #D0D0CC; border-radius: 12px;
+            background: #fff; overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.06);
+        }
+        .desktop-bar {
+            height: 32px; background: #F4F2EE; border-bottom: 1px solid #E8E6E1;
+            display: flex; align-items: center; padding: 0 12px; gap: 6px;
+        }
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+        .dot.r { background: #FF5F56; }
+        .dot.y { background: #FFBD2E; }
+        .dot.g { background: #27C93F; }
+
+        .emergency-banner {
+            background: #FEF2F2; border-bottom: 1px solid #E0555530;
+            padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+        }
+        .emergency-icon {
+            width: 28px; height: 28px; background: #E05555; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 14px; font-weight: 700;
+        }
+        .emergency-banner-text { font-size: 13px; font-weight: 600; color: #991B1B; flex: 1; }
+        .emergency-banner-time { font-size: 11px; color: #E05555; }
+
+        .alert-content { padding: 16px; }
+        .alert-details {
+            background: #F9F8F6; border-radius: 10px; padding: 14px;
+            margin-bottom: 12px;
+        }
+        .alert-details h5 { font-size: 11px; color: #E05555; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 8px; }
+        .alert-details p { font-size: 13px; color: #3A3A38; line-height: 1.6; }
+        .alert-details .meta { font-size: 11px; color: #A3A3A0; margin-top: 8px; }
+
+        .alert-actions { display: flex; gap: 8px; }
+        .alert-btn {
+            padding: 10px 16px; border-radius: 8px;
+            font-size: 13px; font-weight: 600;
+        }
+        .alert-btn.primary { background: #E05555; color: #fff; }
+        .alert-btn.secondary { background: #F4F2EE; color: #3A3A38; }
+
+        .desktop-label {
+            text-align: center; font-size: 11px; color: #6B6B68;
+            text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .vo-strip {
+            position: absolute; bottom: 40px; left: 0; right: 0;
+            text-align: center; font-size: 13px; font-weight: 400; color: #A3A3A0;
+        }
+        .vo-strip em { font-style: normal; color: #33B5B0; }
+    </style>
+</head>
+<body>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <div class="phone">
+            <div class="status-bar"><span>9:41</span><span style="font-size: 11px;">●●● ⟩</span></div>
+            <div class="chat-header">AI Assistant</div>
+            <div class="chat-toggle">
+                <div class="toggle-btn active">✦ Assistant</div>
+                <div class="toggle-btn">👤 Clinic</div>
+            </div>
+            <div class="chat-body">
+                <div class="msg bot"><div class="sender">RecovryAI</div>How are you feeling this evening?</div>
+                <div class="msg user">I'm having chest pain and I can't breathe well. I'm scared.</div>
+                <div class="msg emergency">
+                    <div class="sender urgent">⚠ EMERGENCY</div>
+                    The symptoms you're describing may require immediate medical attention. Your care team has been notified. If you are alone, please unlock your door.
+                </div>
+            </div>
+            <div class="emergency-cta">📞 Call 911 Now<span>Tap to call emergency services</span></div>
+        </div>
+        <div class="phone-label">Patient — Emergency Response</div>
+    </div>
+
+    <div class="connector">
+        <div class="connector-label">Simultaneous</div>
+        <div class="connector-line"></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <div class="desktop-alert">
+            <div class="desktop-bar">
+                <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+            </div>
+            <div class="emergency-banner">
+                <div class="emergency-icon">!</div>
+                <div class="emergency-banner-text">EMERGENCY: Micheala Swain — Chest Pain, Difficulty Breathing</div>
+                <div class="emergency-banner-time">Just now</div>
+            </div>
+            <div class="alert-content">
+                <div class="alert-details">
+                    <h5>Reported Symptoms</h5>
+                    <p>Chest pain and difficulty breathing. Patient reports feeling scared and is requesting immediate assistance.</p>
+                    <div class="meta">
+                        Day 14 of 30 · Total Hip Replacement · POD-9<br>
+                        Patient advised to call 911. Care team notified immediately.
+                    </div>
+                </div>
+                <div class="alert-actions">
+                    <div class="alert-btn primary">📞 Call Patient</div>
+                    <div class="alert-btn secondary">View Full Conversation</div>
+                    <div class="alert-btn secondary">Patient Summary</div>
+                </div>
+            </div>
+        </div>
+        <div class="desktop-label">Provider — Immediate Alert</div>
+    </div>
+
+    <div class="vo-strip">VO: "For critical symptoms, the VCA <em>immediately advises the patient to call 911</em> and alerts the care team."</div>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#4 — Sensor Sync</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        .status-bar {
+            padding: 14px 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .status-bar-icons { display: flex; gap: 6px; align-items: center; }
+        .status-bar-icons svg { width: 16px; height: 16px; }
+
+        .header {
+            padding: 20px 24px 16px;
+        }
+        .header-label {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        .header-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a1a1a;
+            letter-spacing: -0.02em;
+        }
+
+        .devices-section {
+            padding: 0 24px;
+        }
+
+        .device-card {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .device-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .device-icon-wrap {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .device-icon-wrap.watch { background: #F0F0F0; }
+        .device-icon-wrap.sensor { background: #EDF8F7; }
+
+        .device-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .device-status-badge.connected {
+            background: #ECFDF5;
+            color: #059669;
+        }
+        .device-status-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #059669;
+        }
+
+        .device-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 2px;
+        }
+        .device-detail {
+            font-size: 13px;
+            font-weight: 400;
+            color: #888;
+        }
+
+        .device-metrics {
+            display: flex;
+            gap: 0;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+        .device-metric {
+            flex: 1;
+        }
+        .device-metric + .device-metric {
+            border-left: 1px solid rgba(0,0,0,0.05);
+            padding-left: 16px;
+        }
+        .metric-label {
+            font-size: 11px;
+            font-weight: 400;
+            color: #888;
+            margin-bottom: 2px;
+        }
+        .metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .metric-value.teal { color: #3EB5A6; }
+
+        /* Chat confirmation card */
+        .chat-section {
+            padding: 20px 24px 0;
+        }
+        .chat-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .chat-divider-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(0,0,0,0.06);
+        }
+        .chat-divider-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: #888;
+            letter-spacing: 0.03em;
+        }
+
+        .vca-message {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+        }
+        .vca-sender {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .vca-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #3EB5A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .vca-avatar svg { width: 14px; height: 14px; }
+        .vca-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .vca-rx {
+            font-size: 10px;
+            font-weight: 500;
+            color: #3EB5A6;
+            background: #EDF8F7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+        .vca-text {
+            font-size: 15px;
+            font-weight: 400;
+            color: #1a1a1a;
+            line-height: 1.55;
+            margin-bottom: 16px;
+        }
+        .vca-text strong {
+            font-weight: 600;
+        }
+
+        .monitoring-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 16px;
+            background: #F8FAFA;
+            border-radius: 12px;
+        }
+        .monitoring-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #555;
+        }
+        .monitoring-item .check {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3EB5A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .monitoring-item .check svg { width: 10px; height: 10px; }
+
+        .timestamp {
+            font-size: 11px;
+            color: #bbb;
+            text-align: center;
+            padding: 16px 0 40px;
+        }
+
+        /* Connected animation ring */
+        .connected-ring {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #059669;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .connected-ring svg { width: 12px; height: 12px; }
+    </style>
+</head>
+<body>
+    <div class="status-bar">
+        <span>9:41</span>
+        <div class="status-bar-icons">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M1 10.5L4.5 4L8 7L11.5 2L15 6.5" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="4" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="5.5" y="2.5" width="3" height="10.5" rx="1" fill="#1a1a1a"/><rect x="10" y="1" width="3" height="12" rx="1" fill="#1a1a1a"/></svg>
+            <svg viewBox="0 0 20 16" fill="none"><rect x="0.5" y="3.5" width="16" height="9" rx="2" stroke="#1a1a1a" stroke-width="1"/><rect x="17.5" y="6" width="2" height="4" rx="0.5" fill="#1a1a1a"/><rect x="2" y="5" width="11" height="5" rx="1" fill="#1a1a1a"/></svg>
+        </div>
+    </div>
+
+    <div class="header">
+        <div class="header-label">Day 1 Setup</div>
+        <div class="header-title" data-drift-editable="headline" data-drift-maxlen="40">Devices Connected</div>
+    </div>
+
+    <div class="devices-section">
+        <!-- Apple Watch Card -->
+        <div class="device-card">
+            <div class="device-top">
+                <div class="device-icon-wrap watch">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="5" y="2" width="14" height="20" rx="4" stroke="#1a1a1a" stroke-width="1.5"/>
+                        <rect x="7" y="6" width="10" height="12" rx="2" fill="#1a1a1a"/>
+                        <circle cx="12" cy="12" r="3" fill="white"/>
+                        <path d="M12 10.5V12L13 13" stroke="#1a1a1a" stroke-width="1" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="device-status-badge connected">
+                    <div class="dot"></div>
+                    Connected
+                </div>
+            </div>
+            <div class="device-name" data-drift-editable="watch-name" data-drift-maxlen="30">Apple Watch Series 9</div>
+            <div class="device-detail">James's Apple Watch</div>
+            <div class="device-metrics">
+                <div class="device-metric">
+                    <div class="metric-label">Heart Rate</div>
+                    <div class="metric-value teal">72 bpm</div>
+                </div>
+                <div class="device-metric">
+                    <div class="metric-label">Blood Oxygen</div>
+                    <div class="metric-value teal">98%</div>
+                </div>
+                <div class="device-metric">
+                    <div class="metric-label">Battery</div>
+                    <div class="metric-value">86%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Knee Sensor Card -->
+        <div class="device-card">
+            <div class="device-top">
+                <div class="device-icon-wrap sensor">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="8" stroke="#3EB5A6" stroke-width="1.5"/>
+                        <circle cx="12" cy="12" r="4" fill="#3EB5A6" opacity="0.2"/>
+                        <circle cx="12" cy="12" r="2" fill="#3EB5A6"/>
+                        <path d="M12 4V2M12 22V20M4 12H2M22 12H20" stroke="#3EB5A6" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="device-status-badge connected">
+                    <div class="dot"></div>
+                    Connected
+                </div>
+            </div>
+            <div class="device-name" data-drift-editable="sensor-name" data-drift-maxlen="30">Knee Recovery Sensor</div>
+            <div class="device-detail">Right knee — anterior placement</div>
+            <div class="device-metrics">
+                <div class="device-metric">
+                    <div class="metric-label">Range of Motion</div>
+                    <div class="metric-value teal">42°</div>
+                </div>
+                <div class="device-metric">
+                    <div class="metric-label">Temp</div>
+                    <div class="metric-value teal">98.2°F</div>
+                </div>
+                <div class="device-metric">
+                    <div class="metric-label">Battery</div>
+                    <div class="metric-value">100%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-section">
+        <div class="chat-divider">
+            <div class="chat-divider-line"></div>
+            <span class="chat-divider-label">VCA Confirmation</span>
+            <div class="chat-divider-line"></div>
+        </div>
+
+        <div class="vca-message">
+            <div class="vca-sender">
+                <div class="vca-avatar">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v4M7 9v4M1 7h4M9 7h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </div>
+                <span class="vca-name">Your VCA</span>
+                <span class="vca-rx">Rx</span>
+            </div>
+            <div class="vca-text" data-drift-editable="vca-message" data-drift-maxlen="200">
+                <strong>Your devices are connected.</strong> I can now monitor your recovery around the clock. Here's what I'm tracking:
+            </div>
+            <div class="monitoring-list">
+                <div class="monitoring-item">
+                    <div class="check">
+                        <svg viewBox="0 0 10 10" fill="none"><path d="M2 5L4.5 7.5L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    Heart rate and rhythm
+                </div>
+                <div class="monitoring-item">
+                    <div class="check">
+                        <svg viewBox="0 0 10 10" fill="none"><path d="M2 5L4.5 7.5L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    Knee range of motion
+                </div>
+                <div class="monitoring-item">
+                    <div class="check">
+                        <svg viewBox="0 0 10 10" fill="none"><path d="M2 5L4.5 7.5L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    Activity and step count
+                </div>
+                <div class="monitoring-item">
+                    <div class="check">
+                        <svg viewBox="0 0 10 10" fill="none"><path d="M2 5L4.5 7.5L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    Sleep quality and patterns
+                </div>
+            </div>
+        </div>
+
+        <div class="timestamp">March 15, 2026 · 10:32 AM</div>
+    </div>
+</body>
+</html>

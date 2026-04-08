@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>04 — Two Ways to Interact</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #ffffff; }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        /* === LEFT/RIGHT LAYOUT === */
+        .slide { display: flex; width: 100%; height: 100vh; }
+        .left { width: 46%; display: flex; align-items: center; padding-left: 120px; }
+        .right { width: 54%; display: flex; align-items: center; justify-content: center; padding-right: 60px; }
+
+        /* === TEXT BLOCK === */
+        .text-block { width: 500px; }
+        .breadcrumb {
+            font-size: 12px; font-weight: 500; color: #A3A3A0;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            margin-bottom: 16px;
+            opacity: 0; transform: translateY(8px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .headline {
+            font-size: 40px; font-weight: 600; color: #1B1B1A;
+            line-height: 1.25; letter-spacing: -0.02em;
+            margin-bottom: 22px;
+            opacity: 0; transform: translateY(12px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .detail {
+            font-size: 17px; font-weight: 400; color: #3A3A38;
+            line-height: 1.6; letter-spacing: 0.01em;
+            opacity: 0; transform: translateY(12px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .text-block .show { opacity: 1; transform: translateY(0); }
+
+        /* === RIGHT PANEL: TYPE CARDS === */
+        .types {
+            display: flex; flex-direction: row;
+            align-items: center; gap: 60px;
+        }
+        .type-card {
+            display: flex; flex-direction: column; align-items: center; gap: 16px;
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .type-card.show { opacity: 1; transform: translateY(0); }
+
+        .type-icon {
+            width: 120px; height: 120px; border-radius: 28px;
+            background: rgba(51,182,176,0.08);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .type-icon svg { width: 52px; height: 52px; }
+
+        .type-label {
+            font-size: 17px; font-weight: 600; color: #1B1B1A;
+            letter-spacing: -0.01em;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="left">
+            <div class="text-block">
+                <div class="breadcrumb" id="tb-breadcrumb">04 / AGENT INTERACTION</div>
+                <div class="headline" id="tb-headline">Two ways for the patient<br>to interact with<br>the assistant.</div>
+                <div class="detail" id="tb-detail">The assistant engages patients in two key ways. First, it initiates daily check-ins — structured assessments covering pain, sleep, medication, diet, and activity. Second, patients can reach out anytime with questions or concerns. Both modes feed the same clinical intelligence, ensuring nothing falls through the cracks.</div>
+            </div>
+        </div>
+        <div class="right">
+            <div class="types">
+                <div class="type-card" id="card1">
+                    <div class="type-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#33B6B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                    </div>
+                    <div class="type-label">Proactive Check-In</div>
+                </div>
+                <div class="type-card" id="card2">
+                    <div class="type-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#33B6B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    </div>
+                    <div class="type-label">24/7 Access</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showText() {
+            setTimeout(() => document.getElementById('tb-breadcrumb').classList.add('show'), 200);
+            setTimeout(() => document.getElementById('tb-headline').classList.add('show'), 400);
+            setTimeout(() => document.getElementById('tb-detail').classList.add('show'), 700);
+        }
+
+        function reset() {
+            document.querySelectorAll('.type-card').forEach(el => el.classList.remove('show'));
+        }
+
+        function run() {
+            reset();
+            setTimeout(() => document.getElementById('card1').classList.add('show'), 300);
+            setTimeout(() => document.getElementById('card2').classList.add('show'), 700);
+        }
+
+        // Text fades in once on load
+        showText();
+
+        // Cards appear, hold, reset and loop
+        // Last card at 700ms + 5300ms hold = 6000ms total
+        run();
+        setInterval(() => run(), 6000);
+    </script>
+</body>
+</html>

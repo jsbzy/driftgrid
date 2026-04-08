@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Journey — Swim Lane</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #FFFFFF;
+            -webkit-font-smoothing: antialiased;
+        }
+        .slide {
+            width: 1920px;
+            height: 1080px;
+            padding: 56px 80px 48px;
+            display: flex;
+            flex-direction: column;
+            transform-origin: top left;
+        }
+
+        /* Header */
+        .top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            flex-shrink: 0;
+        }
+        .logo-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: #3EB5A6;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo-icon svg { width: 16px; height: 16px; }
+        .logo-name { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+        .title-block { text-align: center; }
+        .title-main {
+            font-size: 28px; font-weight: 700; color: #1a1a1a;
+            letter-spacing: -0.02em;
+        }
+        .title-sub { font-size: 13px; color: #999; margin-top: 2px; }
+        .rx-pill {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 12px;
+            background: rgba(62,181,166,0.06);
+            border: 1px solid rgba(62,181,166,0.12);
+            border-radius: 8px;
+        }
+        .rx-mark {
+            width: 16px; height: 16px; border-radius: 3px;
+            background: #3EB5A6;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 7px; font-weight: 700; color: white;
+        }
+        .rx-text { font-size: 11px; font-weight: 500; color: #3EB5A6; }
+
+        /* Main content area */
+        .lanes {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Phase columns */
+        .phase-row {
+            display: flex;
+            gap: 0;
+            flex: 1;
+        }
+        .phase {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .phase:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: 0; top: 40px; bottom: 40px;
+            width: 1px;
+            background: rgba(0,0,0,0.04);
+        }
+        .phase-1 { flex: 1.2; }
+        .phase-2 { flex: 3.0; }
+        .phase-3 { flex: 3.0; background: rgba(217,119,6,0.015); border-radius: 16px; }
+        .phase-4 { flex: 1.4; }
+
+        /* Phase header */
+        .phase-head {
+            text-align: center;
+            padding: 0 12px 16px;
+            flex-shrink: 0;
+        }
+        .phase-label {
+            font-size: 9px; font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #ccc;
+            margin-bottom: 2px;
+        }
+        .phase-name {
+            font-size: 15px; font-weight: 600; color: #1a1a1a;
+            letter-spacing: -0.01em;
+        }
+        .phase-time {
+            font-size: 10px; color: #bbb; margin-top: 2px;
+        }
+
+        /* Swim lane labels */
+        .lane-label {
+            position: absolute;
+            left: -72px;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #ccc;
+            writing-mode: vertical-lr;
+            transform: rotate(180deg);
+        }
+        .lane-label.patient { top: 100px; }
+        .lane-label.provider { bottom: 60px; }
+
+        /* Swim lanes within each phase */
+        .phase-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0 12px;
+        }
+        .patient-lane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 0;
+        }
+        .lane-divider {
+            height: 1px;
+            background: rgba(0,0,0,0.06);
+            margin: 4px 0;
+            position: relative;
+        }
+        .lane-divider::before {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            top: -1px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(62,181,166,0.08), transparent);
+        }
+        .provider-lane {
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 0;
+        }
+
+        /* Moment node */
+        .moment {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: #FAFBFC;
+            border: 1px solid rgba(0,0,0,0.04);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            cursor: default;
+        }
+        .moment:hover {
+            background: #F5F7FA;
+            border-color: rgba(0,0,0,0.08);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        .moment-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .moment-info { flex: 1; min-width: 0; }
+        .moment-name {
+            font-size: 12px; font-weight: 600; color: #1a1a1a;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .moment-desc {
+            font-size: 10px; color: #999; margin-top: 1px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .moment-num {
+            font-size: 9px; font-weight: 500; color: #ccc;
+            flex-shrink: 0;
+        }
+
+        /* Provider moments — slightly different style */
+        .provider-lane .moment {
+            background: rgba(62,181,166,0.02);
+            border-color: rgba(62,181,166,0.06);
+        }
+        .provider-lane .moment:hover {
+            background: rgba(62,181,166,0.04);
+            border-color: rgba(62,181,166,0.12);
+        }
+
+        /* Connector arrows between phases */
+        .phase-arrow {
+            position: absolute;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 5;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid rgba(0,0,0,0.06);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .phase-arrow svg { width: 8px; height: 8px; }
+
+        /* Status bar */
+        .bottom-bar {
+            flex-shrink: 0;
+            padding-top: 16px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 12px;
+        }
+        .bottom-text { font-size: 11px; color: #999; white-space: nowrap; }
+        .bottom-text strong { font-weight: 600; color: #3EB5A6; }
+        .bottom-progress {
+            flex: 1; height: 3px;
+            background: rgba(0,0,0,0.04);
+            border-radius: 2px; overflow: hidden;
+        }
+        .bottom-fill {
+            width: 47%; height: 100%; border-radius: 2px;
+            background: linear-gradient(90deg, #7BADA6, #3EB5A6);
+        }
+
+        /* Color palette */
+        .dot-teal { background: #3EB5A6; }
+        .dot-green { background: #059669; }
+        .dot-blue { background: #3B82F6; }
+        .dot-amber { background: #D97706; }
+        .dot-red { background: #DC2626; }
+        .dot-gray { background: #888; }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <!-- Header -->
+        <div class="top">
+            <div class="logo-row">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 1000 1000" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M666.16 319.463C666.16 327.133 672.345 333.35 679.975 333.35H831.937V666.65H679.975C672.345 666.65 666.16 672.868 666.16 680.538V833.3H334.605V680.538C334.605 672.868 328.42 666.65 320.79 666.65H168.827V333.35H320.79C328.42 333.35 334.605 327.133 334.605 319.463V166.7H666.16V319.463ZM500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="white"/></svg>
+                </div>
+                <span class="logo-name">recovry.ai</span>
+            </div>
+            <div class="title-block">
+                <div class="title-main" data-drift-editable="title" data-drift-maxlen="40">The Patient Journey</div>
+                <div class="title-sub">13 moments across 4 phases · Patient + Care Team</div>
+            </div>
+            <div class="rx-pill">
+                <div class="rx-mark">Rx</div>
+                <span class="rx-text">Physician-Prescribed AI</span>
+            </div>
+        </div>
+
+        <!-- Lane labels -->
+        <div style="position: relative;">
+            <div class="lane-label patient">Patient</div>
+            <div class="lane-label provider">Care Team</div>
+        </div>
+
+        <!-- Phase columns -->
+        <div class="phase-row">
+            <!-- Phase 1: Prescribed -->
+            <div class="phase phase-1">
+                <div class="phase-head">
+                    <div class="phase-label">Phase 1</div>
+                    <div class="phase-name">Prescribed</div>
+                    <div class="phase-time">Day 0 – 1</div>
+                </div>
+                <div class="phase-body">
+                    <div class="patient-lane">
+                        <div class="moment">
+                            <div class="moment-dot dot-teal"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Living Prescription</div>
+                                <div class="moment-desc">Doctor prescribes AI recovery</div>
+                            </div>
+                            <span class="moment-num">#1</span>
+                        </div>
+                        <div class="moment">
+                            <div class="moment-dot dot-teal"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Sensor Sync</div>
+                                <div class="moment-desc">Devices connect to the system</div>
+                            </div>
+                            <span class="moment-num">#2</span>
+                        </div>
+                        <div class="moment">
+                            <div class="moment-dot dot-teal"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Device Monitoring</div>
+                                <div class="moment-desc">Passive data collection begins</div>
+                            </div>
+                            <span class="moment-num">#4</span>
+                        </div>
+                    </div>
+                    <div class="lane-divider"></div>
+                    <div class="provider-lane">
+                        <!-- No provider moments in setup -->
+                    </div>
+                </div>
+                <div class="phase-arrow">
+                    <svg viewBox="0 0 8 8" fill="none"><path d="M2 1l4 3-4 3" stroke="#ccc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+            </div>
+
+            <!-- Phase 2: Daily Rhythm -->
+            <div class="phase phase-2">
+                <div class="phase-head">
+                    <div class="phase-label">Phase 2</div>
+                    <div class="phase-name">Daily Rhythm</div>
+                    <div class="phase-time">Every day</div>
+                </div>
+                <div class="phase-body">
+                    <div class="patient-lane">
+                        <div class="moment">
+                            <div class="moment-dot dot-green"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Daily Check-In</div>
+                                <div class="moment-desc">Morning pain, sleep, mood questions</div>
+                            </div>
+                            <span class="moment-num">#3</span>
+                        </div>
+                        <div class="moment">
+                            <div class="moment-dot dot-green"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Recovery Status</div>
+                                <div class="moment-desc">How you're doing at a glance</div>
+                            </div>
+                            <span class="moment-num">#7</span>
+                        </div>
+                        <div class="moment">
+                            <div class="moment-dot dot-blue"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">"Is This Normal?"</div>
+                                <div class="moment-desc">Ask your VCA anything, anytime</div>
+                            </div>
+                            <span class="moment-num">#6</span>
+                        </div>
+                    </div>
+                    <div class="lane-divider"></div>
+                    <div class="provider-lane">
+                        <div class="moment">
+                            <div class="moment-dot dot-gray"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Provider Dashboard</div>
+                                <div class="moment-desc">All patients, one view</div>
+                            </div>
+                            <span class="moment-num">#11</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="phase-arrow">
+                    <svg viewBox="0 0 8 8" fill="none"><path d="M2 1l4 3-4 3" stroke="#ccc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+            </div>
+
+            <!-- Phase 3: Something's Off -->
+            <div class="phase phase-3">
+                <div class="phase-head">
+                    <div class="phase-label">Phase 3</div>
+                    <div class="phase-name">When It Matters</div>
+                    <div class="phase-time">Escalation + response</div>
+                </div>
+                <div class="phase-body">
+                    <div class="patient-lane">
+                        <div class="moment">
+                            <div class="moment-dot dot-amber"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Response Pathways</div>
+                                <div class="moment-desc">Green / Yellow / Red triage</div>
+                            </div>
+                            <span class="moment-num">#5</span>
+                        </div>
+                        <div class="moment">
+                            <div class="moment-dot dot-teal"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Circle of Care</div>
+                                <div class="moment-desc">Family and caregiver visibility</div>
+                            </div>
+                            <span class="moment-num">#10</span>
+                        </div>
+                    </div>
+                    <div class="lane-divider"></div>
+                    <div class="provider-lane">
+                        <div class="moment">
+                            <div class="moment-dot dot-red"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Provider Alerts</div>
+                                <div class="moment-desc">Escalation to the surgical team</div>
+                            </div>
+                            <span class="moment-num">#12</span>
+                        </div>
+                        <div class="moment">
+                            <div class="moment-dot dot-teal"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Agentic Actions</div>
+                                <div class="moment-desc">AI acts autonomously when safe</div>
+                            </div>
+                            <span class="moment-num">#9</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="phase-arrow">
+                    <svg viewBox="0 0 8 8" fill="none"><path d="M2 1l4 3-4 3" stroke="#ccc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+            </div>
+
+            <!-- Phase 4: Graduation & Beyond -->
+            <div class="phase phase-4">
+                <div class="phase-head">
+                    <div class="phase-label">Phase 4</div>
+                    <div class="phase-name">Graduation</div>
+                    <div class="phase-time">Day 90+</div>
+                </div>
+                <div class="phase-body">
+                    <div class="patient-lane">
+                        <div class="moment">
+                            <div class="moment-dot dot-green"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Timeline + Graduation</div>
+                                <div class="moment-desc">The full recovery story, completed</div>
+                            </div>
+                            <span class="moment-num">#8</span>
+                        </div>
+                        <div class="moment">
+                            <div class="moment-dot dot-teal"></div>
+                            <div class="moment-info">
+                                <div class="moment-name">Ongoing Relationship</div>
+                                <div class="moment-desc">Recovery ends, care doesn't</div>
+                            </div>
+                            <span class="moment-num">#13</span>
+                        </div>
+                    </div>
+                    <div class="lane-divider"></div>
+                    <div class="provider-lane">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="bottom-bar">
+            <span class="bottom-text">James Park · Right TKA · UCSF Medical Center</span>
+            <div class="bottom-progress"><div class="bottom-fill"></div></div>
+            <span class="bottom-text"><strong>Day 42</strong> of 90</span>
+        </div>
+    </div>
+
+    <script>
+        function scaleToFit() {
+            const s = document.querySelector('.slide');
+            const sx = window.innerWidth / 1920;
+            const sy = window.innerHeight / 1080;
+            const scale = Math.min(sx, sy);
+            s.style.transform = 'scale(' + scale + ')';
+        }
+        scaleToFit();
+        window.addEventListener('resize', scaleToFit);
+    </script>
+</body>
+</html>

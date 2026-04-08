@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM#10 — Circle of Care: Daily Digest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 375px;
+            margin: 0 auto;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .digest-card {
+            background: #FFFFFF; border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 16px; width: 100%; overflow: hidden;
+        }
+
+        .digest-header {
+            padding: 16px 20px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .header-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
+        }
+        .header-avatar svg { width: 14px; height: 14px; }
+        .header-info { flex: 1; }
+        .header-app { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+        .header-for { font-size: 11px; color: #888; }
+        .header-time { font-size: 11px; color: #bbb; }
+
+        .digest-greeting {
+            padding: 20px 20px 16px;
+        }
+        .greeting-text {
+            font-size: 15px; font-weight: 400; color: #1a1a1a;
+            line-height: 1.5;
+        }
+        .greeting-text strong { font-weight: 600; }
+
+        /* Status section */
+        .status-section {
+            padding: 0 20px 16px;
+        }
+        .status-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px;
+            background: rgba(5,150,105,0.04);
+            border: 1px solid rgba(5,150,105,0.08);
+            border-radius: 12px;
+        }
+        .status-orb {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: #3EB5A6; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
+        }
+        .status-orb svg { width: 16px; height: 16px; }
+        .status-label { font-size: 15px; font-weight: 600; color: #059669; }
+        .status-sub { font-size: 12px; color: #888; margin-top: 1px; }
+
+        /* Dimensions */
+        .dims-section { padding: 0 20px 16px; }
+        .dims-label {
+            font-size: 11px; font-weight: 500; color: #888;
+            margin-bottom: 10px;
+        }
+        .dims-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .dim-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px;
+            background: rgba(0,0,0,0.015); border-radius: 8px;
+        }
+        .dim-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .dim-name { font-size: 12px; color: #555; }
+        .dim-val { font-size: 12px; font-weight: 500; color: #1a1a1a; margin-left: auto; }
+
+        /* Highlights */
+        .highlights { padding: 0 20px 16px; }
+        .highlights-label {
+            font-size: 11px; font-weight: 500; color: #888;
+            margin-bottom: 10px;
+        }
+        .highlight-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 8px 0;
+        }
+        .hl-icon {
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; margin-top: 1px;
+        }
+        .hl-icon svg { width: 12px; height: 12px; }
+        .hl-text { font-size: 13px; color: #555; line-height: 1.45; }
+        .hl-text strong { color: #1a1a1a; font-weight: 600; }
+
+        /* Next up */
+        .next-section {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            background: rgba(0,0,0,0.01);
+        }
+        .next-label {
+            font-size: 10px; font-weight: 600; color: #3EB5A6;
+            letter-spacing: 0.04em; margin-bottom: 8px;
+        }
+        .next-item {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; color: #555;
+        }
+        .next-item svg { width: 14px; height: 14px; flex-shrink: 0; color: #3EB5A6; }
+        .next-item + .next-item { margin-top: 6px; }
+
+        .digest-footer {
+            padding: 10px 20px;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .rx-badge {
+            width: 14px; height: 14px; border-radius: 2px;
+            background: #ccc; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .rx-badge span { font-size: 6px; font-weight: 700; color: white; }
+        .footer-text { font-size: 10px; color: #bbb; }
+    </style>
+</head>
+<body>
+    <div class="digest-card">
+        <div class="digest-header">
+            <div class="header-avatar">
+                <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v4M7 9v4M1 7h4M9 7h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div class="header-info">
+                <div class="header-app">recovry.ai</div>
+                <div class="header-for">Daily update for Sarah Park</div>
+            </div>
+            <span class="header-time">8:15 AM</span>
+        </div>
+
+        <div class="digest-greeting">
+            <p class="greeting-text" data-drift-editable="greeting" data-drift-maxlen="150">Good morning, Sarah. Here's how <strong>James</strong> is doing today — <strong>Day 42</strong> of his recovery.</p>
+        </div>
+
+        <div class="status-section">
+            <div class="status-row">
+                <div class="status-orb">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div>
+                    <div class="status-label">On Track</div>
+                    <div class="status-sub">Recovery progressing well</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dims-section">
+            <div class="dims-label">Today's check-in results</div>
+            <div class="dims-grid">
+                <div class="dim-item">
+                    <div class="dim-dot" style="background: #3EB5A6;"></div>
+                    <span class="dim-name">Pain</span>
+                    <span class="dim-val">Minimal</span>
+                </div>
+                <div class="dim-item">
+                    <div class="dim-dot" style="background: #3EB5A6;"></div>
+                    <span class="dim-name">Sleep</span>
+                    <span class="dim-val">Good</span>
+                </div>
+                <div class="dim-item">
+                    <div class="dim-dot" style="background: #3EB5A6;"></div>
+                    <span class="dim-name">Mobility</span>
+                    <span class="dim-val">Strong</span>
+                </div>
+                <div class="dim-item">
+                    <div class="dim-dot" style="background: #3EB5A6;"></div>
+                    <span class="dim-name">Meds</span>
+                    <span class="dim-val">On track</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="highlights">
+            <div class="highlights-label">Highlights</div>
+            <div class="highlight-item">
+                <div class="hl-icon" style="background: rgba(5,150,105,0.08);">
+                    <svg viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#059669" stroke-width="1.3" stroke-linecap="round"/></svg>
+                </div>
+                <span class="hl-text"><strong>ROM improved to 118°</strong> — up 8° this week, ahead of the expected curve.</span>
+            </div>
+            <div class="highlight-item">
+                <div class="hl-icon" style="background: rgba(62,181,166,0.08);">
+                    <svg viewBox="0 0 12 12" fill="none"><path d="M2 8l3-3 2 2 3-4" stroke="#3EB5A6" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="hl-text">Completed a <strong>20-minute walk</strong> yesterday with no pain after.</span>
+            </div>
+            <div class="highlight-item">
+                <div class="hl-icon" style="background: rgba(62,181,166,0.08);">
+                    <svg viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4" stroke="#3EB5A6" stroke-width="1.3"/></svg>
+                </div>
+                <span class="hl-text">Asked about knee clicking on stairs — VCA confirmed it's <strong>normal at this stage</strong>.</span>
+            </div>
+        </div>
+
+        <div class="next-section">
+            <div class="next-label">COMING UP</div>
+            <div class="next-item">
+                <svg viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M1 5.5h12" stroke="currentColor" stroke-width="1.2"/></svg>
+                PT session Thursday at 10:00 AM
+            </div>
+            <div class="next-item">
+                <svg viewBox="0 0 14 14" fill="none"><rect x="3" y="1" width="8" height="12" rx="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M3 5h8" stroke="currentColor" stroke-width="1.2"/></svg>
+                Medication refill ready for pickup
+            </div>
+        </div>
+
+        <div class="digest-footer">
+            <div class="rx-badge"><span>Rx</span></div>
+            <span class="footer-text">Caregiver digest · Sent daily at 8:15 AM</span>
+        </div>
+    </div>
+</body>
+</html>

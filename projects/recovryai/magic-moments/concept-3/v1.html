@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pain Check-In — Full Screen (Color Spectrum)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: #F5F7FA;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .screen {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 40px 32px;
+            position: relative;
+        }
+
+        .screen::before {
+            content: '';
+            position: absolute;
+            top: 25%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(51,182,176,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .content {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 48px;
+            max-width: 380px; width: 100%;
+            position: relative;
+        }
+
+        .greeting {
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .greeting-day {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; font-weight: 500;
+            letter-spacing: 0.06em; color: #33B6B0;
+        }
+        .greeting-question {
+            font-size: 32px; font-weight: 300;
+            color: #1B1B1A; text-align: center;
+            line-height: 1.25; letter-spacing: -0.01em;
+        }
+        .greeting-question strong { font-weight: 600; }
+
+        .options {
+            display: flex; flex-direction: column;
+            gap: 10px; width: 100%;
+        }
+
+        .option {
+            padding: 18px 20px;
+            background: white;
+            border-radius: 14px;
+            border: 1.5px solid #ECECEA;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex; flex-direction: row;
+            align-items: center; justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Subtle left accent bar */
+        .option::before {
+            content: '';
+            position: absolute; left: 0; top: 0; bottom: 0;
+            width: 3px;
+            border-radius: 2px 0 0 2px;
+        }
+        .option[data-level="1"]::before { background: #34D399; }
+        .option[data-level="2"]::before { background: #6EE7B7; }
+        .option[data-level="3"]::before { background: #FBBF24; }
+        .option[data-level="4"]::before { background: #F59E0B; }
+        .option[data-level="5"]::before { background: #EF4444; }
+
+        .option:hover {
+            border-color: #D4D4D0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            transform: translateY(-1px);
+        }
+        .option:active {
+            transform: translateY(0px);
+        }
+        .option.selected {
+            border-color: #ccc;
+        }
+        .option.selected .option-number {
+            color: white;
+        }
+        .option[data-level="1"].selected .option-number { background: #34D399; }
+        .option[data-level="2"].selected .option-number { background: #6EE7B7; }
+        .option[data-level="3"].selected .option-number { background: #FBBF24; }
+        .option[data-level="4"].selected .option-number { background: #F59E0B; }
+        .option[data-level="5"].selected .option-number { background: #EF4444; }
+
+        .option-text {
+            font-size: 16px; font-weight: 500;
+            color: #1B1B1A;
+            padding-left: 8px;
+        }
+        .option-number {
+            width: 28px; height: 28px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px; font-weight: 500;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .option[data-level="1"] .option-number { background: rgba(52,211,153,0.12); color: #34D399; }
+        .option[data-level="2"] .option-number { background: rgba(110,231,183,0.12); color: #6EE7B7; }
+        .option[data-level="3"] .option-number { background: rgba(251,191,36,0.12); color: #D97706; }
+        .option[data-level="4"] .option-number { background: rgba(245,158,11,0.12); color: #D97706; }
+        .option[data-level="5"] .option-number { background: rgba(239,68,68,0.12); color: #EF4444; }
+
+        .rx-footer {
+            display: flex; flex-direction: row;
+            align-items: center; gap: 6px;
+            position: absolute; bottom: -60px;
+        }
+        .rx-badge {
+            width: 16px; height: 16px; border-radius: 3px;
+            background: #ccc;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .rx-badge span { font-size: 7px; font-weight: 700; color: white; }
+        .rx-label { font-size: 11px; color: #bbb; }
+
+        .confirmed {
+            display: none;
+            flex-direction: column;
+            align-items: center; gap: 16px;
+        }
+        .confirmed.show { display: flex; }
+        .confirmed-check {
+            width: 56px; height: 56px; border-radius: 28px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .confirmed-text {
+            font-size: 18px; font-weight: 400; color: #555;
+            text-align: center; line-height: 1.4;
+        }
+        .confirmed-text strong { font-weight: 600; color: #1B1B1A; }
+
+        .voice-hint {
+            position: absolute; bottom: 32px;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; color: #bbb;
+        }
+        .voice-dot {
+            width: 8px; height: 8px; border-radius: 4px;
+            background: rgba(51,182,176,0.3);
+        }
+
+        .replay {
+            position: fixed; top: 20px; right: 20px;
+            font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+            color: #999; background: none; border: 1px solid #ddd;
+            padding: 6px 12px; border-radius: 6px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="screen">
+    <div class="content" id="questionView">
+        <div class="greeting">
+            <div class="greeting-day">DAY 8 · MORNING CHECK-IN</div>
+            <div class="greeting-question">How's your <strong>pain</strong> today?</div>
+        </div>
+
+        <div class="options">
+            <div class="option" data-level="1" onclick="select(this, 1)">
+                <span class="option-text">None</span>
+                <span class="option-number">1</span>
+            </div>
+            <div class="option" data-level="2" onclick="select(this, 2)">
+                <span class="option-text">Mild</span>
+                <span class="option-number">2</span>
+            </div>
+            <div class="option" data-level="3" onclick="select(this, 3)">
+                <span class="option-text">Moderate</span>
+                <span class="option-number">3</span>
+            </div>
+            <div class="option" data-level="4" onclick="select(this, 4)">
+                <span class="option-text">Significant</span>
+                <span class="option-number">4</span>
+            </div>
+            <div class="option" data-level="5" onclick="select(this, 5)">
+                <span class="option-text">Severe</span>
+                <span class="option-number">5</span>
+            </div>
+        </div>
+
+        <div class="rx-footer">
+            <div class="rx-badge"><span>Rx</span></div>
+            <span class="rx-label">Verified</span>
+        </div>
+    </div>
+
+    <div class="confirmed" id="confirmView">
+        <div class="confirmed-check" id="confirmIcon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                <path d="M7 14.5L12 19.5L21 9.5" stroke="#33B6B0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <div class="confirmed-text">
+            Got it. Your pain is <strong id="painLevel">moderate</strong> today.<br>
+            <span style="font-size: 14px; color: #aaa;">Recorded · 8:04 AM</span>
+        </div>
+    </div>
+
+    <div class="voice-hint">
+        <div class="voice-dot"></div>
+        Or just tell me how you feel
+    </div>
+</div>
+
+<button class="replay" onclick="location.reload()">Replay</button>
+
+<script>
+const levels = {1: 'no pain', 2: 'mild', 3: 'moderate', 4: 'significant', 5: 'severe'};
+const colors = {1: '#34D399', 2: '#6EE7B7', 3: '#FBBF24', 4: '#F59E0B', 5: '#EF4444'};
+
+function select(el, level) {
+    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+
+    setTimeout(() => {
+        document.getElementById('painLevel').textContent = levels[level];
+        document.getElementById('confirmIcon').style.background = colors[level] + '18';
+        document.querySelector('#confirmIcon path').setAttribute('stroke', colors[level]);
+        document.getElementById('questionView').style.display = 'none';
+        document.querySelector('.voice-hint').style.display = 'none';
+        document.getElementById('confirmView').classList.add('show');
+    }, 400);
+}
+</script>
+
+</body>
+</html>

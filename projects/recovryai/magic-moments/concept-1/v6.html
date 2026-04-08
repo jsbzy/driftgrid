@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rx Seal — Stylized Video Version</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: #0F0F0F;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .scene { display: flex; flex-direction: column; align-items: center; width: 480px; gap: 24px; }
+
+        /* Message container */
+        .msg-wrap {
+            display: flex; gap: 12px; width: 100%;
+            opacity: 0; transform: translateY(16px);
+        }
+        .msg-wrap.show { animation: slideIn 0.5s ease-out forwards; }
+
+        .avatar {
+            width: 36px; height: 36px; border-radius: 18px;
+            background: rgba(51,182,176,0.15);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .avatar svg { width: 20px; height: 20px; }
+
+        .msg-body { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+
+        .bubble {
+            background: #1e1e1e;
+            border-radius: 16px; padding: 16px 20px;
+            border: 1.5px solid transparent;
+            position: relative;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .bubble p { font-size: 16px; color: #e8e8e8; line-height: 1.5; }
+
+        /* Glow state */
+        .bubble.glow {
+            animation: borderGlow 1.2s ease-out forwards;
+        }
+
+        .footer {
+            display: flex; align-items: center; gap: 6px; padding-left: 4px;
+            min-height: 24px;
+        }
+
+        /* Rx seal — appears with dramatic stamp */
+        .rx-seal {
+            display: flex; align-items: center; gap: 6px;
+            opacity: 0; transform: scale(0);
+        }
+        .rx-seal.stamp { animation: stampDramatic 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+        .rx-icon {
+            width: 20px; height: 20px; border-radius: 3px;
+            background: #33B6B0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .rx-icon span {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 9px; font-weight: 700; color: white; line-height: 1;
+        }
+
+        .seal-text {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 12px; font-weight: 500; color: #33B6B0;
+            letter-spacing: 0.02em;
+        }
+
+        /* Expanding ring behind the seal */
+        .seal-burst {
+            position: absolute; width: 20px; height: 20px; border-radius: 3px;
+            border: 2px solid #33B6B0; opacity: 0; pointer-events: none;
+        }
+        .seal-burst.go { animation: burstOut 0.8s ease-out forwards; }
+
+        /* Teal shimmer line that sweeps across the bubble */
+        .shimmer {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 16px; overflow: hidden; pointer-events: none;
+        }
+        .shimmer::after {
+            content: '';
+            position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(51,182,176,0.08), transparent);
+            opacity: 0;
+        }
+        .shimmer.sweep::after { animation: shimmerSweep 0.8s ease-out forwards; }
+
+        .time-text {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px; color: #555; opacity: 0;
+        }
+        .time-text.show { animation: fadeIn 0.3s ease-out forwards; }
+
+        .dot { width: 3px; height: 3px; border-radius: 2px; background: #333; opacity: 0; }
+        .dot.show { animation: fadeIn 0.2s ease-out forwards; }
+
+        /* Replay */
+        .replay {
+            position: fixed; bottom: 32px;
+            font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+            color: #33B6B0; background: none; border: 1px solid rgba(51,182,176,0.3);
+            padding: 8px 16px; border-radius: 6px; cursor: pointer;
+        }
+        .replay:hover { background: rgba(51,182,176,0.05); }
+
+        /* ── Keyframes ── */
+        @keyframes slideIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes borderGlow {
+            0% { border-color: rgba(51,182,176,0); box-shadow: none; }
+            20% { border-color: rgba(51,182,176,0.5); box-shadow: 0 0 20px rgba(51,182,176,0.15), inset 0 0 12px rgba(51,182,176,0.05); }
+            100% { border-color: rgba(51,182,176,0.15); box-shadow: 0 0 0px rgba(51,182,176,0); }
+        }
+        @keyframes stampDramatic {
+            0% { opacity: 0; transform: scale(0) rotate(-15deg); }
+            50% { opacity: 1; transform: scale(1.2) rotate(3deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes burstOut {
+            0% { opacity: 0.5; transform: scale(1); }
+            100% { opacity: 0; transform: scale(3); border-radius: 8px; }
+        }
+        @keyframes shimmerSweep {
+            0% { left: -100%; opacity: 1; }
+            100% { left: 200%; opacity: 0; }
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="scene">
+    <div class="msg-wrap" id="msg1">
+        <div class="avatar">
+            <svg viewBox="0 0 1000 1000" fill="none">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M666.16 319.463C666.16 327.133 672.345 333.35 679.975 333.35H831.937V666.65H679.975C672.345 666.65 666.16 672.868 666.16 680.538V833.3H334.605V680.538C334.605 672.868 328.42 666.65 320.79 666.65H168.827V333.35H320.79C328.42 333.35 334.605 327.133 334.605 319.463V166.7H666.16V319.463ZM500.382 250.025C500.382 388.083 389.051 500 251.716 500C389.051 500 500.382 611.918 500.382 749.975C500.382 611.918 611.714 500 749.048 500C611.714 500 500.382 388.083 500.382 250.025Z" fill="#33B6B0"/>
+            </svg>
+        </div>
+        <div class="msg-body">
+            <div class="bubble" id="bubble1">
+                <p>Good morning, James. How did you sleep last night?</p>
+                <div class="shimmer" id="shimmer1"></div>
+            </div>
+            <div class="footer">
+                <div style="position: relative; display: flex; align-items: center;">
+                    <div class="rx-seal" id="seal1">
+                        <div class="rx-icon"><span>Rx</span></div>
+                        <span class="seal-text">Verified</span>
+                    </div>
+                    <div class="seal-burst" id="burst1"></div>
+                </div>
+                <span class="dot" id="dot1"></span>
+                <span class="time-text" id="time1">8:04 AM</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button class="replay" onclick="replay()">Replay</button>
+
+<script>
+function runSequence() {
+    // Reset
+    msg1.classList.remove('show');
+    bubble1.classList.remove('glow');
+    shimmer1.classList.remove('sweep');
+    seal1.classList.remove('stamp');
+    burst1.classList.remove('go');
+    dot1.classList.remove('show');
+    time1.classList.remove('show');
+
+    const t = (ms) => new Promise(r => setTimeout(r, ms));
+
+    (async () => {
+        // Message slides in
+        await t(600);
+        msg1.classList.add('show');
+
+        // Pause — message sits there
+        await t(1000);
+
+        // Glow border lights up around the bubble
+        bubble1.classList.add('glow');
+
+        // Shimmer sweeps across
+        await t(200);
+        shimmer1.classList.add('sweep');
+
+        // Rx seal stamps in
+        await t(600);
+        seal1.classList.add('stamp');
+        burst1.classList.add('go');
+
+        // Time appears
+        await t(400);
+        dot1.classList.add('show');
+        time1.classList.add('show');
+    })();
+}
+
+function replay() { runSequence(); }
+
+runSequence();
+</script>
+
+</body>
+</html>

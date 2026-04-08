@@ -1,0 +1,180 @@
+{
+  "project": {
+    "name": "RxAI Icon",
+    "slug": "rxai-icon",
+    "client": "recovryai",
+    "canvas": "desktop",
+    "created": "2026-03-21T00:00:00.000Z",
+    "links": [
+      {
+        "label": "Live",
+        "url": "https://rxai-icon.bzy.design/"
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "concept-1",
+      "label": "V01",
+      "description": "RxAI mark V01 — stamp and borderless variants with inline and badge applications",
+      "position": 1,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-1/v1.html",
+          "parentId": null,
+          "changelog": "Imported from rxai-icon.bzy.design",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-21T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-1-v1.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-2",
+      "label": "V02",
+      "description": "RxAI mark V02 — stamp and borderless variants, alternate mark construction",
+      "position": 2,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-2/v1.html",
+          "parentId": null,
+          "changelog": "Imported from rxai-icon.bzy.design",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-21T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-2-v1.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-3",
+      "label": "V03",
+      "description": "RxAI mark V03 — color variants exploration",
+      "position": 3,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-3/v1.html",
+          "parentId": null,
+          "changelog": "Imported from rxai-icon.bzy.design",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-21T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-3-v1.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-4",
+      "label": "V04",
+      "description": "RxAI mark V04 — color variants with expanded application contexts",
+      "position": 4,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-4/v1.html",
+          "parentId": null,
+          "changelog": "Imported from rxai-icon.bzy.design",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-21T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-4-v1.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-5",
+      "label": "V05",
+      "description": "RxAI mark V05 — refined color variants",
+      "position": 5,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-5/v1.html",
+          "parentId": null,
+          "changelog": "Imported from rxai-icon.bzy.design",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-21T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-5-v1.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-6",
+      "label": "V06",
+      "description": "RxAI mark V06 — color variants iteration",
+      "position": 6,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-6/v1.html",
+          "parentId": null,
+          "changelog": "Imported from rxai-icon.bzy.design",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-21T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-6-v1.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-7",
+      "label": "V07",
+      "description": "RxAI mark V07 — color variants iteration",
+      "position": 7,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-7/v1.html",
+          "parentId": null,
+          "changelog": "Imported from rxai-icon.bzy.design",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-21T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-7-v1.png"
+        }
+      ]
+    },
+    {
+      "id": "concept-8",
+      "label": "V08",
+      "description": "RxAI mark V08 — color variants iteration",
+      "position": 8,
+      "visible": true,
+      "versions": [
+        {
+          "id": "v1",
+          "number": 1,
+          "file": "concept-8/v1.html",
+          "parentId": null,
+          "changelog": "Imported from rxai-icon.bzy.design",
+          "visible": true,
+          "starred": false,
+          "created": "2026-03-21T00:00:00.000Z",
+          "thumbnail": ".thumbs/concept-8-v1.png"
+        }
+      ]
+    }
+  ],
+  "workingSets": [],
+  "comments": [],
+  "clientEdits": []
+}

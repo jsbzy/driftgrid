@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Emerging Third Lane of Healthcare AI — RecovryAI</title>
+    <meta name="description" content="Healthcare AI covers systems with fundamentally different architectures, regulatory postures, and relationships to clinical accountability. Getting the categories straight matters.">
+    <link rel="canonical" href="https://recovry.ai/news/the-emerging-third-lane-of-healthcare-ai.html">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://recovry.ai/news/the-emerging-third-lane-of-healthcare-ai.html">
+    <meta property="og:title" content="The Emerging Third Lane of Healthcare AI — RecovryAI">
+    <meta property="og:description" content="Healthcare AI covers systems with fundamentally different architectures, regulatory postures, and relationships to clinical accountability. Getting the categories straight matters.">
+    <meta property="og:image" content="https://recovry.ai/assets/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Emerging Third Lane of Healthcare AI — RecovryAI">
+    <meta name="twitter:description" content="Healthcare AI covers systems with fundamentally different architectures, regulatory postures, and relationships to clinical accountability. Getting the categories straight matters.">
+    <meta name="twitter:image" content="https://recovry.ai/assets/og-image.png">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --bg-light: #e8e8e8;
+            --grid: rgba(62, 181, 166, 0.15);
+            --grid-glow: rgba(62, 181, 166, 0.35);
+            --teal: #3EB5A6;
+            --teal-text: #0b6b60;
+            --text: #1a1a1a;
+            --text-dim: #666;
+            --text-mid: #444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.75;
+        }
+
+        /* Blueprint grid background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .grid-bg svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .grid-bg .glow-line-h,
+        .grid-bg .glow-line-v {
+            stroke: var(--grid-glow);
+            stroke-width: 1;
+            opacity: 0;
+        }
+
+        .grid-bg .glow-line-h { animation: glowPulseH 8s ease-in-out infinite; }
+        .grid-bg .glow-line-v { animation: glowPulseV 10s ease-in-out infinite; }
+        .grid-bg .glow-line-h:nth-child(2) { animation-delay: -2s; }
+        .grid-bg .glow-line-h:nth-child(3) { animation-delay: -4s; }
+        .grid-bg .glow-line-v:nth-child(5) { animation-delay: -3s; }
+        .grid-bg .glow-line-v:nth-child(6) { animation-delay: -6s; }
+
+        @keyframes glowPulseH {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.7; }
+        }
+        @keyframes glowPulseV {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Docked logo */
+        .docked-logo {
+            position: fixed;
+            top: 16px;
+            left: 1.5rem;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .docked-logo:hover { opacity: 0.75; }
+
+        .docked-logo svg {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .docked-logo .logo-cross { fill: var(--teal); }
+        .docked-logo .logo-sparkle { fill: var(--bg); }
+
+        .docked-logo-text {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-block;
+            margin-bottom: 2.5rem;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            letter-spacing: 0.05em;
+            font-family: 'IBM Plex Sans', sans-serif;
+            transition: color 0.2s ease;
+        }
+
+        .back-link:hover { color: var(--teal); }
+
+        /* Page */
+        .page {
+            max-width: 660px;
+            margin: 0 auto;
+            padding: 5rem 2rem 6rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Post meta */
+        .post-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .post-tag {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.6rem;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--teal);
+            background: rgba(62, 181, 166, 0.08);
+            padding: 0.2rem 0.6rem;
+            border-radius: 2px;
+        }
+
+        .post-date {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        /* Headline */
+        h1 {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 500;
+            line-height: 1.3;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            margin-bottom: 0.6rem;
+        }
+
+        /* Deck */
+        .post-deck {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 300;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        /* Byline */
+        .post-byline {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--grid);
+        }
+
+        .post-byline strong {
+            color: var(--text-mid);
+            font-weight: 500;
+        }
+
+        /* Body */
+        .post-body p {
+            font-size: 0.9rem;
+            color: var(--text-mid);
+            margin-bottom: 1.4rem;
+            font-weight: 400;
+        }
+
+        .post-body p strong {
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        /* Section headers */
+        .post-body h2 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--teal-text);
+            letter-spacing: -0.01em;
+            margin: 2.5rem 0 0.75rem;
+            padding-left: 0.75rem;
+            border-left: 2px solid var(--teal);
+        }
+
+        /* Divider */
+        .post-divider {
+            border: none;
+            border-top: 1px solid var(--grid);
+            margin: 2.5rem 0;
+        }
+
+        /* Closing byline */
+        .post-closing-byline {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.75rem;
+            font-style: italic;
+            color: var(--text-dim);
+            text-align: center;
+        }
+
+        /* Post footer */
+        .post-footer {
+            text-align: center;
+        }
+
+        .post-footer-back {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            letter-spacing: 0.05em;
+        }
+
+        .post-footer-back:hover { color: var(--teal); }
+
+        /* Scroll animations */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Scroll nav */
+        .scroll-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            z-index: 99;
+            background: var(--bg);
+            border-bottom: 1px solid var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 9rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .scroll-nav.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .scroll-nav-title {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        /* Bottom section */
+        .page-bottom {
+            max-width: 660px;
+            margin: 0 auto;
+            padding: 4rem 2rem 2rem;
+            position: relative;
+            z-index: 2;
+        }
+        .bottom-label {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.6rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--teal-text);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .news-list { display: flex; flex-direction: column; text-align: left; }
+        .news-link {
+            display: block;
+            padding: 0.9rem 0;
+            border-top: 1px solid var(--grid);
+            color: var(--text);
+            text-decoration: none;
+        }
+        .news-link:last-child { border-bottom: 1px solid var(--grid); }
+        .news-link:hover .news-link-title { color: var(--teal); }
+        .news-link-meta { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; }
+        .news-link-tag {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.55rem;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--teal-text);
+            background: rgba(62, 181, 166, 0.08);
+            padding: 0.15rem 0.45rem;
+            border-radius: 2px;
+        }
+        .news-link-date {
+            font-family: 'IBM Plex Sans', sans-serif;
+            color: var(--text-dim);
+            font-size: 0.62rem;
+            letter-spacing: 0.04em;
+        }
+        .news-link-title {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.4;
+            transition: color 0.2s ease;
+        }
+        .bottom-divider {
+            border: none;
+            border-top: 1px solid var(--grid);
+            margin: 3rem 0 2.5rem;
+        }
+        .stay-label {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.6rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--teal-text);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .form-minimal { text-align: center; }
+        .form-select {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-mid);
+            background: var(--bg-light);
+            border: 1px solid var(--bg-light);
+            border-radius: 2px;
+            padding: 0.5rem 2rem 0.5rem 0.75rem;
+            width: 200px;
+            margin-right: 0.5rem;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+            vertical-align: middle;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+        }
+        .form-select:hover, .form-select:focus { outline: none; border-color: var(--teal); }
+        .form-row { display: inline-flex; align-items: stretch; }
+        .form-minimal input[type="email"] {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-light);
+            border: 1px solid var(--bg-light);
+            border-radius: 2px 0 0 2px;
+            color: var(--text);
+            width: 200px;
+            transition: border-color 0.2s ease;
+        }
+        .form-minimal input[type="email"]:focus { outline: none; border-color: var(--teal); }
+        .form-minimal input[type="email"]::placeholder { color: var(--text-dim); }
+        .form-minimal button[type="submit"] {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-light);
+            color: var(--text-dim);
+            border: 1px solid var(--bg-light);
+            border-left: 1px solid var(--text-dim);
+            border-radius: 0 2px 2px 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .form-minimal button[type="submit"]:hover { color: var(--teal); }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            border-top: 1px solid var(--bg-light);
+            font-family: 'IBM Plex Sans', sans-serif;
+            letter-spacing: 0.04em;
+            position: relative;
+            z-index: 2;
+        }
+
+        @media (max-width: 768px) {
+            .scroll-nav { padding: 0 1.25rem 0 3.5rem; }
+        }
+
+        @media (max-width: 600px) {
+            .page { padding: 3rem 1.25rem 4rem; }
+            h1 { font-size: 1.4rem; }
+            .docked-logo-text { display: none; }
+            .form-row { display: flex; flex-direction: column; width: 100%; }
+            .form-minimal input[type="email"] {
+                width: 100%;
+                border-radius: 2px;
+            }
+            .form-minimal button[type="submit"] {
+                width: 100%;
+                border-radius: 2px;
+                border-left: 1px solid var(--bg-light);
+                margin-top: 0.5rem;
+            }
+            .form-select { width: 100%; margin-right: 0; margin-bottom: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Blueprint grid background -->
+    <div class="grid-bg">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="smallGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(62, 181, 166, 0.07)" stroke-width="0.5"/>
+                </pattern>
+                <pattern id="grid" width="200" height="200" patternUnits="userSpaceOnUse">
+                    <rect width="200" height="200" fill="url(#smallGrid)"/>
+                    <path d="M 200 0 L 0 0 0 200" fill="none" stroke="rgba(62, 181, 166, 0.12)" stroke-width="1"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+            <line class="glow-line-h" x1="0" y1="200" x2="100%" y2="200" />
+            <line class="glow-line-h" x1="0" y1="600" x2="100%" y2="600" />
+            <line class="glow-line-h" x1="0" y1="1000" x2="100%" y2="1000" />
+            <line class="glow-line-v" x1="200" y1="0" x2="200" y2="100%" />
+            <line class="glow-line-v" x1="600" y1="0" x2="600" y2="100%" />
+            <line class="glow-line-v" x1="1000" y1="0" x2="1000" y2="100%" />
+        </svg>
+    </div>
+
+    <!-- Docked logo -->
+    <a class="docked-logo" href="/">
+        <svg viewBox="0 0 200 200">
+            <path class="logo-cross" d="M50 0 H150 V40 C150 45.5 154.5 50 160 50 H200 V150 H160 C154.5 150 150 154.5 150 160 V200 H50 V160 C50 154.5 45.5 150 40 150 H0 V50 H40 C45.5 50 50 45.5 50 40 V0 Z"/>
+            <path class="logo-sparkle" d="M100 35 C100 61 61 100 35 100 C61 100 100 139 100 165 C100 139 139 100 165 100 C139 100 100 61 100 35 Z"/>
+        </svg>
+        <span class="docked-logo-text">recovry.ai</span>
+    </a>
+
+    <!-- Scroll nav -->
+    <nav class="scroll-nav" id="scrollNav" aria-label="Page progress">
+        <span class="scroll-nav-title">The Emerging Third Lane of Healthcare AI</span>
+    </nav>
+
+    <main class="page">
+
+        <div class="post-meta fade-up">
+            <span class="post-tag">From the CEO</span>
+            <span class="post-date">April 2, 2026</span>
+        </div>
+
+        <h1 class="fade-up">The Emerging Third Lane of Healthcare&nbsp;AI</h1>
+
+        <p class="post-deck fade-up">Where a system sits determines what it can actually be trusted to&nbsp;do.</p>
+
+        <div class="post-byline">
+            By <strong>Scott Walchek</strong>, CEO &amp; Co-Founder
+        </div>
+
+        <div class="post-body">
+
+            <p>Healthcare AI is rapidly accelerating, but most of the industry is building in just two primary lanes. These lanes have genuinely different architectures, different regulatory postures, and different relationships to clinical accountability. Where a system sits determines what it can actually be trusted to do. We're tackling a third lane, one that can be prescribed, not just&nbsp;recommended.</p>
+
+            <h2>Lane One: Provider-Facing Clinical Support</h2>
+
+            <p>Abridge, Nuance, Rad AI, OpenEvidence, UpToDate: tools like these sit behind licensed clinicians. They assist with documentation, imaging interpretation, workflow optimization, and clinical decision support. They're often highly effective and increasingly adopted. The clinician remains present, directs care, and retains responsibility. The AI functions as a productivity multiplier within existing professional&nbsp;oversight.</p>
+
+            <p>The FDA's recently updated Clinical Decision Support Software guidance draws the regulatory line here with precision: software functions that support a healthcare professional who retains the ability to independently review the basis for the recommendations and exercise their own judgment fall outside the device definition under section 520(o)(1)(E) of the Federal Food, Drug, and Cosmetic Act. The clinician's license, judgment, and accountability are standing behind every output. The regulatory bar is lower, the market has responded accordingly, and this lane is crowded, well-funded, and producing&nbsp;value.</p>
+
+            <h2>Lane Two: Consumer-Facing Health and Wellness&nbsp;AI</h2>
+
+            <p>OpenAI, Anthropic, Amazon, and others are investing heavily in consumer-facing health assistants, symptom checkers, and wellness tools. These systems help individuals interpret health information, track behaviors, and arrive at clinical encounters better prepared. They typically include explicit disclaimers that they don't diagnose or prescribe treatment, and they're designed to stay wide of the regulatory&nbsp;line.</p>
+
+            <p>That constraint is appropriate as research consistently documents that unregulated AI systems drift toward clinical territory, sometimes with a confident tone that patients find persuasive and clinicians find alarming. The consumer-facing lane is useful, and potentially dangerous in proportion to how far it strays from its stated&nbsp;scope.</p>
+
+            <h2>Lane Three: Regulated, Patient-Facing Clinical&nbsp;AI</h2>
+
+            <p><strong>This is the lane we're building.</strong></p>
+
+            <p>The FDA's January 2026 Clinical Decision Support Software guidance states it plainly: "Software functions that support or provide recommendations to patients or caregivers — not HCPs — meet the definition of a device." The four criteria that exempt provider-facing tools from device classification under section 520(o)(1)(E) of the Federal Food, Drug, and Cosmetic Act each require that the software be intended for a healthcare professional who can independently review its recommendations and exercise their own judgment. When the end point of the clinical interaction is a patient, those criteria don't apply. The clinician's license is no longer standing behind the&nbsp;output.</p>
+
+            <h2>Why We Started Here</h2>
+
+            <p>In principle, this architecture could apply across the entire care pathway: pre-procedure preparation, intraoperative support, post-acute transition, chronic disease management. The supervision problem that regulated patient-facing AI is designed to solve isn't unique to any single phase of care. We chose to start with post-operative recovery for reasons that are more than strategic; they're&nbsp;architectural.</p>
+
+            <p>Post-operative recovery is unusually well-suited to clinical AI validation. The scope is defined by two hard boundaries: a specific procedure and a finite recovery window. That bounded structure makes it possible to build the kind of clinical validation harnesses the FDA requires for a De Novo (no predicate) submission: prospective study designs with defined patient populations, measurable endpoints, and a relatively clear adjudication standard. Open-ended clinical AI that could engage any patient about any condition at any point in care is much harder, maybe impossible to validate rigorously. Post-op recovery gives you a closed system: a known procedure, a known patient, a known recovery arc, and a body of clinical literature against which AI recommendations can be tested for concordance with human&nbsp;judgment.</p>
+
+            <p>That literature is the second reason. Post-operative recovery protocols, the expected trajectories for pain, mobility, sleep, diet, and wound healing following specific procedures, have been developed and refined by practitioners over decades. They're dense, clinically-validated, and procedure-specific. When a Virtual Care Assistant tells a patient that the pain they're experiencing on day three following a total knee replacement is within the expected range, or that the swelling they're describing warrants an escalation to their care team, it's drawing on a clinical evidence base that has been built and stress-tested by orthopedic surgeons for years. That foundation matters for safety, for regulatory validation, and for the kind of concordance with human judgment that a De Novo submission&nbsp;requires.</p>
+
+            <p>The third reason is that the clinical need in this window is genuine. A typical total knee replacement involves approximately about 400 minutes of clinical engagement across the full episode of care, from pre-operative preparation through recovery. Of those minutes, roughly 151 (approximately 40% of the total) are consumed by post-operative follow-up.<sup>2</sup> Those are the minutes patients spend largely unsupervised, at home, away from any care facility, navigating a recovery in which daily activity, home environment, and individual variation conspire to introduce factors that, if unaddressed, can escalate into serious complications. Half of patients forget their discharge guidance within two weeks. Forty percent of readmissions are tied to missed early warning signs. One in five patients experiences an unplanned provider contact or complication within 30 days of discharge. The incremental annual direct healthcare cost from post-operative complications in the United States runs to approximately $60&nbsp;billion. These are the predictable outcomes of an interval that has never had adequate clinical supervision, at a scale that no clinical workforce could provide on its&nbsp;own.</p>
+
+            <h2>The Supervision Gap</h2>
+
+            <p>Provider-facing tools operate where clinicians are. Consumer-facing tools inform and educate, but they can't carry clinical accountability for what they tell a patient three days after a procedure. The supervision problem lives in that interval precisely because neither lane reaches&nbsp;it.</p>
+
+            <p>The structural forces behind this aren't subtle. The AAMC projects a shortage of up to 86,000 physicians by 2036. One in five practicing physicians is already 65 or older. Healthcare demand is hitting a shrinking workforce under sustained pressure; that collision has no natural resolution without tools that can carry clinically supervised load at scale. A physician-prescribed VCA that engages patients during recovery, identifies deviations from the expected trajectory, and escalates with full clinical context can shift a meaningful portion of that load from overburdened clinicians to AI that has been validated to carry&nbsp;it.</p>
+
+            <p>The trust, reimbursement, and liability arguments for lane three all flow from the same source. Physicians prescribing this tool need to know it performs the way a trained clinician would. Payers building reimbursement frameworks for a new category of care need an evidence record anchored in FDA authorization. Health systems evaluating clinical liability need an accountability structure with defined scope, documented safety architecture, and a cleared indication; without one, patient-facing AI sits in a legal grey zone that no health system's risk committee will approve for deployment at scale, regardless of how capable the underlying technology is. A cleared indication, an evidence record, and a defined accountability structure resolve clinical liability in ways that disclaimers cannot. The liability question in lane three runs deeper than most in healthcare AI have yet grappled with; it deserves its own treatment, and I'll get to it in a future&nbsp;dispatch.</p>
+
+            <p>The road in lane three is longer than the other two. It was always going to&nbsp;be.</p>
+
+            <hr class="post-divider">
+
+            <p class="post-closing-byline">— Scott Walchek, CEO &amp; Co-founder, RecovryAI</p>
+
+            <hr class="post-divider">
+
+            <div class="post-footer">
+                <a href="/" class="post-footer-back">&larr; Back to recovry.ai</a>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="page-bottom">
+        <div class="bottom-label">Latest</div>
+        <div class="news-list">
+            <a href="fda-breakthrough-device-designation.html" class="news-link">
+                <div class="news-link-meta">
+                    <span class="news-link-tag">Press Release</span>
+                    <span class="news-link-date">Mar 3, 2026</span>
+                </div>
+                <div class="news-link-title">RecovryAI Announces FDA Breakthrough Device Designation for Patient-Facing Clinical AI &rarr;</div>
+            </a>
+            <a href="the-breakthrough-isnt-the-story.html" class="news-link">
+                <div class="news-link-meta">
+                    <span class="news-link-tag">From the CEO</span>
+                    <span class="news-link-date">Feb 25, 2026 &middot; Scott Walchek</span>
+                </div>
+                <div class="news-link-title">The Breakthrough Isn't the Story &rarr;</div>
+            </a>
+        </div>
+        <hr class="bottom-divider">
+        <div class="stay-label">Stay Connected</div>
+        <form id="contactForm" action="#" method="POST" class="form-minimal">
+            <select id="role" name="role" class="form-select" aria-label="Your role">
+                <option value="" disabled selected>I'm a...</option>
+                <option value="surgeon">Surgeon</option>
+                <option value="physician">Physician (MD / DO)</option>
+                <option value="practitioner">Practitioner / Physician Assistant</option>
+                <option value="nurse">Nurse</option>
+                <option value="administrator">Administrator / ASC Management</option>
+                <option value="system-executive">System Executive</option>
+                <option value="health-plan">Health Plan</option>
+                <option value="device">Device Company</option>
+                <option value="investor">Investor</option>
+                <option value="press">Press</option>
+                <option value="other">Other</option>
+            </select>
+            <div class="form-row">
+                <input type="email" id="email" name="email" placeholder="your@email.com" required>
+                <button type="submit">Subscribe</button>
+            </div>
+        </form>
+    </main>
+
+    <footer>
+        &copy; 2026 RecovryAI. All rights&nbsp;reserved.
+    </footer>
+
+    <script>
+        const observer = new IntersectionObserver((entries) => {
+            const intersecting = entries.filter(e => e.isIntersecting);
+            intersecting.forEach((entry, i) => {
+                entry.target.style.transitionDelay = `${i * 0.08}s`;
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+        // Auto-animate body content with stagger
+        document.querySelectorAll('.post-body > *, .page-bottom > *').forEach(el => {
+            el.classList.add('fade-up');
+            observer.observe(el);
+        });
+
+        const scrollNav = document.getElementById('scrollNav');
+        const h1Observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                scrollNav.classList.toggle('visible', !entry.isIntersecting);
+            });
+        }, { threshold: 0 });
+        h1Observer.observe(document.querySelector('h1'));
+
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const email = form.email.value;
+            const role = form.role.value;
+            const btn = form.querySelector('button[type="submit"]');
+
+            if (!role) {
+                showFormMsg('Please select your role.', false);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Sending…';
+
+            try {
+                const res = await fetch('https://formspree.io/f/mnjbwldr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, role }),
+                });
+                if (res.ok) {
+                    showFormMsg("You're on the list. We'll be in touch.", true);
+                    form.reset();
+                } else {
+                    showFormMsg('Something went wrong. Please try again.', false);
+                    btn.disabled = false;
+                    btn.textContent = 'Subscribe';
+                }
+            } catch {
+                showFormMsg('Something went wrong. Please try again.', false);
+                btn.disabled = false;
+                btn.textContent = 'Subscribe';
+            }
+        });
+
+        function showFormMsg(msg, success) {
+            let el = document.getElementById('formMsg');
+            if (!el) {
+                el = document.createElement('p');
+                el.id = 'formMsg';
+                el.style.cssText = 'margin-top:0.75rem;font-size:0.9rem;font-family:"IBM Plex Mono",monospace;';
+                document.getElementById('contactForm').after(el);
+            }
+            el.textContent = msg;
+            el.style.color = success ? '#059669' : '#DC2626';
+        }
+    </script>
+
+</body>
+</html>

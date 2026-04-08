@@ -1,0 +1,3456 @@
+{
+  "project": {
+    "name": "RecovryAI 1.5 \u2014 Demo Storyboard",
+    "slug": "demo-storyboard",
+    "client": "recovryai",
+    "canvas": "landscape-16-9",
+    "created": "2026-03-26T00:00:00.000Z",
+    "links": {}
+  },
+  "workingSets": [],
+  "comments": [],
+  "clientEdits": [],
+  "rounds": [
+    {
+      "id": "round-1",
+      "number": 1,
+      "name": "Round 1",
+      "createdAt": "2026-03-26T00:00:00.000Z",
+      "selects": [],
+      "concepts": [
+        {
+          "id": "concept-1",
+          "label": "Storyboard",
+          "description": "10-beat demo storyboard with VO script",
+          "position": 1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-1/v1.html",
+              "parentId": null,
+              "changelog": "Initial storyboard \u2014 10 beats, wireframes + VO script",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-26T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-1-v1.webp",
+              "annotations": []
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-1/v2.html",
+              "parentId": "v1",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T18:21:31.993Z",
+              "thumbnail": ".thumbs/concept-1-v2.webp"
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "concept-1/v3.html",
+              "parentId": "v2",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T15:33:56.333Z",
+              "thumbnail": ".thumbs/concept-1-v3.webp",
+              "annotations": [
+                {
+                  "id": "a-1vc42vt2",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 removed 05 Conversation frame. Renumbered remaining beats 05-09. Updated header to 9 beats.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T15:38:17.324Z",
+                  "resolved": false,
+                  "parentId": "a-oc4ly8ip"
+                },
+                {
+                  "id": "a-z3w12y3r",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 all 9 VO captions updated to match the latest version copy from each concept slide.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T15:38:17.338Z",
+                  "resolved": false,
+                  "parentId": "a-vz47n66q"
+                },
+                {
+                  "id": "a-wtru169m",
+                  "x": 0.23346560846560846,
+                  "y": 0.37333333333333335,
+                  "element": null,
+                  "text": "Lets add an intro slide.  RecovryAI is both a patient mobile app, and a provider dashboard. Visuals show a phone and then a laptop + phone for provider.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-05T17:29:21.277Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-112w7aa7",
+                  "x": 0.2705026455026455,
+                  "y": 0.35393939393939394,
+                  "element": null,
+                  "text": "Add some copy to the v/o on THE APP slide that leads in with the patient app, first let's look at the patient app.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-05T17:53:50.724Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-aq18syt4",
+                  "x": 0.24338624338624337,
+                  "y": 0.7890909090909091,
+                  "element": null,
+                  "text": "Consider a transition here that tees up the provider app.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-05T17:54:12.301Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "concept-1/v4.html",
+              "parentId": "v3",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T17:59:22.320Z",
+              "thumbnail": ".thumbs/concept-1-v4.webp"
+            },
+            {
+              "id": "v5",
+              "number": 5,
+              "file": "concept-1/v5.html",
+              "parentId": "v3",
+              "changelog": "11-beat storyboard \u2014 added 02 Intro (patient app + provider dashboard), updated 03 The App VO ('First, the patient app\u2026'), added 08 Transition ('Now let's look at what the care team sees')",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:00:00.000Z",
+              "thumbnail": ".thumbs/concept-1-v5.webp",
+              "annotations": [
+                {
+                  "id": "a-v5fb1",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 added 02 Intro slide showing phone + laptop/phone wireframes. VO: 'RecovryAI is two things: a patient mobile app, and a provider dashboard.'",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-04-05T18:00:00.000Z",
+                  "resolved": false,
+                  "parentId": "a-wtru169m"
+                },
+                {
+                  "id": "a-v5fb2",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 The App VO now leads with 'First, the patient app.' before the prescribe/VCA copy.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-04-05T18:00:00.000Z",
+                  "resolved": false,
+                  "parentId": "a-112w7aa7"
+                },
+                {
+                  "id": "a-v5fb3",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 added beat 08 Transition (dashed border, phone\u2192laptop wireframe). VO: 'Now let's look at what the care team sees.' 4s beat between Emergency and Portal.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-04-05T18:00:00.000Z",
+                  "resolved": false,
+                  "parentId": "a-aq18syt4"
+                }
+              ]
+            }
+          ],
+          "slug": "storyboard"
+        },
+        {
+          "id": "concept-2",
+          "label": "01 \u2014 Open",
+          "description": "Logo + tagline brand moment",
+          "position": 2,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-2/v1.html",
+              "parentId": null,
+              "changelog": "Wireframe slide from storyboard",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-2-v1.webp",
+              "annotations": []
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-2/v2.html",
+              "parentId": "v1",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T02:35:13.694Z",
+              "thumbnail": ".thumbs/concept-2-v2.webp"
+            }
+          ],
+          "slug": "open"
+        },
+        {
+          "id": "concept-3",
+          "label": "02 \u2014 The App",
+          "description": "Introduce VCA, first app screen",
+          "position": 3,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-3/v1.html",
+              "parentId": null,
+              "changelog": "Wireframe slide from storyboard",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-3/v2.html",
+              "parentId": "v1",
+              "changelog": "02a \u2014 VCA introduces itself, greeting + care team connection",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-v2.webp"
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "concept-3/v3.html",
+              "parentId": "v2",
+              "changelog": "02b \u2014 VCA explains daily check-ins, 24/7 availability, escalation",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-v3.webp"
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "concept-3/v4.html",
+              "parentId": "v3",
+              "changelog": "02c \u2014 Patient responds, VCA prompts first check-in with CTA",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-v4.webp"
+            },
+            {
+              "id": "v5",
+              "number": 5,
+              "file": "concept-3/v5.html",
+              "parentId": "v2",
+              "changelog": "02a rebuild \u2014 exact Figma specs: 14px bubbles, 8px radius, 12px sender, 32px icon, 2px input border, 36px send",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-v5.webp"
+            },
+            {
+              "id": "v6",
+              "number": 6,
+              "file": "concept-3/v6.html",
+              "parentId": "v3",
+              "changelog": "02b rebuild \u2014 exact Figma specs, same styling as v5",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-v6.webp"
+            },
+            {
+              "id": "v7",
+              "number": 7,
+              "file": "concept-3/v7.html",
+              "parentId": "v4",
+              "changelog": "02c rebuild \u2014 exact Figma specs, check-in card refined",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-v7.webp"
+            },
+            {
+              "id": "v8",
+              "number": 8,
+              "file": "concept-3/v8.html",
+              "parentId": "v5",
+              "changelog": "New welcome copy \u2014 VCA greets patient, introduces itself as physician-prescribed, describes daily check-in role",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T21:24:57.528Z",
+              "thumbnail": ".thumbs/concept-3-v8.webp"
+            },
+            {
+              "id": "v10",
+              "number": 10,
+              "file": "concept-3/v10.html",
+              "parentId": "v9",
+              "changelog": "Beat02 VCA Chat \u2014 Remotion video vignette",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-28T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-v10.webp"
+            },
+            {
+              "id": "v14",
+              "number": 14,
+              "file": "concept-3/v14.html",
+              "parentId": "v13",
+              "changelog": "Remotion animated vignette \u2014 updated copy + animation",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T00:00:00.000Z"
+            },
+            {
+              "id": "v11",
+              "number": 11,
+              "file": "concept-3/v11.html",
+              "parentId": "v10",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T21:24:19.569Z",
+              "thumbnail": ".thumbs/concept-3-v11.webp"
+            },
+            {
+              "id": "v12",
+              "number": 12,
+              "file": "concept-3/v12.html",
+              "parentId": "v8",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T22:06:20.946Z",
+              "thumbnail": ".thumbs/concept-3-v12.webp",
+              "annotations": [
+                {
+                  "id": "a-ligxigpg",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 VO updated to include clinically validated guidance language earlier in this session.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T00:10:34.858Z",
+                  "resolved": false,
+                  "parentId": "a-jxs55cnm"
+                }
+              ]
+            },
+            {
+              "id": "v13",
+              "number": 13,
+              "file": "concept-3/v13.html",
+              "parentId": "v12",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T01:11:43.527Z",
+              "thumbnail": ""
+            },
+            {
+              "id": "v15",
+              "number": 15,
+              "file": "concept-3/v15.html",
+              "parentId": "v14",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T03:06:29.003Z",
+              "thumbnail": ".thumbs/concept-3-v15.webp"
+            },
+            {
+              "id": "v16",
+              "number": 16,
+              "file": "concept-3/v16.html",
+              "parentId": "v13",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T04:01:11.911Z",
+              "thumbnail": ".thumbs/concept-3-v16.webp"
+            }
+          ],
+          "slug": "the-app"
+        },
+        {
+          "id": "concept-4",
+          "label": "03 \u2014 Check-In",
+          "description": "Daily check-in sliders, five categories",
+          "position": 4,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-4/v1.html",
+              "parentId": null,
+              "changelog": "Wireframe slide from storyboard",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-4-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-4/v2.html",
+              "parentId": "v1",
+              "changelog": "Check-in chat screen with pain slider \u2014 VCA prompts, patient adjusts slider",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-4-v2.webp"
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "concept-4/v4.html",
+              "parentId": "v3",
+              "changelog": "Check-in complete \u2014 Report Summary card with 5 categories (Pain Moderate, Sleep 44%, Medication 32%, Diet 52%, Activity 10%), View History link",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-4-v4.webp"
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "concept-4/v3.html",
+              "parentId": "v2",
+              "changelog": "Figma-matched check-in screen \u2014 dark header greeting, white card with pain slider, category nav, continue CTA",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T21:39:10.805Z",
+              "thumbnail": ".thumbs/concept-4-v3.webp"
+            },
+            {
+              "id": "v5",
+              "number": 5,
+              "file": "concept-4/v5.html",
+              "parentId": "v4",
+              "changelog": "Beat03 Check-In \u2014 Remotion video vignette",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-28T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-4-v5.webp"
+            },
+            {
+              "id": "v6",
+              "number": 6,
+              "file": "concept-4/v6.html",
+              "parentId": "v5",
+              "changelog": "Beat03 V2 \u2014 3-phase animated: slider sweeps low\u2192mod\u2192severe, category dots skip, report summary chat",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-4-v6.webp"
+            },
+            {
+              "id": "v9",
+              "number": 9,
+              "file": "concept-4/v9.html",
+              "parentId": "v8",
+              "changelog": "Remotion animated vignette \u2014 updated copy + animation",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-4-v9.webp",
+              "annotations": []
+            },
+            {
+              "id": "v7",
+              "number": 7,
+              "file": "concept-4/v7.html",
+              "parentId": "v4",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T22:06:29.017Z",
+              "thumbnail": ".thumbs/concept-4-v7.webp",
+              "annotations": [
+                {
+                  "id": "a-aupeaaa9",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 changed \"two-minute\" to \"short\" in VO text.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T00:10:34.872Z",
+                  "resolved": false,
+                  "parentId": "a-89ws9p72"
+                },
+                {
+                  "id": "a-i7po51t4",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 replaced 5-point star with RecovryAI 4-point AI sparkle/diamond in the Assistant toggle tab.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T00:10:34.889Z",
+                  "resolved": false,
+                  "parentId": "a-7b3t3cka"
+                },
+                {
+                  "id": "a-6e36utto",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 added \"A mini-report is added to the chat.\" to the end of the VO.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T01:00:28.356Z",
+                  "resolved": false,
+                  "parentId": "a-s8kpfjwd"
+                }
+              ]
+            },
+            {
+              "id": "v11",
+              "number": 11,
+              "file": "concept-4/v11.html",
+              "parentId": "v10",
+              "changelog": "HTML/CSS animated vignette \u2014 slider sweep + report summary",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T00:00:00.000Z",
+              "thumbnail": "",
+              "annotations": [
+                {
+                  "id": "a-crztx9x7",
+                  "x": 0.3968253968253968,
+                  "y": 0.6054333764553687,
+                  "element": null,
+                  "text": "add another slide that goes into conversation re: results of check-in?",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-03-30T16:25:10.322Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-tezn1mg0",
+                  "x": 0.42394179894179895,
+                  "y": 0.5782664941785253,
+                  "element": null,
+                  "text": "Here are 5 things to do to...",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-03-30T16:27:25.340Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-ny305p1v",
+                  "x": 0.18452380952380953,
+                  "y": 0.5498059508408797,
+                  "element": null,
+                  "text": "should we have an unstructured chat as well?",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-03-30T16:36:45.705Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v8",
+              "number": 8,
+              "file": "concept-4/v8.html",
+              "parentId": "v7",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T01:11:54.092Z",
+              "thumbnail": ""
+            },
+            {
+              "id": "v10",
+              "number": 10,
+              "file": "concept-4/v10.html",
+              "parentId": "v9",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T03:06:27.820Z",
+              "thumbnail": ".thumbs/concept-4-v10.webp"
+            }
+          ],
+          "slug": "check-in"
+        },
+        {
+          "id": "concept-5",
+          "label": "04 \u2014 Score",
+          "description": "Recovery score aggregation",
+          "position": 5,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-5/v1.html",
+              "parentId": null,
+              "changelog": "Wireframe slide from storyboard",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-5-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-5/v2.html",
+              "parentId": "v1",
+              "changelog": "Home screen \u2014 recovery score 75.8% Improving, pain summary, 4 category rows with trend arrows, bottom nav with teal chat CTA",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-5-v2.webp"
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "concept-5/v3.html",
+              "parentId": "v2",
+              "changelog": "Figma-matched home screen \u2014 exact specs: Inter Tight typography, 24px card radii, Figma asset icons, trend pills with arrow images, 300 weight stat values, black chat FAB, proper border/shadow system",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-5-v3.webp"
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "concept-5/v4.html",
+              "parentId": "v3",
+              "changelog": "Beat04 Score \u2014 Remotion video vignette",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-28T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-5-v4.webp"
+            },
+            {
+              "id": "v7",
+              "number": 7,
+              "file": "concept-5/v7.html",
+              "parentId": "v6",
+              "changelog": "Remotion animated vignette \u2014 updated copy + animation",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T00:00:00.000Z"
+            },
+            {
+              "id": "v5",
+              "number": 5,
+              "file": "concept-5/v5.html",
+              "parentId": "v3",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T22:07:51.048Z",
+              "thumbnail": ".thumbs/concept-5-v5.webp",
+              "annotations": [
+                {
+                  "id": "a-nshftrpc",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 VO now reads: giving the patient, and provider, a clear view of progress and an early signal.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T00:10:34.900Z",
+                  "resolved": false,
+                  "parentId": "a-ngy6f9bk"
+                }
+              ]
+            },
+            {
+              "id": "v9",
+              "number": 9,
+              "file": "concept-5/v9.html",
+              "parentId": "v8",
+              "changelog": "HTML/CSS animated vignette \u2014 score count-up + staggered stats",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T00:00:00.000Z"
+            },
+            {
+              "id": "v6",
+              "number": 6,
+              "file": "concept-5/v6.html",
+              "parentId": "v5",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T01:11:55.702Z",
+              "thumbnail": ""
+            },
+            {
+              "id": "v8",
+              "number": 8,
+              "file": "concept-5/v8.html",
+              "parentId": "v7",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T03:06:30.864Z",
+              "thumbnail": ".thumbs/concept-5-v8.webp"
+            }
+          ],
+          "slug": "score"
+        },
+        {
+          "id": "concept-7",
+          "label": "06 \u2014 Escalation",
+          "description": "Deviation detected, care team alerted",
+          "position": 6,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-7/v1.html",
+              "parentId": null,
+              "changelog": "Wireframe slide from storyboard",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-7-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-7/v2.html",
+              "parentId": "v1",
+              "changelog": "Escalation chat \u2014 VCA detects elevated pain, patient confirms, VCA flags care team, amber 'Care team notified' alert card",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-7-v2.webp"
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "concept-7/v3.html",
+              "parentId": "v2",
+              "changelog": "Option B copy \u2014 triage question, patient reports 7-8 pain, VCA gives clinical assessment (103 days post-op), care team notified alert",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-28T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-7-v3.webp"
+            },
+            {
+              "id": "v5",
+              "number": 5,
+              "file": "concept-7/v5.html",
+              "parentId": "v4",
+              "changelog": "Beat06 Escalation \u2014 Remotion video vignette",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-28T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-7-v5.webp"
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "concept-7/v4.html",
+              "parentId": "v3",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-28T18:37:13.701Z",
+              "thumbnail": ".thumbs/concept-7-v4.webp"
+            },
+            {
+              "id": "v8",
+              "number": 8,
+              "file": "concept-7/v8.html",
+              "parentId": "v7",
+              "changelog": "Remotion animated vignette \u2014 updated copy + animation",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T00:00:00.000Z"
+            },
+            {
+              "id": "v6",
+              "number": 6,
+              "file": "concept-7/v6.html",
+              "parentId": "v4",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T22:08:04.229Z",
+              "thumbnail": ".thumbs/concept-7-v6.webp",
+              "annotations": [
+                {
+                  "id": "a-dlbniix2",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 replaced star with AI sparkle in Assistant toggle tab.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T00:10:34.911Z",
+                  "resolved": false,
+                  "parentId": "a-1p5octha"
+                }
+              ]
+            },
+            {
+              "id": "v10",
+              "number": 10,
+              "file": "concept-7/v10.html",
+              "parentId": "v9",
+              "changelog": "HTML/CSS animated vignette \u2014 sequential chat with typing dots",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T00:00:00.000Z"
+            },
+            {
+              "id": "v7",
+              "number": 7,
+              "file": "concept-7/v7.html",
+              "parentId": "v6",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T01:11:57.049Z",
+              "thumbnail": ""
+            },
+            {
+              "id": "v9",
+              "number": 9,
+              "file": "concept-7/v9.html",
+              "parentId": "v8",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T03:06:32.962Z",
+              "thumbnail": ".thumbs/concept-7-v9.webp"
+            }
+          ],
+          "slug": "escalation"
+        },
+        {
+          "id": "concept-8",
+          "label": "07 \u2014 Emergency",
+          "description": "Critical symptoms, 911 advisory",
+          "position": 7,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-8/v1.html",
+              "parentId": null,
+              "changelog": "Wireframe slide from storyboard",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-8-v1.webp"
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "concept-8/v3.html",
+              "parentId": "v2",
+              "changelog": "Beat07 Emergency \u2014 Remotion video vignette",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-28T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-8-v3.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-8/v2.html",
+              "parentId": "v1",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-28T18:53:23.204Z",
+              "thumbnail": ".thumbs/concept-8-v2.webp"
+            },
+            {
+              "id": "v6",
+              "number": 6,
+              "file": "concept-8/v6.html",
+              "parentId": "v5",
+              "changelog": "Remotion animated vignette \u2014 updated copy + animation",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T00:00:00.000Z"
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "concept-8/v4.html",
+              "parentId": "v2",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T22:08:01.040Z",
+              "thumbnail": ".thumbs/concept-8-v4.webp",
+              "annotations": [
+                {
+                  "id": "a-05s9ta3x",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 replaced star with AI sparkle in Assistant toggle tab.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T00:10:34.926Z",
+                  "resolved": false,
+                  "parentId": "a-em8e76wa"
+                }
+              ]
+            },
+            {
+              "id": "v8",
+              "number": 8,
+              "file": "concept-8/v8.html",
+              "parentId": "v7",
+              "changelog": "HTML/CSS animated vignette \u2014 urgent chat with typing dots",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T00:00:00.000Z"
+            },
+            {
+              "id": "v5",
+              "number": 5,
+              "file": "concept-8/v5.html",
+              "parentId": "v4",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T01:11:58.209Z",
+              "thumbnail": ""
+            },
+            {
+              "id": "v7",
+              "number": 7,
+              "file": "concept-8/v7.html",
+              "parentId": "v6",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T03:06:34.962Z",
+              "thumbnail": ".thumbs/concept-8-v7.webp"
+            }
+          ],
+          "slug": "emergency"
+        },
+        {
+          "id": "concept-9",
+          "label": "08 \u2014 Portal",
+          "description": "Provider dashboard, full conversation view",
+          "position": 8,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-9/v1.html",
+              "parentId": null,
+              "changelog": "Wireframe slide from storyboard",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-9-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-9/v2.html",
+              "parentId": "v1",
+              "changelog": "Provider patient detail \u2014 3-panel desktop: patient info (43% declining), chat with report summary, patient history with ER event notes",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-28T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-9-v2.webp"
+            },
+            {
+              "id": "v6",
+              "number": 6,
+              "file": "concept-9/v6.html",
+              "parentId": "v5",
+              "changelog": "Remotion animated vignette \u2014 updated copy + animation",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-9-v6.webp"
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "concept-9/v3.html",
+              "parentId": "v2",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T02:19:04.674Z",
+              "thumbnail": ""
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "concept-9/v4.html",
+              "parentId": "v2",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T02:32:11.387Z",
+              "thumbnail": ".thumbs/concept-9-v4.webp",
+              "annotations": [
+                {
+                  "id": "a-hq1cv1qh",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 expanded VO to: the care team has a comprehensive dashboard that provides the patient score, full conversation history, and clinical summary.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T00:10:34.938Z",
+                  "resolved": false,
+                  "parentId": "a-vh3ommq4"
+                },
+                {
+                  "id": "a-aiki0a5v",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 added Marcia Davis profile photo using Figma portrait asset in patient avatar.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T00:10:34.949Z",
+                  "resolved": false,
+                  "parentId": "a-jc16hccx"
+                },
+                {
+                  "id": "a-hmt51drp",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 reduced VO max-width from 360px to 280px and moved left from 80px to 40px to clear the browser frame.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T01:05:07.609Z",
+                  "resolved": false,
+                  "parentId": "a-wnt5v9mx"
+                }
+              ]
+            },
+            {
+              "id": "v8",
+              "number": 8,
+              "file": "concept-9/v8.html",
+              "parentId": "v7",
+              "changelog": "HTML/CSS animated vignette \u2014 3-panel reveal",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T00:00:00.000Z",
+              "annotations": [
+                {
+                  "id": "a-8mastum1",
+                  "x": 0.19775132275132276,
+                  "y": 0.5730918499353169,
+                  "element": null,
+                  "text": "Add phone app mention",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-03-30T16:40:30.187Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v5",
+              "number": 5,
+              "file": "concept-9/v5.html",
+              "parentId": "v4",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T01:11:59.018Z",
+              "thumbnail": ""
+            },
+            {
+              "id": "v7",
+              "number": 7,
+              "file": "concept-9/v7.html",
+              "parentId": "v6",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T03:06:36.810Z",
+              "thumbnail": ".thumbs/concept-9-v7.webp"
+            }
+          ],
+          "slug": "portal"
+        },
+        {
+          "id": "concept-10",
+          "label": "09 \u2014 Clinic",
+          "description": "All patients at a glance, status tracking",
+          "position": 9,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-10/v1.html",
+              "parentId": null,
+              "changelog": "Wireframe slide from storyboard",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-10-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-10/v2.html",
+              "parentId": "v1",
+              "changelog": "Clinic dashboard \u2014 4-column kanban: ER Recommendations, PR Connect, Resolved Events, Messages with unread badges",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-28T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-10-v2.webp",
+              "annotations": [
+                {
+                  "id": "a-miehpdb1",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 reduced VO max-width from 360px to 280px and moved left from 80px to 40px to prevent overlap.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T00:10:34.963Z",
+                  "resolved": false,
+                  "parentId": "a-48ua2hb7"
+                },
+                {
+                  "id": "a-ide8gmui",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 added white-space: nowrap and reduced font-size from 9px to 8px on message badges to keep them single-line.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T00:10:34.974Z",
+                  "resolved": false,
+                  "parentId": "a-l7pry2ti"
+                }
+              ]
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "concept-10/v4.html",
+              "parentId": "v3",
+              "changelog": "Remotion animated vignette \u2014 updated copy + animation",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-29T00:00:00.000Z"
+            },
+            {
+              "id": "v6",
+              "number": 6,
+              "file": "concept-10/v6.html",
+              "parentId": "v5",
+              "changelog": "HTML/CSS animated vignette \u2014 column-by-column reveal",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T00:00:00.000Z"
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "concept-10/v3.html",
+              "parentId": "v2",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T01:11:59.683Z",
+              "thumbnail": ".thumbs/concept-10-v3.webp"
+            },
+            {
+              "id": "v5",
+              "number": 5,
+              "file": "concept-10/v5.html",
+              "parentId": "v4",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T03:06:38.812Z",
+              "thumbnail": ".thumbs/concept-10-v5.webp"
+            }
+          ],
+          "slug": "clinic"
+        },
+        {
+          "id": "concept-11",
+          "label": "10 \u2014 Close",
+          "description": "Logo, URL, FDA badge",
+          "position": 10,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-11/v1.html",
+              "parentId": null,
+              "changelog": "Wireframe slide from storyboard",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-27T00:00:00.000Z",
+              "thumbnail": ".thumbs/concept-11-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-oiyu6329",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 removed recovry.ai URL and FDA Breakthrough Device Designation badge. Kept wordmark + tagline only.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T00:10:34.988Z",
+                  "resolved": false,
+                  "parentId": "a-76tmvj82"
+                },
+                {
+                  "id": "a-rkgbev06",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done \u2014 replaced placeholder square with actual RecovryAI Pulse icon (teal cross with sparkle/diamond cutout). Matches concept-2/v1 open slide.",
+                  "author": "agent",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-03-30T01:07:58.107Z",
+                  "resolved": false,
+                  "parentId": "a-940cnzvo"
+                }
+              ]
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "concept-11/v2.html",
+              "parentId": "v1",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-03-30T02:36:03.614Z",
+              "thumbnail": ".thumbs/concept-11-v2.webp"
+            }
+          ],
+          "slug": "close"
+        }
+      ]
+    },
+    {
+      "id": "round-9ikiaq11",
+      "number": 2,
+      "name": "Rd2",
+      "createdAt": "2026-04-05T18:04:36.621Z",
+      "selects": [
+        {
+          "conceptId": "concept-1-round-2",
+          "versionId": "v2"
+        },
+        {
+          "conceptId": "concept-intro-round-2",
+          "versionId": "v4"
+        },
+        {
+          "conceptId": "concept-2-round-2",
+          "versionId": "v3"
+        },
+        {
+          "conceptId": "concept-3-round-2",
+          "versionId": "v4"
+        },
+        {
+          "conceptId": "concept-4-round-2",
+          "versionId": "v4"
+        },
+        {
+          "conceptId": "concept-5-round-2",
+          "versionId": "v4"
+        },
+        {
+          "conceptId": "concept-response-types-round-2",
+          "versionId": "v2"
+        },
+        {
+          "conceptId": "concept-normal-response-round-2",
+          "versionId": "v2"
+        },
+        {
+          "conceptId": "concept-7-round-2",
+          "versionId": "v4"
+        },
+        {
+          "conceptId": "concept-8-round-2",
+          "versionId": "v4"
+        },
+        {
+          "conceptId": "concept-transition-round-2",
+          "versionId": "v3"
+        },
+        {
+          "conceptId": "concept-9-round-2",
+          "versionId": "v4"
+        },
+        {
+          "conceptId": "concept-10-round-2",
+          "versionId": "v4"
+        },
+        {
+          "conceptId": "concept-11-round-2",
+          "versionId": "v3"
+        }
+      ],
+      "concepts": [
+        {
+          "id": "concept-1-round-2",
+          "slug": "storyboard",
+          "label": "Storyboard",
+          "description": "11-beat demo storyboard with VO script",
+          "position": -1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "storyboard/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 \u2014 Storyboard v5 (11 beats with Intro + Transition)",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:10:00.000Z",
+              "thumbnail": ".thumbs/concept-1-round-2-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-c6d75fih",
+                  "x": 0.34523809523809523,
+                  "y": 0.43272727272727274,
+                  "element": null,
+                  "text": "update the v/os and slides here to match the latest versions.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T15:54:08.364Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "storyboard/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "Updated to 13 beats \u2014 added Response Types + Normal Response, all VO text updated to latest",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T16:00:00.000Z",
+              "thumbnail": null
+            }
+          ]
+        },
+        {
+          "id": "concept-intro-round-2",
+          "slug": "intro",
+          "label": "02 \u2014 Intro",
+          "description": "Patient app + provider dashboard overview",
+          "position": 1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "open/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 \u2014 01 \u2014 Open v2",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:04:36.616Z",
+              "thumbnail": ".thumbs/concept-2-round-2-v1.webp"
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "open/round-2/v3.html",
+              "parentId": "v2",
+              "changelog": "VO version \u2014 Sarah narrator",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "open/round-2/v4.html",
+              "parentId": "v3",
+              "changelog": "Polished VO \u2014 40px swap captions, cubic-bezier, auto-start",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T06:00:00.000Z",
+              "thumbnail": ".thumbs/concept-intro-round-2-v4.webp"
+            }
+          ]
+        },
+        {
+          "id": "concept-2-round-2",
+          "slug": "open",
+          "label": "01 \u2014 Open",
+          "description": "Logo + tagline brand moment",
+          "position": 0,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "intro/round-2/v1.html",
+              "parentId": null,
+              "changelog": "New \u2014 phone + laptop wireframes with captions",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T19:00:00.000Z",
+              "thumbnail": ".thumbs/concept-intro-round-2-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-2y0dpc7t",
+                  "x": 0.7896825396825397,
+                  "y": 0.5066666666666667,
+                  "element": null,
+                  "text": "Make it a phone and a laptop for the provider.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-05T21:06:43.121Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-096inet8",
+                  "x": 0.716931216931217,
+                  "y": 0.6048484848484849,
+                  "element": null,
+                  "text": "also make these bigger",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-05T21:06:49.978Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "intro/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "VO version \u2014 Sarah narrator",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null,
+              "annotations": [
+                {
+                  "id": "a-vbshxgh4",
+                  "x": 0.2612433862433862,
+                  "y": 0.4860606060606061,
+                  "element": null,
+                  "text": "Lets add a lead in sentence for framing.. RecovryAI is made up of a patient facing app... and",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T04:24:33.710Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "intro/round-2/v3.html",
+              "parentId": "v2",
+              "changelog": "Polished VO \u2014 40px font, larger devices, cubic-bezier transitions, entrance delay, refined layout",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T05:30:00.000Z",
+              "thumbnail": null
+            }
+          ]
+        },
+        {
+          "id": "concept-3-round-2",
+          "slug": "the-app",
+          "label": "02 \u2014 The App",
+          "description": "Introduce VCA, first app screen",
+          "position": 1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "the-app/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 \u2014 02 \u2014 The App v16",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:04:36.617Z",
+              "thumbnail": ".thumbs/concept-3-round-2-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "the-app/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "Copy of v1",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "the-app/round-2/v3.html",
+              "parentId": "v2",
+              "changelog": "VO version \u2014 Sarah narrator",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null,
+              "annotations": [
+                {
+                  "id": "a-q78g3ve6",
+                  "x": 0.7182539682539683,
+                  "y": 0.44242424242424244,
+                  "element": null,
+                  "text": "The entry of the second bit of text is too slow, it leaves and empty screen for too long.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T04:25:31.049Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "the-app/round-2/v4.html",
+              "parentId": "v3",
+              "changelog": "Polished VO \u2014 40px swap captions, cubic-bezier, auto-start",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T06:00:00.000Z",
+              "thumbnail": ".thumbs/concept-3-round-2-v4.webp",
+              "annotations": []
+            }
+          ]
+        },
+        {
+          "id": "concept-4-round-2",
+          "slug": "check-in",
+          "label": "03 \u2014 Check-In",
+          "description": "Daily check-in sliders, five categories",
+          "position": 2,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "check-in/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 \u2014 03 \u2014 Check-In v11",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:04:36.618Z",
+              "thumbnail": ".thumbs/concept-4-round-2-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-6baaagxc",
+                  "x": 0.24272486772486773,
+                  "y": 0.7115151515151515,
+                  "element": null,
+                  "text": "I think we can drop this last line about five categories, as the next slide mentions the single score.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-05T20:44:03.556Z",
+                  "resolved": true,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "check-in/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "Copy of v1",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "check-in/round-2/v3.html",
+              "parentId": "v2",
+              "changelog": "VO version \u2014 Sarah narrator",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "check-in/round-2/v4.html",
+              "parentId": "v3",
+              "changelog": "Polished VO \u2014 40px swap captions, cubic-bezier, auto-start",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T06:00:00.000Z",
+              "thumbnail": ".thumbs/concept-4-round-2-v4.webp",
+              "annotations": []
+            }
+          ]
+        },
+        {
+          "id": "concept-5-round-2",
+          "slug": "score",
+          "label": "04 \u2014 Score",
+          "description": "Recovery score aggregation",
+          "position": 3,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "score/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 \u2014 04 \u2014 Score v9",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:04:36.618Z",
+              "thumbnail": ".thumbs/concept-5-round-2-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-o6wrkw79",
+                  "x": 0.6415343915343915,
+                  "y": 0.2642424242424242,
+                  "element": null,
+                  "text": "broken profile photo for marcia as well as the top nav.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-05T20:44:55.572Z",
+                  "resolved": true,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "score/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "Copy of v1",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "score/round-2/v3.html",
+              "parentId": "v2",
+              "changelog": "VO version \u2014 Sarah narrator",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null,
+              "annotations": [
+                {
+                  "id": "a-o3atbinj",
+                  "x": 0.16137566137566137,
+                  "y": 0.6957575757575758,
+                  "element": null,
+                  "text": "Change \"early\" to \"clear\"",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T04:26:26.428Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "score/round-2/v4.html",
+              "parentId": "v3",
+              "changelog": "Polished VO \u2014 40px swap captions, cubic-bezier, auto-start",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T06:00:00.000Z",
+              "thumbnail": ".thumbs/concept-5-round-2-v4.webp",
+              "annotations": [
+                {
+                  "id": "a-g6kpl1f9",
+                  "x": 0.7063492063492064,
+                  "y": 0.7563636363636363,
+                  "element": null,
+                  "text": "Change this chat icon to the sparkle",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T15:49:48.307Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "concept-response-types-round-2",
+          "label": "Response Types",
+          "description": "Three response types: normal, provider escalation, emergency escalation",
+          "position": 7,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "response-types/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Three response types framing slide with icons",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T22:02:02.000Z",
+              "thumbnail": ".thumbs/concept-response-types-round-2-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "response-types/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "Polished VO \u2014 40px swap captions, cubic-bezier, auto-start",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T06:00:00.000Z",
+              "thumbnail": ".thumbs/concept-response-types-round-2-v2.webp",
+              "annotations": []
+            }
+          ],
+          "slug": "response-types"
+        },
+        {
+          "id": "concept-normal-response-round-2",
+          "label": "Normal Response",
+          "description": "VCA providing routine guidance after a good check-in",
+          "position": 8,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "normal-response/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Normal response slide \u2014 routine VCA guidance chat",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T22:02:02.000Z",
+              "thumbnail": ".thumbs/concept-normal-response-round-2-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "normal-response/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "Polished VO \u2014 40px swap captions, cubic-bezier, auto-start",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T06:00:00.000Z",
+              "thumbnail": ".thumbs/concept-normal-response-round-2-v2.webp",
+              "annotations": [
+                {
+                  "id": "a-dspkgn8g",
+                  "x": 0.21164021164021163,
+                  "y": 0.4290909090909091,
+                  "element": null,
+                  "text": "Change to, first let's review...",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T15:56:58.356Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-ha68wrd1",
+                  "x": 0.6845238095238095,
+                  "y": 0.5236363636363637,
+                  "element": null,
+                  "text": "Add more clinically language in the chat.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T16:32:04.908Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-f8yn4hsl",
+                  "x": 0.25066137566137564,
+                  "y": 0.5636363636363636,
+                  "element": null,
+                  "text": "Add more clinical language here.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T16:32:51.290Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ],
+          "slug": "normal-response"
+        },
+        {
+          "id": "concept-7-round-2",
+          "slug": "escalation",
+          "label": "06 \u2014 Escalation",
+          "description": "Deviation detected, care team alerted",
+          "position": 4,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "escalation/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 \u2014 06 \u2014 Escalation v10",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:04:36.619Z",
+              "thumbnail": ".thumbs/concept-7-round-2-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-m7rjcy12",
+                  "x": 0.32076719576719576,
+                  "y": 0.3284848484848485,
+                  "element": null,
+                  "text": "Following check-in, the care assistant notices an unusual condition.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-05T20:48:06.646Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-mahlyb3f",
+                  "x": 0.2698412698412698,
+                  "y": 0.4412121212121212,
+                  "element": null,
+                  "text": "adjust orphan words",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-05T20:50:40.696Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-chjq1s07",
+                  "x": 0.6779100529100529,
+                  "y": 0.43393939393939396,
+                  "element": null,
+                  "text": "the chat screen isnt synced with the captions and isnt showing the associated information.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T03:07:35.698Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "escalation/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "Escalation fix \u2014 display:none scroll bug",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "escalation/round-2/v3.html",
+              "parentId": "v2",
+              "changelog": "VO version \u2014 Sarah narrator",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null,
+              "annotations": [
+                {
+                  "id": "a-w10wzzmr",
+                  "x": 0.1884920634920635,
+                  "y": 0.4921212121212121,
+                  "element": null,
+                  "text": "We need to rewrite this one, its clunky. It doesnt flow",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T04:26:58.459Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-mz762i2x",
+                  "x": 0.3326719576719577,
+                  "y": 0.4824242424242424,
+                  "element": null,
+                  "text": "Make \"the care team is notified automatically\" part of the last sentence, instead of. So , ...pain is getting worse, and the assistant automatically notifies the care team.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T14:37:20.053Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-mxv45tat",
+                  "x": 0.32142857142857145,
+                  "y": 0.5563636363636364,
+                  "element": null,
+                  "text": "Add, \"Next, let's look at a provider escalation...\"",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T14:37:42.445Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "escalation/round-2/v4.html",
+              "parentId": "v3",
+              "changelog": "Polished VO \u2014 40px swap captions, cubic-bezier, auto-start",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T06:00:00.000Z",
+              "thumbnail": ".thumbs/concept-7-round-2-v4.webp",
+              "annotations": [
+                {
+                  "id": "a-n8xqprai",
+                  "x": 0.2037037037037037,
+                  "y": 0.5478787878787879,
+                  "element": null,
+                  "text": "Add a line that incldues, all context from exchange is escalated to the care team.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T16:33:55.977Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "concept-8-round-2",
+          "slug": "emergency",
+          "label": "07 \u2014 Emergency",
+          "description": "Critical symptoms, 911 advisory",
+          "position": 5,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "emergency/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 \u2014 07 \u2014 Emergency v8",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:04:36.619Z",
+              "thumbnail": ".thumbs/concept-8-round-2-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-79iewaf7",
+                  "x": 0.3683862433862434,
+                  "y": 0.41333333333333333,
+                  "element": null,
+                  "text": "lets rethink this one as well in a bit more detail. In this case the que is the patient reaches out in free form and complains about severe issues, the VCA detects this and contacts the provider and advises to call emergency services",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-05T20:52:49.436Z",
+                  "resolved": true,
+                  "parentId": null
+                },
+                {
+                  "id": "a-zufnesjm",
+                  "x": 0.14285714285714285,
+                  "y": 0.3418181818181818,
+                  "element": null,
+                  "text": "lets change all references to Marcia, to the patient.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T03:01:23.153Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "emergency/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "Copy of v1",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "emergency/round-2/v3.html",
+              "parentId": "v2",
+              "changelog": "VO version \u2014 Sarah narrator",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null,
+              "annotations": [
+                {
+                  "id": "a-j1bgwtym",
+                  "x": 0.24537037037037038,
+                  "y": 0.5866666666666667,
+                  "element": null,
+                  "text": "Lets not use terms like \"right\" questions on this one or the previous one. Lets just say asks questions.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T04:27:34.309Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-i9cs6bw3",
+                  "x": 0.3948412698412698,
+                  "y": 0.4715151515151515,
+                  "element": null,
+                  "text": "Delay the display of the emergency symptoms, to coincide with the aption / v.o that says Late one night..",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T14:38:49.285Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "emergency/round-2/v4.html",
+              "parentId": "v3",
+              "changelog": "Polished VO \u2014 40px swap captions, cubic-bezier, auto-start",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T06:00:00.000Z",
+              "thumbnail": ".thumbs/concept-8-round-2-v4.webp",
+              "annotations": [
+                {
+                  "id": "a-7no47h80",
+                  "x": 0.6712962962962963,
+                  "y": 0.8351515151515152,
+                  "element": null,
+                  "text": "show the patient tping in the message panel prior to the message showing up. can be accelerated.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T15:41:33.612Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "concept-transition-round-2",
+          "slug": "transition",
+          "label": "08 \u2014 Transition",
+          "description": "Bridge from patient to provider side",
+          "position": 6,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "transition/round-2/v1.html",
+              "parentId": null,
+              "changelog": "New \u2014 centered caption: 'Now let's look at what the care team sees.'",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T19:00:00.000Z",
+              "thumbnail": ""
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "transition/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "VO version \u2014 Sarah narrator",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": null
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "transition/round-2/v3.html",
+              "parentId": "v2",
+              "changelog": "Polished VO \u2014 40px swap captions, cubic-bezier, auto-start",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T06:00:00.000Z",
+              "thumbnail": ".thumbs/concept-transition-round-2-v3.webp"
+            }
+          ]
+        },
+        {
+          "id": "concept-9-round-2",
+          "slug": "portal",
+          "label": "09 \u2014 Portal",
+          "description": "Provider dashboard, full conversation view",
+          "position": 6,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "portal/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 \u2014 08 \u2014 Portal v8",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:04:36.620Z",
+              "thumbnail": ".thumbs/concept-9-round-2-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-9sg0n3ui",
+                  "x": 0.5231481481481481,
+                  "y": 0.3466666666666667,
+                  "element": null,
+                  "text": "Patient profile photo missing",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-05T22:25:02.803Z",
+                  "resolved": true,
+                  "parentId": null
+                },
+                {
+                  "id": "a-h6tpsg08",
+                  "x": 0.5932539682539683,
+                  "y": 0.47515151515151516,
+                  "element": null,
+                  "text": "let slow down the animation of sections coming in. So show the first column when it talks about score, and then the chat column with every conversation in full lin,e and then the third column with Notes from the VCA. Also remove the em dash.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T03:11:11.476Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "portal/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:08:28.849Z",
+              "thumbnail": ""
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "portal/round-2/v3.html",
+              "parentId": "v1",
+              "changelog": "VO version \u2014 Sarah narrator",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": ".thumbs/concept-9-round-2-v3.webp",
+              "annotations": [
+                {
+                  "id": "a-cr6oniph",
+                  "x": 0.17394179894179895,
+                  "y": 0.44242424242424244,
+                  "element": null,
+                  "text": "This doesn't flow for speech, rewrite.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T04:28:00.805Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "portal/round-2/v4.html",
+              "parentId": "v3",
+              "changelog": "Polished VO \u2014 40px swap captions, cubic-bezier, auto-start",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T06:00:00.000Z",
+              "thumbnail": ".thumbs/concept-9-round-2-v4.webp",
+              "annotations": [
+                {
+                  "id": "a-bsrqejx8",
+                  "x": 0.5317460317460317,
+                  "y": 0.7672727272727272,
+                  "element": null,
+                  "text": "lets make the profile column animate it.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T15:42:11.929Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-ryd2ublh",
+                  "x": 0.22883597883597884,
+                  "y": 0.6278787878787879,
+                  "element": null,
+                  "text": "Is there a new histroy trackign graph?",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T16:39:18.965Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "concept-10-round-2",
+          "slug": "clinic",
+          "label": "09 \u2014 Clinic",
+          "description": "All patients at a glance, status tracking",
+          "position": 7,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "clinic/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 \u2014 09 \u2014 Clinic v6",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:04:36.620Z",
+              "thumbnail": ".thumbs/concept-10-round-2-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-mp5hcvbt",
+                  "x": 0.3776455026455027,
+                  "y": 0.5187878787878788,
+                  "element": null,
+                  "text": "this page captions and animations are going way to fast.  Lets have each of the columns come in when mentioned in the caption. Slow it all down as if its being spoken.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T03:15:02.404Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "clinic/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:08:29.281Z",
+              "thumbnail": ""
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "clinic/round-2/v3.html",
+              "parentId": "v1",
+              "changelog": "VO version \u2014 Sarah narrator",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": ".thumbs/concept-10-round-2-v3.webp",
+              "annotations": [
+                {
+                  "id": "a-dgbf8pt4",
+                  "x": 0.289021164021164,
+                  "y": 0.4412121212121212,
+                  "element": null,
+                  "text": "definitely doesnt flow, is this new copy ?",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T04:28:17.185Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v4",
+              "number": 4,
+              "file": "clinic/round-2/v4.html",
+              "parentId": "v3",
+              "changelog": "Polished VO \u2014 40px swap captions, cubic-bezier, auto-start",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-06T06:00:00.000Z",
+              "thumbnail": ".thumbs/concept-10-round-2-v4.webp",
+              "annotations": []
+            }
+          ]
+        },
+        {
+          "id": "concept-11-round-2",
+          "slug": "close",
+          "label": "10 \u2014 Close",
+          "description": "Logo, URL, FDA badge",
+          "position": 8,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "close/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from Round 1 \u2014 10 \u2014 Close v2",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:04:36.621Z",
+              "thumbnail": ".thumbs/concept-11-round-2-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-27nwdz2y",
+                  "x": 0.4497354497354497,
+                  "y": 0.7078787878787879,
+                  "element": null,
+                  "text": "remove the captions on this screen.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-06T03:04:21.048Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "close/round-2/v2.html",
+              "parentId": "v1",
+              "changelog": "",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T18:08:29.890Z",
+              "thumbnail": ""
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "close/round-2/v3.html",
+              "parentId": "v1",
+              "changelog": "VO version \u2014 Sarah narrator",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-05T21:19:03.000Z",
+              "thumbnail": ".thumbs/concept-11-round-2-v3.webp"
+            }
+          ]
+        }
+      ],
+      "closedAt": "2026-04-06T17:00:10.000Z"
+    },
+    {
+      "id": "round-a5d94948",
+      "number": 3,
+      "name": "Rd3",
+      "createdAt": "2026-04-06T17:00:10.000Z",
+      "selects": [],
+      "concepts": [
+        {
+          "id": "concept-open-r3",
+          "label": "01 \u2014 Open",
+          "description": "Logo opening slide",
+          "position": 1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-open",
+              "number": 1,
+              "file": "open/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-open-r3-v1-open.webp"
+            },
+            {
+              "id": "v2-open",
+              "number": 2,
+              "file": "open/round-3/v2.html",
+              "parentId": "v1-open",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-open-r3-v2-open.webp"
+            },
+            {
+              "id": "v3-open",
+              "number": 3,
+              "file": "open/round-3/v3.html",
+              "parentId": "v2-open",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-open-r3-v3-open.webp"
+            },
+            {
+              "id": "v4-open",
+              "number": 4,
+              "file": "open/round-3/v4.html",
+              "parentId": "v3-open",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-open-r3-v4-open.webp",
+              "annotations": [
+                {
+                  "id": "a-ytmkka3b",
+                  "x": 0.5978623914495658,
+                  "y": 0.5897740784780023,
+                  "element": null,
+                  "text": "rebalance this slide.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:38:03.628Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ],
+          "slug": "open"
+        },
+        {
+          "id": "concept-intro-r3",
+          "label": "02 \u2014 Intro",
+          "description": "Patient app + provider app working together",
+          "position": 2,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-intro",
+              "number": 1,
+              "file": "intro/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-intro-r3-v1-intro.webp"
+            },
+            {
+              "id": "v2-intro",
+              "number": 2,
+              "file": "intro/round-3/v2.html",
+              "parentId": "v1-intro",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-intro-r3-v2-intro.webp"
+            },
+            {
+              "id": "v3-intro",
+              "number": 3,
+              "file": "intro/round-3/v3.html",
+              "parentId": "v2-intro",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-intro-r3-v3-intro.webp"
+            },
+            {
+              "id": "v4-intro",
+              "number": 4,
+              "file": "intro/round-3/v4.html",
+              "parentId": "v3-intro",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-intro-r3-v4-intro.webp",
+              "annotations": [
+                {
+                  "id": "a-xeyj16yi",
+                  "x": 0.28857715430861725,
+                  "y": 0.5041617122473246,
+                  "element": null,
+                  "text": "that work seamless together",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:38:21.415Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ],
+          "slug": "intro"
+        },
+        {
+          "id": "concept-the-app-r3",
+          "label": "03 \u2014 The Patient App",
+          "description": "Meet the Virtual Care Assistant",
+          "position": 3,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-the-app",
+              "number": 1,
+              "file": "the-app/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-the-app-r3-v1-the-app.webp"
+            },
+            {
+              "id": "v2-the-app",
+              "number": 2,
+              "file": "the-app/round-3/v2.html",
+              "parentId": "v1-the-app",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-the-app-r3-v2-the-app.webp"
+            },
+            {
+              "id": "v3-the-app",
+              "number": 3,
+              "file": "the-app/round-3/v3.html",
+              "parentId": "v2-the-app",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-the-app-r3-v3-the-app.webp",
+              "annotations": [
+                {
+                  "id": "a-cx8v8cup",
+                  "x": 0.2177688710754843,
+                  "y": 0.4102259215219976,
+                  "element": null,
+                  "text": "change to \"Following their procedure, the patient ...\"",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:00:49.773Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v4-the-app",
+              "number": 4,
+              "file": "the-app/round-3/v4.html",
+              "parentId": "v3-the-app",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-the-app-r3-v4-the-app.webp"
+            }
+          ],
+          "slug": "the-patient-app"
+        },
+        {
+          "id": "concept-two-ways-r3",
+          "label": "04 \u2014 Agent Interaction",
+          "description": "Two ways to interact with the assistant",
+          "position": 4,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-two-ways",
+              "number": 1,
+              "file": "two-ways/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-two-ways-r3-v1-two-ways.webp"
+            },
+            {
+              "id": "v2-two-ways",
+              "number": 2,
+              "file": "two-ways/round-3/v2.html",
+              "parentId": "v1-two-ways",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-two-ways-r3-v2-two-ways.webp"
+            },
+            {
+              "id": "v3-two-ways",
+              "number": 3,
+              "file": "two-ways/round-3/v3.html",
+              "parentId": "v2-two-ways",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-two-ways-r3-v3-two-ways.webp",
+              "annotations": [
+                {
+                  "id": "a-y793c78l",
+                  "x": 0.3406813627254509,
+                  "y": 0.4423305588585018,
+                  "element": null,
+                  "text": "There are two ways for the ...",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:38:45.245Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-fwju7928",
+                  "x": 0.6452905811623246,
+                  "y": 0.6064209274673008,
+                  "element": null,
+                  "text": "make the icons bigger",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:38:52.150Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ],
+          "slug": "agent-interaction"
+        },
+        {
+          "id": "concept-check-in-r3",
+          "label": "05 \u2014 Check-In",
+          "description": "Daily check-ins across five recovery factors",
+          "position": 5,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-check-in",
+              "number": 1,
+              "file": "check-in/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-check-in-r3-v1-check-in.webp"
+            },
+            {
+              "id": "v2-check-in",
+              "number": 2,
+              "file": "check-in/round-3/v2.html",
+              "parentId": "v1-check-in",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-check-in-r3-v2-check-in.webp"
+            },
+            {
+              "id": "v3-check-in",
+              "number": 3,
+              "file": "check-in/round-3/v3.html",
+              "parentId": "v2-check-in",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-check-in-r3-v3-check-in.webp"
+            },
+            {
+              "id": "v4-check-in",
+              "number": 4,
+              "file": "check-in/round-3/v4.html",
+              "parentId": "v3-check-in",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-check-in-r3-v4-check-in.webp"
+            }
+          ],
+          "slug": "check-in"
+        },
+        {
+          "id": "concept-247-r3",
+          "label": "06 \u2014 24/7",
+          "description": "Patients can reach out anytime",
+          "position": 6,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-twenty-four-seven",
+              "number": 1,
+              "file": "twenty-four-seven/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-247-r3-v1-twenty-four-seven.webp"
+            },
+            {
+              "id": "v2-twenty-four-seven",
+              "number": 2,
+              "file": "twenty-four-seven/round-3/v2.html",
+              "parentId": "v1-twenty-four-seven",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-247-r3-v2-twenty-four-seven.webp",
+              "annotations": [
+                {
+                  "id": "a-mto1c9lx",
+                  "x": 0.7254509018036072,
+                  "y": 0.5957193816884662,
+                  "element": null,
+                  "text": "This animation screen is super laggy, with blank bits. Fix.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:01:39.582Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            },
+            {
+              "id": "v3-twenty-four-seven",
+              "number": 3,
+              "file": "twenty-four-seven/round-3/v3.html",
+              "parentId": "v2-twenty-four-seven",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-247-r3-v3-twenty-four-seven.webp",
+              "annotations": [
+                {
+                  "id": "a-i9kpfbmu",
+                  "x": 0.301937207748831,
+                  "y": 0.4161712247324614,
+                  "element": null,
+                  "text": "add \"also\"",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:21:36.324Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-xtymmadh",
+                  "x": 0.593186372745491,
+                  "y": 0.5124851367419738,
+                  "element": null,
+                  "text": "The screen animation on this slide is still glitchy and not showing",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:39:31.095Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ],
+          "slug": "24-7"
+        },
+        {
+          "id": "concept-score-r3",
+          "label": "07 \u2014 Score",
+          "description": "Single recovery score",
+          "position": 7,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-score",
+              "number": 1,
+              "file": "score/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-score-r3-v1-score.webp"
+            },
+            {
+              "id": "v2-score",
+              "number": 2,
+              "file": "score/round-3/v2.html",
+              "parentId": "v1-score",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-score-r3-v2-score.webp"
+            },
+            {
+              "id": "v3-score",
+              "number": 3,
+              "file": "score/round-3/v3.html",
+              "parentId": "v2-score",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-score-r3-v3-score.webp"
+            },
+            {
+              "id": "v4-score",
+              "number": 4,
+              "file": "score/round-3/v4.html",
+              "parentId": "v3-score",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-score-r3-v4-score.webp",
+              "annotations": [
+                {
+                  "id": "a-y4ezatpx",
+                  "x": 0.29191716766867065,
+                  "y": 0.4340071343638526,
+                  "element": null,
+                  "text": "this is weird formatting on this headline",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:39:49.109Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ],
+          "slug": "score"
+        },
+        {
+          "id": "concept-response-types-r3",
+          "label": "08 \u2014 Response Types",
+          "description": "Three ways the assistant responds",
+          "position": 8,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-response-types",
+              "number": 1,
+              "file": "response-types/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-response-types-r3-v1-response-types.webp"
+            },
+            {
+              "id": "v2-response-types",
+              "number": 2,
+              "file": "response-types/round-3/v2.html",
+              "parentId": "v1-response-types",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-response-types-r3-v2-response-types.webp"
+            },
+            {
+              "id": "v3-response-types",
+              "number": 3,
+              "file": "response-types/round-3/v3.html",
+              "parentId": "v2-response-types",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-response-types-r3-v3-response-types.webp"
+            },
+            {
+              "id": "v4-response-types",
+              "number": 4,
+              "file": "response-types/round-3/v4.html",
+              "parentId": "v3-response-types",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-response-types-r3-v4-response-types.webp"
+            }
+          ],
+          "slug": "response-types"
+        },
+        {
+          "id": "concept-normal-r3",
+          "label": "09 \u2014 Normal Response",
+          "description": "Guidance and reassurance when on track",
+          "position": 9,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-normal-response",
+              "number": 1,
+              "file": "normal-response/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-normal-r3-v1-normal-response.webp"
+            },
+            {
+              "id": "v2-normal-response",
+              "number": 2,
+              "file": "normal-response/round-3/v2.html",
+              "parentId": "v1-normal-response",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-normal-r3-v2-normal-response.webp"
+            },
+            {
+              "id": "v3-normal-response",
+              "number": 3,
+              "file": "normal-response/round-3/v3.html",
+              "parentId": "v2-normal-response",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-normal-r3-v3-normal-response.webp"
+            },
+            {
+              "id": "v4-normal-response",
+              "number": 4,
+              "file": "normal-response/round-3/v4.html",
+              "parentId": "v3-normal-response",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-normal-r3-v4-normal-response.webp",
+              "annotations": [
+                {
+                  "id": "a-ylen1c17",
+                  "x": 0.2999331997327989,
+                  "y": 0.42568370986920334,
+                  "element": null,
+                  "text": "maybe we should put these on two lines instead of 4 - it looks clunky",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:40:10.027Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ],
+          "slug": "normal-response"
+        },
+        {
+          "id": "concept-escalation-r3",
+          "label": "10 \u2014 Escalation",
+          "description": "VCA escalates to care team",
+          "position": 10,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-escalation",
+              "number": 1,
+              "file": "escalation/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-escalation-r3-v1-escalation.webp"
+            },
+            {
+              "id": "v2-escalation",
+              "number": 2,
+              "file": "escalation/round-3/v2.html",
+              "parentId": "v1-escalation",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-escalation-r3-v2-escalation.webp"
+            },
+            {
+              "id": "v3-escalation",
+              "number": 3,
+              "file": "escalation/round-3/v3.html",
+              "parentId": "v2-escalation",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-escalation-r3-v3-escalation.webp"
+            },
+            {
+              "id": "v4-escalation",
+              "number": 4,
+              "file": "escalation/round-3/v4.html",
+              "parentId": "v3-escalation",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-escalation-r3-v4-escalation.webp",
+              "annotations": [
+                {
+                  "id": "a-e4aabj6r",
+                  "x": 0.13092852371409486,
+                  "y": 0.3070063694267516,
+                  "element": null,
+                  "text": "Add escalation icon",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:22:01.714Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ],
+          "slug": "escalation"
+        },
+        {
+          "id": "concept-emergency-r3",
+          "label": "11 \u2014 Emergency",
+          "description": "Directs patients to call 911",
+          "position": 11,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-emergency",
+              "number": 1,
+              "file": "emergency/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-emergency-r3-v1-emergency.webp"
+            },
+            {
+              "id": "v2-emergency",
+              "number": 2,
+              "file": "emergency/round-3/v2.html",
+              "parentId": "v1-emergency",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-emergency-r3-v2-emergency.webp"
+            },
+            {
+              "id": "v3-emergency",
+              "number": 3,
+              "file": "emergency/round-3/v3.html",
+              "parentId": "v2-emergency",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-emergency-r3-v3-emergency.webp"
+            },
+            {
+              "id": "v4-emergency",
+              "number": 4,
+              "file": "emergency/round-3/v4.html",
+              "parentId": "v3-emergency",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-emergency-r3-v4-emergency.webp",
+              "annotations": [
+                {
+                  "id": "a-rl1461kz",
+                  "x": 0.1509686038744155,
+                  "y": 0.2980891719745223,
+                  "element": null,
+                  "text": "ADd emergency icon",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:22:08.449Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ],
+          "slug": "emergency"
+        },
+        {
+          "id": "concept-portal-r3",
+          "label": "13 \u2014 Provider App",
+          "description": "Care team sees everything in context",
+          "position": 12,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-portal",
+              "number": 1,
+              "file": "portal/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-portal-r3-v1-portal.webp"
+            },
+            {
+              "id": "v2-portal",
+              "number": 2,
+              "file": "portal/round-3/v2.html",
+              "parentId": "v1-portal",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-portal-r3-v2-portal.webp"
+            },
+            {
+              "id": "v3-portal",
+              "number": 3,
+              "file": "portal/round-3/v3.html",
+              "parentId": "v2-portal",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-portal-r3-v3-portal.webp"
+            },
+            {
+              "id": "v4-portal",
+              "number": 4,
+              "file": "portal/round-3/v4.html",
+              "parentId": "v3-portal",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-portal-r3-v4-portal.webp"
+            }
+          ],
+          "slug": "provider-app"
+        },
+        {
+          "id": "concept-clinic-r3",
+          "label": "14 \u2014 Clinic",
+          "description": "Every patient at a glance",
+          "position": 13,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-clinic",
+              "number": 1,
+              "file": "clinic/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-clinic-r3-v1-clinic.webp"
+            },
+            {
+              "id": "v2-clinic",
+              "number": 2,
+              "file": "clinic/round-3/v2.html",
+              "parentId": "v1-clinic",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-clinic-r3-v2-clinic.webp"
+            },
+            {
+              "id": "v3-clinic",
+              "number": 3,
+              "file": "clinic/round-3/v3.html",
+              "parentId": "v2-clinic",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-clinic-r3-v3-clinic.webp"
+            },
+            {
+              "id": "v4-clinic",
+              "number": 4,
+              "file": "clinic/round-3/v4.html",
+              "parentId": "v3-clinic",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-clinic-r3-v4-clinic.webp",
+              "annotations": [
+                {
+                  "id": "a-c9sng8my",
+                  "x": 0.26920507682030725,
+                  "y": 0.40071343638525564,
+                  "element": null,
+                  "text": "The dashboard shows....",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-08T06:40:54.173Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ],
+          "slug": "clinic"
+        },
+        {
+          "id": "concept-summary-r3",
+          "label": "15 \u2014 Summary",
+          "description": "Closing statement",
+          "position": 14,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-summary",
+              "number": 1,
+              "file": "summary/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-summary-r3-v1-summary.webp"
+            },
+            {
+              "id": "v2-summary",
+              "number": 2,
+              "file": "summary/round-3/v2.html",
+              "parentId": "v1-summary",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-summary-r3-v2-summary.webp"
+            }
+          ],
+          "slug": "summary"
+        },
+        {
+          "id": "concept-close-r3",
+          "label": "16 \u2014 Close",
+          "description": "Logo closing slide",
+          "position": 15,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1-close",
+              "number": 1,
+              "file": "close/round-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial round-3 version",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-close-r3-v1-close.webp"
+            },
+            {
+              "id": "v2-close",
+              "number": 2,
+              "file": "close/round-3/v2.html",
+              "parentId": "v1-close",
+              "changelog": "Headline rewrite",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-close-r3-v2-close.webp"
+            },
+            {
+              "id": "v3-close",
+              "number": 3,
+              "file": "close/round-3/v3.html",
+              "parentId": "v2-close",
+              "changelog": "Language alignment with website, one-pager, articles",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-08T05:56:58.890479+00:00",
+              "thumbnail": ".thumbs/concept-close-r3-v3-close.webp"
+            },
+            {
+              "id": "v4-close",
+              "number": 4,
+              "file": "close/round-3/v4.html",
+              "parentId": "v3-close",
+              "changelog": "End-to-end review and polish pass",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-08T06:07:18.892168+00:00",
+              "thumbnail": ".thumbs/concept-close-r3-v4-close.webp"
+            }
+          ],
+          "slug": "close"
+        }
+      ]
+    }
+  ]
+}
