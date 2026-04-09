@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
 import type { ClientInfo } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
+
+const hasSupabase = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -117,12 +119,17 @@ export function Dashboard() {
                     >
                       {project.conceptCount} concept{project.conceptCount !== 1 ? 's' : ''} &middot; {project.versionCount} version{project.versionCount !== 1 ? 's' : ''}
                     </div>
-                    {/* Canvas label */}
-                    <div
-                      className="text-[var(--muted)] mt-2"
-                      style={{ fontSize: 10 }}
-                    >
-                      {resolved.label}
+                    {/* Canvas label + push button */}
+                    <div className="flex items-center justify-between mt-2">
+                      <span
+                        className="text-[var(--muted)]"
+                        style={{ fontSize: 10 }}
+                      >
+                        {resolved.label}
+                      </span>
+                      {hasSupabase && (
+                        <PushButton client={client.slug} project={project.slug} />
+                      )}
                     </div>
                   </div>
                 </Link>
@@ -141,5 +148,67 @@ export function Dashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+function PushButton({ client, project }: { client: string; project: string }) {
+  const [state, setState] = useState<'idle' | 'pushing' | 'done' | 'error'>('idle');
+  const [result, setResult] = useState('');
+
+  const push = useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault(); // Don't navigate the parent Link
+    e.stopPropagation();
+    if (state === 'pushing') return;
+    setState('pushing');
+    setResult('');
+
+    try {
+      const res = await fetch('/api/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client, project }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setState('done');
+        setResult(`${data.uploaded} files`);
+        // Copy share URL
+        if (data.shareUrl) {
+          const fullUrl = window.location.origin + data.shareUrl;
+          try { await navigator.clipboard.writeText(fullUrl); } catch {}
+        }
+        setTimeout(() => setState('idle'), 3000);
+      } else {
+        setState('error');
+        setResult(data.error || 'Failed');
+        setTimeout(() => setState('idle'), 3000);
+      }
+    } catch {
+      setState('error');
+      setResult('Network error');
+      setTimeout(() => setState('idle'), 3000);
+    }
+  }, [client, project, state]);
+
+  return (
+    <button
+      onClick={push}
+      className="flex items-center gap-1 transition-all"
+      style={{
+        fontSize: 9,
+        letterSpacing: '0.06em',
+        fontFamily: 'var(--font-mono, monospace)',
+        color: state === 'done' ? '#059669' : state === 'error' ? '#e55' : 'var(--muted)',
+        opacity: state === 'pushing' ? 0.4 : 0.5,
+      }}
+      title="Push to cloud + copy share link"
+    >
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 19V5" /><path d="M5 12l7-7 7 7" />
+      </svg>
+      <span>
+        {state === 'pushing' ? 'PUSHING...' : state === 'done' ? `PUSHED ${result}` : state === 'error' ? result : 'PUSH'}
+      </span>
+    </button>
   );
 }

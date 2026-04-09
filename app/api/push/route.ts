@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 const BUCKET = 'projects';
@@ -9,21 +9,29 @@ const BUCKET = 'projects';
 /**
  * POST /api/push
  * Pushes a local project to Supabase Storage.
- * Body: { client, project, userId }
+ * Body: { client, project }
  *
- * This runs on the LOCAL instance — reads files from disk, uploads to cloud.
+ * Runs on the LOCAL instance — reads files from disk, uploads to cloud.
+ * Requires SUPABASE env vars but NOT DRIFT_CLOUD mode.
  */
 export async function POST(request: Request) {
-  if (!isCloudMode()) {
-    return NextResponse.json({ error: 'Cloud mode not configured' }, { status: 400 });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json({ error: 'Supabase not configured. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to .env.local' }, { status: 400 });
   }
 
-  const { client, project, userId } = await request.json();
-  if (!client || !project || !userId) {
-    return NextResponse.json({ error: 'Missing client, project, or userId' }, { status: 400 });
+  const { client, project } = await request.json();
+  if (!client || !project) {
+    return NextResponse.json({ error: 'Missing client or project' }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // Use a stable userId for storage paths
+  const userId = process.env.DRIFT_CLOUD_USER_ID || 'jeff';
+
   const projectDir = path.join(PROJECTS_DIR, client, project);
 
   // Verify project exists locally
@@ -33,64 +41,48 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Project not found locally' }, { status: 404 });
   }
 
-  // Recursively collect all files in the project directory
-  const files: { relativePath: string; fullPath: string }[] = [];
-
-  async function walkDir(dir: string, prefix: string) {
+  // Recursively collect all files
+  async function walkDir(dir: string, prefix: string): Promise<{ relativePath: string; fullPath: string }[]> {
     const entries = await fs.readdir(dir, { withFileTypes: true });
+    const files: { relativePath: string; fullPath: string }[] = [];
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
       const relPath = prefix ? `${prefix}/${entry.name}` : entry.name;
       if (entry.isDirectory()) {
-        await walkDir(fullPath, relPath);
+        files.push(...await walkDir(fullPath, relPath));
       } else {
         files.push({ relativePath: relPath, fullPath });
       }
     }
+    return files;
   }
 
-  await walkDir(projectDir, '');
+  const files = await walkDir(projectDir, '');
 
-  // Upload each file to Supabase Storage
   let uploaded = 0;
   let failed = 0;
 
   for (const file of files) {
     const storagePath = `${userId}/${client}/${project}/${file.relativePath}`;
     const data = await fs.readFile(file.fullPath);
-    const contentType = file.relativePath.endsWith('.html') ? 'text/html'
+    const ct = file.relativePath.endsWith('.html') ? 'text/html'
       : file.relativePath.endsWith('.json') ? 'application/json'
       : file.relativePath.endsWith('.webp') ? 'image/webp'
-      : file.relativePath.endsWith('.png') ? 'image/png'
       : file.relativePath.endsWith('.svg') ? 'image/svg+xml'
+      : file.relativePath.endsWith('.png') ? 'image/png'
       : 'application/octet-stream';
 
     const { error } = await supabase.storage.from(BUCKET).upload(storagePath, data, {
       upsert: true,
-      contentType,
+      contentType: ct,
     });
 
     if (error) {
-      console.error(`Failed to upload ${storagePath}:`, error.message);
+      console.error(`Push failed: ${storagePath} — ${error.message}`);
       failed++;
     } else {
       uploaded++;
     }
-  }
-
-  // Also upload brand assets if they exist
-  const brandDir = path.join(PROJECTS_DIR, client, 'brand');
-  try {
-    await fs.stat(brandDir);
-    const brandFiles: { relativePath: string; fullPath: string }[] = [];
-    await walkDir(brandDir, '');
-    for (const file of brandFiles) {
-      const storagePath = `${userId}/${client}/brand/${file.relativePath}`;
-      const data = await fs.readFile(file.fullPath);
-      await supabase.storage.from(BUCKET).upload(storagePath, data, { upsert: true });
-    }
-  } catch {
-    // No brand directory — that's fine
   }
 
   return NextResponse.json({
@@ -98,5 +90,6 @@ export async function POST(request: Request) {
     uploaded,
     failed,
     total: files.length,
+    shareUrl: `/s/${Buffer.from(`${userId}/${client}/${project}`).toString('base64url')}`,
   });
 }
