@@ -74,8 +74,9 @@
         .ts-line { flex: 1; height: 1px; background: #d4d0ca; }
         .ts-pill { padding: 5px 10px; border: 1px solid #b8b6b2; border-radius: 25px; font-size: 12px; font-weight: 700; color: #1c1b1f; letter-spacing: 0.05px; white-space: nowrap; }
 
-        .sender { display: flex; align-items: baseline; gap: 5px; padding: 0 13px 0 53px; margin-bottom: 4px; }
-        .sender.right { justify-content: flex-end; padding: 0 13px; white-space: nowrap; }
+        .sender { display: flex; align-items: baseline; gap: 5px; padding: 0 13px 0 53px; margin-bottom: 4px; white-space: nowrap; }
+        .sender.right { justify-content: flex-end; padding: 0 13px; }
+        .s-ts { flex-shrink: 0; }
         .s-name { font-size: 12px; font-weight: 700; color: #1b1b1a; letter-spacing: 0.05px; }
         .s-ts { font-size: 11px; font-weight: 500; color: #6a6a66; letter-spacing: 0.04px; }
         .s-dot { width: 2px; height: 2px; border-radius: 50%; background: #6a6a66; }
@@ -273,17 +274,26 @@
         function run() {
             reset();
 
-            setTimeout(() => show('el-today'), 200);
-            setTimeout(() => { show('el-patient-sender1'); show('el-patient-typing1'); }, 500);
-            setTimeout(() => { hide('el-patient-typing1'); show('el-patient-msg1'); }, 1200);
-            setTimeout(() => { show('el-bot-sender1'); show('el-bot-typing1'); scroll(); }, 1700);
-            setTimeout(() => { hide('el-bot-typing1'); show('el-bot-msg1'); scroll(); }, 2700);
-            setTimeout(() => { show('el-bot-typing2'); scroll(); }, 3200);
-            setTimeout(() => { hide('el-bot-typing2'); show('el-bot-msg2'); scroll(); }, 4500);
-            setTimeout(() => { show('el-patient-sender2'); show('el-patient-typing2'); scroll(); }, 5500);
-            setTimeout(() => { hide('el-patient-typing2'); show('el-patient-msg2'); scroll(); }, 6200);
-            setTimeout(() => { show('el-bot-sender2'); show('el-bot-typing3'); scroll(); }, 6700);
-            setTimeout(() => { hide('el-bot-typing3'); show('el-bot-msg3'); scroll(); }, 8000);
+            // Today pill
+            setTimeout(() => show('el-today'), 300);
+
+            // Patient types first message
+            setTimeout(() => { show('el-patient-sender1'); show('el-patient-typing1'); }, 800);
+            setTimeout(() => { hide('el-patient-typing1'); show('el-patient-msg1'); }, 1500);
+
+            // Bot responds with two messages
+            setTimeout(() => { show('el-bot-sender1'); show('el-bot-typing1'); scroll(); }, 2300);
+            setTimeout(() => { hide('el-bot-typing1'); show('el-bot-msg1'); scroll(); }, 3500);
+            setTimeout(() => { show('el-bot-typing2'); scroll(); }, 4000);
+            setTimeout(() => { hide('el-bot-typing2'); show('el-bot-msg2'); scroll(); }, 5200);
+
+            // Patient replies
+            setTimeout(() => { show('el-patient-sender2'); show('el-patient-typing2'); scroll(); }, 6000);
+            setTimeout(() => { hide('el-patient-typing2'); show('el-patient-msg2'); scroll(); }, 6700);
+
+            // Bot final message
+            setTimeout(() => { show('el-bot-sender2'); show('el-bot-typing3'); scroll(); }, 7500);
+            setTimeout(() => { hide('el-bot-typing3'); show('el-bot-msg3'); scroll(); }, 8700);
         }
 
         // Text fades in once on load
@@ -291,7 +301,7 @@
 
         // Phone animation loops
         run();
-        setInterval(() => run(), 11000);
+        setInterval(() => run(), 11700);
     </script>
 </body>
 </html>
