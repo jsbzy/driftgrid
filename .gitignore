@@ -46,11 +46,15 @@ _archive/
 # User projects (client work — not committed to the public repo)
 /projects/*/
 !/projects/demo/
-!/projects/recovryai/
 
-# Thumbnail caches
-.thumbs/
-!/projects/recovryai/**/.thumbs/
+# Thumbnail caches (generated, not committed)
+**/.thumbs/
 
 # Video / Remotion working files
 /video/
+
+# Claude worktrees
+.claude/worktrees/
+
+# Launch tracker (local tool)
+launch-tracker.html
