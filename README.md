@@ -1,21 +1,21 @@
 # DriftGrid
 
-**The design iteration workspace for AI-generated work.**
+**Design iteration for agents. Present to clients.**
 
-Your AI tool generates HTML. DriftGrid versions it, compares it, and presents it to clients. Concepts across, versions down -- drift around the grid until you reach your selects.
+Your AI agent creates HTML designs. DriftGrid versions them on an infinite canvas, lets you browse and compare, then share a link with your client. Concepts across, versions down — drift around the grid until you reach your selects.
 
 <!-- TODO: hero GIF here -->
-<!-- ![DriftGrid](docs/hero.gif) -->
 
 ## Why DriftGrid
 
-AI coding tools (Claude Code, Cursor, Copilot) are incredibly fast at generating designs -- but there's no good way to manage the output. You end up with dozens of HTML files, no way to compare them, and a messy handoff to clients.
+AI tools generate designs fast — but there's no good way to manage the output. You end up with dozens of HTML files, no way to compare them, and a messy handoff to clients.
 
-DriftGrid fixes this. It gives every design a place on a 2D grid where you can zoom, browse, star your picks, and present them -- all from `localhost:3000`.
+DriftGrid is the missing layer:
 
-- **BYO AI** -- DriftGrid doesn't generate designs. It's the workspace where your AI-generated work lives.
-- **Local-first** -- runs on your machine, no cloud dependency. Your files, your filesystem.
-- **Live HTML** -- every frame is a real HTML page, not a static screenshot. Interactive prototypes work out of the box.
+- **BYO AI** — works with Claude Code, Cursor, Copilot, Claude Managed Agents, or any tool that writes HTML
+- **Local-first** — your files, your filesystem, no lock-in
+- **Cloud sharing** — push to the cloud, share a link, clients review and comment
+- **Live HTML** — every frame is a real HTML page, not a screenshot
 
 ## Quick Start
 
@@ -26,15 +26,19 @@ npm install
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000). The included demo project shows a 4-concept landing page iteration.
+Open [localhost:3000](http://localhost:3000). The included demo project shows a multi-concept design iteration.
 
-### Create your first project
+## The Workflow
 
-```bash
-npm run init -- my-client landing-page
+```
+Agent creates HTML → DriftGrid organizes it → Push to cloud → Share with client
+     (local)              (local)              (one click)     (public link)
 ```
 
-This scaffolds a project at `projects/my-client/landing-page/` with a manifest, starter HTML, and brand directory. Point your AI tool at the HTML files and start iterating.
+1. **Your agent writes HTML** — point Claude Code (or any AI tool) at the project. The CLAUDE.md conventions file tells the agent how to create versioned designs.
+2. **Browse the grid** — zoom, navigate, compare concepts side by side. Star your picks.
+3. **Push to cloud** — one button on the dashboard uploads everything.
+4. **Share a link** — your client gets a public review URL. No login needed.
 
 ## How It Works
 
@@ -51,89 +55,57 @@ projects/
             └── v1.html     # Different direction
 ```
 
-**Concepts** are design directions (columns on the grid). **Versions** are iterations within a concept (rows). Your AI tool creates the HTML files, and DriftGrid reads the manifest to display them.
+**Concepts** are design directions (columns). **Versions** are iterations (rows). The manifest tracks everything. Your AI tool creates files, DriftGrid displays them.
 
-### The Grid
+### Navigation
 
-The infinite canvas shows all your work at a glance. Zoom in to browse, zoom out to compare. Five zoom levels let you go from full overview to single-card focus:
-
-| Key | View |
-|-----|------|
+| Key | Action |
+|-----|--------|
 | `` ` `` | Full overview |
-| `1` | Column |
-| `2`-`4` | Card close-ups |
+| `1`–`4` | Zoom levels |
 | `Enter` | Enter frame (live HTML) |
 | `Esc` | Back out |
-
-Arrow keys navigate. `Space` to pan. `D` to drift (duplicate + iterate). `S` to toggle selects. `?` for all shortcuts.
-
-### Selects & Presentation
-
-Star your picks with `S`, then present them as a fullscreen slideshow. Working sets let you save named selections -- "Round 1 picks", "Client favorites" -- for export or review.
+| `D` | Drift (new version) |
+| `S` | Star / unstar |
+| `P` | Present starred |
+| Arrow keys | Navigate |
+| `Space` | Pan |
 
 ### Client Review
 
-Share a separate review URL (`/review/{client}/{project}`) where clients see only what you've made visible. They can suggest text edits and leave comments without touching your working grid.
+Share links give clients a read-only view of the grid. They can browse, zoom into frames, and leave annotations — without touching your working environment.
 
-### Export
+### Cloud Tier
 
-Export from the UI or CLI:
+Self-hosted is free forever. The cloud tier ($12/month) adds:
 
-```bash
-npm run export-pdf -- my-client landing-page
-npm run export-png -- my-client landing-page
-```
-
-Formats: PDF, PNG, PPTX, raw HTML. Working sets export as multi-page documents.
+- **Push to cloud** — upload from your local dashboard
+- **Share links** — public URLs for client review, no login required
+- **Archive** — your full design practice, always accessible
 
 ## Canvas Presets
 
-| Preset | Width | Height | Behavior |
-|--------|-------|--------|----------|
-| A4 Portrait | 794px | 1123px | locked |
-| 16:9 Landscape | 1920px | 1080px | locked |
-| Desktop | 1440px | auto | scroll |
-| Tablet | 768px | auto | scroll |
-| Mobile | 375px | auto | scroll |
-| Freeform | custom | custom | configurable |
-
-```bash
-npm run init -- acme pitch-deck --canvas landscape-16-9
-```
+| Preset | Dimensions | Behavior |
+|--------|-----------|----------|
+| 16:9 Landscape | 1920 × 1080 | locked |
+| A4 Portrait | 794 × 1123 | locked |
+| Desktop | 1440 × auto | scroll |
+| Tablet | 768 × auto | scroll |
+| Mobile | 375 × auto | scroll |
 
 ## MCP Server
 
-DriftGrid includes an MCP server for direct integration with Claude Code and other AI tools:
+DriftGrid includes an MCP server for direct agent integration:
 
 ```bash
 npm run mcp
 ```
 
-This lets your AI tool create projects, add versions, read feedback, manage rounds, and more -- without leaving the conversation.
+Your AI tool can create projects, add versions, read feedback, manage rounds — all without leaving the conversation.
 
 ## Tech Stack
 
-- Next.js 16, React 19, TypeScript
-- Tailwind CSS v4
-- Playwright (thumbnails + export)
-- SWR (data fetching)
-- No database -- filesystem is the source of truth
-
-## CLI Reference
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start the dev server |
-| `npm run init -- <client> <project>` | Scaffold a new project |
-| `npm run doctor` | Validate all projects |
-| `npm run generate-thumbs` | Regenerate thumbnails |
-| `npm run export-pdf -- <client> <project>` | Export to PDF |
-| `npm run export-png -- <client> <project>` | Export to PNG |
-| `npm run mcp` | Start the MCP server |
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+Next.js 16, React 19, TypeScript, Tailwind v4, SWR, Playwright. No database locally — filesystem is the source of truth. Cloud tier uses Supabase for storage and auth.
 
 ## License
 
