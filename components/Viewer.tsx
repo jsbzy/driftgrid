@@ -980,6 +980,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               }
             }}
             mode={mode}
+            shareToken={shareToken}
             zoomLevel={zoomLevel}
             onZoomLevelChange={setZoomLevel}
             showHidden={showHidden}

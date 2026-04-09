@@ -46,6 +46,7 @@ interface CanvasViewProps {
   onSendToRound?: (conceptId: string, versionId: string, targetRoundId: string) => void;
   onSendToNewRound?: (conceptId: string, versionId: string) => void;
   mode?: ViewMode;
+  shareToken?: string;
   zoomLevel: ZoomLevel;
   onZoomLevelChange: (level: ZoomLevel) => void;
   showHidden?: boolean;
@@ -85,6 +86,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   onSendToRound,
   onSendToNewRound,
   mode,
+  shareToken,
   zoomLevel,
   onZoomLevelChange,
   showHidden,
@@ -745,6 +747,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             onCardContextMenu={handleCardContextMenu}
             multiSelected={multiSelected}
             mode={mode}
+            shareToken={shareToken}
           />
         </div>
       </div>
@@ -872,6 +875,7 @@ const CardLayer = memo(function CardLayer({
   onThumbnailDoubleClick,
   onCardContextMenu,
   mode,
+  shareToken,
 }: {
   layout: CanvasLayout;
   concepts: Concept[];
@@ -892,6 +896,7 @@ const CardLayer = memo(function CardLayer({
   onThumbnailDoubleClick: (ci: number, vi: number) => void;
   onCardContextMenu: (ci: number, vi: number, e: React.MouseEvent) => void;
   mode?: string;
+  shareToken?: string;
 }) {
   // Viewport culling: only render cards visible in the current view + buffer
   const vpW = viewportRef.current?.clientWidth ?? 2000;
@@ -925,7 +930,9 @@ const CardLayer = memo(function CardLayer({
           || `${concept.id}-${version.id}.webp`;
         // Use small thumbnails at low zoom, full-res at high zoom (z3/z4)
         const thumbW = transform.scale < 0.5 ? '&w=880' : '';
-        const thumbSrc = `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}${thumbW}`;
+        const thumbSrc = shareToken
+          ? `/api/s/${shareToken}/thumbs/${thumbFilename}`
+          : `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}${thumbW}`;
         const isStarred = selections.has(`${concept.id}:${version.id}`);
         const isLatest = pos.versionIndex === concept.versions.length - 1;
 
