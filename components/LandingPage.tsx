@@ -1,85 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-
 /**
- * Minimalist teaser landing page — dot grid with subtle drift animation.
+ * Teaser landing page — static crosshair grid with wordmark.
  */
 export function LandingPage() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let raf: number;
-    let time = 0;
-
-    function resize() {
-      const dpr = window.devicePixelRatio || 1;
-      canvas!.width = window.innerWidth * dpr;
-      canvas!.height = window.innerHeight * dpr;
-      ctx!.scale(dpr, dpr);
-    }
-
-    function draw() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      ctx!.clearRect(0, 0, w, h);
-
-      const spacing = 32;
-      const cols = Math.ceil(w / spacing) + 2;
-      const rows = Math.ceil(h / spacing) + 2;
-      const cx = w / 2;
-      const cy = h / 2;
-      const maxDist = Math.sqrt(cx * cx + cy * cy);
-
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-          const baseX = col * spacing;
-          const baseY = row * spacing;
-
-          // Distance from center
-          const dx = baseX - cx;
-          const dy = baseY - cy;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const normDist = dist / maxDist;
-
-          // Subtle drift: dots near center drift slowly, edges are still
-          const driftAmount = (1 - normDist) * 3;
-          const angle = Math.atan2(dy, dx) + time * 0.15;
-          const x = baseX + Math.cos(angle + dist * 0.008) * driftAmount;
-          const y = baseY + Math.sin(angle + dist * 0.008) * driftAmount;
-
-          // Opacity: brighter near center, fading to edges
-          const opacity = 0.06 + (1 - normDist) * 0.08;
-
-          // Size: slightly larger near center
-          const size = 0.8 + (1 - normDist) * 0.4;
-
-          ctx!.beginPath();
-          ctx!.arc(x, y, size, 0, Math.PI * 2);
-          ctx!.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-          ctx!.fill();
-        }
-      }
-
-      time += 0.008;
-      raf = requestAnimationFrame(draw);
-    }
-
-    resize();
-    draw();
-    window.addEventListener('resize', resize);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
   return (
     <div style={{
       position: 'fixed',
@@ -90,33 +14,59 @@ export function LandingPage() {
       alignItems: 'center',
       justifyContent: 'center',
     }}>
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-        }}
-      />
+      {/* Grid lines */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        backgroundImage:
+          `linear-gradient(rgba(255,255,255,0.03) 0.5px, transparent 0.5px),
+           linear-gradient(90deg, rgba(255,255,255,0.03) 0.5px, transparent 0.5px)`,
+        backgroundSize: '40px 40px',
+      }} />
+
+      {/* Center crosshair — slightly brighter lines */}
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: 0,
+        right: 0,
+        height: '0.5px',
+        background: 'rgba(255,255,255,0.06)',
+      }} />
+      <div style={{
+        position: 'absolute',
+        left: '50%',
+        top: 0,
+        bottom: 0,
+        width: '0.5px',
+        background: 'rgba(255,255,255,0.06)',
+      }} />
 
       {/* Wordmark */}
-      <div style={{
-        position: 'relative',
-        zIndex: 1,
-        textAlign: 'center',
-      }}>
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
         <h1 style={{
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: 18,
+          fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+          fontSize: 15,
           fontWeight: 400,
-          letterSpacing: '0.25em',
-          color: 'rgba(255, 255, 255, 0.5)',
+          letterSpacing: '0.3em',
+          color: 'rgba(255,255,255,0.4)',
           textTransform: 'lowercase',
           margin: 0,
+          padding: '8px 20px',
+          background: '#0a0a0a',
         }}>
           driftgrid
         </h1>
+        <p style={{
+          fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+          fontSize: 10,
+          fontWeight: 400,
+          letterSpacing: '0.12em',
+          color: 'rgba(255,255,255,0.15)',
+          marginTop: 12,
+        }}>
+          Design iteration for agents
+        </p>
       </div>
     </div>
   );
