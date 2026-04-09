@@ -153,14 +153,13 @@ export function Dashboard() {
 
 function PushButton({ client, project }: { client: string; project: string }) {
   const [state, setState] = useState<'idle' | 'pushing' | 'done' | 'error'>('idle');
-  const [result, setResult] = useState('');
+  const [shareUrl, setShareUrl] = useState('');
 
   const push = useCallback(async (e: React.MouseEvent) => {
-    e.preventDefault(); // Don't navigate the parent Link
+    e.preventDefault();
     e.stopPropagation();
     if (state === 'pushing') return;
     setState('pushing');
-    setResult('');
 
     try {
       const res = await fetch('/api/push', {
@@ -169,26 +168,49 @@ function PushButton({ client, project }: { client: string; project: string }) {
         body: JSON.stringify({ client, project }),
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.shareUrl) {
+        const fullUrl = window.location.origin.replace('localhost:3000', 'driftgrid.ai') + data.shareUrl;
+        setShareUrl(fullUrl);
         setState('done');
-        setResult(`${data.uploaded} files`);
-        // Copy share URL
-        if (data.shareUrl) {
-          const fullUrl = window.location.origin + data.shareUrl;
-          try { await navigator.clipboard.writeText(fullUrl); } catch {}
-        }
-        setTimeout(() => setState('idle'), 3000);
+        try { await navigator.clipboard.writeText(fullUrl); } catch {}
       } else {
         setState('error');
-        setResult(data.error || 'Failed');
         setTimeout(() => setState('idle'), 3000);
       }
     } catch {
       setState('error');
-      setResult('Network error');
       setTimeout(() => setState('idle'), 3000);
     }
   }, [client, project, state]);
+
+  const copyLink = useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try { await navigator.clipboard.writeText(shareUrl); } catch {}
+  }, [shareUrl]);
+
+  if (state === 'done' && shareUrl) {
+    return (
+      <button
+        onClick={copyLink}
+        className="flex items-center gap-1 transition-all"
+        style={{
+          fontSize: 9,
+          letterSpacing: '0.06em',
+          fontFamily: 'var(--font-mono, monospace)',
+          color: '#059669',
+          opacity: 0.7,
+        }}
+        title={shareUrl}
+      >
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+        <span>LIVE — COPY LINK</span>
+      </button>
+    );
+  }
 
   return (
     <button
@@ -198,7 +220,7 @@ function PushButton({ client, project }: { client: string; project: string }) {
         fontSize: 9,
         letterSpacing: '0.06em',
         fontFamily: 'var(--font-mono, monospace)',
-        color: state === 'done' ? '#059669' : state === 'error' ? '#e55' : 'var(--muted)',
+        color: state === 'error' ? '#e55' : 'var(--muted)',
         opacity: state === 'pushing' ? 0.4 : 0.5,
       }}
       title="Push to cloud + copy share link"
@@ -206,9 +228,7 @@ function PushButton({ client, project }: { client: string; project: string }) {
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 19V5" /><path d="M5 12l7-7 7 7" />
       </svg>
-      <span>
-        {state === 'pushing' ? 'PUSHING...' : state === 'done' ? `PUSHED ${result}` : state === 'error' ? result : 'PUSH'}
-      </span>
+      <span>{state === 'pushing' ? 'PUSHING...' : state === 'error' ? 'FAILED' : 'PUSH'}</span>
     </button>
   );
 }
