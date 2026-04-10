@@ -66,7 +66,7 @@
               "parentId": "concept-2--v2",
               "changelog": "Full split \u2014 left hero with stats, right code panel with syntax highlighting and output block",
               "visible": true,
-              "starred": false,
+              "starred": true,
               "created": "2026-04-01T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-2-concept-2--v3.webp"
             },
@@ -77,9 +77,9 @@
               "parentId": null,
               "changelog": "Full terminal takeover \u2014 boot log, ASCII logo, live system monitor, audio waveform footer, CRT scanlines",
               "visible": true,
-              "starred": true,
+              "starred": false,
               "created": "2026-04-10T00:00:00.000Z",
-              "thumbnail": ""
+              "thumbnail": ".thumbs/concept-2-concept-2--v4.webp"
             }
           ]
         },
@@ -161,7 +161,7 @@
               "visible": true,
               "starred": true,
               "created": "2026-04-10T00:00:00.000Z",
-              "thumbnail": ""
+              "thumbnail": ".thumbs/concept-1-concept-1--v4.webp"
             }
           ]
         },
@@ -216,7 +216,7 @@
               "parentId": "concept-3--v2",
               "changelog": "Dark gradient mesh background, split layout with glass-morphism feature cards, channel list, team presence",
               "visible": true,
-              "starred": false,
+              "starred": true,
               "created": "2026-04-01T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-3-concept-3--v3.webp",
               "annotations": [
@@ -233,17 +233,6 @@
                   "element": null
                 }
               ]
-            },
-            {
-              "id": "concept-3--v4",
-              "number": 4,
-              "file": "concept-3/v4.html",
-              "parentId": null,
-              "changelog": "Centered typographic hero \u2014 120px gradient headline over outlined WAVELENGTH wordmark, logo strip of fake press",
-              "visible": true,
-              "starred": true,
-              "created": "2026-04-10T00:00:00.000Z",
-              "thumbnail": ""
             }
           ]
         },
@@ -273,7 +262,7 @@
               "parentId": "concept-4--v1",
               "changelog": "Added horizontal feature strip with numbered items, vertical divider between columns",
               "visible": true,
-              "starred": false,
+              "starred": true,
               "created": "2026-04-01T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-4-concept-4--v2.webp"
             },
@@ -309,9 +298,9 @@
               "parentId": null,
               "changelog": "Full newspaper broadsheet \u2014 masthead, two-column body with drop cap, pull quote sidebar, dossier stat table, footer ribbon",
               "visible": true,
-              "starred": true,
+              "starred": false,
               "created": "2026-04-10T00:00:00.000Z",
-              "thumbnail": ""
+              "thumbnail": ".thumbs/concept-4-concept-4--v4.webp"
             }
           ]
         }

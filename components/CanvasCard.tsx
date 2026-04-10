@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 
 interface CanvasCardProps {
   thumbnail: string | null;
@@ -52,7 +52,6 @@ export const CanvasCard = memo(function CanvasCard({
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [thumbSrc, setThumbSrc] = useState(thumbnail);
-  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     setThumbSrc(thumbnail);
@@ -60,13 +59,16 @@ export const CanvasCard = memo(function CanvasCard({
     setImgLoaded(false);
   }, [thumbnail]);
 
-  // Handle images loaded from browser cache before React's onLoad fires
-  useEffect(() => {
-    const el = imgRef.current;
-    if (el?.complete && el.naturalWidth > 0) {
+  // Ref callback: fires synchronously when the <img> is attached.
+  // Handles cached images where onLoad never fires because the browser
+  // already has the image decoded.
+  const imgRefCallback = useCallback((el: HTMLImageElement | null) => {
+    if (!el) return;
+    if (el.complete && el.naturalWidth > 0) {
+      // Image is already loaded (from cache) — mark as loaded immediately
       setImgLoaded(true);
     }
-  }, [thumbSrc]);
+  }, []);
 
   return (
     <div
@@ -91,14 +93,12 @@ export const CanvasCard = memo(function CanvasCard({
           style={{
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--card-border)',
-            outline: isCurrent
-              ? '2px solid var(--column-accent)'
+            // Use box-shadow rings instead of outline (Tailwind v4 resets outline)
+            boxShadow: isCurrent
+              ? '0 0 0 3px #8b5cf6, 0 0 0 5px rgba(139, 92, 246, 0.25), var(--card-shadow)'
               : isMultiSelected
-              ? '1.5px solid var(--card-outline-focus)'
-              : undefined,
-            outlineOffset: isCurrent ? 3 : 2,
-            opacity: (isMultiSelected || isCurrent) ? undefined : undefined,
-            boxShadow: 'var(--card-shadow)',
+              ? '0 0 0 2px var(--card-outline-focus), var(--card-shadow)'
+              : 'var(--card-shadow)',
             background: 'var(--card-bg)',
             position: 'relative',
           }}
@@ -147,7 +147,7 @@ export const CanvasCard = memo(function CanvasCard({
                 </div>
               )}
               <img
-                ref={imgRef}
+                ref={imgRefCallback}
                 src={thumbSrc}
                 alt={`${conceptLabel} v${versionNumber}`}
                 className="w-full h-full object-cover object-top"
