@@ -53,6 +53,9 @@ _archive/
 # Video / Remotion working files
 /video/
 
+# Internal archive
+/_archive/
+
 # Claude worktrees
 .claude/worktrees/
 

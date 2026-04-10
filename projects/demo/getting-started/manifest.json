@@ -43,7 +43,7 @@
               "parentId": "concept-1--v1",
               "changelog": "Bolder headline with blue accent, pill CTA, ghost link",
               "visible": true,
-              "starred": false,
+              "starred": true,
               "created": "2026-03-23T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-1-concept-1--v2.png"
             }
@@ -64,7 +64,7 @@
               "parentId": null,
               "changelog": "Dark hero with grid motif and terminal-style CTA",
               "visible": true,
-              "starred": false,
+              "starred": true,
               "created": "2026-03-23T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-2-concept-2--v1.png"
             }
