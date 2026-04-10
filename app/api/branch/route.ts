@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { getManifest, writeManifest } from '@/lib/manifest';
 import { conceptSlug } from '@/lib/letters';
+import { emptyCanvasBoilerplate } from '@/lib/canvas-boilerplate';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -50,41 +51,40 @@ export async function POST(request: Request) {
   // Create the new concept folder
   await fs.mkdir(path.join(projectDir, newFolder), { recursive: true });
 
-  // Copy the source HTML file to the new concept folder as v1.html
-  const srcPath = path.join(projectDir, sourceVersion.file);
+  // Write empty canvas boilerplate as v1.html — designer directs agent to fill it in
   const newFile = `${newFolder}/v1.html`;
   const destPath = path.join(projectDir, newFile);
+  const newLabel = label || `Concept ${nextN}`;
+
+  const boilerplate = emptyCanvasBoilerplate(
+    typeof manifest.project.canvas === 'string' ? manifest.project.canvas : 'desktop',
+    `${manifest.project.name} — ${newLabel}`,
+  );
 
   try {
-    await fs.copyFile(srcPath, destPath);
+    await fs.writeFile(destPath, boilerplate, 'utf-8');
   } catch {
-    return NextResponse.json({ error: 'Failed to copy file' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create file' }, { status: 500 });
   }
-
-  // Determine source version number for description
-  const sourceVersionNumber = sourceVersion.number;
-  const sourceConceptLabel = sourceConcept.label;
 
   // Create new concept and version IDs
   const newConceptId = `concept-${generateId()}`;
   const newVersionId = `version-${generateId()}`;
 
   // Build the new concept entry
-  const newLabel = label || `Concept ${nextN}`;
   const newConcept = {
     id: newConceptId,
     slug: conceptSlug(newLabel),
     label: newLabel,
-    description: `Branched from ${sourceConceptLabel} v${sourceVersionNumber}`,
+    description: 'New drift slot — empty',
     position: manifest.concepts.length,
     visible: true,
-    branchedFrom: { conceptId, versionId },
     versions: [{
       id: newVersionId,
       number: 1,
       file: newFile,
       parentId: null,
-      changelog: `Branched from ${sourceConceptLabel} v${sourceVersionNumber}`,
+      changelog: 'New drift slot — empty',
       visible: true,
       starred: false,
       created: new Date().toISOString(),

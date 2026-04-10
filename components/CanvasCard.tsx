@@ -13,6 +13,7 @@ interface CanvasCardProps {
   isLatest?: boolean;
   filePath?: string;
   mode?: string;
+  demoSlot?: boolean;
   onStar?: () => void;
   onDelete?: () => void;
   onDrift?: () => void;
@@ -36,6 +37,7 @@ export const CanvasCard = memo(function CanvasCard({
   isLatest,
   filePath,
   mode,
+  demoSlot,
   onStar,
   onDelete,
   onDrift,
@@ -113,7 +115,28 @@ export const CanvasCard = memo(function CanvasCard({
             />
           )}
 
-          {thumbSrc && !imgError ? (
+          {demoSlot ? (
+            <div
+              className="w-full h-full flex flex-col items-center justify-center gap-3"
+              style={{
+                background: 'transparent',
+                border: '1.5px dashed var(--border)',
+                borderRadius: 'inherit',
+                color: 'var(--muted)',
+                fontFamily: 'var(--font-mono, monospace)',
+              }}
+            >
+              <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.4 }}>
+                Empty slot
+              </div>
+              <div style={{ fontSize: 11, opacity: 0.3, textAlign: 'center', padding: '0 24px', lineHeight: 1.5 }}>
+                Direct your agent<br />to fill this in
+              </div>
+              <div style={{ fontSize: 9, opacity: 0.25, letterSpacing: '0.08em', marginTop: 4 }}>
+                v{versionNumber}
+              </div>
+            </div>
+          ) : thumbSrc && !imgError ? (
             <>
               {/* Lightweight placeholder while image loads */}
               {!imgLoaded && (

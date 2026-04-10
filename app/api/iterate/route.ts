@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { getManifest, writeManifest } from '@/lib/manifest';
+import { emptyCanvasBoilerplate } from '@/lib/canvas-boilerplate';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -48,15 +49,19 @@ export async function POST(request: Request) {
   const conceptFolder = path.dirname(version.file);
   const newFile = `${conceptFolder}/v${nextNumber}.html`;
   const projectDir = path.join(PROJECTS_DIR, client, project);
-
-  // Copy the HTML file
-  const srcPath = path.join(projectDir, version.file);
   const destPath = path.join(projectDir, newFile);
 
+  // Write empty canvas boilerplate — the designer directs their agent to fill it in
+  const boilerplate = emptyCanvasBoilerplate(
+    typeof manifest.project.canvas === 'string' ? manifest.project.canvas : 'desktop',
+    `${manifest.project.name} — ${concept.label} v${nextNumber}`,
+  );
+
   try {
-    await fs.copyFile(srcPath, destPath);
+    await fs.mkdir(path.dirname(destPath), { recursive: true });
+    await fs.writeFile(destPath, boilerplate, 'utf-8');
   } catch {
-    return NextResponse.json({ error: 'Failed to copy file' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create file' }, { status: 500 });
   }
 
   // Add new version to manifest
@@ -64,8 +69,8 @@ export async function POST(request: Request) {
     id: nextId,
     number: nextNumber,
     file: newFile,
-    parentId: versionId,
-    changelog: '',
+    parentId: null,
+    changelog: 'New drift slot — empty',
     visible: true,
     starred: false,
     created: new Date().toISOString(),

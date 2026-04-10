@@ -950,6 +950,7 @@ const CardLayer = memo(function CardLayer({
               isLatest={isLatest}
               isMultiSelected={multiSelected.has(`${concept.id}:${version.id}`)}
               filePath={`~/driftgrid/projects/${client}/${project}/${version.file}`}
+              demoSlot={!version.file}
               mode={mode}
               onStar={() => onStarVersion(concept.id, version.id)}
               onDelete={() => onDeleteVersion(concept.id, version.id)}

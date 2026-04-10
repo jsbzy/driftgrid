@@ -11,14 +11,14 @@
     {
       "id": "round-1",
       "number": 1,
-      "name": "Round 1",
+      "name": "Round 1 \u2014 Initial Explorations",
       "createdAt": "2026-04-01T00:00:00.000Z",
       "selects": [],
       "concepts": [
         {
           "id": "concept-2",
           "label": "Dark Code",
-          "description": "Dark background, left-aligned, developer-oriented — JetBrains Mono, green accent",
+          "description": "Dark background, left-aligned, developer-oriented \u2014 JetBrains Mono, green accent",
           "position": 1,
           "visible": true,
           "slug": "concept-2",
@@ -39,20 +39,34 @@
               "number": 2,
               "file": "concept-2/v2.html",
               "parentId": "concept-2--v1",
-              "changelog": "Split layout — left messaging, right code-block feature list with YAML-style config",
+              "changelog": "Split layout \u2014 left messaging, right code-block feature list with YAML-style config",
               "visible": true,
               "starred": false,
               "created": "2026-04-01T00:00:00.000Z",
-              "thumbnail": ".thumbs/concept-2-concept-2--v2.webp"
+              "thumbnail": ".thumbs/concept-2-concept-2--v2.webp",
+              "annotations": [
+                {
+                  "id": "a3",
+                  "text": "Love the terminal aesthetic. Add some stats to the hero.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "resolved": true,
+                  "created": "2026-04-01T12:00:00.000Z",
+                  "x": null,
+                  "y": null,
+                  "element": null
+                }
+              ]
             },
             {
               "id": "concept-2--v3",
               "number": 3,
               "file": "concept-2/v3.html",
               "parentId": "concept-2--v2",
-              "changelog": "Full split — left hero with stats, right code panel with syntax highlighting and output block",
+              "changelog": "Full split \u2014 left hero with stats, right code panel with syntax highlighting and output block",
               "visible": true,
-              "starred": false,
+              "starred": true,
               "created": "2026-04-01T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-2-concept-2--v3.webp"
             }
@@ -61,7 +75,7 @@
         {
           "id": "concept-1",
           "label": "Light Clean",
-          "description": "White background, centered content, Inter font, blue accent — clean and restrained",
+          "description": "White background, centered content, Inter font, blue accent \u2014 clean and restrained",
           "position": 2,
           "visible": true,
           "slug": "concept-1",
@@ -75,7 +89,21 @@
               "visible": true,
               "starred": false,
               "created": "2026-04-01T00:00:00.000Z",
-              "thumbnail": ".thumbs/concept-1-concept-1--v1.webp"
+              "thumbnail": ".thumbs/concept-1-concept-1--v1.webp",
+              "annotations": [
+                {
+                  "id": "a1",
+                  "text": "Let's try a bolder headline treatment",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "resolved": true,
+                  "created": "2026-04-01T10:00:00.000Z",
+                  "x": null,
+                  "y": null,
+                  "element": null
+                }
+              ]
             },
             {
               "id": "concept-1--v2",
@@ -86,7 +114,21 @@
               "visible": true,
               "starred": false,
               "created": "2026-04-01T00:00:00.000Z",
-              "thumbnail": ".thumbs/concept-1-concept-1--v2.webp"
+              "thumbnail": ".thumbs/concept-1-concept-1--v2.webp",
+              "annotations": [
+                {
+                  "id": "a2",
+                  "text": "Nice. Try adding a product mockup on the right side.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "resolved": true,
+                  "created": "2026-04-01T11:00:00.000Z",
+                  "x": null,
+                  "y": null,
+                  "element": null
+                }
+              ]
             },
             {
               "id": "concept-1--v3",
@@ -95,7 +137,7 @@
               "parentId": "concept-1--v2",
               "changelog": "Split layout with CSS product mockup on right, dual CTAs, refined typography",
               "visible": true,
-              "starred": false,
+              "starred": true,
               "created": "2026-04-01T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-1-concept-1--v3.webp"
             }
@@ -104,7 +146,7 @@
         {
           "id": "concept-3",
           "label": "Violet Bold",
-          "description": "Purple-to-blue gradient, centered vibrant feel — DM Sans, white text",
+          "description": "Purple-to-blue gradient, centered vibrant feel \u2014 DM Sans, white text",
           "position": 3,
           "visible": true,
           "slug": "concept-3",
@@ -118,7 +160,21 @@
               "visible": true,
               "starred": false,
               "created": "2026-04-01T00:00:00.000Z",
-              "thumbnail": ".thumbs/concept-3-concept-3--v1.webp"
+              "thumbnail": ".thumbs/concept-3-concept-3--v1.webp",
+              "annotations": [
+                {
+                  "id": "a4",
+                  "text": "Needs more depth. Add glass-morphism cards.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "resolved": true,
+                  "created": "2026-04-01T13:00:00.000Z",
+                  "x": null,
+                  "y": null,
+                  "element": null
+                }
+              ]
             },
             {
               "id": "concept-3--v2",
@@ -138,9 +194,23 @@
               "parentId": "concept-3--v2",
               "changelog": "Dark gradient mesh background, split layout with glass-morphism feature cards, channel list, team presence",
               "visible": true,
-              "starred": false,
+              "starred": true,
               "created": "2026-04-01T00:00:00.000Z",
-              "thumbnail": ".thumbs/concept-3-concept-3--v3.webp"
+              "thumbnail": ".thumbs/concept-3-concept-3--v3.webp",
+              "annotations": [
+                {
+                  "id": "a5",
+                  "text": "This is our favorite direction.",
+                  "author": "client",
+                  "isClient": true,
+                  "isAgent": false,
+                  "resolved": false,
+                  "created": "2026-04-02T09:00:00.000Z",
+                  "x": null,
+                  "y": null,
+                  "element": null
+                }
+              ]
             }
           ]
         },
@@ -179,84 +249,25 @@
               "number": 3,
               "file": "concept-4/v3.html",
               "parentId": "concept-4--v2",
-              "changelog": "Full editorial spread — oversized W letterform, pull quote, stats strip, dual CTAs",
+              "changelog": "Full editorial spread \u2014 oversized W letterform, pull quote, stats strip, dual CTAs",
               "visible": true,
-              "starred": false,
+              "starred": true,
               "created": "2026-04-01T00:00:00.000Z",
-              "thumbnail": ".thumbs/concept-4-concept-4--v3.webp"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "round-8pxhzget",
-      "number": 2,
-      "name": "22",
-      "createdAt": "2026-04-03T06:18:19.765Z",
-      "selects": [],
-      "concepts": [
-        {
-          "id": "concept-1-round-2",
-          "slug": "concept-1",
-          "label": "Light Clean",
-          "description": "White background, centered content, Inter font, blue accent — clean and restrained",
-          "position": 0,
-          "visible": true,
-          "versions": [
-            {
-              "id": "v1",
-              "number": 1,
-              "file": "concept-1/round-2/v1.html",
-              "parentId": null,
-              "changelog": "Carried from Round 1 — Minimal v3",
-              "visible": true,
-              "starred": false,
-              "created": "2026-04-03T06:18:19.763Z",
-              "thumbnail": ".thumbs/concept-1-round-2-v1.webp"
-            },
-            {
-              "id": "v2",
-              "number": 2,
-              "file": "concept-1/round-2/v2.html",
-              "parentId": null,
-              "changelog": "Carried from Round 1 — Minimal v2",
-              "visible": true,
-              "starred": false,
-              "created": "2026-04-03T06:18:19.764Z",
-              "thumbnail": ".thumbs/concept-1-round-2-v2.webp"
-            }
-          ]
-        },
-        {
-          "id": "concept-2-round-2",
-          "slug": "concept-2",
-          "label": "Dark Code",
-          "description": "Dark background, left-aligned, developer-oriented — JetBrains Mono, green accent",
-          "position": 1,
-          "visible": true,
-          "versions": [
-            {
-              "id": "v1",
-              "number": 1,
-              "file": "concept-2/round-2/v1.html",
-              "parentId": null,
-              "changelog": "Carried from Round 1 — Dark v3",
-              "visible": true,
-              "starred": false,
-              "created": "2026-04-03T06:18:19.764Z",
-              "thumbnail": ".thumbs/concept-2-round-2-v1.webp"
-            },
-            {
-              "id": "v2",
-              "number": 2,
-              "file": "concept-2/round-2/v2.html",
-              "parentId": null,
-              "changelog": "Carried from Round 1 — Dark v2",
-              "visible": true,
-              "starred": false,
-              "created": "2026-04-03T06:18:19.765Z",
-              "thumbnail": ".thumbs/concept-2-round-2-v2.webp"
+              "thumbnail": ".thumbs/concept-4-concept-4--v3.webp",
+              "annotations": [
+                {
+                  "id": "a6",
+                  "text": "Great editorial feel. Dibs on this for the press page.",
+                  "author": "client",
+                  "isClient": true,
+                  "isAgent": false,
+                  "resolved": false,
+                  "created": "2026-04-02T09:30:00.000Z",
+                  "x": null,
+                  "y": null,
+                  "element": null
+                }
+              ]
             }
           ]
         }

@@ -2,11 +2,13 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import useSWR from 'swr';
-import type { Manifest, ViewMode } from '@/lib/types';
+import type { Manifest, ViewMode, Concept, Version } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
 import { filterVisibleManifest } from '@/lib/filterManifest';
 import { letterToNumber, conceptSlug } from '@/lib/letters';
 import { HtmlFrame, type HtmlFrameHandle } from './HtmlFrame';
+import { TourOverlay } from './TourOverlay';
+import { useTour } from '@/lib/hooks/useTour';
 import { NavigationGrid } from './NavigationGrid';
 import { CanvasView, type CanvasViewHandle } from './CanvasView';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
@@ -57,6 +59,16 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set());
   const [clipboard, setClipboard] = useState<{ conceptId: string; versionId: string; file: string; label: string; number: number }[] | null>(null);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('overview');
+
+  // Demo drift state — only used in share mode (shareToken present).
+  // Tracks client-side-only versions/concepts added via D/Shift+D in the demo.
+  // Never persisted. Refresh = reset.
+  const [demoVersions, setDemoVersions] = useState<Record<string, Version[]>>({});
+  const [demoConcepts, setDemoConcepts] = useState<Concept[]>([]);
+
+  // Tour — auto-starts on first visit when viewing a share link
+  const tour = useTour(!!shareToken);
+
   // Smooth zoom transition state
   const canvasRef = useRef<CanvasViewHandle>(null);
   const frameWrapperRef = useRef<HTMLDivElement>(null);
@@ -94,9 +106,29 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     return { ...manifest, concepts: activeRound.concepts };
   }, [manifest, activeRound]);
 
-  const filtered = roundScopedManifest && mode === 'client'
-    ? filterVisibleManifest(roundScopedManifest)
-    : roundScopedManifest;
+  // Layer demo-drift slots on top of the fetched manifest (share mode only).
+  // Demo versions are appended to the end of each concept's versions array (top of column visually).
+  // Demo concepts are appended to the end of the concepts array.
+  const demoManifest = useMemo(() => {
+    if (!roundScopedManifest) return null;
+    if (!shareToken) return roundScopedManifest;
+    if (Object.keys(demoVersions).length === 0 && demoConcepts.length === 0) {
+      return roundScopedManifest;
+    }
+    const newConcepts = roundScopedManifest.concepts.map(c => {
+      const extra = demoVersions[c.id];
+      if (!extra?.length) return c;
+      return { ...c, versions: [...c.versions, ...extra] };
+    });
+    return {
+      ...roundScopedManifest,
+      concepts: [...newConcepts, ...demoConcepts],
+    };
+  }, [roundScopedManifest, shareToken, demoVersions, demoConcepts]);
+
+  const filtered = demoManifest && mode === 'client'
+    ? filterVisibleManifest(demoManifest)
+    : demoManifest;
   const concepts = filtered?.concepts ?? [];
   const currentConcept = concepts[conceptIndex];
   const versions = currentConcept?.versions ?? [];
@@ -274,6 +306,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       if (multiSelected.size > 0) setMultiSelected(new Set());
       setConceptIndex(ci);
       setVersionIndex(vi);
+      tour.trigger('arrow');
       const concept = concepts[ci];
       const version = concept?.versions[vi];
       if (concept && version) {
@@ -281,7 +314,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         window.history.replaceState(null, '', `#${slug}/v${version.number}`);
       }
     },
-    [concepts, multiSelected]
+    [concepts, multiSelected, tour]
   );
 
   const handleHighlight = useCallback(
@@ -315,11 +348,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         presentation.setIsPresenting(false);
         setZoomLevel('z2');
         setTransitionCardBounds(getTransitionCardBounds(conceptIndex, versionIndex));
+        tour.trigger('esc');
         return 'grid';
       }
+      tour.trigger('enter');
       return 'frame';
     });
-  }, [conceptIndex, versionIndex, getTransitionCardBounds, presentation.setIsPresenting]);
+  }, [conceptIndex, versionIndex, getTransitionCardBounds, presentation.setIsPresenting, tour]);
 
   // Pinch zoom out from frame -> exit to grid
   useEffect(() => {
@@ -412,16 +447,75 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     return starred >= 0 ? starred : 0;
   }, [concepts, selections]);
 
+  // Demo drift: adds a client-side-only empty slot to the current concept.
+  // Only used when shareToken is present. Never persisted.
+  const handleDemoDrift = useCallback(() => {
+    if (!currentConcept) return;
+    const existing = demoVersions[currentConcept.id] || [];
+    const realCount = currentConcept.versions.length - existing.length;
+    const nextNumber = realCount + existing.length + 1;
+    const newVersion: Version = {
+      id: `demo-v${nextNumber}-${Date.now()}`,
+      number: nextNumber,
+      file: '',
+      parentId: null,
+      changelog: 'Empty slot — direct your agent to fill this in',
+      visible: true,
+      starred: false,
+      created: new Date().toISOString(),
+      thumbnail: '',
+    };
+    setDemoVersions(prev => ({
+      ...prev,
+      [currentConcept.id]: [...(prev[currentConcept.id] || []), newVersion],
+    }));
+    // Advance to the new slot
+    setVersionIndex(currentConcept.versions.length); // length AFTER adding = new index
+    flash.showDriftFlash('DRIFTED \u2193');
+    tour.trigger('drift');
+  }, [currentConcept, demoVersions, flash, tour]);
+
+  // Demo branch: adds a client-side-only empty concept column.
+  const handleDemoBranch = useCallback(() => {
+    if (!concepts.length) return;
+    const nextN = concepts.length + 1;
+    const newConcept: Concept = {
+      id: `demo-concept-${Date.now()}`,
+      slug: `demo-concept-${nextN}`,
+      label: `Concept ${nextN}`,
+      description: 'Empty concept — direct your agent to fill this in',
+      position: concepts.length,
+      visible: true,
+      versions: [{
+        id: `demo-v1-${Date.now()}`,
+        number: 1,
+        file: '',
+        parentId: null,
+        changelog: 'Empty slot — direct your agent to fill this in',
+        visible: true,
+        starred: false,
+        created: new Date().toISOString(),
+        thumbnail: '',
+      }],
+    };
+    setDemoConcepts(prev => [...prev, newConcept]);
+    setConceptIndex(concepts.length);
+    setVersionIndex(0);
+    flash.showDriftFlash('DRIFTED \u2192');
+    tour.trigger('branch');
+  }, [concepts, flash, tour]);
+
   const handleDrift = useMemo(() => {
     if (!currentConcept || !currentVersion) return undefined;
+    if (shareToken) return handleDemoDrift;
     return () => mutations.handleDriftVersion(currentConcept.id, currentVersion.id);
-  }, [currentConcept, currentVersion, mutations.handleDriftVersion]);
+  }, [currentConcept, currentVersion, mutations.handleDriftVersion, shareToken, handleDemoDrift]);
 
   const handleBranch = useMemo(() => {
-    return currentConcept && currentVersion
-      ? () => mutations.handleBranchVersion(currentConcept.id, currentVersion.id)
-      : undefined;
-  }, [currentConcept, currentVersion, mutations.handleBranchVersion]);
+    if (!currentConcept || !currentVersion) return undefined;
+    if (shareToken) return handleDemoBranch;
+    return () => mutations.handleBranchVersion(currentConcept.id, currentVersion.id);
+  }, [currentConcept, currentVersion, mutations.handleBranchVersion, shareToken, handleDemoBranch]);
 
   useKeyboardNav({
     conceptIndex,
@@ -857,6 +951,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
+        <TourOverlay step={tour.currentStep} stepIndex={tour.step} onDismiss={tour.dismiss} />
         {/* Top-right: project name + round switcher */}
         <div className="fixed top-4 right-4 z-30 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
           {/* Round switcher — hidden when only 1 round or in client mode */}
@@ -1001,21 +1096,48 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
+      <TourOverlay step={tour.currentStep} stepIndex={tour.step} onDismiss={tour.dismiss} />
       <div ref={frameWrapperRef} className="flex-1 min-h-0 relative">
         <div className="h-full p-4 relative" style={{ background: mode === 'client' ? '#fff' : 'var(--canvas)' }}>
-          <HtmlFrame
-            ref={htmlFrameRef}
-            src={htmlSrc}
-            placeholder={thumbSrc}
-            borderless={mode === 'client'}
-            canvasWidth={resolved.width}
-            canvasHeight={typeof resolved.height === 'number' ? resolved.height : undefined}
-            editMode={clientEdits.editMode}
-            showEdits={showEdits}
-            hasEdits={clientEdits.hasEdits}
-            savedEdits={clientEdits.edits}
-            onEditsChange={clientEdits.handleEditsChange}
-          />
+          {!currentVersion.file ? (
+            <div
+              className="h-full flex flex-col items-center justify-center gap-4"
+              style={{
+                border: '1.5px dashed var(--border)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--muted)',
+                fontFamily: 'var(--font-mono, monospace)',
+              }}
+            >
+              <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.4 }}>
+                Empty slot
+              </div>
+              <div style={{ fontSize: 14, opacity: 0.5, textAlign: 'center', maxWidth: 400, lineHeight: 1.6 }}>
+                Direct your agent to fill this in.<br />
+                <span style={{ opacity: 0.6, fontSize: 12 }}>
+                  e.g. &quot;make this version bolder and more minimal&quot;
+                </span>
+              </div>
+              <div style={{ fontSize: 10, opacity: 0.3, letterSpacing: '0.08em', marginTop: 16 }}>
+                In your local DriftGrid, this slot becomes a real HTML file<br />
+                that your agent writes to.
+              </div>
+            </div>
+          ) : (
+            <HtmlFrame
+              ref={htmlFrameRef}
+              src={htmlSrc}
+              placeholder={thumbSrc}
+              borderless={mode === 'client'}
+              canvasWidth={resolved.width}
+              canvasHeight={typeof resolved.height === 'number' ? resolved.height : undefined}
+              editMode={clientEdits.editMode}
+              showEdits={showEdits}
+              hasEdits={clientEdits.hasEdits}
+              savedEdits={clientEdits.edits}
+              onEditsChange={clientEdits.handleEditsChange}
+            />
+          )}
           <AnnotationOverlay
             annotations={annotationState.annotations}
             annotationMode={annotationState.annotationMode}
