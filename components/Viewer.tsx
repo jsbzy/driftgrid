@@ -161,10 +161,12 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         e.preventDefault();
         ui.setNavGridHidden(v => !v);
       }
-      if (e.key === 'a' || e.key === 'A') {
+      // C (without Cmd): toggle comment/annotation mode in frame view
+      if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey) {
         if (viewMode === 'frame') {
           e.preventDefault();
           annotationState.setAnnotationMode(v => !v);
+          tour.trigger('comment');
         }
       }
       // Cmd+C: copy frames to clipboard
@@ -220,7 +222,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [viewMode, annotationState, ui, concepts, currentConcept, currentVersion, multiSelected, clipboard, client, project, activeRoundId, mutate]);
+  }, [viewMode, annotationState, ui, concepts, currentConcept, currentVersion, multiSelected, clipboard, client, project, activeRoundId, mutate, tour]);
   const presentation = usePresentationMode(
     concepts, selections, conceptIndex, versionIndex, viewMode,
     setConceptIndex, setVersionIndex, setViewMode,
@@ -825,7 +827,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         </svg>
         <span style={actionBarKey}>D</span>
       </button>
-      <button onClick={() => annotationState.setAnnotationMode(v => !v)} className={actionBarBtn} title="Add comment (A)" style={{ opacity: annotationState.annotationMode ? 1 : undefined }}>
+      <button onClick={() => annotationState.setAnnotationMode(v => !v)} className={actionBarBtn} title="Add comment (C)" style={{ opacity: annotationState.annotationMode ? 1 : undefined }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill={annotationState.annotationMode ? 'white' : 'none'} stroke="white" strokeWidth="2">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>

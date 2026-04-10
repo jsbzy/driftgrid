@@ -107,7 +107,7 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
               window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, bubbles: true }));
               return;
             }
-            if (e.key === 'a' || e.key === 'A' ||
+            if (e.key === 'c' || e.key === 'C' ||
                 e.key === 'd' || e.key === 'D' ||
                 e.key === 'g' || e.key === 'G' || e.key === 'Escape' ||
                 e.key === 'h' || e.key === 'H' ||

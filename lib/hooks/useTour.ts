@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 const STORAGE_KEY = 'driftgrid-tour-seen';
 
-export type TourTrigger = 'arrow' | 'enter' | 'esc' | 'drift' | 'branch' | 'any';
+export type TourTrigger = 'arrow' | 'enter' | 'esc' | 'drift' | 'branch' | 'comment' | 'any';
 
 export interface TourStep {
   eyebrow: string;
@@ -17,7 +17,7 @@ export interface TourStep {
 export const TOUR_STEPS: TourStep[] = [
   {
     eyebrow: 'Welcome',
-    hint: 'This is DriftGrid. An infinite grid for rapid design iteration. You direct, your AI agent executes. Columns are concepts, rows are versions.',
+    hint: 'Rapid design iteration and sharing. You direct, your AI agent executes. Columns are concepts, rows are versions.',
     keys: ['←', '→', '↑', '↓'],
     advanceOn: 'arrow',
   },
@@ -26,6 +26,12 @@ export const TOUR_STEPS: TourStep[] = [
     hint: 'Press Enter or double-click a card to open the live HTML frame.',
     keys: ['↵', '2x click'],
     advanceOn: 'enter',
+  },
+  {
+    eyebrow: 'Leave a comment',
+    hint: 'Press C to drop a comment anywhere on the frame. Your client sees it on the shared link.',
+    keys: ['C'],
+    advanceOn: 'comment',
   },
   {
     eyebrow: 'Back to the grid',
