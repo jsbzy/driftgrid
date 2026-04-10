@@ -4,12 +4,19 @@ import { getUser } from '@/lib/auth';
 import { isCloudMode } from '@/lib/supabase';
 
 export default async function Home() {
-  // Cloud mode: show landing page if not logged in
+  // Production (Vercel): always show landing page unless the user is logged in
+  if (process.env.VERCEL) {
+    if (isCloudMode()) {
+      const user = await getUser();
+      if (user) return <Dashboard />;
+    }
+    return <LandingPage />;
+  }
+
+  // Local dev: show dashboard (unless explicitly in cloud mode + logged out)
   if (isCloudMode()) {
     const user = await getUser();
-    if (!user) {
-      return <LandingPage />;
-    }
+    if (!user) return <LandingPage />;
   }
 
   return <Dashboard />;
