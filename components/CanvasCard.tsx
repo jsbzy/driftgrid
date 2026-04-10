@@ -70,6 +70,37 @@ export const CanvasCard = memo(function CanvasCard({
       }}
       onContextMenu={onContextMenu}
     >
+      {/* Selection ring — sibling of button so it's not clipped by overflow:hidden */}
+      {isCurrent && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: -4,
+            left: -4,
+            right: -4,
+            bottom: -4,
+            borderRadius: 'calc(var(--radius-md) + 4px)',
+            border: '3px solid #8b5cf6',
+            boxSizing: 'border-box',
+            zIndex: 20,
+          }}
+        />
+      )}
+      {isMultiSelected && !isCurrent && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: -2,
+            left: -2,
+            right: -2,
+            bottom: -2,
+            borderRadius: 'calc(var(--radius-md) + 2px)',
+            border: '2px solid rgba(139, 92, 246, 0.5)',
+            boxSizing: 'border-box',
+            zIndex: 19,
+          }}
+        />
+      )}
       <button
         onClick={(e) => onClick(e.shiftKey, e.metaKey || e.ctrlKey)}
         onDoubleClick={onDoubleClick}
@@ -80,12 +111,7 @@ export const CanvasCard = memo(function CanvasCard({
           style={{
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--card-border)',
-            // Use box-shadow rings instead of outline (Tailwind v4 resets outline)
-            boxShadow: isCurrent
-              ? '0 0 0 3px #8b5cf6, 0 0 0 5px rgba(139, 92, 246, 0.25), var(--card-shadow)'
-              : isMultiSelected
-              ? '0 0 0 2px var(--card-outline-focus), var(--card-shadow)'
-              : 'var(--card-shadow)',
+            boxShadow: 'var(--card-shadow)',
             background: 'var(--card-bg)',
             position: 'relative',
           }}
