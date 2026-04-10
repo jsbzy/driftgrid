@@ -51,11 +51,7 @@ export async function GET(
 
   const { data, error } = await supabase.storage.from(BUCKET).download(path);
   if (error || !data) {
-    console.error('[share manifest] download failed', { path, error: error?.message, resolved });
-    return NextResponse.json({
-      error: 'Project not found',
-      debug: { path, storageError: error?.message, resolved },
-    }, { status: 404 });
+    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
 
   const text = await data.text();
