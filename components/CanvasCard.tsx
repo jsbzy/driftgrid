@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 
 interface CanvasCardProps {
   thumbnail: string | null;
@@ -49,26 +49,13 @@ export const CanvasCard = memo(function CanvasCard({
   width,
   height,
 }: CanvasCardProps) {
-  const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [thumbSrc, setThumbSrc] = useState(thumbnail);
 
   useEffect(() => {
     setThumbSrc(thumbnail);
     setImgError(false);
-    setImgLoaded(false);
   }, [thumbnail]);
-
-  // Ref callback: fires synchronously when the <img> is attached.
-  // Handles cached images where onLoad never fires because the browser
-  // already has the image decoded.
-  const imgRefCallback = useCallback((el: HTMLImageElement | null) => {
-    if (!el) return;
-    if (el.complete && el.naturalWidth > 0) {
-      // Image is already loaded (from cache) — mark as loaded immediately
-      setImgLoaded(true);
-    }
-  }, []);
 
   return (
     <div
@@ -137,30 +124,18 @@ export const CanvasCard = memo(function CanvasCard({
               </div>
             </div>
           ) : thumbSrc && !imgError ? (
-            <>
-              {/* Lightweight placeholder while image loads */}
-              {!imgLoaded && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[var(--card-bg)]">
-                  <span className="text-[10px]" style={{ color: 'var(--foreground)', opacity: 0.15 }}>
-                    {iterationLetter || `v${versionNumber}`}
-                  </span>
-                </div>
-              )}
-              <img
-                ref={imgRefCallback}
-                src={thumbSrc}
-                alt={`${conceptLabel} v${versionNumber}`}
-                className="w-full h-full object-cover object-top"
-                style={{ opacity: imgLoaded ? 1 : 0, transition: 'opacity 0.15s ease' }}
-                draggable={false}
-                decoding="async"
-                onLoad={() => setImgLoaded(true)}
-                onError={() => {
-                  setImgError(true);
-                  setTimeout(() => setImgError(false), 3000);
-                }}
-              />
-            </>
+            <img
+              key={thumbSrc}
+              src={thumbSrc}
+              alt={`${conceptLabel} v${versionNumber}`}
+              className="w-full h-full object-cover object-top"
+              draggable={false}
+              decoding="async"
+              onError={() => {
+                setImgError(true);
+                setTimeout(() => setImgError(false), 3000);
+              }}
+            />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[var(--background)]">
               <span className="text-[11px] font-medium" style={{ color: 'var(--foreground)', opacity: 0.4 }}>{conceptLabel}</span>
