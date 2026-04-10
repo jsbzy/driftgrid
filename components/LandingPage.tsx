@@ -1,95 +1,38 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 
-type TabKey = 'clone' | 'cloud' | 'mcp';
-
-const TABS: { key: TabKey; label: string; lines: { text: string; muted?: boolean }[] }[] = [
-  {
-    key: 'clone',
-    label: 'Clone',
-    lines: [
-      { text: '# Clone, install, run. Opens localhost:3000.', muted: true },
-      { text: '$ git clone https://github.com/jsbzy/driftgrid.git' },
-      { text: '$ cd driftgrid && npm install' },
-      { text: '$ npm run dev' },
-    ],
-  },
-  {
-    key: 'cloud',
-    label: 'Cloud',
-    lines: [
-      { text: '# Free forever. Paid tier adds sharing + archive.', muted: true },
-      { text: '$ open https://driftgrid.ai/login' },
-      { text: '$ # Sign up, push a project, get a share link' },
-    ],
-  },
-  {
-    key: 'mcp',
-    label: 'MCP',
-    lines: [
-      { text: '# Connect Claude Code directly via MCP.', muted: true },
-      { text: '$ claude mcp add driftgrid' },
-      { text: '$ # Agent can now create projects, push, and share' },
-    ],
-  },
-];
+const DEMO_URL = '/s/amVmZi9kZW1vL3dhdmVsZW5ndGg';
 
 function QuickStart() {
-  const [tab, setTab] = useState<TabKey>('clone');
   const [copied, setCopied] = useState(false);
-  const activeTab = TABS.find(t => t.key === tab)!;
-  const copyText = activeTab.lines
-    .filter(l => !l.muted)
-    .map(l => l.text.replace(/^\$ /, ''))
-    .join('\n');
+  const commands = [
+    'git clone https://github.com/jsbzy/driftgrid.git',
+    'cd driftgrid && npm install',
+    'npm run dev',
+  ];
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(copyText);
+      await navigator.clipboard.writeText(commands.join('\n'));
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {}
   };
 
   return (
-    <section style={{
-      padding: '0 32px 120px',
-      maxWidth: 800,
+    <div id="quickstart" style={{
+      width: '100%',
+      maxWidth: 720,
       margin: '0 auto',
     }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'baseline',
-        gap: 8,
-        marginBottom: 24,
-      }}>
-        <span style={{
-          fontSize: 11,
-          color: 'rgba(255,255,255,0.3)',
-          fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-        }}>
-          ›
-        </span>
-        <h2 style={{
-          fontSize: 22,
-          fontWeight: 500,
-          color: 'rgba(255,255,255,0.9)',
-          margin: 0,
-          fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-          letterSpacing: '-0.01em',
-        }}>
-          Quick Start
-        </h2>
-      </div>
-
       {/* Terminal window */}
       <div style={{
         background: 'rgba(255,255,255,0.025)',
         border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: 10,
         overflow: 'hidden',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
       }}>
         {/* Title bar */}
         <div style={{
@@ -99,43 +42,16 @@ function QuickStart() {
           padding: '14px 18px',
           borderBottom: '1px solid rgba(255,255,255,0.05)',
         }}>
-          {/* Traffic lights + tabs */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-            </div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {TABS.map(t => (
-                <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
-                  style={{
-                    padding: '5px 12px',
-                    borderRadius: 4,
-                    fontSize: 10,
-                    fontWeight: 600,
-                    letterSpacing: '0.05em',
-                    fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-                    background: tab === t.key ? 'rgba(255,255,255,0.95)' : 'transparent',
-                    color: tab === t.key ? '#0a0a0a' : 'rgba(255,255,255,0.4)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 120ms ease',
-                  }}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
           </div>
 
-          {/* Copy button */}
           <button
             onClick={copy}
             style={{
-              padding: '5px 10px',
+              padding: '5px 12px',
               borderRadius: 4,
               fontSize: 9,
               fontWeight: 600,
@@ -143,7 +59,7 @@ function QuickStart() {
               textTransform: 'uppercase',
               fontFamily: '"JetBrains Mono", ui-monospace, monospace',
               background: 'transparent',
-              color: copied ? '#4ade80' : 'rgba(255,255,255,0.3)',
+              color: copied ? '#4ade80' : 'rgba(255,255,255,0.4)',
               border: '1px solid rgba(255,255,255,0.08)',
               cursor: 'pointer',
               transition: 'color 120ms ease',
@@ -159,31 +75,35 @@ function QuickStart() {
           fontFamily: '"JetBrains Mono", ui-monospace, monospace',
           fontSize: 13,
           lineHeight: 2,
+          textAlign: 'left',
         }}>
-          {activeTab.lines.map((line, i) => (
-            <div
-              key={i}
-              style={{
-                color: line.muted ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.85)',
-                fontStyle: line.muted ? 'italic' : 'normal',
-              }}
-            >
-              {line.text}
+          <div style={{
+            color: 'rgba(255,255,255,0.3)',
+            fontStyle: 'italic',
+            marginBottom: 4,
+          }}>
+            # Clone, install, run. Opens localhost:3000.
+          </div>
+          {commands.map((cmd, i) => (
+            <div key={i} style={{ color: 'rgba(255,255,255,0.9)' }}>
+              <span style={{ color: 'rgba(255,255,255,0.3)', userSelect: 'none' }}>$ </span>
+              {cmd}
             </div>
           ))}
         </div>
       </div>
 
       <p style={{
-        fontSize: 11,
-        color: 'rgba(255,255,255,0.35)',
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.3)',
         textAlign: 'center',
-        marginTop: 20,
+        marginTop: 16,
         fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+        letterSpacing: '0.05em',
       }}>
-        Works on macOS, Linux, Windows. Requires Node 20+.
+        macOS · Linux · Windows · Requires Node 20+
       </p>
-    </section>
+    </div>
   );
 }
 
@@ -230,8 +150,8 @@ export function LandingPage() {
           >
             GitHub
           </a>
-          <Link
-            href="/login"
+          <a
+            href={DEMO_URL}
             style={{
               fontSize: 10,
               letterSpacing: '0.12em',
@@ -240,8 +160,8 @@ export function LandingPage() {
               textTransform: 'uppercase',
             }}
           >
-            Log in
-          </Link>
+            Demo
+          </a>
         </div>
       </nav>
 
@@ -252,7 +172,7 @@ export function LandingPage() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '0 32px',
+        padding: '0 32px 60px',
         position: 'relative',
       }}>
         {/* Grid background */}
@@ -268,7 +188,7 @@ export function LandingPage() {
         }} />
 
         {/* Hero content */}
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 720 }}>
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 720, marginBottom: 64 }}>
           <div style={{
             fontSize: 9,
             letterSpacing: '0.2em',
@@ -313,9 +233,7 @@ export function LandingPage() {
             marginTop: 48,
           }}>
             <a
-              href="https://github.com/jsbzy/driftgrid"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="#quickstart"
               style={{
                 padding: '12px 24px',
                 background: 'rgba(255,255,255,0.95)',
@@ -326,13 +244,12 @@ export function LandingPage() {
                 textTransform: 'uppercase',
                 textDecoration: 'none',
                 borderRadius: 4,
-                transition: 'all 150ms ease',
               }}
             >
-              Get Started →
+              Get Started ↓
             </a>
             <a
-              href="/s/amVmZi9yZWNvdnJ5YWkvZGVtby1zdG9yeWJvYXJk"
+              href={DEMO_URL}
               style={{
                 padding: '12px 24px',
                 border: '1px solid rgba(255,255,255,0.15)',
@@ -343,12 +260,16 @@ export function LandingPage() {
                 textTransform: 'uppercase',
                 textDecoration: 'none',
                 borderRadius: 4,
-                transition: 'all 150ms ease',
               }}
             >
               See a Demo
             </a>
           </div>
+        </div>
+
+        {/* Quick Start terminal directly under hero */}
+        <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
+          <QuickStart />
         </div>
       </section>
 
@@ -378,8 +299,8 @@ export function LandingPage() {
           {[
             { n: '01', t: 'Agent writes', d: 'Point Claude Code (or any AI) at your project. It creates versioned HTML designs following the CLAUDE.md conventions.' },
             { n: '02', t: 'You browse', d: 'Zoom, compare, navigate. Star your picks. The infinite canvas shows every iteration side-by-side.' },
-            { n: '03', t: 'Push to cloud', d: 'One click uploads your project to driftgrid.ai. Your files stay local — the cloud is just for sharing.' },
-            { n: '04', t: 'Share the link', d: 'Clients get a public review URL. They browse, comment, approve. No account needed.' },
+            { n: '03', t: 'Present', d: 'Press P to show starred versions fullscreen. Export as PDF, PNG, or static HTML.' },
+            { n: '04', t: 'Share', d: 'Generate a public review link. Clients browse and comment without accounts.' },
           ].map((step, i) => (
             <div key={i} style={{
               padding: 20,
@@ -428,7 +349,7 @@ export function LandingPage() {
           {[
             {
               t: 'BYO Agent',
-              d: 'Works with Claude Code, Cursor, Copilot, Claude Managed Agents, or any tool that writes HTML. DriftGrid is the harness.',
+              d: 'Works with Claude Code, Cursor, Copilot, or any tool that writes HTML. DriftGrid is the harness.',
             },
             {
               t: 'Local-first',
@@ -436,7 +357,7 @@ export function LandingPage() {
             },
             {
               t: 'Live HTML',
-              d: 'Every frame is a real HTML page, not a screenshot. Interactive prototypes work out of the box. Export as PDF, PNG, or static site.',
+              d: 'Every frame is a real HTML page, not a screenshot. Interactive prototypes work out of the box.',
             },
           ].map((f, i) => (
             <div key={i}>
@@ -460,8 +381,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      <QuickStart />
-
       {/* Footer */}
       <footer style={{
         padding: '48px 32px',
@@ -474,7 +393,7 @@ export function LandingPage() {
           color: 'rgba(255,255,255,0.2)',
           textTransform: 'uppercase',
         }}>
-          BZY Design · MIT License · Built with Claude Code
+          BZY Design · MIT License
         </div>
       </footer>
     </div>
