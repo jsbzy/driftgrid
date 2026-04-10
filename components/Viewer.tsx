@@ -47,7 +47,11 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
 
   const [conceptIndex, setConceptIndex] = useState(0);
   const [versionIndex, setVersionIndex] = useState(0);
-  const [viewMode, setViewMode] = useState<'frame' | 'grid'>(mode === 'client' ? 'frame' : 'grid');
+  // Share demos open in grid view (show the whole landscape first).
+  // Non-shared client review still opens to frame (clients want to dive in).
+  const [viewMode, setViewMode] = useState<'frame' | 'grid'>(
+    shareToken ? 'grid' : mode === 'client' ? 'frame' : 'grid'
+  );
   const [selections, setSelections] = useState<Set<string>>(new Set());
   const [activeRoundId, setActiveRoundId] = useState<string | null>(null);
   const flash = useFlash();
@@ -951,7 +955,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
-        <TourOverlay step={tour.currentStep} stepIndex={tour.step} onDismiss={tour.dismiss} />
+        <TourOverlay
+          step={tour.currentStep}
+          stepIndex={tour.step}
+          totalSteps={tour.totalSteps}
+          onDismiss={tour.dismiss}
+          onNext={tour.next}
+        />
         {/* Top-right: project name + round switcher */}
         <div className="fixed top-4 right-4 z-30 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
           {/* Round switcher — hidden when only 1 round or in client mode */}
@@ -1096,7 +1106,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
-      <TourOverlay step={tour.currentStep} stepIndex={tour.step} onDismiss={tour.dismiss} />
+      <TourOverlay
+          step={tour.currentStep}
+          stepIndex={tour.step}
+          totalSteps={tour.totalSteps}
+          onDismiss={tour.dismiss}
+          onNext={tour.next}
+        />
       <div ref={frameWrapperRef} className="flex-1 min-h-0 relative">
         <div className="h-full p-4 relative" style={{ background: mode === 'client' ? '#fff' : 'var(--canvas)' }}>
           {!currentVersion.file ? (

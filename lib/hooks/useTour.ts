@@ -16,50 +16,51 @@ export interface TourStep {
 
 export const TOUR_STEPS: TourStep[] = [
   {
-    eyebrow: '1 of 6 · Welcome',
+    eyebrow: 'Welcome',
     hint: 'This is DriftGrid. An infinite grid for rapid design iteration. You direct, your AI agent executes. Columns are concepts, rows are versions.',
     keys: ['←', '→', '↑', '↓'],
     advanceOn: 'arrow',
   },
   {
-    eyebrow: '2 of 6 · See a design',
+    eyebrow: 'See a design',
     hint: 'Press Enter to open a frame and view the live HTML.',
     keys: ['↵'],
     advanceOn: 'enter',
   },
   {
-    eyebrow: '3 of 6 · Back to the grid',
+    eyebrow: 'Back to the grid',
     hint: 'Press Esc to come back to the grid.',
     keys: ['esc'],
     advanceOn: 'esc',
   },
   {
-    eyebrow: '4 of 6 · Drift ↓',
+    eyebrow: 'Drift — new version',
     hint: 'Press D to open a new empty version slot. Tell your agent what you want — it fills it in.',
     keys: ['D'],
     advanceOn: 'drift',
   },
   {
-    eyebrow: '5 of 6 · Branch →',
+    eyebrow: 'Branch — new concept',
     hint: 'Press Shift+D to start a new concept column — a new direction to explore.',
     keys: ['⇧', 'D'],
     advanceOn: 'branch',
   },
   {
-    eyebrow: '6 of 6 · Done',
+    eyebrow: 'You\u2019re set',
     hint: 'Press ? anytime for all shortcuts. Press P to present your starred versions fullscreen.',
     keys: ['?', 'P'],
     advanceOn: 'any',
-    autoDismissAfter: 5000,
   },
 ];
 
 export interface TourState {
   active: boolean;
   step: number;
+  totalSteps: number;
   currentStep: TourStep | null;
   dismiss: () => void;
   replay: () => void;
+  next: () => void;
   trigger: (kind: TourTrigger) => void;
 }
 
@@ -103,6 +104,16 @@ export function useTour(enabled: boolean): TourState {
     setActive(true);
   }, []);
 
+  const next = useCallback(() => {
+    setStep(s => {
+      if (s + 1 >= TOUR_STEPS.length) {
+        dismiss();
+        return s;
+      }
+      return s + 1;
+    });
+  }, [dismiss]);
+
   const trigger = useCallback((kind: TourTrigger) => {
     if (!active) return;
     const currentStep = TOUR_STEPS[step];
@@ -130,9 +141,11 @@ export function useTour(enabled: boolean): TourState {
   return {
     active,
     step,
+    totalSteps: TOUR_STEPS.length,
     currentStep: active ? TOUR_STEPS[step] ?? null : null,
     dismiss,
     replay,
+    next,
     trigger,
   };
 }

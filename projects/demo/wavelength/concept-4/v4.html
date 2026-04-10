@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavelength</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #f4f0e6;
+            color: #1a1a17;
+            display: flex;
+            flex-direction: column;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        /* Newspaper masthead */
+        .masthead {
+            padding: 36px 120px 24px;
+            border-bottom: 3px double #1a1a17;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+
+        .masthead-left {
+            font-size: 11px;
+            font-weight: 600;
+            color: #5c574e;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            line-height: 1.6;
+        }
+
+        .masthead-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 44px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            line-height: 1;
+            font-style: italic;
+        }
+
+        .masthead-right {
+            font-size: 11px;
+            font-weight: 600;
+            color: #5c574e;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            text-align: right;
+            line-height: 1.6;
+        }
+
+        /* Section label */
+        .section-label {
+            padding: 16px 120px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #8a8478;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+        }
+
+        .section-label .rule {
+            flex: 1;
+            height: 1px;
+            background: #d8d1be;
+            margin: 0 20px;
+        }
+
+        /* Main editorial block */
+        .main {
+            flex: 1;
+            padding: 32px 120px 0;
+            display: grid;
+            grid-template-columns: 1.2fr 0.9fr;
+            gap: 72px;
+            min-height: 0;
+        }
+
+        /* Hero headline column */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .kicker {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            font-style: italic;
+            color: #8a6b3a;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 96px;
+            font-weight: 900;
+            line-height: 0.94;
+            letter-spacing: -0.035em;
+            color: #1a1a17;
+            margin-bottom: 28px;
+        }
+
+        h1 .italic {
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        .byline {
+            font-size: 12px;
+            color: #5c574e;
+            padding: 14px 0;
+            border-top: 1px solid #d8d1be;
+            border-bottom: 1px solid #d8d1be;
+            display: flex;
+            justify-content: space-between;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        /* Multi-column body with drop cap */
+        .body-columns {
+            column-count: 2;
+            column-gap: 32px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #3d3a34;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .body-columns p {
+            margin-bottom: 12px;
+        }
+
+        .drop-cap {
+            font-family: 'Playfair Display', serif;
+            font-size: 72px;
+            font-weight: 900;
+            float: left;
+            line-height: 0.85;
+            margin: 6px 8px -4px 0;
+            color: #1a1a17;
+        }
+
+        /* Right sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #d8d1be;
+            padding-left: 56px;
+            min-width: 0;
+        }
+
+        .pull-quote {
+            font-family: 'Playfair Display', serif;
+            font-size: 30px;
+            font-weight: 600;
+            line-height: 1.25;
+            color: #1a1a17;
+            font-style: italic;
+            margin-bottom: 14px;
+            position: relative;
+            padding-left: 16px;
+            border-left: 3px solid #8a6b3a;
+        }
+
+        .attr {
+            font-size: 12px;
+            font-weight: 600;
+            color: #5c574e;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 32px;
+        }
+
+        .attr .role {
+            color: #8a8478;
+            font-weight: 500;
+            text-transform: none;
+            letter-spacing: 0.02em;
+            display: block;
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        .dossier {
+            margin-top: auto;
+            border-top: 1px solid #d8d1be;
+            padding-top: 20px;
+        }
+
+        .dossier-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: #8a8478;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 14px;
+        }
+
+        .dossier-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 9px 0;
+            border-bottom: 1px dotted #d8d1be;
+            font-size: 13px;
+        }
+
+        .dossier-row:last-child { border-bottom: none; }
+
+        .dossier-key {
+            color: #78756e;
+        }
+
+        .dossier-val {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-style: italic;
+        }
+
+        .cta-row {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            margin-top: 20px;
+        }
+
+        .cta-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 28px;
+            background: #1a1a17;
+            color: #f4f0e6;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 2px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .cta-secondary {
+            font-size: 13px;
+            font-weight: 600;
+            color: #8a6b3a;
+            text-decoration: none;
+            border-bottom: 1px solid #8a6b3a;
+            padding-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* Footer ribbon */
+        .footer-ribbon {
+            padding: 14px 120px;
+            border-top: 1px solid #1a1a17;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            font-weight: 600;
+            color: #5c574e;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+    </style>
+</head>
+<body>
+    <div class="masthead">
+        <div class="masthead-left">
+            Vol. II &middot; No. 04<br>
+            Spring Quarterly
+        </div>
+        <div class="masthead-title">The Wavelength Dispatch</div>
+        <div class="masthead-right">
+            April 7, 2026<br>
+            Established 2024
+        </div>
+    </div>
+
+    <div class="section-label">
+        <span>Feature Story</span>
+        <div class="rule"></div>
+        <span>Page 01</span>
+    </div>
+
+    <div class="main">
+        <div class="hero">
+            <div class="kicker" data-drift-editable="kicker" data-drift-maxlen="40">A manifesto for modern teams</div>
+            <h1 data-drift-editable="headline" data-drift-maxlen="70">The end of<br>the <span class="italic">noisy</span><br>workplace.</h1>
+            <div class="byline">
+                <span>By the Wavelength Team</span>
+                <span>8 min read</span>
+            </div>
+            <div class="body-columns">
+                <p><span class="drop-cap">W</span>e built Wavelength because the tools meant to bring teams together were quietly pulling them apart. Every ping a tax on attention. Every channel a promise of chaos. Something had to change.</p>
+                <p data-drift-editable="body-1" data-drift-maxlen="260">So we started with a simple question: what would team communication look like if it respected your focus as much as your velocity? The answer became a workspace built around threads, not streams.</p>
+                <p data-drift-editable="body-2" data-drift-maxlen="260">Wavelength replaces the endless scroll with structure. Conversations have beginnings and ends. Decisions stay findable. Context travels with the work.</p>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <p class="pull-quote" data-drift-editable="pull-quote" data-drift-maxlen="140">"For the first time in a decade, our team actually feels quiet &mdash; in the best possible way."</p>
+            <div class="attr">
+                Elena Torres
+                <span class="role">Head of Product at Craft Studio</span>
+            </div>
+
+            <div class="cta-row">
+                <a class="cta-primary" href="#">
+                    <span data-drift-editable="cta" data-drift-maxlen="30">Request access</span>
+                    <span>&rarr;</span>
+                </a>
+                <a class="cta-secondary" href="#" data-drift-editable="cta-secondary" data-drift-maxlen="30">Read full story</a>
+            </div>
+
+            <div class="dossier">
+                <div class="dossier-title">The Details</div>
+                <div class="dossier-row">
+                    <span class="dossier-key">Teams onboarded</span>
+                    <span class="dossier-val">2,431</span>
+                </div>
+                <div class="dossier-row">
+                    <span class="dossier-key">Fewer meetings</span>
+                    <span class="dossier-val">40%</span>
+                </div>
+                <div class="dossier-row">
+                    <span class="dossier-key">Founded</span>
+                    <span class="dossier-val">Brooklyn, 2024</span>
+                </div>
+                <div class="dossier-row">
+                    <span class="dossier-key">Pricing</span>
+                    <span class="dossier-val">From $8/seat</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-ribbon">
+        <span>wavelength.co</span>
+        <span>&mdash; Quietly, together &mdash;</span>
+        <span>Continued inside</span>
+    </div>
+</body>
+</html>

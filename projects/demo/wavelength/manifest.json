@@ -66,9 +66,20 @@
               "parentId": "concept-2--v2",
               "changelog": "Full split \u2014 left hero with stats, right code panel with syntax highlighting and output block",
               "visible": true,
-              "starred": true,
+              "starred": false,
               "created": "2026-04-01T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-2-concept-2--v3.webp"
+            },
+            {
+              "id": "concept-2--v4",
+              "number": 4,
+              "file": "concept-2/v4.html",
+              "parentId": null,
+              "changelog": "Full terminal takeover \u2014 boot log, ASCII logo, live system monitor, audio waveform footer, CRT scanlines",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ""
             }
           ]
         },
@@ -137,9 +148,20 @@
               "parentId": "concept-1--v2",
               "changelog": "Split layout with CSS product mockup on right, dual CTAs, refined typography",
               "visible": true,
-              "starred": true,
+              "starred": false,
               "created": "2026-04-01T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-1-concept-1--v3.webp"
+            },
+            {
+              "id": "concept-1--v4",
+              "number": 4,
+              "file": "concept-1/v4.html",
+              "parentId": null,
+              "changelog": "Added top nav + social proof, italic accent in oversized headline, floating notification stack replaces static mockup",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ""
             }
           ]
         },
@@ -194,7 +216,7 @@
               "parentId": "concept-3--v2",
               "changelog": "Dark gradient mesh background, split layout with glass-morphism feature cards, channel list, team presence",
               "visible": true,
-              "starred": true,
+              "starred": false,
               "created": "2026-04-01T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-3-concept-3--v3.webp",
               "annotations": [
@@ -211,6 +233,17 @@
                   "element": null
                 }
               ]
+            },
+            {
+              "id": "concept-3--v4",
+              "number": 4,
+              "file": "concept-3/v4.html",
+              "parentId": null,
+              "changelog": "Centered typographic hero \u2014 120px gradient headline over outlined WAVELENGTH wordmark, logo strip of fake press",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ""
             }
           ]
         },
@@ -251,7 +284,7 @@
               "parentId": "concept-4--v2",
               "changelog": "Full editorial spread \u2014 oversized W letterform, pull quote, stats strip, dual CTAs",
               "visible": true,
-              "starred": true,
+              "starred": false,
               "created": "2026-04-01T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-4-concept-4--v3.webp",
               "annotations": [
@@ -268,6 +301,17 @@
                   "element": null
                 }
               ]
+            },
+            {
+              "id": "concept-4--v4",
+              "number": 4,
+              "file": "concept-4/v4.html",
+              "parentId": null,
+              "changelog": "Full newspaper broadsheet \u2014 masthead, two-column body with drop cap, pull quote sidebar, dossier stat table, footer ribbon",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ""
             }
           ]
         }

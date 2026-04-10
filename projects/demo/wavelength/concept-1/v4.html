@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavelength</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #ffffff;
+            position: relative;
+        }
+        @media print { html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+        /* Top nav strip */
+        .nav {
+            position: absolute;
+            top: 48px;
+            left: 120px;
+            right: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a0a0a;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-mark {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            background: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-mark::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            background: #ffffff;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 36px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+        }
+
+        .nav-cta {
+            padding: 9px 20px;
+            background: #0a0a0a;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 100px;
+        }
+
+        /* Main layout */
+        .layout {
+            display: flex;
+            align-items: center;
+            height: 100vh;
+            padding: 0 120px;
+            gap: 80px;
+        }
+
+        .content {
+            flex: 1;
+            max-width: 640px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2563eb;
+            margin-bottom: 28px;
+        }
+
+        .eyebrow-line {
+            width: 28px;
+            height: 1px;
+            background: #2563eb;
+        }
+
+        h1 {
+            font-size: 88px;
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.05em;
+            color: #0a0a0a;
+            margin-bottom: 28px;
+        }
+
+        h1 .accent {
+            color: #2563eb;
+            font-style: italic;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            line-height: 1.65;
+            color: #6b7280;
+            margin-bottom: 44px;
+            max-width: 480px;
+        }
+
+        .cta-row {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .cta-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 36px;
+            background: #0a0a0a;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 100px;
+            text-decoration: none;
+        }
+
+        .avatars {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .avatar-stack {
+            display: flex;
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            margin-left: -10px;
+        }
+
+        .avatar:first-child { margin-left: 0; }
+        .avatar.a { background: #dbeafe; }
+        .avatar.b { background: #d1fae5; }
+        .avatar.c { background: #fce7f3; }
+        .avatar.d { background: #fef3c7; }
+
+        .avatar-text {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .avatar-text strong {
+            color: #0a0a0a;
+            font-weight: 600;
+        }
+
+        /* Right side - notification stack */
+        .notif-stack {
+            flex-shrink: 0;
+            width: 440px;
+            position: relative;
+            height: 460px;
+        }
+
+        .notif {
+            position: absolute;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            padding: 22px 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.02);
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .notif-1 { top: 0; transform: rotate(-1.5deg); }
+        .notif-2 { top: 120px; transform: rotate(0.8deg); z-index: 2; }
+        .notif-3 { top: 240px; transform: rotate(-0.6deg); }
+        .notif-4 { top: 360px; transform: rotate(1.2deg); }
+
+        .notif-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .notif-icon.blue { background: #2563eb; }
+        .notif-icon.green { background: #10b981; }
+        .notif-icon.pink { background: #ec4899; }
+        .notif-icon.amber { background: #f59e0b; }
+
+        .notif-body { flex: 1; min-width: 0; }
+
+        .notif-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0a0a0a;
+            margin-bottom: 3px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .notif-time {
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
+        .notif-msg {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="logo">
+            <div class="logo-mark"></div>
+            <span>Wavelength</span>
+        </div>
+        <div class="nav-links">
+            <span>Product</span>
+            <span>Teams</span>
+            <span>Pricing</span>
+            <span>Changelog</span>
+        </div>
+        <div class="nav-cta">Sign in</div>
+    </nav>
+
+    <div class="layout">
+        <div class="content">
+            <div class="eyebrow">
+                <span class="eyebrow-line"></span>
+                <span data-drift-editable="eyebrow" data-drift-maxlen="30">Team communication, refined</span>
+            </div>
+            <h1 data-drift-editable="headline" data-drift-maxlen="60">Calm focus<br>for teams <span class="accent">in flow.</span></h1>
+            <p class="subtitle" data-drift-editable="subtitle" data-drift-maxlen="140">Wavelength is the workspace where conversations stay organized, decisions stay visible, and your team finally stops drowning in noise.</p>
+            <div class="cta-row">
+                <a class="cta-primary" href="#">
+                    <span data-drift-editable="cta" data-drift-maxlen="30">Start free trial</span>
+                    <span>&rarr;</span>
+                </a>
+                <div class="avatars">
+                    <div class="avatar-stack">
+                        <div class="avatar a"></div>
+                        <div class="avatar b"></div>
+                        <div class="avatar c"></div>
+                        <div class="avatar d"></div>
+                    </div>
+                    <div class="avatar-text">
+                        <strong>2,400+ teams</strong><br>already on board
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="notif-stack">
+            <div class="notif notif-1">
+                <div class="notif-icon blue">P</div>
+                <div class="notif-body">
+                    <div class="notif-title">#product-launch <span class="notif-time">2m</span></div>
+                    <div class="notif-msg">Priya shipped the billing update</div>
+                </div>
+            </div>
+            <div class="notif notif-2">
+                <div class="notif-icon green">D</div>
+                <div class="notif-body">
+                    <div class="notif-title">#deploys <span class="notif-time">5m</span></div>
+                    <div class="notif-msg">Build passed on main &middot; 47s</div>
+                </div>
+            </div>
+            <div class="notif notif-3">
+                <div class="notif-icon pink">R</div>
+                <div class="notif-body">
+                    <div class="notif-title">#design-review <span class="notif-time">12m</span></div>
+                    <div class="notif-msg">Rin posted 3 new frames for feedback</div>
+                </div>
+            </div>
+            <div class="notif notif-4">
+                <div class="notif-icon amber">T</div>
+                <div class="notif-body">
+                    <div class="notif-title">Thread summary <span class="notif-time">now</span></div>
+                    <div class="notif-msg">14 messages summarized in 2 bullets</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
