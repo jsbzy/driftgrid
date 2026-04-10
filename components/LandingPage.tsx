@@ -1,6 +1,191 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+
+type TabKey = 'clone' | 'cloud' | 'mcp';
+
+const TABS: { key: TabKey; label: string; lines: { text: string; muted?: boolean }[] }[] = [
+  {
+    key: 'clone',
+    label: 'Clone',
+    lines: [
+      { text: '# Clone, install, run. Opens localhost:3000.', muted: true },
+      { text: '$ git clone https://github.com/jsbzy/driftgrid.git' },
+      { text: '$ cd driftgrid && npm install' },
+      { text: '$ npm run dev' },
+    ],
+  },
+  {
+    key: 'cloud',
+    label: 'Cloud',
+    lines: [
+      { text: '# Free forever. Paid tier adds sharing + archive.', muted: true },
+      { text: '$ open https://driftgrid.ai/login' },
+      { text: '$ # Sign up, push a project, get a share link' },
+    ],
+  },
+  {
+    key: 'mcp',
+    label: 'MCP',
+    lines: [
+      { text: '# Connect Claude Code directly via MCP.', muted: true },
+      { text: '$ claude mcp add driftgrid' },
+      { text: '$ # Agent can now create projects, push, and share' },
+    ],
+  },
+];
+
+function QuickStart() {
+  const [tab, setTab] = useState<TabKey>('clone');
+  const [copied, setCopied] = useState(false);
+  const activeTab = TABS.find(t => t.key === tab)!;
+  const copyText = activeTab.lines
+    .filter(l => !l.muted)
+    .map(l => l.text.replace(/^\$ /, ''))
+    .join('\n');
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(copyText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  };
+
+  return (
+    <section style={{
+      padding: '0 32px 120px',
+      maxWidth: 800,
+      margin: '0 auto',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: 8,
+        marginBottom: 24,
+      }}>
+        <span style={{
+          fontSize: 11,
+          color: 'rgba(255,255,255,0.3)',
+          fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+        }}>
+          ›
+        </span>
+        <h2 style={{
+          fontSize: 22,
+          fontWeight: 500,
+          color: 'rgba(255,255,255,0.9)',
+          margin: 0,
+          fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+          letterSpacing: '-0.01em',
+        }}>
+          Quick Start
+        </h2>
+      </div>
+
+      {/* Terminal window */}
+      <div style={{
+        background: 'rgba(255,255,255,0.025)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 10,
+        overflow: 'hidden',
+      }}>
+        {/* Title bar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '14px 18px',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+        }}>
+          {/* Traffic lights + tabs */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {TABS.map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: 4,
+                    fontSize: 10,
+                    fontWeight: 600,
+                    letterSpacing: '0.05em',
+                    fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+                    background: tab === t.key ? 'rgba(255,255,255,0.95)' : 'transparent',
+                    color: tab === t.key ? '#0a0a0a' : 'rgba(255,255,255,0.4)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 120ms ease',
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Copy button */}
+          <button
+            onClick={copy}
+            style={{
+              padding: '5px 10px',
+              borderRadius: 4,
+              fontSize: 9,
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+              background: 'transparent',
+              color: copied ? '#4ade80' : 'rgba(255,255,255,0.3)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              cursor: 'pointer',
+              transition: 'color 120ms ease',
+            }}
+          >
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={{
+          padding: '24px 28px',
+          fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+          fontSize: 13,
+          lineHeight: 2,
+        }}>
+          {activeTab.lines.map((line, i) => (
+            <div
+              key={i}
+              style={{
+                color: line.muted ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.85)',
+                fontStyle: line.muted ? 'italic' : 'normal',
+              }}
+            >
+              {line.text}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <p style={{
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.35)',
+        textAlign: 'center',
+        marginTop: 20,
+        fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+      }}>
+        Works on macOS, Linux, Windows. Requires Node 20+.
+      </p>
+    </section>
+  );
+}
 
 /**
  * Marketing landing page — shown at root URL for unauthenticated visitors.
@@ -275,38 +460,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Quickstart */}
-      <section style={{
-        padding: '0 32px 120px',
-        maxWidth: 720,
-        margin: '0 auto',
-        textAlign: 'center',
-      }}>
-        <div style={{
-          fontSize: 9,
-          letterSpacing: '0.2em',
-          color: 'rgba(255,255,255,0.3)',
-          textTransform: 'uppercase',
-          marginBottom: 24,
-        }}>
-          Try it in 30 seconds
-        </div>
-        <div style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 4,
-          padding: '20px 24px',
-          fontSize: 12,
-          color: 'rgba(255,255,255,0.8)',
-          textAlign: 'left',
-          lineHeight: 1.8,
-        }}>
-          <div style={{ color: 'rgba(255,255,255,0.3)' }}>$ git clone https://github.com/jsbzy/driftgrid.git</div>
-          <div style={{ color: 'rgba(255,255,255,0.3)' }}>$ cd driftgrid && npm install</div>
-          <div style={{ color: 'rgba(255,255,255,0.3)' }}>$ npm run dev</div>
-          <div style={{ color: 'rgba(255,255,255,0.5)', marginTop: 8 }}># Opens localhost:3000 with a demo project</div>
-        </div>
-      </section>
+      <QuickStart />
 
       {/* Footer */}
       <footer style={{
