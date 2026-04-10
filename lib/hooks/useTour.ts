@@ -23,14 +23,14 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     eyebrow: 'See a design',
-    hint: 'Press Enter to open a frame and view the live HTML.',
-    keys: ['↵'],
+    hint: 'Press Enter or double-click a card to open the live HTML frame.',
+    keys: ['↵', '2x click'],
     advanceOn: 'enter',
   },
   {
     eyebrow: 'Back to the grid',
-    hint: 'Press Esc to come back to the grid.',
-    keys: ['esc'],
+    hint: 'Press Esc or G to come back to the grid.',
+    keys: ['esc', 'G'],
     advanceOn: 'esc',
   },
   {
