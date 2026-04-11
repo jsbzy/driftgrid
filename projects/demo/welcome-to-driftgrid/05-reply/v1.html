@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Agent Reply</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Fraunces:wght@700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #0a0a0a;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar {
+    height: 52px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    padding: 0 40px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.05em;
+    gap: 12px;
+  }
+  .crumb-sep { color: rgba(255, 255, 255, 0.2); }
+  .crumb-current { color: rgba(255, 255, 255, 0.92); }
+  .dot-group { display: flex; gap: 6px; margin-right: 20px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+  .stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 160px 20px;
+    position: relative;
+  }
+  .frame {
+    width: 1200px;
+    height: 760px;
+    background: #1a120a;
+    border: 1px solid rgba(255, 200, 120, 0.1);
+    border-radius: 14px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    padding: 80px 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: visible;
+    animation: warmGlow 1.2s ease-out forwards;
+  }
+  @keyframes warmGlow {
+    from { background: #0f0f10; }
+    to { background: #1a120a; }
+  }
+  .frame::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 10%, rgba(245, 158, 11, 0.12), transparent 50%);
+    pointer-events: none;
+    border-radius: 14px;
+  }
+  .brand {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: rgba(245, 158, 11, 0.7);
+    margin-bottom: 28px;
+    text-transform: uppercase;
+  }
+  .hero {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 68px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    max-width: 820px;
+    margin-bottom: 28px;
+    color: #fef3c7;
+  }
+  .desc {
+    font-size: 16px;
+    color: rgba(254, 243, 199, 0.55);
+    max-width: 560px;
+    line-height: 1.6;
+    margin-bottom: 44px;
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(180deg, #f59e0b, #d97706);
+    color: #1a120a;
+    padding: 14px 22px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    width: fit-content;
+  }
+
+  /* Comment pin + thread */
+  .pin-wrap {
+    position: absolute;
+    top: 120px;
+    left: 420px;
+  }
+  .pin {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #8b5cf6;
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.25), 0 0 24px rgba(139, 92, 246, 0.6);
+  }
+  .popup {
+    position: absolute;
+    left: 32px;
+    top: -8px;
+    width: 400px;
+    background: rgba(20, 20, 22, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    border-radius: 10px;
+    padding: 18px;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .popup::before {
+    content: '';
+    position: absolute;
+    left: -7px;
+    top: 18px;
+    width: 12px;
+    height: 12px;
+    background: rgba(20, 20, 22, 0.95);
+    border-left: 1px solid rgba(139, 92, 246, 0.4);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.4);
+    transform: rotate(45deg);
+  }
+  .popup-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 14px;
+  }
+  .msg {
+    opacity: 0;
+    animation: fadeMsg 0.5s ease-out forwards;
+  }
+  @keyframes fadeMsg {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .msg-1 { animation-delay: 0.2s; }
+  .msg-2 { animation-delay: 0.6s; }
+  .msg-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  .avatar-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+  .avatar-you { background: rgba(255, 255, 255, 0.5); }
+  .avatar-agent { background: #4ade80; box-shadow: 0 0 6px rgba(74, 222, 128, 0.6); }
+  .msg-text {
+    font-size: 13px;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 14px;
+  }
+  .msg-agent .msg-text {
+    color: #4ade80;
+    padding-left: 14px;
+    border-left: 2px solid rgba(74, 222, 128, 0.4);
+  }
+  .resolve {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 8px 12px;
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    border-radius: 5px;
+    font-size: 11px;
+    color: #4ade80;
+    opacity: 0;
+    animation: fadeMsg 0.5s ease-out 1.0s forwards;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="dot-group">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <span>demo</span><span class="crumb-sep">/</span>
+    <span>wavelength</span><span class="crumb-sep">/</span>
+    <span>Dark Code</span><span class="crumb-sep">/</span>
+    <span class="crumb-current">v4</span>
+  </div>
+
+  <div class="stage">
+    <div class="frame">
+      <div class="brand">WAVELENGTH</div>
+      <h1 class="hero" data-drift-editable>Ship products your team<br>can actually maintain.</h1>
+      <p class="desc" data-drift-editable>A warmer, more human framework for the people who actually maintain the code.</p>
+      <div class="cta">Get started →</div>
+
+      <div class="pin-wrap">
+        <div class="pin"></div>
+        <div class="popup">
+          <div class="popup-label">Thread #4</div>
+
+          <div class="msg msg-1 msg-you">
+            <div class="msg-author">
+              <div class="avatar-dot avatar-you"></div>
+              <span>You</span>
+            </div>
+            <div class="msg-text">make it warmer and more inviting</div>
+          </div>
+
+          <div class="msg msg-2 msg-agent">
+            <div class="msg-author">
+              <div class="avatar-dot avatar-agent"></div>
+              <span>Agent</span>
+            </div>
+            <div class="msg-text">Changed accent to warm amber, swapped headline to serif, added subtle gradient.</div>
+          </div>
+
+          <div class="resolve">✓ Resolve</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

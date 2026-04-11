@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Share</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #0a0a0a;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Topbar with Share button */
+  .topbar {
+    height: 60px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    padding: 0 40px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    gap: 14px;
+  }
+  .dot-group { display: flex; gap: 6px; margin-right: 20px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+  .crumb-sep { color: rgba(255, 255, 255, 0.2); }
+  .crumb-current { color: rgba(255, 255, 255, 0.92); }
+  .spacer { flex: 1; }
+  .topbar-btn {
+    padding: 8px 14px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+  }
+  .share-btn {
+    padding: 10px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #8b5cf6;
+    color: #fff;
+    border: 1px solid #8b5cf6;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2), 0 8px 24px rgba(139, 92, 246, 0.3);
+  }
+
+  /* Toast */
+  .toast {
+    position: absolute;
+    top: 90px;
+    right: 40px;
+    background: rgba(22, 22, 24, 0.96);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    border-radius: 10px;
+    padding: 18px 22px;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    opacity: 0;
+    transform: translateY(-12px);
+    animation: toastIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s forwards;
+  }
+  @keyframes toastIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .toast-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(74, 222, 128, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4ade80;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .toast-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .toast-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+  }
+  .toast-link {
+    font-size: 11px;
+    color: #8b5cf6;
+    letter-spacing: 0.03em;
+  }
+
+  /* Stage / message */
+  .stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 160px;
+    text-align: center;
+  }
+  .title {
+    font-size: 54px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 24px;
+    max-width: 900px;
+  }
+  .subtitle {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.5);
+    max-width: 660px;
+    line-height: 1.7;
+    margin-bottom: 64px;
+  }
+  .cta-big {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    background: #8b5cf6;
+    color: #fff;
+    padding: 20px 36px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: 0 20px 60px rgba(139, 92, 246, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  .cta-big .arrow {
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="dot-group">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <span>demo</span><span class="crumb-sep">/</span>
+    <span class="crumb-current">wavelength</span>
+    <div class="spacer"></div>
+    <div class="topbar-btn">Present</div>
+    <div class="share-btn">Share ↗</div>
+  </div>
+
+  <div class="toast">
+    <div class="toast-icon">✓</div>
+    <div class="toast-text">
+      <div class="toast-title">Share link copied</div>
+      <div class="toast-link">driftgrid.ai/s/abc123</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <h1 class="title" data-drift-editable>Your client opens the link.<br>No login. No account.</h1>
+    <p class="subtitle" data-drift-editable>They can browse every concept, leave comments, and approve their favorites — right in the browser.</p>
+    <div class="cta-big">
+      <span>→ Open a real project</span>
+    </div>
+  </div>
+</body>
+</html>

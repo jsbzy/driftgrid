@@ -1,0 +1,252 @@
+{
+  "project": {
+    "name": "Welcome to DriftGrid",
+    "slug": "welcome-to-driftgrid",
+    "client": "demo",
+    "canvas": "landscape-16-9",
+    "created": "2026-04-10T00:00:00.000Z",
+    "links": {}
+  },
+  "workingSets": [],
+  "comments": [],
+  "clientEdits": [],
+  "rounds": [
+    {
+      "id": "round-1",
+      "number": 1,
+      "name": "Walkthrough",
+      "createdAt": "2026-04-10T00:00:00.000Z",
+      "selects": [],
+      "concepts": [
+        {
+          "id": "welcome",
+          "slug": "welcome",
+          "label": "01 — Welcome",
+          "description": "The grid — rapid design iteration and sharing",
+          "position": 0,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "01-welcome/v1.html",
+            "parentId": null,
+            "changelog": "Welcome beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        },
+        {
+          "id": "frame",
+          "slug": "frame",
+          "label": "02 — Frame",
+          "description": "Enter a frame to view the live HTML",
+          "position": 1,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "02-frame/v1.html",
+            "parentId": null,
+            "changelog": "Frame beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        },
+        {
+          "id": "prompt",
+          "slug": "prompt",
+          "label": "03 — Prompt",
+          "description": "Press C to leave a prompt for your agent",
+          "position": 2,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "03-prompt/v1.html",
+            "parentId": null,
+            "changelog": "Prompt beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        },
+        {
+          "id": "terminal",
+          "slug": "terminal",
+          "label": "04 — Terminal",
+          "description": "Copy the prompt into your terminal agent",
+          "position": 3,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "04-terminal/v1.html",
+            "parentId": null,
+            "changelog": "Terminal beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        },
+        {
+          "id": "reply",
+          "slug": "reply",
+          "label": "05 — Reply",
+          "description": "Agent edits the file and replies in the thread",
+          "position": 4,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "05-reply/v1.html",
+            "parentId": null,
+            "changelog": "Reply beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        },
+        {
+          "id": "drift-down",
+          "slug": "drift-down",
+          "label": "06 — Drift Down",
+          "description": "Press D to open a new version slot",
+          "position": 5,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "06-drift-down/v1.html",
+            "parentId": null,
+            "changelog": "Drift down beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        },
+        {
+          "id": "drift-roundtrip",
+          "slug": "drift-roundtrip",
+          "label": "07 — Drift Roundtrip",
+          "description": "Same loop — new version filled by the agent",
+          "position": 6,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "07-drift-roundtrip/v1.html",
+            "parentId": null,
+            "changelog": "Drift roundtrip beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        },
+        {
+          "id": "branch",
+          "slug": "branch",
+          "label": "08 — Branch",
+          "description": "Press Shift+D for a new concept column",
+          "position": 7,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "08-branch/v1.html",
+            "parentId": null,
+            "changelog": "Branch beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        },
+        {
+          "id": "branch-roundtrip",
+          "slug": "branch-roundtrip",
+          "label": "09 — Branch Roundtrip",
+          "description": "New concept, same loop",
+          "position": 8,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "09-branch-roundtrip/v1.html",
+            "parentId": null,
+            "changelog": "Branch roundtrip beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        },
+        {
+          "id": "star",
+          "slug": "star",
+          "label": "10 — Star",
+          "description": "Press S to mark your selects",
+          "position": 9,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "10-star/v1.html",
+            "parentId": null,
+            "changelog": "Star beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        },
+        {
+          "id": "present",
+          "slug": "present",
+          "label": "11 — Present",
+          "description": "Press P to present starred versions fullscreen",
+          "position": 10,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "11-present/v1.html",
+            "parentId": null,
+            "changelog": "Present beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        },
+        {
+          "id": "share",
+          "slug": "share",
+          "label": "12 — Share",
+          "description": "Share a public link with your client",
+          "position": 11,
+          "visible": true,
+          "versions": [{
+            "id": "v1",
+            "number": 1,
+            "file": "12-share/v1.html",
+            "parentId": null,
+            "changelog": "Share beat",
+            "visible": true,
+            "starred": false,
+            "created": "2026-04-10T00:00:00.000Z",
+            "thumbnail": ""
+          }]
+        }
+      ]
+    }
+  ]
+}

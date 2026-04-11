@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Copy to Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #0a0a0a;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  /* Top 55% — the DriftGrid frame view */
+  .top-half {
+    height: 55vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .topbar {
+    height: 44px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.05em;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .crumb-sep { color: rgba(255, 255, 255, 0.2); }
+  .crumb-current { color: rgba(255, 255, 255, 0.92); }
+  .dot-group { display: flex; gap: 5px; margin-right: 16px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+
+  .stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 160px;
+    overflow: hidden;
+  }
+  .frame {
+    width: 1000px;
+    max-height: 100%;
+    background: #0f0f10;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 50px 70px;
+    position: relative;
+    overflow: hidden;
+  }
+  .brand {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 18px;
+    text-transform: uppercase;
+  }
+  .hero {
+    font-size: 46px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin-bottom: 20px;
+  }
+  .desc {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+    max-width: 480px;
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 10px 16px;
+    border-radius: 5px;
+    font-size: 12px;
+  }
+  /* Comment pin */
+  .pin {
+    position: absolute;
+    top: 60px;
+    left: 300px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25), 0 0 20px rgba(139, 92, 246, 0.5);
+  }
+
+  /* Bottom 45% — terminal panel */
+  .terminal {
+    height: 45vh;
+    background: #1c1c1e;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s forwards;
+    box-shadow: 0 -30px 60px rgba(0, 0, 0, 0.5);
+  }
+  @keyframes slideUp {
+    to { transform: translateY(0); }
+  }
+  .term-titlebar {
+    height: 32px;
+    background: #2a2a2d;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    position: relative;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+  }
+  .tlights { display: flex; gap: 8px; }
+  .tlight { width: 12px; height: 12px; border-radius: 50%; }
+  .tl-red { background: #ff5f57; }
+  .tl-yellow { background: #febc2e; }
+  .tl-green { background: #28c840; }
+  .term-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 500;
+  }
+  .term-body {
+    flex: 1;
+    padding: 24px 36px;
+    font-size: 15px;
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.85);
+    overflow: hidden;
+  }
+  .line {
+    opacity: 0;
+    animation: fadeLine 0.4s ease-out forwards;
+  }
+  @keyframes fadeLine {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .line:nth-child(1) { animation-delay: 0.8s; }
+  .line:nth-child(2) { animation-delay: 1.0s; }
+  .line:nth-child(3) { animation-delay: 1.2s; }
+  .line:nth-child(4) { animation-delay: 1.4s; }
+  .line:nth-child(5) { animation-delay: 1.6s; }
+  .line:nth-child(6) { animation-delay: 1.9s; }
+  .line:nth-child(7) { animation-delay: 2.4s; }
+  .line:nth-child(8) { animation-delay: 2.7s; }
+
+  .muted { color: rgba(255, 255, 255, 0.4); }
+  .path { color: #8b5cf6; }
+  .check { color: #4ade80; }
+  .spinner {
+    display: inline-block;
+    animation: spin 0.8s steps(10) infinite;
+    color: #8b5cf6;
+  }
+  @keyframes spin {
+    0%   { content: '⠋'; }
+    10%  { content: '⠙'; }
+    20%  { content: '⠹'; }
+    30%  { content: '⠸'; }
+    40%  { content: '⠼'; }
+    50%  { content: '⠴'; }
+    60%  { content: '⠦'; }
+    70%  { content: '⠧'; }
+    80%  { content: '⠇'; }
+    90%  { content: '⠏'; }
+    100% { content: '⠋'; }
+  }
+  .spinner::before {
+    content: '⠋';
+    animation: spin 0.8s steps(10) infinite;
+  }
+  .prompt-arrow { color: rgba(255, 255, 255, 0.3); }
+</style>
+</head>
+<body>
+  <div class="top-half">
+    <div class="topbar">
+      <div class="dot-group">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+      <span>demo</span><span class="crumb-sep">/</span>
+      <span>wavelength</span><span class="crumb-sep">/</span>
+      <span>Dark Code</span><span class="crumb-sep">/</span>
+      <span class="crumb-current">v3</span>
+    </div>
+    <div class="stage">
+      <div class="frame">
+        <div class="brand">WAVELENGTH</div>
+        <h1 class="hero" data-drift-editable>Ship products your team<br>can actually maintain.</h1>
+        <p class="desc" data-drift-editable>A lightweight framework for engineering teams who want clarity over cleverness.</p>
+        <div class="cta">Get started <span>→</span></div>
+        <div class="pin"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="terminal">
+    <div class="term-titlebar">
+      <div class="tlights">
+        <div class="tlight tl-red"></div>
+        <div class="tlight tl-yellow"></div>
+        <div class="tlight tl-green"></div>
+      </div>
+      <div class="term-title">Claude Code</div>
+    </div>
+    <div class="term-body">
+      <div class="line"><span class="prompt-arrow">&gt;</span> Source: <span class="path">~/driftgrid/.../concept-1/v3.html</span></div>
+      <div class="line"><span class="prompt-arrow">&gt;</span> Target: <span class="path">~/driftgrid/.../concept-1/v4.html</span> <span class="muted">(new)</span></div>
+      <div class="line">&nbsp;</div>
+      <div class="line"><span class="prompt-arrow">&gt;</span> Drift v3 with this change:</div>
+      <div class="line"><span class="muted">&nbsp;&nbsp;</span>make it warmer and more inviting</div>
+      <div class="line">&nbsp;</div>
+      <div class="line"><span class="check">✓</span> Reading v3.html...</div>
+      <div class="line"><span class="check">✓</span> Writing v4.html &nbsp;&nbsp; <span class="check">✓</span> Replied in thread</div>
+    </div>
+  </div>
+</body>
+</html>

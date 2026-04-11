@@ -29,6 +29,7 @@ interface CanvasViewProps {
   onDeleteConcept?: (conceptId: string) => void;
   onInsertConcept?: (label: string, afterConceptIndex?: number) => void;
   onRenameConcept?: (conceptId: string, newLabel: string) => void;
+  unreadKeys?: Set<string>;
   onHideVersion?: (conceptId: string, versionId: string) => void;
   onDriftToProject?: (conceptId: string, versionId: string) => void;
   multiSelected: Set<string>;
@@ -69,6 +70,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   onDeleteConcept,
   onInsertConcept,
   onRenameConcept,
+  unreadKeys,
   onHideVersion,
   onDriftToProject,
   multiSelected,
@@ -748,6 +750,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             multiSelected={multiSelected}
             mode={mode}
             shareToken={shareToken}
+            unreadKeys={unreadKeys}
           />
         </div>
       </div>
@@ -876,6 +879,7 @@ const CardLayer = memo(function CardLayer({
   onCardContextMenu,
   mode,
   shareToken,
+  unreadKeys,
 }: {
   layout: CanvasLayout;
   concepts: Concept[];
@@ -897,6 +901,7 @@ const CardLayer = memo(function CardLayer({
   onCardContextMenu: (ci: number, vi: number, e: React.MouseEvent) => void;
   mode?: string;
   shareToken?: string;
+  unreadKeys?: Set<string>;
 }) {
   // Viewport culling: only render cards visible in the current view + buffer
   const vpW = viewportRef.current?.clientWidth ?? 2000;
@@ -948,6 +953,7 @@ const CardLayer = memo(function CardLayer({
               isCurrent={pos.conceptIndex === conceptIndex && pos.versionIndex === versionIndex}
               isSelected={isStarred}
               isLatest={isLatest}
+              unread={unreadKeys?.has(`${concept.id}:${version.id}`)}
               isMultiSelected={multiSelected.has(`${concept.id}:${version.id}`)}
               filePath={`~/driftgrid/projects/${client}/${project}/${version.file}`}
               demoSlot={!version.file}

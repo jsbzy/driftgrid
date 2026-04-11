@@ -9,6 +9,7 @@ import { letterToNumber, conceptSlug } from '@/lib/letters';
 import { HtmlFrame, type HtmlFrameHandle } from './HtmlFrame';
 import { TourOverlay } from './TourOverlay';
 import { useTour } from '@/lib/hooks/useTour';
+import { useUnreadVersions } from '@/lib/hooks/useUnreadVersions';
 import { NavigationGrid } from './NavigationGrid';
 import { CanvasView, type CanvasViewHandle } from './CanvasView';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
@@ -70,8 +71,23 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const [demoVersions, setDemoVersions] = useState<Record<string, Version[]>>({});
   const [demoConcepts, setDemoConcepts] = useState<Concept[]>([]);
 
-  // Tour — auto-starts on first visit when viewing a share link
-  const tour = useTour(!!shareToken);
+  // Walkthrough detection: the meta demo project uses persistent walkthrough mode
+  // where each column = one step. Navigation drives the tour.
+  const isWalkthrough = client === 'demo' && project === 'welcome-to-driftgrid';
+
+  // Tour — auto-starts on first visit when viewing a share link.
+  // In walkthrough mode, the tour is always active and follows conceptIndex.
+  const tour = useTour(!!shareToken || isWalkthrough, {
+    mode: isWalkthrough ? 'walkthrough' : 'action',
+    walkthroughStepIndex: conceptIndex,
+    onWalkthroughDone: () => {
+      // Hand off to the real project demo
+      window.location.href = '/s/amVmZi9kZW1vL3dhdmVsZW5ndGg';
+    },
+  });
+
+  // Unread versions (localStorage-backed, in-memory for share mode)
+  const unread = useUnreadVersions(client, project, !!shareToken);
 
   // Smooth zoom transition state
   const canvasRef = useRef<CanvasViewHandle>(null);
@@ -140,6 +156,45 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
 
   // Extracted hooks
   const annotationState = useAnnotationState(client, project, currentConcept?.id, currentVersion?.id, viewMode, shareToken);
+
+  // On first project load, bulk-mark all existing versions as read so the grid
+  // doesn't light up entirely. Only runs once per project when the unread hook
+  // initializes and we have a concept list to work with.
+  const didBulkMarkRead = useRef(false);
+  useEffect(() => {
+    if (didBulkMarkRead.current) return;
+    if (!concepts.length) return;
+    const keys: string[] = [];
+    for (const c of concepts) {
+      for (const v of c.versions) {
+        keys.push(`${c.id}:${v.id}`);
+      }
+    }
+    if (keys.length > 0) {
+      unread.markAllRead(keys);
+      didBulkMarkRead.current = true;
+    }
+  }, [concepts, unread]);
+
+  // Mark current version as read when user enters frame view
+  useEffect(() => {
+    if (viewMode === 'frame' && currentConcept && currentVersion) {
+      unread.markRead(currentConcept.id, currentVersion.id);
+    }
+  }, [viewMode, currentConcept, currentVersion, unread]);
+
+  // Build the set of currently-unread keys for CanvasView
+  const unreadKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of concepts) {
+      for (const v of c.versions) {
+        if (unread.isUnread(c.id, v.id)) {
+          set.add(`${c.id}:${v.id}`);
+        }
+      }
+    }
+    return set;
+  }, [concepts, unread]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -962,7 +1017,15 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           stepIndex={tour.step}
           totalSteps={tour.totalSteps}
           onDismiss={tour.dismiss}
-          onNext={tour.next}
+          onNext={isWalkthrough
+            ? () => {
+                const next = Math.min(conceptIndex + 1, concepts.length - 1);
+                handleNavigate(next, 0);
+              }
+            : tour.next}
+          persistMode={isWalkthrough}
+          doneLabel={isWalkthrough ? 'Open a real project →' : 'Done'}
+          eyebrowLabel={isWalkthrough ? 'Walkthrough' : 'Tour'}
         />
         {/* Top-right: project name + round switcher */}
         <div className="fixed top-4 right-4 z-30 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
@@ -1088,6 +1151,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             }}
             mode={mode}
             shareToken={shareToken}
+            unreadKeys={unreadKeys}
             zoomLevel={zoomLevel}
             onZoomLevelChange={setZoomLevel}
             showHidden={showHidden}
@@ -1113,7 +1177,15 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           stepIndex={tour.step}
           totalSteps={tour.totalSteps}
           onDismiss={tour.dismiss}
-          onNext={tour.next}
+          onNext={isWalkthrough
+            ? () => {
+                const next = Math.min(conceptIndex + 1, concepts.length - 1);
+                handleNavigate(next, 0);
+              }
+            : tour.next}
+          persistMode={isWalkthrough}
+          doneLabel={isWalkthrough ? 'Open a real project →' : 'Done'}
+          eyebrowLabel={isWalkthrough ? 'Walkthrough' : 'Tour'}
         />
       <div ref={frameWrapperRef} className="flex-1 min-h-0 relative">
         <div className="h-full p-4 relative" style={{ background: mode === 'client' ? '#fff' : 'var(--canvas)' }}>

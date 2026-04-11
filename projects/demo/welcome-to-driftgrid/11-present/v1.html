@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Present</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #000;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 80px 100px;
+  }
+
+  .counter {
+    position: absolute;
+    top: 40px;
+    right: 48px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+    letter-spacing: 0.1em;
+    font-weight: 500;
+  }
+
+  .design {
+    width: 1480px;
+    height: 860px;
+    background: #0f0f10;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    box-shadow: 0 60px 120px rgba(0, 0, 0, 0.8);
+    padding: 110px 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    animation: designFadeIn 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s forwards;
+  }
+  @keyframes designFadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .design::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 10%, rgba(139,92,246,0.08), transparent 50%);
+    pointer-events: none;
+  }
+  .brand {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 36px;
+    text-transform: uppercase;
+  }
+  .hero {
+    font-size: 82px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.02;
+    max-width: 1100px;
+    margin-bottom: 36px;
+  }
+  .desc {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    max-width: 640px;
+    line-height: 1.6;
+    margin-bottom: 56px;
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 16px 26px;
+    border-radius: 7px;
+    font-size: 14px;
+    width: fit-content;
+  }
+
+  .bottom-nav {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .nav-arrow {
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+  }
+  kbd {
+    display: inline-block;
+    padding: 2px 7px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0 3px;
+  }
+</style>
+</head>
+<body>
+  <div class="counter">3 / 12</div>
+
+  <div class="design">
+    <div class="brand">WAVELENGTH</div>
+    <h1 class="hero" data-drift-editable>Ship products your team<br>can actually maintain.</h1>
+    <p class="desc" data-drift-editable>A lightweight framework for engineering teams who want clarity over cleverness.</p>
+    <div class="cta">Get started <span>→</span></div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-arrow">←</div>
+    <span>press <kbd>ESC</kbd> to exit</span>
+    <div class="nav-arrow">→</div>
+  </div>
+</body>
+</html>

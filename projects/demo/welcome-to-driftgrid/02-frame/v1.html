@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Frame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #0a0a0a;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar {
+    height: 52px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    padding: 0 40px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.05em;
+    gap: 12px;
+  }
+  .crumb { color: rgba(255, 255, 255, 0.5); }
+  .crumb-sep { color: rgba(255, 255, 255, 0.2); }
+  .crumb-current { color: rgba(255, 255, 255, 0.92); }
+  .dot-group { display: flex; gap: 6px; margin-right: 20px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+  .stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 160px 40px;
+  }
+  .frame {
+    width: 1200px;
+    height: 760px;
+    background: #0f0f10;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    padding: 80px 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .frame::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 10%, rgba(139,92,246,0.08), transparent 50%);
+    pointer-events: none;
+  }
+  .brand {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 28px;
+    text-transform: uppercase;
+  }
+  .hero {
+    font-size: 64px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    max-width: 820px;
+    margin-bottom: 28px;
+  }
+  .desc {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.5);
+    max-width: 560px;
+    line-height: 1.6;
+    margin-bottom: 44px;
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.92);
+    padding: 14px 22px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    width: fit-content;
+    margin-bottom: 52px;
+  }
+  .code-block {
+    background: #060606;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.8;
+    max-width: 540px;
+  }
+  .code-block .k { color: #8b5cf6; }
+  .code-block .s { color: #86efac; }
+  .hint {
+    text-align: center;
+    padding: 20px 0 28px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  kbd {
+    display: inline-block;
+    padding: 2px 7px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0 3px;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="dot-group">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <span class="crumb">demo</span>
+    <span class="crumb-sep">/</span>
+    <span class="crumb">wavelength</span>
+    <span class="crumb-sep">/</span>
+    <span class="crumb">Dark Code</span>
+    <span class="crumb-sep">/</span>
+    <span class="crumb-current">v3</span>
+  </div>
+
+  <div class="stage">
+    <div class="frame">
+      <div class="brand">WAVELENGTH</div>
+      <h1 class="hero" data-drift-editable>Ship products your team<br>can actually maintain.</h1>
+      <p class="desc" data-drift-editable>A lightweight framework for engineering teams who want clarity over cleverness.</p>
+      <div class="cta">Get started <span>→</span></div>
+      <div class="code-block">
+        <div><span class="k">$</span> npm install wavelength</div>
+        <div><span class="k">import</span> <span class="s">{ create }</span> <span class="k">from</span> <span class="s">'wavelength'</span></div>
+        <div><span class="k">const</span> app = <span class="s">create</span>({ name: <span class="s">'my-app'</span> })</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hint">press <kbd>ESC</kbd> or <kbd>G</kbd> to go back</div>
+</body>
+</html>

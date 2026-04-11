@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Branch Roundtrip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #0a0a0a;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 140px 120px 100px;
+  }
+  .title {
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 88px;
+  }
+  .stages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    width: 100%;
+    flex: 1;
+    opacity: 0;
+    animation: fadeIn 0.8s ease-out 0.2s forwards;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  .stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 420px;
+  }
+  .stage-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 24px;
+  }
+  .mini-grid {
+    width: 380px;
+    height: 300px;
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 18px;
+    display: flex;
+    gap: 10px;
+  }
+  .mini-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .mini-card {
+    height: 36px;
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    position: relative;
+  }
+  .mini-card::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    background: linear-gradient(90deg, rgba(139,92,246,0.12), transparent);
+    border-radius: 2px;
+  }
+  .mini-empty-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .mini-empty {
+    height: 36px;
+    border: 1.5px dashed rgba(139, 92, 246, 0.55);
+    border-radius: 4px;
+    outline: 2px solid #8b5cf6;
+    outline-offset: -3px;
+    background: rgba(139, 92, 246, 0.05);
+  }
+  .mini-filled {
+    height: 36px;
+    border-radius: 4px;
+    background: #1a1410;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    position: relative;
+  }
+  .mini-filled::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    background: linear-gradient(90deg, rgba(245,158,11,0.4), transparent);
+    border-radius: 2px;
+  }
+
+  .mini-term {
+    width: 380px;
+    height: 300px;
+    background: #1c1c1e;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  }
+  .mini-term-bar {
+    height: 26px;
+    background: #2a2a2d;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 6px;
+  }
+  .tlight { width: 9px; height: 9px; border-radius: 50%; }
+  .tl-r { background: #ff5f57; }
+  .tl-y { background: #febc2e; }
+  .tl-g { background: #28c840; }
+  .mini-term-title {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .mini-term-body {
+    flex: 1;
+    padding: 18px 22px;
+    font-size: 11px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.75);
+  }
+  .mini-term-body .muted { color: rgba(255,255,255,0.4); }
+  .mini-term-body .k { color: #8b5cf6; }
+  .mini-term-body .g { color: #4ade80; }
+  .spinner-mini {
+    display: inline-block;
+    color: #8b5cf6;
+    animation: spinmini 0.8s linear infinite;
+  }
+  @keyframes spinmini {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .arrow {
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 300;
+  }
+  .bottom-note {
+    margin-top: 60px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <h2 class="title">Branch a new concept.</h2>
+  <div class="subtitle">A whole new column, same exact loop.</div>
+
+  <div class="stages">
+    <div class="stage">
+      <div class="stage-label">Empty column</div>
+      <div class="mini-grid">
+        <div class="mini-col">
+          <div class="mini-card"></div>
+          <div class="mini-card"></div>
+          <div class="mini-card"></div>
+          <div class="mini-card"></div>
+        </div>
+        <div class="mini-col">
+          <div class="mini-card"></div>
+          <div class="mini-card"></div>
+          <div class="mini-card"></div>
+        </div>
+        <div class="mini-empty-col">
+          <div class="mini-empty"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">→</div>
+
+    <div class="stage">
+      <div class="stage-label">Agent works</div>
+      <div class="mini-term">
+        <div class="mini-term-bar">
+          <div class="tlight tl-r"></div>
+          <div class="tlight tl-y"></div>
+          <div class="tlight tl-g"></div>
+          <div class="mini-term-title">Claude Code</div>
+        </div>
+        <div class="mini-term-body">
+          <div><span class="muted">&gt;</span> Create new concept:</div>
+          <div>&nbsp;&nbsp;<span class="muted">"minimalist editorial"</span></div>
+          <div>&nbsp;</div>
+          <div><span class="g">✓</span> Created concept-05/</div>
+          <div><span class="spinner-mini">⠋</span> Writing v1.html...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">→</div>
+
+    <div class="stage">
+      <div class="stage-label">Column filled</div>
+      <div class="mini-grid">
+        <div class="mini-col">
+          <div class="mini-card"></div>
+          <div class="mini-card"></div>
+          <div class="mini-card"></div>
+          <div class="mini-card"></div>
+        </div>
+        <div class="mini-col">
+          <div class="mini-card"></div>
+          <div class="mini-card"></div>
+          <div class="mini-card"></div>
+        </div>
+        <div class="mini-empty-col">
+          <div class="mini-filled"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-note">NEW CONCEPT, SAME LOOP</div>
+</body>
+</html>

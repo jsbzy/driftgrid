@@ -11,6 +11,7 @@ interface CanvasCardProps {
   isSelected?: boolean;
   isMultiSelected?: boolean;
   isLatest?: boolean;
+  unread?: boolean;
   filePath?: string;
   mode?: string;
   demoSlot?: boolean;
@@ -35,6 +36,7 @@ export const CanvasCard = memo(function CanvasCard({
   isSelected,
   isMultiSelected,
   isLatest,
+  unread,
   filePath,
   mode,
   demoSlot,
@@ -101,6 +103,22 @@ export const CanvasCard = memo(function CanvasCard({
           }}
         />
       )}
+      {/* Unread indicator — small purple dot in top-right */}
+      {unread && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: 10,
+            right: 10,
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: '#8b5cf6',
+            boxShadow: '0 0 0 3px rgba(139, 92, 246, 0.15)',
+            zIndex: 21,
+          }}
+        />
+      )}
       <button
         onClick={(e) => onClick(e.shiftKey, e.metaKey || e.ctrlKey)}
         onDoubleClick={onDoubleClick}
@@ -116,18 +134,6 @@ export const CanvasCard = memo(function CanvasCard({
             position: 'relative',
           }}
         >
-          {/* Latest version indicator — gold left edge bar */}
-          {isLatest && (
-            <div
-              className="absolute left-0 top-0 bottom-0 z-10 pointer-events-none"
-              style={{
-                width: 3,
-                background: 'var(--selects-gold, #facc15)',
-                borderRadius: 'var(--radius-md) 0 0 var(--radius-md)',
-              }}
-            />
-          )}
-
           {demoSlot ? (
             <div
               className="w-full h-full flex flex-col items-center justify-center gap-3"
@@ -183,12 +189,6 @@ export const CanvasCard = memo(function CanvasCard({
         }}
       >
         {iterationLetter || `v${versionNumber}`}
-        {isLatest && (
-          <span style={{
-            display: 'inline-block', width: 5, height: 5, borderRadius: '50%',
-            background: '#f59e0b', marginLeft: 4, verticalAlign: 'middle',
-          }} />
-        )}
       </div>
 
       {/* Reorder hint — shown on current card, hidden in client mode */}

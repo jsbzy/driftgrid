@@ -9,6 +9,12 @@ interface TourOverlayProps {
   totalSteps: number;
   onDismiss: () => void;
   onNext: () => void;
+  /** Persistent mode (walkthrough): no skip button, always visible */
+  persistMode?: boolean;
+  /** Label for the primary action button on the last step (default: "Done") */
+  doneLabel?: string;
+  /** Label shown as eyebrow prefix (default: "Tour") */
+  eyebrowLabel?: string;
 }
 
 /**
@@ -17,7 +23,16 @@ interface TourOverlayProps {
  * can advance without performing the keyboard action, and clear "Try:" labeling
  * on the key chips so they're obviously hints, not interactive buttons.
  */
-export function TourOverlay({ step, stepIndex, totalSteps, onDismiss, onNext }: TourOverlayProps) {
+export function TourOverlay({
+  step,
+  stepIndex,
+  totalSteps,
+  onDismiss,
+  onNext,
+  persistMode,
+  doneLabel = 'Done',
+  eyebrowLabel = 'Tour',
+}: TourOverlayProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -69,24 +84,26 @@ export function TourOverlay({ step, stepIndex, totalSteps, onDismiss, onNext }: 
           color: 'rgba(255, 255, 255, 0.35)',
           textTransform: 'uppercase',
         }}>
-          Tour · {stepIndex + 1} / {totalSteps}
+          {eyebrowLabel} · {stepIndex + 1} / {totalSteps}
         </div>
-        <button
-          onClick={onDismiss}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: 'rgba(255, 255, 255, 0.35)',
-            fontSize: 9,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            padding: 0,
-          }}
-          title="Skip tour"
-        >
-          Skip ✕
-        </button>
+        {!persistMode && (
+          <button
+            onClick={onDismiss}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(255, 255, 255, 0.35)',
+              fontSize: 9,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+            title="Skip tour"
+          >
+            Skip ✕
+          </button>
+        )}
       </div>
 
       {/* Title */}
@@ -178,7 +195,7 @@ export function TourOverlay({ step, stepIndex, totalSteps, onDismiss, onNext }: 
             fontFamily: '"JetBrains Mono", ui-monospace, monospace',
           }}
         >
-          {isLast ? 'Done' : 'Next →'}
+          {isLast ? doneLabel : 'Next →'}
         </button>
       </div>
     </div>

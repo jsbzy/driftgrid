@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 
-const DEMO_URL = '/s/amVmZi9kZW1vL3dhdmVsZW5ndGg';
+const DEMO_URL = '/s/amVmZi9kZW1vL3dlbGNvbWUtdG8tZHJpZnRncmlk';
+const REAL_PROJECT_URL = '/s/amVmZi9kZW1vL3dhdmVsZW5ndGg';
 
 function QuickStart() {
   const [copied, setCopied] = useState(false);
