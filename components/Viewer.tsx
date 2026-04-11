@@ -139,7 +139,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const currentVersion = versions[versionIndex];
 
   // Extracted hooks
-  const annotationState = useAnnotationState(client, project, currentConcept?.id, currentVersion?.id, viewMode);
+  const annotationState = useAnnotationState(client, project, currentConcept?.id, currentVersion?.id, viewMode, shareToken);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
