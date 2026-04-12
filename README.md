@@ -77,7 +77,7 @@ Share links give clients a read-only view of the grid. They can browse, zoom int
 
 ### Cloud Tier
 
-Self-hosted is free forever. The cloud tier ($12/month) adds:
+Self-hosted is free forever. The cloud tier ($10/month or $96/year) adds:
 
 - **Push to cloud** — upload from your local dashboard
 - **Share links** — public URLs for client review, no login required
