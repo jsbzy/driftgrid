@@ -155,11 +155,11 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
           {state === 'local' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>
-                Your project lives on your machine. To share it with clients, push it to DriftGrid Cloud.
+                Create a DriftGrid account to share your projects with clients.
               </p>
 
               <a
-                href="https://driftgrid.ai"
+                href="https://driftgrid.ai/login"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -175,19 +175,10 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
                   textDecoration: 'none',
                 }}
               >
-                Open DriftGrid Cloud
+                Create Account
               </a>
 
-              <div style={{ padding: '14px 16px', background: '#f9f9f9', borderRadius: 8 }}>
-                <div style={{ fontSize: 10, color: '#aaa', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>How it works</div>
-                <ol style={{ fontSize: 12, color: '#666', lineHeight: 1.8, margin: 0, paddingLeft: 16 }}>
-                  <li>Sign up at driftgrid.ai</li>
-                  <li>Push your project to the cloud</li>
-                  <li>Get a share link instantly</li>
-                </ol>
-              </div>
-
-              <div style={{ marginTop: 8 }}>
+              <div style={{ marginTop: 16 }}>
                 <p style={{ fontSize: 11, color: '#bbb', lineHeight: 1.5, margin: 0 }}>
                   Prefer to self-host?{' '}
                   <a href="https://docs.driftgrid.ai/docs/self-hosting" target="_blank" rel="noopener noreferrer" style={{ color: '#888', textDecoration: 'underline' }}>

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import type { ClientInfo } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
 
-const hasSupabase = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+const isCloud = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -46,18 +46,44 @@ function ThemeToggle() {
 
 export function Dashboard() {
   const { data: clients, isLoading } = useSWR<ClientInfo[]>('/api/clients', fetcher);
+  const { data: shares } = useSWR<{ token: string; client: string; project: string; is_active: boolean }[]>(
+    isCloud ? '/api/share' : null,
+    fetcher
+  );
 
   const isEmpty = clients && clients.length === 0;
+
+  // Build a lookup: "client/project" → share token
+  const shareMap = new Map<string, string>();
+  if (shares) {
+    for (const s of shares) {
+      if (s.is_active) shareMap.set(`${s.client}/${s.project}`, s.token);
+    }
+  }
 
   return (
     <div className="min-h-screen p-8 max-w-5xl mx-auto">
       {/* Header */}
       <header className="mb-12 flex items-center justify-between">
         <h1 className="text-sm font-medium tracking-widest uppercase text-[var(--muted)]">
-          DriftGrid
+          DriftGrid{isCloud ? ' Cloud' : ''}
         </h1>
-        <ThemeToggle />
+        <div className="flex items-center gap-4">
+          {isCloud && (
+            <Link href="/account" className="text-[10px] tracking-wide text-[var(--muted)] no-underline hover:opacity-80" style={{ opacity: 0.5 }}>
+              Account
+            </Link>
+          )}
+          <ThemeToggle />
+        </div>
       </header>
+
+      {/* Cloud mode subtitle */}
+      {isCloud && (
+        <p className="text-xs text-[var(--muted)] -mt-8 mb-10" style={{ opacity: 0.5 }}>
+          Share your projects with clients. All design work happens locally.
+        </p>
+      )}
 
       {/* Loading state */}
       {isLoading && (
@@ -67,9 +93,35 @@ export function Dashboard() {
       {/* Empty state */}
       {isEmpty && (
         <div className="text-center py-20">
-          <p className="text-sm text-[var(--muted)]">
-            No projects yet. Run <code className="text-[var(--foreground)] font-medium">driftgrid init</code> to create one.
-          </p>
+          {isCloud ? (
+            <div>
+              <p className="text-sm text-[var(--muted)] mb-4">
+                No projects uploaded yet.
+              </p>
+              <p className="text-xs text-[var(--muted)] mb-6" style={{ opacity: 0.5, maxWidth: 400, margin: '0 auto 24px', lineHeight: 1.6 }}>
+                Design locally with your agent, then push projects here to share with clients.
+              </p>
+              <div style={{
+                display: 'inline-block',
+                padding: '12px 20px',
+                background: 'var(--card-bg, #f5f5f5)',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                fontFamily: 'var(--font-mono, monospace)',
+                fontSize: 12,
+                color: 'var(--foreground)',
+              }}>
+                driftgrid push
+              </div>
+              <p className="text-[10px] text-[var(--muted)] mt-3" style={{ opacity: 0.4 }}>
+                Run this in your local DriftGrid directory
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-[var(--muted)]">
+              No projects yet. Run <code className="text-[var(--foreground)] font-medium">driftgrid init</code> to create one.
+            </p>
+          )}
         </div>
       )}
 
@@ -82,56 +134,24 @@ export function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {client.projects.map(project => {
               const resolved = resolveCanvas(project.canvas);
-              return (
+              const shareToken = shareMap.get(`${client.slug}/${project.slug}`);
+              const shareUrl = shareToken ? `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${shareToken}` : null;
+
+              return isCloud ? (
+                <CloudProjectCard
+                  key={project.slug}
+                  client={client.slug}
+                  project={project}
+                  canvas={resolved.label}
+                  shareUrl={shareUrl}
+                />
+              ) : (
                 <Link
                   key={project.slug}
                   href={`/admin/${client.slug}/${project.slug}`}
                   className="block group"
                 >
-                  <div
-                    className="relative"
-                    style={{
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-md, 8px)',
-                      padding: '16px 20px',
-                      transition: 'all 150ms ease',
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.transform = 'translateY(-1px)';
-                      e.currentTarget.style.boxShadow = 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.06))';
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
-                    {/* Project name */}
-                    <div
-                      style={{ fontSize: 14, fontWeight: 500 }}
-                      className="text-[var(--foreground)] mb-1.5"
-                    >
-                      {project.name}
-                    </div>
-                    {/* Meta: concept count + version count */}
-                    <div
-                      style={{ fontSize: 11 }}
-                      className="text-[var(--muted)]"
-                    >
-                      {project.conceptCount} concept{project.conceptCount !== 1 ? 's' : ''} &middot; {project.versionCount} version{project.versionCount !== 1 ? 's' : ''}
-                    </div>
-                    {/* Canvas label + push button */}
-                    <div className="flex items-center justify-between mt-2">
-                      <span
-                        className="text-[var(--muted)]"
-                        style={{ fontSize: 10 }}
-                      >
-                        {resolved.label}
-                      </span>
-                      {hasSupabase && (
-                        <PushButton client={client.slug} project={project.slug} />
-                      )}
-                    </div>
-                  </div>
+                  <ProjectCard name={project.name} concepts={project.conceptCount} versions={project.versionCount} canvas={resolved.label} />
                 </Link>
               );
             })}
@@ -140,7 +160,7 @@ export function Dashboard() {
       ))}
 
       {/* New project hint */}
-      {clients && clients.length > 0 && (
+      {clients && clients.length > 0 && !isCloud && (
         <div className="mt-6 mb-12 text-center">
           <p className="text-[10px] text-[var(--muted)] tracking-wide">
             Run <code className="font-medium text-[var(--foreground)]">driftgrid init</code> to create a new project
@@ -151,84 +171,158 @@ export function Dashboard() {
   );
 }
 
-function PushButton({ client, project }: { client: string; project: string }) {
-  const [state, setState] = useState<'idle' | 'pushing' | 'done' | 'error'>('idle');
-  const [shareUrl, setShareUrl] = useState('');
+function ProjectCard({ name, concepts, versions, canvas }: { name: string; concepts: number; versions: number; canvas: string }) {
+  return (
+    <div
+      className="relative"
+      style={{
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-md, 8px)',
+        padding: '16px 20px',
+        transition: 'all 150ms ease',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-1px)';
+        e.currentTarget.style.boxShadow = 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.06))';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+    >
+      <div style={{ fontSize: 14, fontWeight: 500 }} className="text-[var(--foreground)] mb-1.5">
+        {name}
+      </div>
+      <div style={{ fontSize: 11 }} className="text-[var(--muted)]">
+        {concepts} concept{concepts !== 1 ? 's' : ''} &middot; {versions} version{versions !== 1 ? 's' : ''}
+      </div>
+      <div className="mt-2">
+        <span className="text-[var(--muted)]" style={{ fontSize: 10 }}>{canvas}</span>
+      </div>
+    </div>
+  );
+}
 
-  const push = useCallback(async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (state === 'pushing') return;
-    setState('pushing');
+function CloudProjectCard({ client, project, canvas, shareUrl }: {
+  client: string;
+  project: { slug: string; name: string; conceptCount: number; versionCount: number };
+  canvas: string;
+  shareUrl: string | null;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [url, setUrl] = useState(shareUrl);
 
+  const createShare = useCallback(async () => {
+    setCreating(true);
     try {
-      const res = await fetch('/api/push', {
+      const res = await fetch('/api/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client, project }),
+        body: JSON.stringify({ client, project: project.slug }),
       });
-      const data = await res.json();
-      if (res.ok && data.shareUrl) {
-        const fullUrl = window.location.origin.replace('localhost:3000', 'driftgrid.ai') + data.shareUrl;
-        setShareUrl(fullUrl);
-        setState('done');
-        try { await navigator.clipboard.writeText(fullUrl); } catch {}
-      } else {
-        setState('error');
-        setTimeout(() => setState('idle'), 3000);
+      if (res.ok) {
+        const data = await res.json();
+        setUrl(data.url);
+        await navigator.clipboard.writeText(data.url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
       }
-    } catch {
-      setState('error');
-      setTimeout(() => setState('idle'), 3000);
-    }
-  }, [client, project, state]);
+    } catch {}
+    setCreating(false);
+  }, [client, project.slug]);
 
-  const copyLink = useCallback(async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try { await navigator.clipboard.writeText(shareUrl); } catch {}
-  }, [shareUrl]);
-
-  if (state === 'done' && shareUrl) {
-    return (
-      <button
-        onClick={copyLink}
-        className="flex items-center gap-1 transition-all"
-        style={{
-          fontSize: 9,
-          letterSpacing: '0.06em',
-          fontFamily: 'var(--font-mono, monospace)',
-          color: '#059669',
-          opacity: 0.7,
-        }}
-        title={shareUrl}
-      >
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-        </svg>
-        <span>LIVE — COPY LINK</span>
-      </button>
-    );
-  }
+  const copyLink = useCallback(async () => {
+    if (!url) return;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [url]);
 
   return (
-    <button
-      onClick={push}
-      className="flex items-center gap-1 transition-all"
+    <div
       style={{
-        fontSize: 9,
-        letterSpacing: '0.06em',
-        fontFamily: 'var(--font-mono, monospace)',
-        color: state === 'error' ? '#e55' : 'var(--muted)',
-        opacity: state === 'pushing' ? 0.4 : 0.5,
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-md, 8px)',
+        padding: '16px 20px',
       }}
-      title="Push to cloud + copy share link"
     >
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 19V5" /><path d="M5 12l7-7 7 7" />
-      </svg>
-      <span>{state === 'pushing' ? 'PUSHING...' : state === 'error' ? 'FAILED' : 'PUSH'}</span>
-    </button>
+      <div className="flex items-start justify-between mb-1.5">
+        <div style={{ fontSize: 14, fontWeight: 500 }} className="text-[var(--foreground)]">
+          {project.name}
+        </div>
+        {url && (
+          <span style={{ fontSize: 9, letterSpacing: '0.08em', color: '#22c55e', fontFamily: 'var(--font-mono, monospace)' }}>
+            LIVE
+          </span>
+        )}
+      </div>
+      <div style={{ fontSize: 11 }} className="text-[var(--muted)] mb-2">
+        {project.conceptCount} concept{project.conceptCount !== 1 ? 's' : ''} &middot; {project.versionCount} version{project.versionCount !== 1 ? 's' : ''} &middot; {canvas}
+      </div>
+
+      {url ? (
+        <div className="flex items-center gap-2 mt-3">
+          <button
+            onClick={copyLink}
+            style={{
+              flex: 1,
+              padding: '8px 0',
+              textAlign: 'center',
+              fontSize: 11,
+              fontWeight: 500,
+              fontFamily: 'var(--font-mono, monospace)',
+              background: 'var(--foreground)',
+              color: 'var(--background)',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {copied ? 'Copied!' : 'Copy Share Link'}
+          </button>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: '8px 12px',
+              fontSize: 11,
+              fontFamily: 'var(--font-mono, monospace)',
+              color: 'var(--muted)',
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              textDecoration: 'none',
+            }}
+          >
+            Preview
+          </a>
+        </div>
+      ) : (
+        <button
+          onClick={createShare}
+          disabled={creating}
+          style={{
+            width: '100%',
+            padding: '8px 0',
+            textAlign: 'center',
+            fontSize: 11,
+            fontWeight: 500,
+            fontFamily: 'var(--font-mono, monospace)',
+            background: 'var(--foreground)',
+            color: 'var(--background)',
+            border: 'none',
+            borderRadius: 6,
+            cursor: creating ? 'default' : 'pointer',
+            opacity: creating ? 0.5 : 1,
+            letterSpacing: '0.04em',
+            marginTop: 8,
+          }}
+        >
+          {creating ? 'Creating...' : 'Create Share Link'}
+        </button>
+      )}
+    </div>
   );
 }
