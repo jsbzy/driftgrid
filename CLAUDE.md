@@ -64,8 +64,13 @@ npm run dev
 ```
 Tell the user: "Open **localhost:3000** — you'll see your project with 3 empty concept slots. Each one says 'awaiting prompt'. I'll fill them in next."
 
-### Step 5 — Create the first designs
-Fill in the 3 concept slots with different design directions. Each should be a complete, distinct take on the project brief. Use the brand guidelines, follow the canvas boilerplate rules below, and make each direction meaningfully different — not just color swaps.
+### Step 5 — Gather reference material
+Before designing, ask: "Do you have any other reference material? Copy docs, content briefs, product descriptions, existing designs, or anything I should work from?"
+
+If they provide files, URLs, or text — read and incorporate. If not, move on.
+
+### Step 6 — Create the first designs
+Fill in the 3 concept slots with different design directions. Each should be a complete, distinct take on the project brief. Use the brand guidelines and any reference material, follow the canvas boilerplate rules below, and make each direction meaningfully different — not just color swaps.
 
 After creating designs, tell the user: "Your 3 directions are ready. Open the grid to browse them. Use arrow keys to navigate, Enter to zoom in, S to star your favorites."
 
