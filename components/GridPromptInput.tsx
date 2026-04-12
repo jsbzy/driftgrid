@@ -236,21 +236,7 @@ export function GridPromptInput({
     }
   }, [text, state, existingPrompt, onSave, onEdit]);
 
-  /** Dev: simulate MCP picking up the prompt — toggles `status: 'running'` */
-  const handleMarkRunning = useCallback(() => {
-    if (!existingPrompt || !onSetStatus) return;
-    onSetStatus(existingPrompt.id, 'running');
-    toast('Marked in-progress');
-  }, [existingPrompt, onSetStatus]);
-
-  /** Dev: simulate the agent posting a reply — adds an isAgent annotation */
-  const handleSimulateReply = useCallback(() => {
-    if (!existingPrompt || !onReply) return;
-    const replyText = window.prompt('Agent reply text:');
-    if (replyText && replyText.trim()) {
-      onReply(existingPrompt.id, replyText.trim(), true);
-    }
-  }, [existingPrompt, onReply]);
+  // Running status and agent replies are set by the agent via API (PATCH /api/annotations)
 
   /** Resolve the prompt (designer accepts the agent's work) */
   const handleResolve = useCallback(() => {
@@ -487,86 +473,9 @@ export function GridPromptInput({
             </button>
           )}
 
-          {/* Mark as running (simulates agent pickup) */}
-          {state === 'awaiting' && onSetStatus && (
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleMarkRunning();
-              }}
-              title="Dev — simulate MCP picking up this prompt"
-              style={{
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: 9,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                padding: '5px 9px',
-                borderRadius: 5,
-                border: '1px dashed rgba(212,168,74,0.4)',
-                background: 'rgba(212,168,74,0.08)',
-                color: 'rgba(212,168,74,0.8)',
-                cursor: 'pointer',
-              }}
-            >
-              ● running
-            </button>
-          )}
+          {/* Running and agent reply states are set by the agent via API, not manual buttons */}
 
-          {/* Dev — simulate agent reply (only in-progress so we can land in done state) */}
-          {state === 'in-progress' && onReply && (
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSimulateReply();
-              }}
-              title="Dev — simulate an agent reply"
-              style={{
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: 9,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                padding: '5px 9px',
-                borderRadius: 5,
-                border: '1px dashed rgba(212,168,74,0.4)',
-                background: 'rgba(212,168,74,0.08)',
-                color: 'rgba(212,168,74,0.8)',
-                cursor: 'pointer',
-              }}
-            >
-              + agent reply
-            </button>
-          )}
-
-          {/* Continue the thread in done state */}
-          {state === 'done' && onReply && (
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSimulateReply();
-              }}
-              title="Continue the conversation"
-              style={{
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: 9,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                padding: '5px 9px',
-                borderRadius: 5,
-                border: '1px solid rgba(255,255,255,0.1)',
-                background: 'rgba(255,255,255,0.05)',
-                color: 'rgba(255,255,255,0.7)',
-                cursor: 'pointer',
-              }}
-            >
-              + reply
-            </button>
-          )}
+          {/* Agent replies appear automatically via API */}
         </div>
       </div>
     </div>

@@ -868,8 +868,8 @@ const CardLayer = memo(function CardLayer({
               isMultiSelected={multiSelected.has(`${concept.id}:${version.id}`)}
               filePath={`~/driftgrid/projects/${client}/${project}/${version.file}`}
               demoSlot={!version.file}
-              isEmptySlot={version.changelog === 'New drift slot — empty'}
-              isAgentWorking={version.changelog === 'Agent working'}
+              isEmptySlot={version.changelog === 'New drift slot — empty' && !version.annotations?.some(a => a.status === 'running')}
+              isAgentWorking={version.changelog === 'Agent working' || !!version.annotations?.some(a => a.status === 'running')}
               mode={mode}
               onStar={() => onStarVersion(concept.id, version.id)}
               onDelete={() => onDeleteVersion(concept.id, version.id)}
