@@ -149,7 +149,7 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
           {state === 'signup' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>
-                Create a free account to share this project with clients. Your first project share is free.
+                To share a DriftGrid project with clients, you need an account.
               </p>
 
               <a

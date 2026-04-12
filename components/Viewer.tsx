@@ -1187,28 +1187,24 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           {mode !== 'client' && !shareToken && (
             <button
               onClick={() => setSharePanelOpen(true)}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg transition-all"
+              className="flex items-center gap-1.5 transition-all"
               style={{
-                fontSize: 12,
-                fontWeight: 600,
-                letterSpacing: '0.04em',
-                color: '#0a0a0a',
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '0.06em',
+                color: 'var(--foreground)',
                 cursor: 'pointer',
-                background: '#fff',
+                background: 'none',
                 border: 'none',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+                opacity: 0.5,
+                padding: 0,
               }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = '#f0f0f0';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = '#fff';
-              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.5'; }}
               title="Share with clients"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
               </svg>
               Share
             </button>
