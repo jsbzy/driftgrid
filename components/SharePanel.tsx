@@ -1,9 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from './Toast';
 
-type ShareState = 'closed' | 'local' | 'signup' | 'uploading' | 'ready' | 'upgrade';
+const CLOUD_URL = process.env.NEXT_PUBLIC_DRIFTGRID_CLOUD_URL || 'https://driftgrid.ai';
+const STORAGE_KEY = 'driftgrid-cloud-auth';
+
+type ShareState = 'closed' | 'checking' | 'auth' | 'syncing' | 'ready' | 'upgrade' | 'error';
+
+interface StoredCredentials {
+  accessToken: string;
+  refreshToken: string;
+  email: string;
+  expiresAt: number;
+}
 
 interface SharePanelProps {
   open: boolean;
@@ -12,72 +22,153 @@ interface SharePanelProps {
   project: string;
 }
 
+function getStoredCredentials(): StoredCredentials | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function storeCredentials(creds: StoredCredentials) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(creds));
+}
+
+function clearCredentials() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 export function SharePanel({ open, onClose, client, project }: SharePanelProps) {
   const [state, setState] = useState<ShareState>('closed');
   const [shareUrl, setShareUrl] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState('');
   const [copied, setCopied] = useState(false);
+  const [progress, setProgress] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [email, setEmail] = useState('');
+  const [commentsCopied, setCommentsCopied] = useState(false);
+
+  // Listen for postMessage from the connect popup
+  const handleMessage = useCallback((event: MessageEvent) => {
+    if (event.data?.type !== 'driftgrid-cloud-auth') return;
+
+    const { accessToken, refreshToken, email: userEmail } = event.data;
+    if (!accessToken) return;
+
+    // Store credentials
+    storeCredentials({
+      accessToken,
+      refreshToken: refreshToken || '',
+      email: userEmail || '',
+      // Supabase JWTs default to 1hr expiry
+      expiresAt: Date.now() + 3600 * 1000,
+    });
+
+    setEmail(userEmail || '');
+
+    // Start syncing immediately
+    pushAndShare(accessToken, refreshToken || '');
+  }, [client, project]);
+
+  useEffect(() => {
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [handleMessage]);
 
   useEffect(() => {
     if (!open) {
       setState('closed');
       return;
     }
-    // Determine initial state
-    checkState();
+    checkCredentials();
   }, [open]);
 
-  async function checkState() {
-    // Detect local mode — no Supabase URL means sharing isn't possible locally
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setState('local');
+  async function checkCredentials() {
+    setState('checking');
+    const creds = getStoredCredentials();
+
+    if (!creds?.accessToken) {
+      setState('auth');
       return;
     }
 
+    setEmail(creds.email);
+
+    // Check if token is likely expired (with 5min buffer)
+    if (creds.expiresAt && Date.now() > creds.expiresAt - 300000) {
+      // Token might be expired — try pushing anyway, the orchestrator handles refresh
+      pushAndShare(creds.accessToken, creds.refreshToken);
+      return;
+    }
+
+    // Token looks valid — push
+    pushAndShare(creds.accessToken, creds.refreshToken);
+  }
+
+  async function pushAndShare(accessToken: string, refreshToken: string) {
+    setState('syncing');
+    setProgress('Preparing files...');
+
     try {
-      // Cloud mode — try to create share link
-      const res = await fetch('/api/share', {
+      const res = await fetch('/api/cloud/push-and-share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client, project }),
+        body: JSON.stringify({ client, project, accessToken, refreshToken }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setShareUrl(data.url);
-        setState('ready');
+      const data = await res.json();
+
+      // Token expired and couldn't be refreshed
+      if (data.needsAuth) {
+        clearCredentials();
+        setState('auth');
         return;
       }
 
-      const err = await res.json();
-
-      // Duplicate — share already exists
-      if (err.error?.includes('duplicate') || err.error?.includes('unique')) {
-        const listRes = await fetch(`/api/share?client=${encodeURIComponent(client)}&project=${encodeURIComponent(project)}`);
-        if (listRes.ok) {
-          const links = await listRes.json();
-          if (links.length > 0) {
-            setShareUrl(`${window.location.origin}/s/${links[0].token}`);
-            setState('ready');
-            return;
-          }
-        }
-      }
-
       // Free tier limit
-      if (err.error === 'free_limit') {
+      if (data.error === 'free_limit') {
         setState('upgrade');
         return;
       }
 
-      // Not authenticated or local mode
-      if (res.status === 400 || res.status === 401) {
-        setState('signup');
+      if (!res.ok) {
+        setErrorMsg(data.error || 'Failed to share');
+        setState('error');
         return;
       }
-    } catch {
-      setState('signup');
+
+      // Update stored tokens if they were refreshed
+      if (data.newAccessToken) {
+        const creds = getStoredCredentials();
+        storeCredentials({
+          accessToken: data.newAccessToken,
+          refreshToken: data.newRefreshToken || refreshToken,
+          email: creds?.email || email,
+          expiresAt: Date.now() + 3600 * 1000,
+        });
+      }
+
+      setShareUrl(data.shareUrl);
+      setProgress(`${data.filesUploaded} files synced`);
+      setState('ready');
+    } catch (err) {
+      setErrorMsg('Could not reach DriftGrid Cloud. Check your connection.');
+      setState('error');
     }
+  }
+
+  function openConnectPopup() {
+    const origin = encodeURIComponent(window.location.origin);
+    const w = 420;
+    const h = 520;
+    const left = window.screenX + (window.innerWidth - w) / 2;
+    const top = window.screenY + (window.innerHeight - h) / 2;
+    window.open(
+      `${CLOUD_URL}/connect?origin=${origin}`,
+      'driftgrid-connect',
+      `width=${w},height=${h},left=${left},top=${top},popup=yes`,
+    );
   }
 
   async function handleCopy() {
@@ -86,6 +177,44 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
     setCopied(true);
     toast('Share link copied');
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleCopyComments() {
+    if (!shareUrl) return;
+    try {
+      const token = shareUrl.split('/s/')[1];
+      if (!token) return;
+
+      const creds = getStoredCredentials();
+      const res = await fetch(`${CLOUD_URL}/api/cloud/comments?token=${encodeURIComponent(token)}`, {
+        headers: creds?.accessToken ? { 'Authorization': `Bearer ${creds.accessToken}` } : {},
+      });
+
+      if (!res.ok) {
+        toast('No comments yet');
+        return;
+      }
+
+      const data = await res.json();
+      if (!data.text || data.count === 0) {
+        toast('No comments yet');
+        return;
+      }
+
+      await navigator.clipboard.writeText(data.text);
+      setCommentsCopied(true);
+      toast(`${data.count} comment${data.count === 1 ? '' : 's'} copied`);
+      setTimeout(() => setCommentsCopied(false), 2000);
+    } catch {
+      toast('Failed to fetch comments');
+    }
+  }
+
+  function handleSignOut() {
+    clearCredentials();
+    setShareUrl(null);
+    setEmail('');
+    setState('auth');
   }
 
   if (!open) return null;
@@ -120,10 +249,16 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
     overflow: 'auto',
   };
 
+  const headerText = state === 'auth' ? 'Share with clients'
+    : state === 'upgrade' ? 'Upgrade to share'
+    : state === 'error' ? 'Share error'
+    : 'Share link';
+
   return (
     <>
       <style>{`
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes pulse-dot { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
       `}</style>
 
       {/* Backdrop */}
@@ -140,7 +275,7 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
       <div style={panelStyle}>
         <div style={headerStyle}>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#111', letterSpacing: '0.02em' }}>
-            {state === 'local' || state === 'signup' ? 'Share with clients' : state === 'upgrade' ? 'Upgrade to share' : 'Share link'}
+            {headerText}
           </span>
           <button
             onClick={onClose}
@@ -151,139 +286,61 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
         </div>
 
         <div style={bodyStyle}>
-          {/* LOCAL STATE — no cloud configured */}
-          {state === 'local' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>
-                Create a DriftGrid account to share your projects with clients.
-              </p>
-
-              <a
-                href="https://driftgrid.ai/login"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'block',
-                  padding: '12px 0',
-                  textAlign: 'center',
-                  background: '#111',
-                  color: '#fff',
-                  borderRadius: 8,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  letterSpacing: '0.04em',
-                  textDecoration: 'none',
-                }}
-              >
-                Create Account
-              </a>
-
-              <div style={{ marginTop: 16 }}>
-                <p style={{ fontSize: 11, color: '#bbb', lineHeight: 1.5, margin: 0 }}>
-                  Prefer to self-host?{' '}
-                  <a href="https://docs.driftgrid.ai/docs/self-hosting" target="_blank" rel="noopener noreferrer" style={{ color: '#888', textDecoration: 'underline' }}>
-                    See docs
-                  </a>
-                </p>
+          {/* CHECKING STATE */}
+          {state === 'checking' && (
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out infinite' }} />
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out 0.2s infinite' }} />
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out 0.4s infinite' }} />
               </div>
             </div>
           )}
 
-          {/* SIGNUP STATE */}
-          {state === 'signup' && (
+          {/* AUTH STATE */}
+          {state === 'auth' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>
-                To share a DriftGrid project with clients, you need an account.
+                Sign in to DriftGrid Cloud to share your project with clients.
               </p>
 
-              <a
-                href={`https://driftgrid.ai/login?next=${encodeURIComponent(`/admin/${client}/${project}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={openConnectPopup}
                 style={{
                   display: 'block',
+                  width: '100%',
                   padding: '12px 0',
                   textAlign: 'center',
                   background: '#111',
                   color: '#fff',
+                  border: 'none',
                   borderRadius: 8,
                   fontSize: 12,
                   fontWeight: 600,
                   letterSpacing: '0.04em',
-                  textDecoration: 'none',
+                  cursor: 'pointer',
                 }}
               >
-                Create Account
-              </a>
+                Sign in to share
+              </button>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.08)' }} />
-                <span style={{ fontSize: 10, color: '#aaa', letterSpacing: '0.08em', textTransform: 'uppercase' }}>or</span>
-                <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.08)' }} />
-              </div>
-
-              <div style={{ display: 'flex', gap: 8 }}>
-                <a
-                  href="https://driftgrid.ai/login?provider=google"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    flex: 1,
-                    padding: '10px 0',
-                    textAlign: 'center',
-                    border: '1px solid rgba(0,0,0,0.12)',
-                    borderRadius: 8,
-                    fontSize: 11,
-                    color: '#444',
-                    textDecoration: 'none',
-                    fontWeight: 500,
-                  }}
-                >
-                  Google
-                </a>
-                <a
-                  href="https://driftgrid.ai/login?provider=github"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    flex: 1,
-                    padding: '10px 0',
-                    textAlign: 'center',
-                    border: '1px solid rgba(0,0,0,0.12)',
-                    borderRadius: 8,
-                    fontSize: 11,
-                    color: '#444',
-                    textDecoration: 'none',
-                    fontWeight: 500,
-                  }}
-                >
-                  GitHub
-                </a>
-              </div>
-
-              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-                <p style={{ fontSize: 11, color: '#aaa', lineHeight: 1.5, margin: 0 }}>
-                  Prefer to self-host?{' '}
-                  <a href="https://docs.driftgrid.ai/docs/self-hosting" target="_blank" rel="noopener noreferrer" style={{ color: '#888', textDecoration: 'underline' }}>
-                    See docs
-                  </a>
-                </p>
-              </div>
+              <p style={{ fontSize: 11, color: '#bbb', lineHeight: 1.5, margin: 0 }}>
+                Your designs stay local. Only shared projects are visible to clients.
+              </p>
             </div>
           )}
 
-          {/* UPLOADING STATE */}
-          {state === 'uploading' && (
+          {/* SYNCING STATE */}
+          {state === 'syncing' && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, paddingTop: 40 }}>
               <div style={{ display: 'flex', gap: 4 }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out infinite' }} />
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out 0.2s infinite' }} />
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out 0.4s infinite' }} />
               </div>
-              <style>{`@keyframes pulse-dot { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }`}</style>
-              <p style={{ fontSize: 13, color: '#666', margin: 0 }}>Uploading project to cloud...</p>
-              {uploadProgress && (
-                <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>{uploadProgress}</p>
+              <p style={{ fontSize: 13, color: '#666', margin: 0 }}>Syncing to DriftGrid Cloud...</p>
+              {progress && (
+                <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>{progress}</p>
               )}
             </div>
           )}
@@ -355,10 +412,79 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
                 Clients can browse and leave comments — no account needed.
               </p>
 
+              {/* Copy Feedback section */}
               <div style={{ paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <button
+                  onClick={handleCopyComments}
+                  style={{
+                    width: '100%',
+                    padding: '10px 0',
+                    textAlign: 'center',
+                    background: '#fff',
+                    color: '#666',
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 8,
+                    fontSize: 11,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  {commentsCopied ? 'Comments copied!' : 'Copy Client Feedback'}
+                </button>
+                <p style={{ fontSize: 10, color: '#bbb', margin: '8px 0 0', lineHeight: 1.4 }}>
+                  Copies all client comments as text. Paste into your conversation to start the next round.
+                </p>
+              </div>
+
+              {/* Re-sync + account info */}
+              <div style={{ paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <button
+                  onClick={() => {
+                    const creds = getStoredCredentials();
+                    if (creds) pushAndShare(creds.accessToken, creds.refreshToken);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 0',
+                    textAlign: 'center',
+                    background: '#fff',
+                    color: '#666',
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 8,
+                    fontSize: 11,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  Re-sync latest changes
+                </button>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 10, color: '#ccc' }}>
+                    {email}
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: 10,
+                      color: '#ccc',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    sign out
+                  </button>
+                </div>
+
                 <p style={{ fontSize: 11, color: '#bbb', margin: 0 }}>
                   Free tier: 1 project share.{' '}
-                  <a href="/pricing" target="_blank" style={{ color: '#888', textDecoration: 'underline' }}>Upgrade for unlimited</a>
+                  <a href={`${CLOUD_URL}/pricing`} target="_blank" style={{ color: '#888', textDecoration: 'underline' }}>
+                    Upgrade for unlimited
+                  </a>
                 </p>
               </div>
             </div>
@@ -379,7 +505,7 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
               </div>
 
               <a
-                href="/pricing"
+                href={`${CLOUD_URL}/pricing`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -405,6 +531,52 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
                 </a>
                 {' '}for free with your own infrastructure.
               </p>
+            </div>
+          )}
+
+          {/* ERROR STATE */}
+          {state === 'error' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <p style={{ fontSize: 13, color: '#e55', lineHeight: 1.6, margin: 0 }}>
+                {errorMsg || 'Something went wrong.'}
+              </p>
+
+              <button
+                onClick={() => {
+                  setErrorMsg('');
+                  checkCredentials();
+                }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  padding: '12px 0',
+                  textAlign: 'center',
+                  background: '#111',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  cursor: 'pointer',
+                }}
+              >
+                Try again
+              </button>
+
+              <button
+                onClick={handleSignOut}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 11,
+                  color: '#aaa',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                Sign in with a different account
+              </button>
             </div>
           )}
         </div>

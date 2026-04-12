@@ -21,6 +21,8 @@ const PUBLIC_PATHS = [
   '/api/stripe',    // Stripe webhook + checkout (routes do their own auth)
   '/api/share',     // share link creation uses its own auth
   '/api/s/',        // public share link endpoints
+  '/api/cloud/',    // cloud push/share/verify endpoints (JWT-authed, not cookie-authed)
+  '/connect',       // auth popup page for local→cloud linking
   '/s/',            // v1 share link pages
   '/review/',       // legacy client-review pages (live client URLs depend on this)
   '/api/manifest/', // public manifest reads for shared projects
