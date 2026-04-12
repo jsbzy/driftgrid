@@ -15,6 +15,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import * as readline from 'readline';
 import { CANVAS_PRESETS } from '../lib/constants';
+import { driftPromptBoilerplate } from '../lib/canvas-boilerplate';
 import type { Manifest } from '../lib/types';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
@@ -141,7 +142,6 @@ async function main() {
 
   const projectDir = path.join(PROJECTS_DIR, client, project);
   const brandDir = path.join(PROJECTS_DIR, client, 'brand');
-  const conceptDir = path.join(projectDir, 'concept-1');
   const thumbsDir = path.join(projectDir, '.thumbs');
 
   // Check if project already exists
@@ -151,10 +151,11 @@ async function main() {
   }
 
   // Create project directories
-  await fs.mkdir(conceptDir, { recursive: true });
   await fs.mkdir(thumbsDir, { recursive: true });
-  console.log(`  Created projects/${client}/${project}/concept-1/`);
-  console.log(`  Created projects/${client}/${project}/.thumbs/`);
+  for (let i = 1; i <= 3; i++) {
+    await fs.mkdir(path.join(projectDir, `concept-${i}`), { recursive: true });
+  }
+  console.log(`  Created projects/${client}/${project}/ (3 concepts)`);
 
   // Create brand directory if it doesn't exist
   if (!(await dirExists(brandDir))) {
@@ -190,15 +191,40 @@ async function main() {
     console.log(`  Created projects/${client}/brand/guidelines.md`);
   }
 
-  // Create manifest
+  // Create manifest with 3 starter concepts
   const now = new Date().toISOString();
-  const conceptId = `concept-${generateId()}`;
-  const versionId = `version-${generateId()}`;
 
   const projectName = project
     .split('-')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ');
+
+  const conceptLabels = ['Direction A', 'Direction B', 'Direction C'];
+  const concepts = conceptLabels.map((label, i) => {
+    const cId = `concept-${generateId()}`;
+    const vId = `version-${generateId()}`;
+    return {
+      id: cId,
+      slug: `concept-${i + 1}`,
+      label,
+      description: '',
+      position: i,
+      visible: true,
+      versions: [
+        {
+          id: vId,
+          number: 1,
+          file: `concept-${i + 1}/v1.html`,
+          parentId: null,
+          changelog: 'New drift slot — empty',
+          visible: true,
+          starred: false,
+          created: now,
+          thumbnail: '',
+        },
+      ],
+    };
+  });
 
   const manifest: Manifest = {
     project: {
@@ -209,28 +235,7 @@ async function main() {
       created: now,
       links: {},
     },
-    concepts: [
-      {
-        id: conceptId,
-        label: 'Concept 1',
-        description: '',
-        position: 0,
-        visible: true,
-        versions: [
-          {
-            id: versionId,
-            number: 1,
-            file: 'concept-1/v1.html',
-            parentId: null,
-            changelog: 'Initial version',
-            visible: true,
-            starred: false,
-            created: now,
-            thumbnail: '',
-          },
-        ],
-      },
-    ],
+    concepts,
     rounds: [],
     workingSets: [],
     comments: [],
@@ -241,77 +246,23 @@ async function main() {
   await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
   console.log(`  Created projects/${client}/${project}/manifest.json`);
 
-  // Create starter HTML file
-  const preset = CANVAS_PRESETS[canvasPreset];
-  const isLocked = !preset.responsive && typeof preset.height === 'number';
-  const widthPx = typeof preset.width === 'number' ? preset.width : 1440;
-
-  let starterHtml: string;
-  if (isLocked) {
-    starterHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${projectName}</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-        }
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            -webkit-font-smoothing: antialiased;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #ffffff;
-            color: #111111;
-        }
-        @media print {
-            html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        }
-    </style>
-</head>
-<body>
-    <h1 style="font-size: 2rem; font-weight: 300; letter-spacing: 0.05em;">${projectName}</h1>
-</body>
-</html>`;
-  } else {
-    starterHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${projectName}</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; }
-        body {
-            max-width: ${widthPx}px;
-            margin: 0 auto;
-            font-family: system-ui, -apple-system, sans-serif;
-            -webkit-font-smoothing: antialiased;
-            padding: 4rem 2rem;
-            background: #ffffff;
-            color: #111111;
-        }
-    </style>
-</head>
-<body>
-    <h1 style="font-size: 2rem; font-weight: 300; letter-spacing: 0.05em;">${projectName}</h1>
-</body>
-</html>`;
+  // Create drift-prompt boilerplate HTML for each concept
+  for (let i = 0; i < conceptLabels.length; i++) {
+    const html = driftPromptBoilerplate(
+      canvasPreset,
+      `${projectName} — ${conceptLabels[i]}`,
+      conceptLabels[i],
+      1,
+    );
+    const htmlPath = path.join(projectDir, `concept-${i + 1}`, 'v1.html');
+    await fs.writeFile(htmlPath, html, 'utf-8');
   }
-
-  const htmlPath = path.join(conceptDir, 'v1.html');
-  await fs.writeFile(htmlPath, starterHtml, 'utf-8');
-  console.log(`  Created projects/${client}/${project}/concept-1/v1.html`);
+  console.log(`  Created 3 concept slots (Direction A, B, C)`);
 
   // Write/update CLAUDE.md with DriftGrid conventions
   const claudeMdPath = path.join(PROJECTS_DIR, '..', 'CLAUDE.md');
+  const presetInfo = CANVAS_PRESETS[canvasPreset];
+  const widthPx = typeof presetInfo.width === 'number' ? presetInfo.width : 1440;
   const driftgridSection = `
 ## DriftGrid Conventions
 
@@ -320,7 +271,7 @@ This project uses DriftGrid for design iteration. Key rules:
 - **Never overwrite versions.** Copy to the next version number (v2, v3, etc.) and edit the copy.
 - **Update manifest.json** when adding versions or concepts.
 - **HTML files must be self-contained** — inline CSS/JS, Google Fonts via \`<link>\` tags, no external URLs.
-- **Canvas preset:** \`${canvasPreset}\` (${widthPx}${typeof preset.height === 'number' ? `x${preset.height}` : ' x auto'})
+- **Canvas preset:** \`${canvasPreset}\` (${widthPx}${typeof presetInfo.height === 'number' ? `x${presetInfo.height}` : ' x auto'})
 
 ### API Endpoints (localhost:3000)
 - \`GET /api/current\` — what the user is currently viewing
@@ -340,9 +291,11 @@ This project uses DriftGrid for design iteration. Key rules:
   }
 
   console.log('');
-  console.log(`Project initialized at: projects/${client}/${project}/`);
-  console.log(`Canvas: ${preset.label} (${widthPx}${typeof preset.height === 'number' ? `x${preset.height}` : ' x auto'})`);
-  console.log(`View at: http://localhost:3000/admin/${client}/${project}`);
+  console.log(`  Project ready: projects/${client}/${project}/`);
+  console.log(`  Canvas: ${presetInfo.label} (${widthPx}${typeof presetInfo.height === 'number' ? `x${presetInfo.height}` : ' x auto'})`);
+  console.log(`  3 empty concepts — prompt your agent to fill them in.`);
+  console.log('');
+  console.log(`  View at: http://localhost:3000/admin/${client}/${project}`);
 }
 
 main().catch(err => {
