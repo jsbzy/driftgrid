@@ -24,6 +24,13 @@ export interface ProjectMeta {
   canvas: string;
   created: string;
   links: ProjectLinks;
+  /**
+   * Supabase auth.users.id of the project owner. Present on cloud projects
+   * (Pro tier), undefined on local-only projects (Free tier). Used to scope
+   * Supabase Storage paths as {userId}/{client}/{project}/... and to enforce
+   * row-level security on comments and share links.
+   */
+  userId?: string;
 }
 
 export interface Version {

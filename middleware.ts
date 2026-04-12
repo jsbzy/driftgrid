@@ -1,83 +1,95 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-const PUBLIC_PATHS = ['/_next', '/favicon.ico', '/login', '/api/auth', '/s/', '/api/share', '/api/s/', '/review/', '/api/manifest/', '/api/html/'];
+/**
+ * DriftGrid middleware — v1 simplified auth model:
+ *
+ *   • Local dev (localhost) → no auth required. Ever. Users work offline, free tier.
+ *   • Production             → Supabase Auth required for protected routes.
+ *   • Public paths           → always accessible (share links, client reviews, API endpoints that need it).
+ *
+ * Dead-simple flow: local = free-tier-by-default, production = cloud-gated.
+ * No more DRIFT_PASSWORD dual-mode confusion.
+ */
 
-async function sha256(str: string): Promise<string> {
-  const buf = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(str)
-  );
-  return Array.from(new Uint8Array(buf))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+const PUBLIC_PATHS = [
+  '/_next',
+  '/favicon.ico',
+  '/login',
+  '/api/auth',      // Supabase OAuth callback (/api/auth/callback)
+  '/api/share',     // share link creation uses its own auth
+  '/api/s/',        // public share link endpoints
+  '/s/',            // v1 share link pages
+  '/review/',       // legacy client-review pages (live client URLs depend on this)
+  '/api/manifest/', // public manifest reads for shared projects
+  '/api/html/',     // public HTML file reads for shared projects
+];
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.some(p => pathname.startsWith(p));
+}
+
+function isLocalDev(request: NextRequest): boolean {
+  const host = request.nextUrl.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public paths
-  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+  // Always allow public paths (share links, login, static assets, etc.)
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
-  // --- Cloud mode: Supabase auth (skip in local dev) ---
+  // Local dev always bypasses auth — free tier runs fully offline.
+  if (isLocalDev(request)) {
+    return NextResponse.next();
+  }
+
+  // Root landing page — always allow (the page component decides whether to
+  // show the public landing or the authed dashboard).
+  if (pathname === '/') {
+    return NextResponse.next();
+  }
+
+  // Production — require Supabase Auth for everything else.
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const isLocalDev = request.nextUrl.hostname === 'localhost' || request.nextUrl.hostname === '127.0.0.1';
 
-  if (supabaseUrl && supabaseAnonKey && !isLocalDev) {
-    // Landing page: allow unauthenticated access to root
-    if (pathname === '/') {
-      // Let the page component decide whether to show landing or dashboard
-      return NextResponse.next();
-    }
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // Supabase not configured in a non-local environment — fail closed.
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('error', 'auth_not_configured');
+    return NextResponse.redirect(loginUrl);
+  }
 
-    let response = NextResponse.next({
-      request: { headers: request.headers },
-    });
+  let response = NextResponse.next({ request: { headers: request.headers } });
 
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          for (const { name, value, options } of cookiesToSet) {
-            request.cookies.set(name, value);
-            response = NextResponse.next({
-              request: { headers: request.headers },
-            });
-            response.cookies.set(name, value, options);
-          }
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    });
+      setAll(cookiesToSet) {
+        for (const { name, value, options } of cookiesToSet) {
+          request.cookies.set(name, value);
+          response = NextResponse.next({ request: { headers: request.headers } });
+          response.cookies.set(name, value, options);
+        }
+      },
+    },
+  });
 
-    const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      const loginUrl = new URL('/login', request.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    return response;
+  if (!user) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('next', pathname + request.nextUrl.search);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // --- Local mode: DRIFT_PASSWORD ---
-  const password = process.env.DRIFT_PASSWORD;
-  if (!password) {
-    return NextResponse.next();
-  }
-
-  const cookie = request.cookies.get('drift-auth')?.value;
-  const expected = await sha256(password);
-  if (cookie === expected) {
-    return NextResponse.next();
-  }
-
-  const loginUrl = new URL('/login', request.url);
-  return NextResponse.redirect(loginUrl);
+  return response;
 }
 
 export const config = {

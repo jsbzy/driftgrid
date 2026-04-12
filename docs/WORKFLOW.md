@@ -47,7 +47,7 @@ Open `localhost:3000` — the dashboard shows all projects. Click into any proje
    yourdomain.com/review/{client}/{project}
    ```
 
-**Note:** The production site is password-protected. Set `DRIFT_PASSWORD` in Vercel environment variables and share the password with your client.
+**Note:** v1+ uses Supabase Auth in production. The designer signs in with email, Google, or GitHub to access their projects. Client review links under `/review/{client}/{project}` and `/s/{token}` are public (no auth required) so clients can view without an account. See `supabase/migrations/` for the schema.
 
 ## Exporting (local only)
 

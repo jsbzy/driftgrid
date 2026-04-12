@@ -1,10 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
-const isCloud = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+/**
+ * DriftGrid v1 login page.
+ *
+ *   Local dev: no auth required — users never see this page. Middleware
+ *   bypasses auth on localhost, so the only way to land here is explicit
+ *   navigation.
+ *
+ *   Production: Supabase Auth (email/password + OAuth via Google/GitHub).
+ *   Landing on /login from a protected route passes `?next=` so we can bounce
+ *   the user back after sign-in.
+ */
 
 function getSupabaseBrowser() {
   return createClient(
@@ -13,16 +23,24 @@ function getSupabaseBrowser() {
   );
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') ?? '/';
+  const urlError = searchParams.get('error');
 
-  // --- Cloud mode: Supabase email/password ---
-  async function handleCloudSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    if (urlError === 'auth_not_configured') {
+      setError('Supabase is not configured on this deployment.');
+    }
+  }, [urlError]);
+
+  async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -30,19 +48,16 @@ export default function LoginPage() {
     const supabase = getSupabaseBrowser();
 
     if (mode === 'signup') {
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
+      const { error: signUpError } = await supabase.auth.signUp({ email, password });
       if (signUpError) {
         setError(signUpError.message);
         setLoading(false);
         return;
       }
-      // Auto-login after signup (email confirmation disabled for launch)
+      // Try an immediate sign-in after signup (works when email confirmation is disabled).
       const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
       if (loginError) {
-        setError('Account created — please log in.');
+        setError('Account created — check your inbox to confirm, then sign in.');
         setMode('login');
         setLoading(false);
         return;
@@ -56,123 +71,128 @@ export default function LoginPage() {
       }
     }
 
-    router.push('/');
+    router.push(next);
     router.refresh();
   }
 
-  // --- Local mode: DRIFT_PASSWORD ---
-  async function handleLocalSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleOAuth(provider: 'google' | 'github') {
     setError('');
     setLoading(true);
-
-    const res = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
+    const supabase = getSupabaseBrowser();
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(next)}`,
+      },
     });
-
-    if (res.ok) {
-      router.push('/');
-    } else {
-      setError('incorrect password');
+    if (oauthError) {
+      setError(oauthError.message);
       setLoading(false);
     }
   }
 
-  if (isCloud) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
-        <form onSubmit={handleCloudSubmit} className="w-full max-w-xs space-y-4">
-          <div className="text-xs tracking-widest uppercase" style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono, monospace)' }}>
-            DriftGrid
-          </div>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="email"
-            autoFocus
-            className="w-full bg-transparent border-b outline-none py-2 text-sm"
-            style={{
-              borderColor: error ? '#e55' : 'var(--border)',
-              color: 'var(--foreground)',
-              fontFamily: 'var(--font-mono, monospace)',
-            }}
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="password"
-            className="w-full bg-transparent border-b outline-none py-2 text-sm"
-            style={{
-              borderColor: error ? '#e55' : 'var(--border)',
-              color: 'var(--foreground)',
-              fontFamily: 'var(--font-mono, monospace)',
-            }}
-          />
-          {error && (
-            <p className="text-xs" style={{ color: '#e55', fontFamily: 'var(--font-mono, monospace)' }}>
-              {error}
-            </p>
-          )}
-          <div className="flex items-center justify-between">
-            <button
-              type="submit"
-              disabled={loading || !email || !password}
-              className="text-xs tracking-widest uppercase cursor-pointer disabled:opacity-30"
-              style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono, monospace)' }}
-            >
-              {loading ? '...' : mode === 'login' ? 'log in' : 'sign up'}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
-              className="text-xs tracking-widest uppercase cursor-pointer"
-              style={{ color: 'var(--muted)', opacity: 0.5, fontFamily: 'var(--font-mono, monospace)' }}
-            >
-              {mode === 'login' ? 'create account' : 'back to login'}
-            </button>
-          </div>
-        </form>
-      </div>
-    );
-  }
+  const supabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // Local mode — password only
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <form onSubmit={handleLocalSubmit} className="w-full max-w-xs space-y-4">
-        <div className="text-xs tracking-widest uppercase" style={{ color: 'var(--muted)' }}>
-          drift
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
+      <form onSubmit={handleEmailSubmit} className="w-full max-w-xs space-y-5">
+        <div className="text-xs tracking-widest uppercase" style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono, monospace)' }}>
+          DriftGrid
         </div>
+
+        {!supabaseConfigured && (
+          <p className="text-xs" style={{ color: '#e55', fontFamily: 'var(--font-mono, monospace)' }}>
+            Supabase is not configured in this environment.
+          </p>
+        )}
+
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="email"
+          autoFocus
+          disabled={!supabaseConfigured}
+          className="w-full bg-transparent border-b outline-none py-2 text-sm"
+          style={{
+            borderColor: error ? '#e55' : 'var(--border)',
+            color: 'var(--foreground)',
+            fontFamily: 'var(--font-mono, monospace)',
+          }}
+        />
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="password"
-          autoFocus
-          className="w-full bg-transparent border-b outline-none py-2 text-sm font-mono"
+          disabled={!supabaseConfigured}
+          className="w-full bg-transparent border-b outline-none py-2 text-sm"
           style={{
             borderColor: error ? '#e55' : 'var(--border)',
             color: 'var(--foreground)',
+            fontFamily: 'var(--font-mono, monospace)',
           }}
         />
+
         {error && (
-          <p className="text-xs" style={{ color: '#e55' }}>
+          <p className="text-xs" style={{ color: '#e55', fontFamily: 'var(--font-mono, monospace)' }}>
             {error}
           </p>
         )}
-        <button
-          type="submit"
-          disabled={loading || !password}
-          className="text-xs tracking-widest uppercase cursor-pointer disabled:opacity-30"
-          style={{ color: 'var(--muted)' }}
-        >
-          {loading ? '...' : 'enter'}
-        </button>
+
+        <div className="flex items-center justify-between">
+          <button
+            type="submit"
+            disabled={loading || !email || !password || !supabaseConfigured}
+            className="text-xs tracking-widest uppercase cursor-pointer disabled:opacity-30"
+            style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono, monospace)' }}
+          >
+            {loading ? '...' : mode === 'login' ? 'log in' : 'sign up'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
+            className="text-xs tracking-widest uppercase cursor-pointer"
+            style={{ color: 'var(--muted)', opacity: 0.5, fontFamily: 'var(--font-mono, monospace)' }}
+          >
+            {mode === 'login' ? 'create account' : 'back to login'}
+          </button>
+        </div>
+
+        <div className="pt-4 border-t space-y-2" style={{ borderColor: 'var(--border)' }}>
+          <div className="text-[10px] tracking-widest uppercase" style={{ color: 'var(--muted)', opacity: 0.5, fontFamily: 'var(--font-mono, monospace)' }}>
+            or continue with
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => handleOAuth('google')}
+              disabled={loading || !supabaseConfigured}
+              className="text-xs tracking-widest uppercase cursor-pointer disabled:opacity-30"
+              style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono, monospace)' }}
+            >
+              google
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOAuth('github')}
+              disabled={loading || !supabaseConfigured}
+              className="text-xs tracking-widest uppercase cursor-pointer disabled:opacity-30"
+              style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono, monospace)' }}
+            >
+              github
+            </button>
+          </div>
+        </div>
       </form>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" style={{ background: 'var(--background)' }} />}>
+      <LoginForm />
+    </Suspense>
   );
 }
