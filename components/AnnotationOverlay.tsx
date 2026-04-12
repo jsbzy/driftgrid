@@ -4,6 +4,10 @@ import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react
 import type { Annotation } from '@/lib/types';
 import { toast } from '@/components/Toast';
 
+function handleSendToAgent() {
+  toast('Install the DriftGrid MCP server to send prompts directly to your agent.', 'info');
+}
+
 interface AnnotationOverlayProps {
   annotations: Annotation[];
   editMode?: boolean;
@@ -621,6 +625,25 @@ export function AnnotationOverlay({
                       >
                         Copy
                       </button>
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={(e) => { e.stopPropagation(); handleSendToAgent(); }}
+                        style={{
+                          fontFamily: 'var(--font-mono, monospace)',
+                          fontSize: 9,
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          padding: '5px 9px',
+                          borderRadius: 5,
+                          border: '1px dashed rgba(255,255,255,0.12)',
+                          background: 'rgba(255,255,255,0.02)',
+                          color: 'rgba(255,255,255,0.3)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Send to Agent
+                      </button>
                     </div>
                   </div>
                 )}
@@ -787,6 +810,25 @@ export function AnnotationOverlay({
                     }}
                   >
                     {copyState === 'copied' ? 'Copied' : 'Copy'}
+                  </button>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={(e) => { e.stopPropagation(); handleSendToAgent(); inputRef.current?.focus(); }}
+                    style={{
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontSize: 9,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      padding: '5px 9px',
+                      borderRadius: 5,
+                      border: '1px dashed rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.02)',
+                      color: 'rgba(255,255,255,0.3)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Send to Agent
                   </button>
                 </>
               )}

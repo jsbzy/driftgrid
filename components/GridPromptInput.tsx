@@ -460,6 +460,33 @@ export function GridPromptInput({
             </button>
           )}
 
+          {/* Send to Agent — encourages MCP install */}
+          {(state === 'empty' || state === 'awaiting') && (
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={(e) => {
+                e.stopPropagation();
+                toast('Install the DriftGrid MCP server to send prompts directly to your agent.', 'info');
+                textareaRef.current?.focus();
+              }}
+              style={{
+                fontFamily: 'var(--font-mono, monospace)',
+                fontSize: 9,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                padding: '5px 9px',
+                borderRadius: 5,
+                border: '1px dashed rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.02)',
+                color: 'rgba(255,255,255,0.3)',
+                cursor: 'pointer',
+              }}
+            >
+              Send to Agent
+            </button>
+          )}
+
           {/* Mark as running (simulates agent pickup) */}
           {state === 'awaiting' && onSetStatus && (
             <button
