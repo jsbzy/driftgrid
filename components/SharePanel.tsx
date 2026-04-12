@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from './Toast';
 
-type ShareState = 'closed' | 'signup' | 'uploading' | 'ready' | 'upgrade';
+type ShareState = 'closed' | 'local' | 'signup' | 'uploading' | 'ready' | 'upgrade';
 
 interface SharePanelProps {
   open: boolean;
@@ -28,8 +28,14 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
   }, [open]);
 
   async function checkState() {
+    // Detect local mode — no Supabase URL means sharing isn't possible locally
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      setState('local');
+      return;
+    }
+
     try {
-      // Try to create share link — the API will tell us the state
+      // Cloud mode — try to create share link
       const res = await fetch('/api/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -134,7 +140,7 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
       <div style={panelStyle}>
         <div style={headerStyle}>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#111', letterSpacing: '0.02em' }}>
-            {state === 'signup' ? 'Share with clients' : state === 'upgrade' ? 'Upgrade to share' : 'Share link'}
+            {state === 'local' || state === 'signup' ? 'Share with clients' : state === 'upgrade' ? 'Upgrade to share' : 'Share link'}
           </span>
           <button
             onClick={onClose}
@@ -145,6 +151,53 @@ export function SharePanel({ open, onClose, client, project }: SharePanelProps) 
         </div>
 
         <div style={bodyStyle}>
+          {/* LOCAL STATE — no cloud configured */}
+          {state === 'local' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>
+                Your project lives on your machine. To share it with clients, push it to DriftGrid Cloud.
+              </p>
+
+              <a
+                href="https://driftgrid.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  padding: '12px 0',
+                  textAlign: 'center',
+                  background: '#111',
+                  color: '#fff',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  textDecoration: 'none',
+                }}
+              >
+                Open DriftGrid Cloud
+              </a>
+
+              <div style={{ padding: '14px 16px', background: '#f9f9f9', borderRadius: 8 }}>
+                <div style={{ fontSize: 10, color: '#aaa', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>How it works</div>
+                <ol style={{ fontSize: 12, color: '#666', lineHeight: 1.8, margin: 0, paddingLeft: 16 }}>
+                  <li>Sign up at driftgrid.ai</li>
+                  <li>Push your project to the cloud</li>
+                  <li>Get a share link instantly</li>
+                </ol>
+              </div>
+
+              <div style={{ marginTop: 8 }}>
+                <p style={{ fontSize: 11, color: '#bbb', lineHeight: 1.5, margin: 0 }}>
+                  Prefer to self-host?{' '}
+                  <a href="https://docs.driftgrid.ai/docs/self-hosting" target="_blank" rel="noopener noreferrer" style={{ color: '#888', textDecoration: 'underline' }}>
+                    See docs
+                  </a>
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* SIGNUP STATE */}
           {state === 'signup' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
