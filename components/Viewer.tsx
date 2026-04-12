@@ -1208,17 +1208,27 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                   toast('Share failed', 'error');
                 }
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:bg-white/10 transition-all"
+              className="flex items-center gap-2 px-4 py-1.5 rounded-full transition-all"
               style={{
-                fontSize: 10,
+                fontSize: 11,
+                fontWeight: 500,
                 letterSpacing: '0.06em',
-                color: 'var(--foreground)',
-                opacity: 0.5,
-                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff',
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.25)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)';
               }}
               title="Create share link for this project"
             >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
                 <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
               </svg>
