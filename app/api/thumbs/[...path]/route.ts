@@ -3,6 +3,9 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import { getManifest } from '@/lib/manifest';
+import { isCloudMode } from '@/lib/supabase';
+import { getAsset } from '@/lib/storage';
+import { getUserId } from '@/lib/auth';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { generateThumbnail } from '@/lib/thumbnails';
 
@@ -121,6 +124,23 @@ export async function GET(
   const client = pathParts[0];
   const project = pathParts[1];
   const thumbFilename = pathParts.slice(2).join('/');
+
+  // Cloud mode: serve from Supabase Storage (no generation, no resize)
+  if (isCloudMode()) {
+    const userId = await getUserId();
+    if (userId) {
+      const data = await getAsset(userId, client, project, `.thumbs/${thumbFilename}`);
+      if (data) {
+        return new NextResponse(new Uint8Array(data), {
+          headers: {
+            'Content-Type': thumbFilename.endsWith('.png') ? 'image/png' : 'image/webp',
+            'Cache-Control': 'public, max-age=300',
+          },
+        });
+      }
+    }
+    return new NextResponse('Not found', { status: 404 });
+  }
 
   // Parse optional resize width: ?w=440
   const url = new URL(_request.url);
