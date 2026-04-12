@@ -74,6 +74,11 @@ Ask: "How many design directions would you like? (default: 3)"
 
 If they say a number, use it. If they press enter or say "default", use 3. If the init script created a different number of concept slots than requested, create or remove slots to match using the iterate/branch APIs.
 
+Before writing any files, tell the user: "I'm creating your designs now. Open **http://localhost:3000/admin/{client}/{project}** to watch them appear in the grid." Then try to open the URL automatically:
+```bash
+open http://localhost:3000/admin/{client}/{project}
+```
+
 Fill in each concept slot with a distinct design direction. Each should be a complete take on the project brief. Use the brand guidelines and any reference material, follow the canvas boilerplate rules below, and make each direction meaningfully different — not just color swaps.
 
 After creating designs, tell the user: "Your 3 directions are ready. Open the grid to browse them. Use arrow keys to navigate, Enter to zoom in, S to star your favorites."
