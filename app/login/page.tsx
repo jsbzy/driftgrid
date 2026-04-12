@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 /**
  * DriftGrid v1 login page.
@@ -14,10 +14,14 @@ import { createClient } from '@supabase/supabase-js';
  *   Production: Supabase Auth (email/password + OAuth via Google/GitHub).
  *   Landing on /login from a protected route passes `?next=` so we can bounce
  *   the user back after sign-in.
+ *
+ *   Uses createBrowserClient from @supabase/ssr (not createClient from
+ *   @supabase/supabase-js) so the session gets stored in COOKIES, which
+ *   the server-side middleware and getUser() can read.
  */
 
 function getSupabaseBrowser() {
-  return createClient(
+  return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
