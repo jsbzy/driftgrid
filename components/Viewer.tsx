@@ -72,6 +72,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const [gridPromptOpen, setGridPromptOpen] = useState(false);
   const autoOpenGridPromptRef = useRef(false);
 
+  // Auto-close grid prompt when the slot gets filled by the agent
+  useEffect(() => {
+    if (gridPromptOpen && currentVersion && currentVersion.changelog !== 'New drift slot — empty') {
+      setGridPromptOpen(false);
+    }
+  }, [gridPromptOpen, currentVersion]);
+
   // Demo drift state — only used in share mode (shareToken present).
   // Tracks client-side-only versions/concepts added via D/Shift+D in the demo.
   // Never persisted. Refresh = reset.
