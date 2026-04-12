@@ -24,9 +24,11 @@ export function useAnnotationState(
   // Demo annotations: keyed by `${conceptId}:${versionId}` so each card has its own list
   const [demoAnnotations, setDemoAnnotations] = useState<Record<string, Annotation[]>>({});
 
-  // Fetch annotations when viewing a frame
+  // Fetch annotations whenever the current card selection changes.
+  // We fetch in both frame AND grid view so the grid prompt panel can
+  // detect existing whole-version prompts and reply threads on drift slots.
   useEffect(() => {
-    if (!conceptId || !versionId || viewMode !== 'frame') {
+    if (!conceptId || !versionId) {
       setAnnotations([]);
       return;
     }
@@ -40,14 +42,14 @@ export function useAnnotationState(
       .then(r => r.json())
       .then(data => { if (Array.isArray(data)) setAnnotations(data); })
       .catch(() => {});
-  }, [client, project, conceptId, versionId, viewMode, shareToken, demoAnnotations]);
+  }, [client, project, conceptId, versionId, shareToken, demoAnnotations]);
 
   // Clear annotation mode when leaving frame
   useEffect(() => {
     if (viewMode !== 'frame') setAnnotationMode(false);
   }, [viewMode]);
 
-  const handleAddAnnotation = useCallback(async (x: number, y: number, text: string) => {
+  const handleAddAnnotation = useCallback(async (x: number | null, y: number | null, text: string) => {
     if (!conceptId || !versionId) return;
 
     if (shareToken) {
@@ -91,7 +93,10 @@ export function useAnnotationState(
       const annotation = await res.json();
       setAnnotations(prev => [...prev, annotation]);
       setAnnotationMode(false);
-      toast('Annotation added');
+      // Don't toast on whole-version (drift prompt) saves — the caller handles its own feedback
+      if (x !== null && y !== null) {
+        toast('Annotation added');
+      }
     }
   }, [client, project, conceptId, versionId, shareToken]);
 
@@ -139,6 +144,114 @@ export function useAnnotationState(
     }
   }, [client, project, conceptId, versionId]);
 
+  const handleEditAnnotation = useCallback(async (id: string, text: string) => {
+    if (!conceptId || !versionId) return;
+
+    if (shareToken) {
+      // Demo mode: update locally only
+      const key = `${conceptId}:${versionId}`;
+      setDemoAnnotations(prev => ({
+        ...prev,
+        [key]: (prev[key] || []).map(a => a.id === id ? { ...a, text } : a),
+      }));
+      setAnnotations(prev => prev.map(a => a.id === id ? { ...a, text } : a));
+      return;
+    }
+
+    const res = await fetch('/api/annotations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId,
+        versionId,
+        annotationId: id,
+        text,
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setAnnotations(prev => prev.map(a => a.id === id ? { ...a, text: updated.text } : a));
+    }
+  }, [client, project, conceptId, versionId, shareToken]);
+
+  const handleReplyAnnotation = useCallback(async (parentId: string, text: string, asAgent: boolean = false) => {
+    if (!conceptId || !versionId) return;
+
+    if (shareToken) {
+      const reply: Annotation = {
+        id: 'demo-' + Math.random().toString(36).substring(2, 10),
+        x: null, y: null,
+        element: null,
+        text,
+        author: asAgent ? 'agent' : 'You',
+        isClient: !asAgent,
+        isAgent: asAgent,
+        created: new Date().toISOString(),
+        resolved: false,
+        parentId,
+      };
+      const key = `${conceptId}:${versionId}`;
+      setDemoAnnotations(prev => ({
+        ...prev,
+        [key]: [...(prev[key] || []), reply],
+      }));
+      setAnnotations(prev => [...prev, reply]);
+      return;
+    }
+
+    const res = await fetch('/api/annotations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId,
+        versionId,
+        x: null, y: null,
+        text,
+        author: asAgent ? 'agent' : 'designer',
+        isClient: false,
+        isAgent: asAgent,
+        parentId,
+      }),
+    });
+    if (res.ok) {
+      const reply = await res.json();
+      setAnnotations(prev => [...prev, reply]);
+    }
+  }, [client, project, conceptId, versionId, shareToken]);
+
+  const handleSetAnnotationStatus = useCallback(async (id: string, status: 'running' | null) => {
+    if (!conceptId || !versionId) return;
+
+    if (shareToken) {
+      const next = status === null ? undefined : status;
+      const key = `${conceptId}:${versionId}`;
+      setDemoAnnotations(prev => ({
+        ...prev,
+        [key]: (prev[key] || []).map(a => a.id === id ? { ...a, status: next } : a),
+      }));
+      setAnnotations(prev => prev.map(a => a.id === id ? { ...a, status: next } : a));
+      return;
+    }
+
+    const res = await fetch('/api/annotations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId,
+        versionId,
+        annotationId: id,
+        status,
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setAnnotations(prev => prev.map(a => a.id === id ? { ...a, status: updated.status } : a));
+    }
+  }, [client, project, conceptId, versionId, shareToken]);
+
   return {
     annotations,
     annotationMode,
@@ -146,5 +259,8 @@ export function useAnnotationState(
     handleAddAnnotation,
     handleDeleteAnnotation,
     handleResolveAnnotation,
+    handleEditAnnotation,
+    handleReplyAnnotation,
+    handleSetAnnotationStatus,
   };
 }

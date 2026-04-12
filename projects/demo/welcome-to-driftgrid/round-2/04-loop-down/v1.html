@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Drift Down</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #0a0a0a;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 88px 80px 60px;
+  }
+
+  /* Chrome */
+  .brand {
+    position: fixed;
+    top: 24px;
+    left: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-mark { width: 20px; height: 20px; flex-shrink: 0; }
+  .brand-wordmark {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: lowercase;
+  }
+  .chrome-label {
+    position: fixed;
+    top: 24px;
+    right: 32px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    margin-bottom: 44px;
+  }
+  .hero h1 {
+    font-size: 44px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    color: rgba(255, 255, 255, 0.95);
+  }
+  .hero p {
+    font-size: 15px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.005em;
+    line-height: 1.6;
+  }
+
+  /* Stage — terminal + grid */
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 1720px;
+    height: 560px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 32px;
+  }
+
+  /* ────── TERMINAL ────── */
+  .terminal {
+    width: 420px;
+    flex-shrink: 0;
+    align-self: stretch;
+    background: #0e0e0e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  }
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    background: rgba(22, 22, 22, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .traffic { display: flex; gap: 6px; }
+  .traffic span { width: 11px; height: 11px; border-radius: 50%; }
+  .traffic span:nth-child(1) { background: #ff5f57; }
+  .traffic span:nth-child(2) { background: #febc2e; }
+  .traffic span:nth-child(3) { background: #28c840; }
+  .terminal-title {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.35);
+    padding-right: 52px;
+  }
+  .terminal-body {
+    flex: 1;
+    padding: 22px 22px 20px;
+    font-size: 12px;
+    line-height: 1.75;
+    color: rgba(255, 255, 255, 0.78);
+    position: relative;
+  }
+  .term-line { display: block; white-space: nowrap; opacity: 0; }
+  .term-line .sigil { display: inline-block; width: 16px; text-align: left; }
+  .term-line .sigil.prompt { color: rgba(139, 92, 246, 0.9); font-weight: 600; }
+  .term-line .sigil.arrow  { color: rgba(198, 175, 255, 0.7); }
+  .term-line .sigil.dot    { color: rgba(74, 222, 128, 0.85); }
+  .term-line .sigil.caret  { color: rgba(140, 205, 235, 0.85); }
+  .term-line .sigil.meta   { color: rgba(255, 255, 255, 0.35); }
+  .term-line.cmd  { color: rgba(255, 255, 255, 0.92); }
+  .term-line.user { color: rgba(255, 255, 255, 0.88); }
+  .term-line.meta { color: rgba(255, 255, 255, 0.45); letter-spacing: 0.05em; text-transform: uppercase; font-size: 10px; }
+  .term-line.indent { padding-left: 22px; color: rgba(255, 255, 255, 0.62); font-size: 11px; }
+  .term-line.think { color: rgba(140, 205, 235, 0.85); }
+  .term-line.edit  { color: rgba(255, 212, 150, 0.82); }
+  .term-line.done  { color: rgba(140, 235, 180, 0.95); font-weight: 500; }
+  .term-blank { display: block; height: 14px; }
+  .term-cursor {
+    display: inline-block;
+    width: 7px;
+    height: 13px;
+    background: rgba(198, 175, 255, 0.85);
+    vertical-align: text-top;
+    margin-left: 3px;
+    animation: termCursorBlink 1s steps(2) infinite;
+  }
+  @keyframes termCursorBlink { to { opacity: 0; } }
+
+  /* Terminal lines — t1 always shown; t2 (the user prompt) appears only AFTER the pane transfers */
+  .t1 { animation: t1 13s ease-out infinite; }
+  @keyframes t1 { 0%, 4% { opacity: 0; } 8%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+  .t2 { animation: t2 13s ease-out infinite; }
+  @keyframes t2 { 0%, 52% { opacity: 0; } 56%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+  .t3 { animation: t3 13s ease-out infinite; }
+  @keyframes t3 { 0%, 60% { opacity: 0; } 64%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+  .t4 { animation: t4 13s ease-out infinite; }
+  @keyframes t4 { 0%, 66% { opacity: 0; } 70%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+  .t5 { animation: t5 13s ease-out infinite; }
+  @keyframes t5 { 0%, 76% { opacity: 0; } 80%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+  .t6 { animation: t6 13s ease-out infinite; }
+  @keyframes t6 { 0%, 80% { opacity: 0; } 84%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+  /* ────── GRID VIEW (extreme zoom — 1 full column + half of the next) ────── */
+  .grid-view {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 34px;
+    padding-top: 4px;
+    max-height: 560px;
+    max-width: 1114px;   /* 720 + 34 gap + 360 (half of next column) */
+    overflow: hidden;    /* clips the second column so only half is visible */
+  }
+  .column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    max-height: 100%;
+    overflow: hidden;
+  }
+  .column-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 6px;
+    white-space: nowrap;
+  }
+  .card {
+    position: relative;
+    width: 720px;
+    height: 408px;
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03), transparent 60%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+  }
+  .card .vlabel {
+    position: absolute;
+    bottom: 7px;
+    right: 9px;
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 500;
+  }
+
+  /* Column themes — bigger cards show more of the underlying design */
+  .col-1 .card::after {
+    content: '';
+    position: absolute;
+    inset: 22px;
+    background:
+      linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 30px);
+    border-radius: 5px;
+  }
+  .col-2 .card { background: #f5f5f5; }
+  .col-2 .card::before { display: none; }
+  .col-2 .card::after {
+    content: '';
+    position: absolute;
+    left: 22px; right: 22px; top: 26px;
+    height: 7px;
+    background: #1a1a1a;
+    border-radius: 2px;
+    box-shadow: 0 17px 0 rgba(0,0,0,0.6), 0 34px 0 rgba(0,0,0,0.2);
+  }
+  .col-2 .card .vlabel { color: rgba(0,0,0,0.35); }
+  .col-3 .card { background: linear-gradient(135deg, #2a1757 0%, #0a0a0a 100%); }
+  .col-3 .card::after {
+    content: '';
+    position: absolute;
+    inset: 24px;
+    background: linear-gradient(180deg, rgba(139,92,246,0.35), transparent 60%);
+    border-radius: 5px;
+  }
+
+  /* ─── Col-1 new drift (drift-down animation) ─── */
+  .col-1 .card-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: stackPush 13s ease-out infinite;
+  }
+  @keyframes stackPush {
+    0%, 10%    { transform: translateY(-424px); }   /* card 408 + gap 16 = 424 */
+    18%, 100%  { transform: translateY(0); }
+  }
+  .card.new-drift {
+    border: 1.5px dashed rgba(139, 92, 246, 0.7);
+    background: rgba(139, 92, 246, 0.04);
+    opacity: 0;
+    transform-origin: top center;
+    animation: driftIn 13s ease-out infinite;
+  }
+  .card.new-drift::before { display: none; }
+  .card.new-drift::after { display: none; }
+  .card.new-drift .vlabel {
+    opacity: 0;
+    color: rgba(139, 92, 246, 0.8);
+    animation: driftFill 13s ease-out infinite;
+  }
+
+  /* Empty state: visible before the prompt pane appears */
+  .card.new-drift .empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    opacity: 0;
+    animation: emptyStateShow 13s ease-out infinite;
+  }
+  @keyframes emptyStateShow {
+    0%, 11%   { opacity: 0; transform: scale(0.96); }
+    14%, 16%  { opacity: 1; transform: scale(1); }
+    20%, 100% { opacity: 0; transform: scale(0.96); }
+  }
+  .card.new-drift .empty-label {
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: rgba(210, 190, 255, 0.85);
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 12px 22px;
+    border: 1px dashed rgba(139, 92, 246, 0.5);
+    border-radius: 6px;
+    background: rgba(139, 92, 246, 0.08);
+  }
+
+  /* The filled-in new design — clearly different layout from the existing card stripes */
+  .card.new-drift .new-design {
+    position: absolute;
+    inset: 60px 80px 60px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 14px;
+    opacity: 0;
+    z-index: 3;
+    animation: newDesignFill 13s ease-out infinite;
+  }
+  @keyframes newDesignFill {
+    0%, 82%   { opacity: 0; }
+    88%       { opacity: 1; }
+    92%       { opacity: 1; }
+    96%, 100% { opacity: 0; }
+  }
+  .new-design .nd-headline {
+    width: 72%;
+    height: 34px;
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 3px;
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.2);
+  }
+  .new-design .nd-headline.two {
+    width: 56%;
+    margin-bottom: 10px;
+  }
+  .new-design .nd-subhead {
+    width: 62%;
+    height: 8px;
+    background: rgba(139, 92, 246, 0.7);
+    border-radius: 2px;
+    margin-bottom: 18px;
+  }
+  .new-design .nd-body {
+    width: 48%;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 1px;
+  }
+  .new-design .nd-body.short {
+    width: 34%;
+    margin-bottom: 16px;
+  }
+  .new-design .nd-cta {
+    width: 140px;
+    height: 42px;
+    background: rgba(139, 92, 246, 0.88);
+    border-radius: 5px;
+    box-shadow: 0 10px 26px rgba(139, 92, 246, 0.3);
+  }
+
+  /* Notification dot — appears on the new card when it's done */
+  .card.new-drift .notify-dot {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.95);
+    box-shadow: 0 0 14px rgba(139, 92, 246, 0.7);
+    opacity: 0;
+    z-index: 7;
+    animation: notifyDot 13s ease-out infinite;
+  }
+  @keyframes notifyDot {
+    0%, 83%   { opacity: 0; transform: scale(0.4); }
+    87%       { opacity: 1; transform: scale(1.4); }
+    90%       { opacity: 1; transform: scale(1); }
+    92%       { opacity: 1; transform: scale(1); }
+    96%, 100% { opacity: 0; transform: scale(0.4); }
+  }
+  @keyframes driftIn {
+    0%, 10%   { opacity: 0; transform: translateY(-20px); }
+    14%       { opacity: 1; transform: translateY(0); border-style: dashed; border-color: rgba(139, 92, 246, 0.7); background: rgba(139, 92, 246, 0.04); }
+    82%       { opacity: 1; border-style: dashed; border-color: rgba(139, 92, 246, 0.7); background: rgba(139, 92, 246, 0.04); }
+    86%       { opacity: 1; border-style: solid; border-color: rgba(255, 255, 255, 0.08); background: #141414; }
+    92%       { opacity: 1; border-style: solid; background: #141414; }
+    96%, 100% { opacity: 0; transform: translateY(-20px); }
+  }
+  @keyframes driftFill {
+    0%, 84%   { opacity: 0; }
+    88%       { opacity: 1; }
+    92%       { opacity: 1; }
+    96%, 100% { opacity: 0; }
+  }
+
+  /* NEW VERSION tag (persists top-center of the drift card) */
+  .new-tag {
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 7px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: 2px;
+    white-space: nowrap;
+    z-index: 6;
+    background: rgba(139, 92, 246, 0.22);
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    color: rgba(210, 190, 255, 0.98);
+  }
+
+  /* Updating overlay inside the drift card — grid + scan + AGENT WORKING label */
+  .card-updating {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    opacity: 0;
+    background: rgba(18, 12, 32, 0.55);
+    animation: cardUpdatingShow 13s ease-out infinite;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-updating .updating-label {
+    position: relative;
+    z-index: 3;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(210, 190, 255, 0.96);
+    background: rgba(10, 10, 10, 0.8);
+    padding: 12px 22px;
+    border-radius: 6px;
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .card-updating .updating-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(139, 92, 246, 0.2);
+    border-top-color: rgba(139, 92, 246, 0.95);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes cardUpdatingShow {
+    0%, 62%   { opacity: 0; }
+    68%, 80%  { opacity: 1; }
+    84%, 100% { opacity: 0; }
+  }
+  .card-updating::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(139, 92, 246, 0.22) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 92, 246, 0.22) 1px, transparent 1px);
+    background-size: 16px 16px;
+    animation: cardGridDrift 2s linear infinite;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 85%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 85%);
+  }
+  @keyframes cardGridDrift { to { background-position: 16px 16px; } }
+  .card-updating::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1.5px;
+    background: linear-gradient(90deg, transparent, rgba(210, 190, 255, 0.95), transparent);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.65);
+    animation: cardScanSweep 13s ease-in-out infinite;
+  }
+  @keyframes cardScanSweep {
+    0%, 62%   { top: 0; opacity: 0; }
+    68%       { top: 0; opacity: 1; }
+    80%       { top: 100%; opacity: 1; }
+    84%, 100% { top: 0; opacity: 0; }
+  }
+
+  /* ────── PROMPT PANE — appears on the v4 card, then transfers to terminal ────── */
+  .prompt-pane {
+    position: absolute;
+    top: 110px;     /* positioned over the v4 card (below label + inset) */
+    left: 680px;    /* centered-ish on the wider Dark Code card */
+    width: 420px;
+    background: rgba(10, 10, 10, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 10px;
+    padding: 16px 18px;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(139, 92, 246, 0.2);
+    opacity: 0;
+    z-index: 8;
+    animation: prompt-pane-fly 13s ease-in-out infinite;
+  }
+  @keyframes prompt-pane-fly {
+    0%, 17%   { opacity: 0; transform: translate(0, -6px) scale(0.96); }
+    20%       { opacity: 1; transform: translate(0, 0) scale(1); }
+    48%       { opacity: 1; transform: translate(0, 0) scale(1); }
+    54%       { opacity: 1; transform: translate(-450px, 0) scale(0.65); }   /* fly toward terminal */
+    58%       { opacity: 0; transform: translate(-700px, 0) scale(0.35); }
+    92%, 100% { opacity: 0; transform: translate(0, -6px) scale(0.96); }
+  }
+  .prompt-pane .pane-eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .prompt-pane .pane-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .prompt-pane .pane-chip {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    border: 1px solid rgba(139, 92, 246, 0.55);
+    background: rgba(139, 92, 246, 0.18);
+    color: rgba(210, 190, 255, 0.98);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+  }
+  .prompt-pane .pane-meta {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.42);
+  }
+  .prompt-pane .pane-body {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.55;
+    min-height: 20px;
+    padding-left: 26px;
+  }
+  .prompt-pane .typed-wrap {
+    display: inline-block;
+    overflow: hidden;
+    white-space: normal;
+    max-width: 0;
+    vertical-align: bottom;
+    animation: paneType 13s steps(36, end) infinite;
+  }
+  @keyframes paneType {
+    0%, 22%  { max-width: 0; }
+    46%, 100% { max-width: 100%; }
+  }
+
+  /* Static preview mode — shows the final "done" state: card filled with new design, notify dot, no pane */
+  body.static .prompt-pane { opacity: 0 !important; animation: none !important; }
+  body.static .card.new-drift { opacity: 1 !important; animation: none !important; transform: none !important; border-style: solid !important; border-color: rgba(255, 255, 255, 0.08) !important; background: #141414 !important; }
+  body.static .card.new-drift .vlabel { opacity: 1 !important; animation: none !important; }
+  body.static .card.new-drift .empty-state { opacity: 0 !important; animation: none !important; }
+  body.static .card.new-drift .new-design { opacity: 1 !important; animation: none !important; }
+  body.static .card.new-drift .notify-dot { opacity: 1 !important; transform: scale(1) !important; animation: none !important; }
+  body.static .col-1 .card-stack { animation: none !important; transform: none !important; }
+  body.static .card-updating { opacity: 0 !important; animation: none !important; }
+  body.static .term-line { opacity: 1 !important; animation: none !important; }
+
+  /* Alternate preview: .static-working shows the working state */
+  body.static-working .prompt-pane { opacity: 0 !important; animation: none !important; }
+  body.static-working .card.new-drift { opacity: 1 !important; animation: none !important; transform: none !important; }
+  body.static-working .card-updating { opacity: 1 !important; animation: none !important; }
+  body.static-working .card-updating::after { top: 50% !important; opacity: 1 !important; animation: none !important; }
+  body.static-working .empty-state { opacity: 0 !important; animation: none !important; }
+  body.static-working .col-1 .card-stack { animation: none !important; transform: none !important; }
+  body.static-working .term-line { opacity: 1 !important; animation: none !important; }
+
+  /* Alternate preview: .static-empty shows the empty state */
+  body.static-empty .prompt-pane { opacity: 0 !important; animation: none !important; }
+  body.static-empty .card.new-drift { opacity: 1 !important; animation: none !important; transform: none !important; }
+  body.static-empty .card.new-drift .empty-state { opacity: 1 !important; transform: scale(1) !important; animation: none !important; }
+  body.static-empty .col-1 .card-stack { animation: none !important; transform: translateY(0) !important; }
+  body.static-empty .term-line.t1 { opacity: 1 !important; animation: none !important; }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
+      <rect x="3" y="3" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="19.5" y="1.5" width="11" height="11" rx="1.5" fill="#8b5cf6"/>
+      <rect x="3" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="18" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+    </svg>
+    <span class="brand-wordmark">driftgrid</span>
+  </div>
+  <div class="chrome-label">demo-project · R1</div>
+
+  <div class="hero">
+    <h1 data-drift-editable>Drift up — new version</h1>
+    <p data-drift-editable>Your agent iterates in place. The grid updates around it.</p>
+  </div>
+
+  <div class="stage">
+    <!-- Terminal panel — designer's CLI agent doing the work -->
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="traffic"><span></span><span></span><span></span></div>
+        <div class="terminal-title">~/driftgrid — claude-code — 80×24</div>
+      </div>
+      <div class="terminal-body">
+        <span class="term-line cmd t1"><span class="sigil prompt">$</span>claude-code</span>
+        <span class="term-blank"></span>
+        <span class="term-line meta t2"><span class="sigil meta">#</span>prompt via driftgrid</span>
+        <span class="term-line indent t2">concept · dark-code</span>
+        <span class="term-line indent t2">frame · v4.html</span>
+        <span class="term-line indent t2">target · headline</span>
+        <span class="term-blank"></span>
+        <span class="term-line user t3"><span class="sigil arrow">&gt;</span>"Make the headline bolder and</span>
+        <span class="term-line user t3" style="padding-left: 16px;">more confident."</span>
+        <span class="term-blank"></span>
+        <span class="term-line think t4"><span class="sigil caret">▸</span>Editing dark-code/v4.html</span>
+        <span class="term-line edit t5"><span class="sigil caret">▸</span>Writing 37 tokens</span>
+        <span class="term-line done t6"><span class="sigil dot">●</span>Done · 1.2s</span>
+      </div>
+    </div>
+
+    <!-- Grid view — 4 columns with drift-down happening on col-1 -->
+    <div class="grid-view">
+      <div class="column col-1">
+        <div class="column-label">Dark Code</div>
+        <div class="card new-drift">
+          <span class="new-tag">new version</span>
+
+          <!-- Empty state: what the user sees before prompting -->
+          <div class="empty-state">
+            <span class="empty-label">+ Prompt your agent</span>
+          </div>
+
+          <!-- Updating state: visible while the agent is working -->
+          <div class="card-updating">
+            <div class="updating-label">
+              <span class="updating-spinner"></span>
+              Agent Working
+            </div>
+          </div>
+
+          <!-- Done state: a clearly different design fills in -->
+          <div class="new-design">
+            <div class="nd-headline"></div>
+            <div class="nd-headline two"></div>
+            <div class="nd-subhead"></div>
+            <div class="nd-body"></div>
+            <div class="nd-body short"></div>
+            <div class="nd-cta"></div>
+          </div>
+
+          <!-- Notification dot — pops when the drift is done -->
+          <div class="notify-dot"></div>
+
+          <span class="vlabel">v4</span>
+        </div>
+        <div class="card-stack">
+          <div class="card"><span class="vlabel">v3</span></div>
+          <div class="card"><span class="vlabel">v2</span></div>
+          <div class="card"><span class="vlabel">v1</span></div>
+        </div>
+      </div>
+      <div class="column col-2">
+        <div class="column-label">Light Clean</div>
+        <div class="card"><span class="vlabel">v3</span></div>
+        <div class="card"><span class="vlabel">v2</span></div>
+        <div class="card"><span class="vlabel">v1</span></div>
+      </div>
+    </div>
+
+    <!-- Prompt pane — positioned at .stage level so it can fly toward the terminal without being clipped -->
+    <div class="prompt-pane">
+      <div class="pane-eyebrow">Comment</div>
+      <div class="pane-head">
+        <span class="pane-chip">C</span>
+        <span class="pane-meta">you</span>
+      </div>
+      <div class="pane-body"><span class="typed-wrap">Make the headline bolder and more confident.</span></div>
+    </div>
+  </div>
+</body>
+</html>

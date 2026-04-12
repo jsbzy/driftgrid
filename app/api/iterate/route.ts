@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { getManifest, writeManifest } from '@/lib/manifest';
-import { emptyCanvasBoilerplate } from '@/lib/canvas-boilerplate';
+import { driftPromptBoilerplate } from '@/lib/canvas-boilerplate';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -51,10 +51,12 @@ export async function POST(request: Request) {
   const projectDir = path.join(PROJECTS_DIR, client, project);
   const destPath = path.join(projectDir, newFile);
 
-  // Write empty canvas boilerplate — the designer directs their agent to fill it in
-  const boilerplate = emptyCanvasBoilerplate(
+  // Write the drift-prompt boilerplate — polished empty state asking the user to prompt their agent
+  const boilerplate = driftPromptBoilerplate(
     typeof manifest.project.canvas === 'string' ? manifest.project.canvas : 'desktop',
     `${manifest.project.name} — ${concept.label} v${nextNumber}`,
+    concept.label,
+    nextNumber,
   );
 
   try {

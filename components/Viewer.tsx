@@ -26,6 +26,7 @@ import { useAnnotationState } from '@/lib/hooks/useAnnotationState';
 import { usePresentationMode } from '@/lib/hooks/usePresentationMode';
 import { useManifestMutations } from '@/lib/hooks/useManifestMutations';
 import { AnnotationOverlay } from './AnnotationOverlay';
+import { GridPromptInput } from './GridPromptInput';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -64,6 +65,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set());
   const [clipboard, setClipboard] = useState<{ conceptId: string; versionId: string; file: string; label: string; number: number }[] | null>(null);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('overview');
+  // Grid-view prompt input — open when user presses C on an empty card, or auto-opens after drift/branch
+  const [gridPromptOpen, setGridPromptOpen] = useState(false);
+  const autoOpenGridPromptRef = useRef(false);
 
   // Demo drift state — only used in share mode (shareToken present).
   // Tracks client-side-only versions/concepts added via D/Shift+D in the demo.
@@ -216,12 +220,15 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         e.preventDefault();
         ui.setNavGridHidden(v => !v);
       }
-      // C (without Cmd): toggle comment/annotation mode in frame view
+      // C (without Cmd): toggle comment/annotation mode in frame view, or open grid prompt on empty cards
       if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey) {
         if (viewMode === 'frame') {
           e.preventDefault();
           annotationState.setAnnotationMode(v => !v);
           tour.trigger('comment');
+        } else if (viewMode === 'grid' && currentVersion?.changelog === 'New drift slot — empty') {
+          e.preventDefault();
+          setGridPromptOpen(true);
         }
       }
       // Cmd+C: copy frames to clipboard
@@ -412,10 +419,18 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         tour.trigger('esc');
         return 'grid';
       }
+      // Going grid → frame: if the selected card is an empty drift slot,
+      // stay on the grid and open the prompt modal instead.
+      const concept = concepts[conceptIndex];
+      const version = concept?.versions[versionIndex];
+      if (version?.changelog === 'New drift slot — empty') {
+        setGridPromptOpen(true);
+        return 'grid';
+      }
       tour.trigger('enter');
       return 'frame';
     });
-  }, [conceptIndex, versionIndex, getTransitionCardBounds, presentation.setIsPresenting, tour]);
+  }, [conceptIndex, versionIndex, concepts, getTransitionCardBounds, presentation.setIsPresenting, tour]);
 
   // Pinch zoom out from frame -> exit to grid
   useEffect(() => {
@@ -440,6 +455,11 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       if (concept && version) {
         const slug = concept.slug || conceptSlug(concept.label);
         window.history.replaceState(null, '', `#${slug}/v${version.number}`);
+      }
+      // Empty drift slots: stay on the grid and open the prompt modal instead of entering the frame
+      if (version?.changelog === 'New drift slot — empty') {
+        setGridPromptOpen(true);
+        return;
       }
       setViewMode('frame');
     },
@@ -569,14 +589,29 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const handleDrift = useMemo(() => {
     if (!currentConcept || !currentVersion) return undefined;
     if (shareToken) return handleDemoDrift;
-    return () => mutations.handleDriftVersion(currentConcept.id, currentVersion.id);
+    return async () => {
+      autoOpenGridPromptRef.current = true;
+      await mutations.handleDriftVersion(currentConcept.id, currentVersion.id);
+    };
   }, [currentConcept, currentVersion, mutations.handleDriftVersion, shareToken, handleDemoDrift]);
 
   const handleBranch = useMemo(() => {
     if (!currentConcept || !currentVersion) return undefined;
     if (shareToken) return handleDemoBranch;
-    return () => mutations.handleBranchVersion(currentConcept.id, currentVersion.id);
+    return async () => {
+      autoOpenGridPromptRef.current = true;
+      await mutations.handleBranchVersion(currentConcept.id, currentVersion.id);
+    };
   }, [currentConcept, currentVersion, mutations.handleBranchVersion, shareToken, handleDemoBranch]);
+
+  // Consume the auto-open flag once the new (empty) version becomes current
+  useEffect(() => {
+    if (!autoOpenGridPromptRef.current) return;
+    if (viewMode !== 'grid') return;
+    if (currentVersion?.changelog !== 'New drift slot — empty') return;
+    autoOpenGridPromptRef.current = false;
+    setGridPromptOpen(true);
+  }, [currentVersion, viewMode]);
 
   useKeyboardNav({
     conceptIndex,
@@ -1012,21 +1047,15 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
-        <TourOverlay
-          step={tour.currentStep}
-          stepIndex={tour.step}
-          totalSteps={tour.totalSteps}
-          onDismiss={tour.dismiss}
-          onNext={isWalkthrough
-            ? () => {
-                const next = Math.min(conceptIndex + 1, concepts.length - 1);
-                handleNavigate(next, 0);
-              }
-            : tour.next}
-          persistMode={isWalkthrough}
-          doneLabel={isWalkthrough ? 'Open a real project →' : 'Done'}
-          eyebrowLabel={isWalkthrough ? 'Walkthrough' : 'Tour'}
-        />
+        {!isWalkthrough && (
+          <TourOverlay
+            step={tour.currentStep}
+            stepIndex={tour.step}
+            totalSteps={tour.totalSteps}
+            onDismiss={tour.dismiss}
+            onNext={tour.next}
+          />
+        )}
         {/* Top-right: project name + round switcher */}
         <div className="fixed top-4 right-4 z-30 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
           {/* Round switcher — hidden when only 1 round or in client mode */}
@@ -1157,6 +1186,56 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             showHidden={showHidden}
             initialCardBounds={transitionCardBounds}
           />
+          {gridPromptOpen && currentConcept && currentVersion && (() => {
+            // Resolve the "reference" slide this card was drifted from:
+            // - drifted version: the previous version in this concept
+            // - branched concept (v1): follow concept.branchedFrom → source concept/version
+            const currentVersionIdx = currentConcept.versions.findIndex(v => v.id === currentVersion.id);
+            let referenceLabel: string | undefined;
+            let referencePath: string | undefined;
+            if (currentVersionIdx > 0) {
+              const prev = currentConcept.versions[currentVersionIdx - 1];
+              referenceLabel = `${currentConcept.label} v${prev.number}`;
+              referencePath = `~/driftgrid/projects/${client}/${project}/${prev.file}`;
+            } else if (currentConcept.branchedFrom) {
+              const srcConcept = concepts.find(c => c.id === currentConcept.branchedFrom?.conceptId);
+              const srcVersion = srcConcept?.versions.find(v => v.id === currentConcept.branchedFrom?.versionId);
+              if (srcConcept && srcVersion) {
+                referenceLabel = `${srcConcept.label} v${srcVersion.number}`;
+                referencePath = `~/driftgrid/projects/${client}/${project}/${srcVersion.file}`;
+              }
+            }
+            const targetPath = `~/driftgrid/projects/${client}/${project}/${currentVersion.file}`;
+            // Find the whole-version prompt annotation and its replies for this card
+            const existingPrompt = annotationState.annotations.find(
+              a => a.x === null && a.y === null && a.parentId == null,
+            );
+            const promptReplies = existingPrompt
+              ? annotationState.annotations
+                  .filter(a => a.parentId === existingPrompt.id)
+                  .sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime())
+              : undefined;
+            return (
+              <GridPromptInput
+                conceptLabel={currentConcept.label}
+                versionNumber={currentVersion.number}
+                targetPath={targetPath}
+                referenceLabel={referenceLabel}
+                referencePath={referencePath}
+                cardSelector={`[data-card-id="${currentConcept.id}:${currentVersion.id}"]`}
+                existingPrompt={existingPrompt}
+                replies={promptReplies}
+                onCancel={() => setGridPromptOpen(false)}
+                onSave={async (text) => {
+                  await annotationState.handleAddAnnotation(null, null, text);
+                }}
+                onEdit={annotationState.handleEditAnnotation}
+                onReply={annotationState.handleReplyAnnotation}
+                onResolve={annotationState.handleResolveAnnotation}
+                onSetStatus={annotationState.handleSetAnnotationStatus}
+              />
+            );
+          })()}
         </div>
         {multiSelectBar || actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame (Enter)', '↵')}
         <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />
@@ -1172,21 +1251,15 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
-      <TourOverlay
+      {!isWalkthrough && (
+        <TourOverlay
           step={tour.currentStep}
           stepIndex={tour.step}
           totalSteps={tour.totalSteps}
           onDismiss={tour.dismiss}
-          onNext={isWalkthrough
-            ? () => {
-                const next = Math.min(conceptIndex + 1, concepts.length - 1);
-                handleNavigate(next, 0);
-              }
-            : tour.next}
-          persistMode={isWalkthrough}
-          doneLabel={isWalkthrough ? 'Open a real project →' : 'Done'}
-          eyebrowLabel={isWalkthrough ? 'Walkthrough' : 'Tour'}
+          onNext={tour.next}
         />
+      )}
       <div ref={frameWrapperRef} className="flex-1 min-h-0 relative">
         <div className="h-full p-4 relative" style={{ background: mode === 'client' ? '#fff' : 'var(--canvas)' }}>
           {!currentVersion.file ? (
@@ -1234,6 +1307,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             onAdd={annotationState.handleAddAnnotation}
             onDelete={annotationState.handleDeleteAnnotation}
             onResolve={annotationState.handleResolveAnnotation}
+            onEdit={annotationState.handleEditAnnotation}
+            onReply={annotationState.handleReplyAnnotation}
+            frameContext={currentConcept && currentVersion ? {
+              conceptLabel: currentConcept.label,
+              versionNumber: currentVersion.number,
+              filePath: `~/driftgrid/projects/${client}/${project}/${currentVersion.file}`,
+            } : undefined}
           />
         </div>
         {/* Branding */}

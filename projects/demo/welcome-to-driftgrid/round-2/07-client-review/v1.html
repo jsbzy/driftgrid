@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Client Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #0a0a0a;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 88px 80px 80px;
+  }
+
+  .brand {
+    position: fixed;
+    top: 24px;
+    left: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-mark { width: 20px; height: 20px; flex-shrink: 0; }
+  .brand-wordmark {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: lowercase;
+  }
+  .chrome-label {
+    position: fixed;
+    top: 24px;
+    right: 32px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+  }
+  .chrome-zoom {
+    position: fixed;
+    bottom: 28px;
+    left: 32px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.25);
+    text-transform: uppercase;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    color: rgba(255, 255, 255, 0.95);
+  }
+  .hero p {
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.01em;
+    line-height: 1.6;
+  }
+
+  /* Stage */
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 1720px;
+    height: 560px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ────── CENTRAL FRAME — the one being reviewed ────── */
+  .frame {
+    width: 1000px;
+    height: 540px;
+    background: #ffffff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 0 1.5px rgba(234, 179, 80, 0.55);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    z-index: 5;
+    opacity: 0;
+    animation: frameIn 13s ease-out infinite;
+  }
+  @keyframes frameIn {
+    0%, 2%    { opacity: 0; transform: scale(0.96); }
+    8%, 94%   { opacity: 1; transform: scale(1); }
+    97%, 100% { opacity: 0; transform: scale(0.96); }
+  }
+
+  .frame-chrome {
+    height: 40px;
+    background: #e8e8e8;
+    border-bottom: 1px solid rgba(10, 10, 10, 0.08);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .tlights { display: flex; gap: 6px; }
+  .tlight { width: 10px; height: 10px; border-radius: 50%; }
+  .tlight.red { background: #ff5f57; }
+  .tlight.yellow { background: #febc2e; }
+  .tlight.green { background: #28c840; }
+  .addr-bar {
+    flex: 1;
+    height: 22px;
+    background: #ffffff;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-size: 10px;
+    color: rgba(10, 10, 10, 0.5);
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(10, 10, 10, 0.06);
+  }
+  .star-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 4px;
+    background: rgba(234, 179, 80, 0.18);
+    border: 1px solid rgba(234, 179, 80, 0.55);
+    color: rgba(140, 95, 5, 0.95);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .star-tag svg { width: 10px; height: 10px; fill: #facc15; stroke: #facc15; }
+  .canvas-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 4px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    color: rgba(100, 60, 215, 0.95);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .frame-body {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    background: #fafafa;
+    padding: 60px 80px;
+  }
+  .site-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 56px;
+  }
+  .site-nav .logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #1a1a1a;
+  }
+  .site-nav .nav-items { display: flex; gap: 24px; }
+  .site-nav .nav-item {
+    width: 48px;
+    height: 6px;
+    background: rgba(10, 10, 10, 0.32);
+    border-radius: 2px;
+  }
+  .site-headline {
+    width: 78%;
+    height: 44px;
+    background: #1a1a1a;
+    border-radius: 3px;
+    margin-bottom: 10px;
+  }
+  .site-headline.two {
+    width: 64%;
+    height: 44px;
+    margin-bottom: 22px;
+  }
+  .site-subhead {
+    width: 52%;
+    height: 8px;
+    background: rgba(139, 92, 246, 0.7);
+    border-radius: 2px;
+    margin-bottom: 28px;
+  }
+  .site-body {
+    width: 50%;
+    height: 6px;
+    background: rgba(10, 10, 10, 0.3);
+    border-radius: 1px;
+    margin-bottom: 8px;
+  }
+  .site-body.short {
+    width: 40%;
+    margin-bottom: 30px;
+  }
+  .site-cta {
+    width: 150px;
+    height: 42px;
+    background: #8b5cf6;
+    border-radius: 5px;
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2);
+  }
+
+  /* ────── SIDE FRAME EDGES — partial glimpses of adjacent designs ────── */
+  .side-frame {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 190px;
+    height: 480px;
+    background: #141414;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    opacity: 0;
+    z-index: 3;
+    animation: sideFrameIn 13s ease-out infinite;
+  }
+  .side-frame.left { left: -70px; }
+  .side-frame.right { right: -70px; }
+  @keyframes sideFrameIn {
+    0%, 4%    { opacity: 0; }
+    10%, 94%  { opacity: 0.55; }
+    97%, 100% { opacity: 0; }
+  }
+  .side-frame::before {
+    content: '';
+    position: absolute;
+    inset: 28px;
+    background:
+      linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 24px);
+    border-radius: 4px;
+  }
+  .side-frame.right::before {
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.35), transparent 60%);
+  }
+
+  /* ────── CLIENT COMMENT PIN (on the frame) ────── */
+  .client-pin {
+    position: absolute;
+    top: 180px;
+    left: 80px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(34, 211, 238, 0.95);
+    border: 2px solid #ffffff;
+    box-shadow: 0 4px 14px rgba(34, 211, 238, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+    opacity: 0;
+    z-index: 8;
+    animation: clientPinIn 13s ease-out infinite;
+  }
+  .client-pin::before { content: 'A'; }
+  @keyframes clientPinIn {
+    0%, 18%   { opacity: 0; transform: scale(0.2); }
+    24%       { opacity: 1; transform: scale(1.25); }
+    28%, 94%  { opacity: 1; transform: scale(1); }
+    97%, 100% { opacity: 0; }
+  }
+  .client-pin::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    border: 2px solid rgba(34, 211, 238, 0.5);
+    animation: pinRing 2s ease-out infinite;
+  }
+  @keyframes pinRing {
+    0%   { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.9); opacity: 0; }
+  }
+
+  /* ────── CLIENT COMMENT POPUP — attached to the pin, on the frame ────── */
+  .client-popup {
+    position: absolute;
+    top: 214px;
+    left: 116px;
+    width: 360px;
+    background: rgba(10, 10, 10, 0.96);
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    border-left: 2px solid rgba(34, 211, 238, 0.85);
+    border-radius: 8px;
+    padding: 16px 18px 14px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+    opacity: 0;
+    transform: translateY(-6px) scale(0.95);
+    transform-origin: top left;
+    z-index: 9;
+    animation: clientPopupIn 13s ease-out infinite;
+  }
+  @keyframes clientPopupIn {
+    0%, 26%   { opacity: 0; transform: translateY(-6px) scale(0.95); }
+    32%       { opacity: 1; transform: translateY(0) scale(1); }
+    94%       { opacity: 1; transform: translateY(0) scale(1); }
+    97%, 100% { opacity: 0; transform: translateY(-6px) scale(0.95); }
+  }
+  .client-eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(34, 211, 238, 0.75);
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .client-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .client-chip {
+    width: 18px;
+    height: 18px;
+    border: 1px solid rgba(34, 211, 238, 0.55);
+    background: rgba(34, 211, 238, 0.18);
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(150, 220, 240, 0.98);
+  }
+  .client-meta {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.42);
+  }
+  .client-body {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.55;
+    padding-left: 26px;
+  }
+  .client-body .typed-wrap {
+    display: inline-block;
+    overflow: hidden;
+    white-space: normal;
+    max-width: 0;
+    vertical-align: bottom;
+    animation: clientType 13s steps(52, end) infinite;
+  }
+  @keyframes clientType {
+    0%, 34%   { max-width: 0; }
+    56%, 100% { max-width: 100%; }
+  }
+
+  /* ────── Share link copied toast ────── */
+  .share-toast {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 12px 18px;
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: rgba(140, 235, 180, 0.95);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+    opacity: 0;
+    animation: toastIn 13s ease-out infinite;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 12;
+  }
+  @keyframes toastIn {
+    0%, 4%    { opacity: 0; transform: translateX(16px); }
+    10%       { opacity: 1; transform: translateX(0); }
+    22%, 94%  { opacity: 0.4; transform: translateX(0); }
+    97%, 100% { opacity: 0; }
+  }
+  .share-toast .check {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(74, 222, 128, 0.9);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #0a0a0a;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  /* Static preview mode */
+  body.static .frame,
+  body.static .side-frame,
+  body.static .client-pin,
+  body.static .client-popup,
+  body.static .share-toast { opacity: 1 !important; transform: translateY(-50%) !important; animation: none !important; }
+  body.static .frame { transform: none !important; }
+  body.static .client-pin { transform: none !important; }
+  body.static .client-popup { transform: none !important; }
+  body.static .typed-wrap { max-width: 100% !important; animation: none !important; }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
+      <rect x="3" y="3" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="19.5" y="1.5" width="11" height="11" rx="1.5" fill="#8b5cf6"/>
+      <rect x="3" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="18" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+    </svg>
+    <span class="brand-wordmark">driftgrid</span>
+  </div>
+  <div class="chrome-label">demo-project · R1</div>
+  <div class="chrome-zoom">reviewing · light-clean · v2</div>
+
+  <div class="hero">
+    <h1 data-drift-editable>Client review</h1>
+    <p data-drift-editable>Share a link. Your client comments — right on the frame. You see it instantly.</p>
+  </div>
+
+  <div class="stage">
+    <!-- Share link toast -->
+    <div class="share-toast">
+      <span class="check">✓</span>
+      Share link copied
+    </div>
+
+    <!-- Left side frame edge -->
+    <div class="side-frame left"></div>
+
+    <!-- Central focused frame -->
+    <div class="frame">
+      <div class="frame-chrome">
+        <div class="tlights">
+          <div class="tlight red"></div>
+          <div class="tlight yellow"></div>
+          <div class="tlight green"></div>
+        </div>
+        <div class="addr-bar">light-clean.html</div>
+        <div class="star-tag">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+          starred
+        </div>
+        <div class="canvas-tag">Desktop · 1440</div>
+      </div>
+      <div class="frame-body">
+        <div class="site-nav">
+          <div class="logo"></div>
+          <div class="nav-items">
+            <div class="nav-item"></div>
+            <div class="nav-item"></div>
+            <div class="nav-item"></div>
+            <div class="nav-item"></div>
+          </div>
+        </div>
+        <div class="site-headline"></div>
+        <div class="site-headline two"></div>
+        <div class="site-subhead"></div>
+        <div class="site-body"></div>
+        <div class="site-body short"></div>
+        <div class="site-cta"></div>
+
+        <!-- Client pin + popup ON the frame -->
+        <div class="client-pin"></div>
+        <div class="client-popup">
+          <div class="client-eyebrow">Client comment</div>
+          <div class="client-head">
+            <span class="client-chip">A</span>
+            <span class="client-meta">Alex · client</span>
+          </div>
+          <div class="client-body"><span class="typed-wrap">Love the bold headline. Can we try more breathing room above the CTA?</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right side frame edge -->
+    <div class="side-frame right"></div>
+  </div>
+</body>
+</html>

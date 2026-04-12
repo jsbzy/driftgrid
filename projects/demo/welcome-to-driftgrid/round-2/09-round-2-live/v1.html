@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Keep Iterating</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #0a0a0a;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 88px 80px 60px;
+  }
+
+  .brand {
+    position: fixed;
+    top: 24px;
+    left: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-mark { width: 20px; height: 20px; flex-shrink: 0; }
+  .brand-wordmark {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: lowercase;
+  }
+  .chrome-label {
+    position: fixed;
+    top: 24px;
+    right: 32px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    margin-bottom: 44px;
+  }
+  .hero h1 {
+    font-size: 52px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 14px;
+    color: rgba(255, 255, 255, 0.96);
+  }
+  .hero p {
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+  }
+
+  /* Stage */
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 1720px;
+    height: 560px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  /* Grid — flex row, using flex gap, each column has fixed width */
+  .grid {
+    display: flex;
+    gap: 22px;
+    align-items: flex-start;
+    animation: gridFade 13s ease-out infinite;
+  }
+  @keyframes gridFade {
+    0%        { opacity: 0; transform: translateY(4px); }
+    6%        { opacity: 1; transform: translateY(0); }
+    90%       { opacity: 1; transform: translateY(0); }
+    96%, 100% { opacity: 0; transform: translateY(4px); }
+  }
+
+  .column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+  }
+  .column-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
+
+  .card {
+    width: 172px;
+    height: 96px;
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03), transparent 60%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+  }
+
+  /* Starred cards — gold shoebox + star icon (carried from slide 7) */
+  .card.starred { box-shadow: 0 0 0 1.5px rgba(234, 179, 80, 0.55); }
+  .card.starred .card-star {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 11px;
+    height: 11px;
+    z-index: 4;
+  }
+  .card.starred .card-star svg { width: 100%; height: 100%; fill: #facc15; stroke: #facc15; }
+
+  /* Column themes */
+  .card.dark-code::after {
+    content: '';
+    position: absolute;
+    inset: 14px;
+    background:
+      linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 22px);
+    border-radius: 3px;
+  }
+  .card.light-clean { background: #f5f5f5; }
+  .card.light-clean::before { display: none; }
+  .card.light-clean::after {
+    content: '';
+    position: absolute;
+    left: 14px; right: 14px; top: 18px;
+    height: 4px;
+    background: #1a1a1a;
+    border-radius: 1px;
+    box-shadow: 0 10px 0 rgba(0,0,0,0.6), 0 20px 0 rgba(0,0,0,0.2);
+  }
+  .card.violet-bold { background: linear-gradient(135deg, #2a1757 0%, #0a0a0a 100%); }
+  .card.violet-bold::after {
+    content: '';
+    position: absolute;
+    inset: 16px;
+    background: linear-gradient(180deg, rgba(139,92,246,0.4), transparent 60%);
+    border-radius: 3px;
+  }
+  .card.warm-editorial { background: #1a1410; }
+  .card.warm-editorial::after {
+    content: '';
+    position: absolute;
+    left: 14px; right: 14px; top: 16px;
+    height: 5px;
+    background: rgba(234, 179, 80, 0.45);
+    border-radius: 1px;
+    box-shadow: 0 11px 0 rgba(255,255,255,0.08), 0 22px 0 rgba(255,255,255,0.06);
+  }
+  .card.new-concept { background: #141a17; }
+  .card.new-concept::after {
+    content: '';
+    position: absolute;
+    inset: 12px 16px;
+    background: linear-gradient(90deg, rgba(244, 232, 210, 0.85) 0%, rgba(244, 232, 210, 0.85) 62%, transparent 62%);
+    background-size: 100% 10px;
+    background-position: 0 0;
+    background-repeat: no-repeat;
+  }
+  .card.mono-studio { background: linear-gradient(180deg, #141414 0%, #1c1c1c 100%); }
+  .card.mono-studio::after {
+    content: '';
+    position: absolute;
+    left: 14px; right: 14px; top: 20px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.55);
+    border-radius: 1px;
+    box-shadow: 0 10px 0 rgba(255, 255, 255, 0.18), 0 20px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  /* ─── GROWING CARDS: height animation pushes existing cards down ─── */
+  .card.grow {
+    height: 0;
+    overflow: hidden;
+    opacity: 0;
+    border-color: transparent;
+    margin-bottom: -12px;   /* cancel the column's gap when collapsed */
+  }
+  .card.grow::before,
+  .card.grow::after { opacity: 0; }
+
+  /* Sequential steps: 7 discrete events, one card/column at a time */
+  /* step-a @ 14% — Dark Code v5 */
+  .card.grow.step-a { animation: grow-a 13s ease-out infinite; }
+  @keyframes grow-a {
+    0%, 10%   { height: 0; margin-bottom: -12px; opacity: 0; border-color: transparent; }
+    14%       { height: 96px; margin-bottom: 0; opacity: 1; border-color: rgba(255,255,255,0.08); }
+    90%       { height: 96px; margin-bottom: 0; opacity: 1; border-color: rgba(255,255,255,0.08); }
+    96%, 100% { height: 0; margin-bottom: -12px; opacity: 0; border-color: transparent; }
+  }
+  /* step-b @ 34% — Light Clean v3 */
+  .card.grow.step-b { animation: grow-b 13s ease-out infinite; }
+  @keyframes grow-b {
+    0%, 30%   { height: 0; margin-bottom: -12px; opacity: 0; border-color: transparent; }
+    34%       { height: 96px; margin-bottom: 0; opacity: 1; border-color: rgba(255,255,255,0.08); }
+    90%       { height: 96px; margin-bottom: 0; opacity: 1; border-color: rgba(255,255,255,0.08); }
+    96%, 100% { height: 0; margin-bottom: -12px; opacity: 0; border-color: transparent; }
+  }
+  /* step-c @ 46% — Violet Bold v5 */
+  .card.grow.step-c { animation: grow-c 13s ease-out infinite; }
+  @keyframes grow-c {
+    0%, 42%   { height: 0; margin-bottom: -12px; opacity: 0; border-color: transparent; }
+    46%       { height: 96px; margin-bottom: 0; opacity: 1; border-color: rgba(255,255,255,0.08); }
+    90%       { height: 96px; margin-bottom: 0; opacity: 1; border-color: rgba(255,255,255,0.08); }
+    96%, 100% { height: 0; margin-bottom: -12px; opacity: 0; border-color: transparent; }
+  }
+  /* step-d @ 58% — Dark Code v6 */
+  .card.grow.step-d { animation: grow-d 13s ease-out infinite; }
+  @keyframes grow-d {
+    0%, 54%   { height: 0; margin-bottom: -12px; opacity: 0; border-color: transparent; }
+    58%       { height: 96px; margin-bottom: 0; opacity: 1; border-color: rgba(255,255,255,0.08); }
+    90%       { height: 96px; margin-bottom: 0; opacity: 1; border-color: rgba(255,255,255,0.08); }
+    96%, 100% { height: 0; margin-bottom: -12px; opacity: 0; border-color: transparent; }
+  }
+  /* step-e @ 82% — New Concept v2 */
+  .card.grow.step-e { animation: grow-e 13s ease-out infinite; }
+  @keyframes grow-e {
+    0%, 78%   { height: 0; margin-bottom: -12px; opacity: 0; border-color: transparent; }
+    82%       { height: 96px; margin-bottom: 0; opacity: 1; border-color: rgba(255,255,255,0.08); }
+    90%       { height: 96px; margin-bottom: 0; opacity: 1; border-color: rgba(255,255,255,0.08); }
+    96%, 100% { height: 0; margin-bottom: -12px; opacity: 0; border-color: transparent; }
+  }
+
+  /* Grow card inner content in sync with each step */
+  .card.grow.step-a::before,
+  .card.grow.step-a::after { animation: fade-a 13s ease-out infinite; }
+  @keyframes fade-a {
+    0%, 12%  { opacity: 0; }
+    20%      { opacity: 1; }
+    90%      { opacity: 1; }
+    96%, 100% { opacity: 0; }
+  }
+  .card.grow.step-b::before,
+  .card.grow.step-b::after { animation: fade-b 13s ease-out infinite; }
+  @keyframes fade-b {
+    0%, 32%  { opacity: 0; }
+    40%      { opacity: 1; }
+    90%      { opacity: 1; }
+    96%, 100% { opacity: 0; }
+  }
+  .card.grow.step-c::before,
+  .card.grow.step-c::after { animation: fade-c 13s ease-out infinite; }
+  @keyframes fade-c {
+    0%, 44%  { opacity: 0; }
+    52%      { opacity: 1; }
+    90%      { opacity: 1; }
+    96%, 100% { opacity: 0; }
+  }
+  .card.grow.step-d::before,
+  .card.grow.step-d::after { animation: fade-d 13s ease-out infinite; }
+  @keyframes fade-d {
+    0%, 56%  { opacity: 0; }
+    64%      { opacity: 1; }
+    90%      { opacity: 1; }
+    96%, 100% { opacity: 0; }
+  }
+  .card.grow.step-e::before,
+  .card.grow.step-e::after { animation: fade-e 13s ease-out infinite; }
+  @keyframes fade-e {
+    0%, 80%  { opacity: 0; }
+    88%      { opacity: 1; }
+    90%      { opacity: 1; }
+    96%, 100% { opacity: 0; }
+  }
+
+  /* ─── NEW COLUMNS: width animation pushes grid wider to the right ─── */
+  .column.new-col {
+    width: 0;
+    overflow: hidden;
+    opacity: 0;
+    margin-right: -22px;
+  }
+  /* step-right-a @ 24% — Warm Editorial drifts in (after Dark Code grows at 14%) */
+  .column.new-col.step-right-a { animation: col-right-a 13s ease-out infinite; }
+  @keyframes col-right-a {
+    0%, 20%   { width: 0; margin-right: -22px; opacity: 0; }
+    24%       { width: 172px; margin-right: 0; opacity: 1; }
+    90%       { width: 172px; margin-right: 0; opacity: 1; }
+    96%, 100% { width: 0; margin-right: -22px; opacity: 0; }
+  }
+  /* step-right-b @ 70% — Mono Studio drifts in */
+  .column.new-col.step-right-b { animation: col-right-b 13s ease-out infinite; }
+  @keyframes col-right-b {
+    0%, 66%   { width: 0; margin-right: -22px; opacity: 0; }
+    70%       { width: 172px; margin-right: 0; opacity: 1; }
+    90%       { width: 172px; margin-right: 0; opacity: 1; }
+    96%, 100% { width: 0; margin-right: -22px; opacity: 0; }
+  }
+
+  /* Static preview mode */
+  body.static .grid,
+  body.static .card.grow,
+  body.static .column.new-col { opacity: 1 !important; height: auto !important; width: auto !important; margin: 0 !important; border-color: rgba(255,255,255,0.08) !important; animation: none !important; transform: none !important; }
+  body.static .card.grow { height: 96px !important; margin-bottom: 0 !important; }
+  body.static .card.grow::before,
+  body.static .card.grow::after { opacity: 1 !important; animation: none !important; }
+  body.static .column.new-col { width: 172px !important; margin-right: 0 !important; }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
+      <rect x="3" y="3" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="19.5" y="1.5" width="11" height="11" rx="1.5" fill="#8b5cf6"/>
+      <rect x="3" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="18" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+    </svg>
+    <span class="brand-wordmark">driftgrid</span>
+  </div>
+  <div class="chrome-label">demo-project</div>
+
+  <div class="hero">
+    <h1 data-drift-editable>And keep iterating</h1>
+    <p data-drift-editable>Round after round, to create the best work you can.</p>
+  </div>
+
+  <div class="stage">
+    <div class="grid">
+      <!-- Col 1 Dark Code — starts with v4 + v3 starred (from slide 7), grows at step-a and step-d -->
+      <div class="column">
+        <div class="column-label">Dark Code</div>
+        <div class="card dark-code grow step-d"></div>
+        <div class="card dark-code grow step-a"></div>
+        <div class="card dark-code starred">
+          <div class="card-star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></div>
+        </div>
+        <div class="card dark-code starred">
+          <div class="card-star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></div>
+        </div>
+      </div>
+
+      <!-- Col 2 Light Clean — starts with v2 starred, grows at step-b -->
+      <div class="column">
+        <div class="column-label">Light Clean</div>
+        <div class="card light-clean grow step-b"></div>
+        <div class="card light-clean starred">
+          <div class="card-star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></div>
+        </div>
+      </div>
+
+      <!-- Col 3 Violet Bold — starts with v4 starred, grows at step-c -->
+      <div class="column">
+        <div class="column-label">Violet Bold</div>
+        <div class="card violet-bold grow step-c"></div>
+        <div class="card violet-bold starred">
+          <div class="card-star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></div>
+        </div>
+      </div>
+
+      <!-- Col 4 New Concept — starts with v1 starred, grows at step-e -->
+      <div class="column">
+        <div class="column-label">New Concept</div>
+        <div class="card new-concept grow step-e"></div>
+        <div class="card new-concept starred">
+          <div class="card-star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></div>
+        </div>
+      </div>
+
+      <!-- New col 5 Warm Editorial — drifts in at step-right-a -->
+      <div class="column new-col step-right-a">
+        <div class="column-label">Warm Editorial</div>
+        <div class="card warm-editorial"></div>
+        <div class="card warm-editorial"></div>
+      </div>
+
+      <!-- New col 6 Mono Studio — drifts in later at step-right-b -->
+      <div class="column new-col step-right-b">
+        <div class="column-label">Mono Studio</div>
+        <div class="card mono-studio"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

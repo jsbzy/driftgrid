@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Frames are Your Canvas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #0a0a0a;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 88px 80px 80px;
+  }
+
+  /* Brand (top-left) */
+  .brand {
+    position: fixed;
+    top: 24px;
+    left: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-mark { width: 20px; height: 20px; flex-shrink: 0; }
+  .brand-wordmark {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: lowercase;
+  }
+
+  .chrome-label {
+    position: fixed;
+    top: 24px;
+    right: 32px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    margin-bottom: 68px;
+  }
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 18px;
+    color: rgba(255, 255, 255, 0.95);
+  }
+  .hero p {
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.01em;
+    line-height: 1.6;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .accent { color: rgba(198, 175, 255, 0.95); font-weight: 500; }
+
+  /* Canvas card row */
+  .canvas-row {
+    display: flex;
+    gap: 36px;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .canvas-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 22px 16px 18px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.2s;
+    position: relative;
+    width: 182px;
+  }
+  .canvas-card.active {
+    background: rgba(139, 92, 246, 0.05);
+    border-color: rgba(139, 92, 246, 0.45);
+    box-shadow: 0 12px 32px rgba(139, 92, 246, 0.12);
+  }
+
+  /* The shape — a rounded rect at the correct aspect ratio */
+  .canvas-shape {
+    position: relative;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .canvas-card.active .canvas-shape {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.25);
+  }
+  /* Subtle content lines inside the shape */
+  .canvas-shape::before {
+    content: '';
+    position: absolute;
+    inset: 12%;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+    background-size: 100% 6px;
+    opacity: 0.4;
+  }
+  .canvas-card.active .canvas-shape::before {
+    background:
+      linear-gradient(rgba(198, 175, 255, 0.4) 1px, transparent 1px);
+    background-size: 100% 6px;
+    opacity: 0.55;
+  }
+
+  /* Individual shapes by canvas type */
+  .shape-landscape {
+    width: 150px;
+    height: 84px; /* 16:9 */
+  }
+  .shape-desktop {
+    width: 150px;
+    height: 94px; /* 16:10 but with scroll */
+  }
+  .shape-tablet {
+    width: 84px;
+    height: 110px; /* 3:4 with scroll */
+  }
+  .shape-mobile {
+    width: 60px;
+    height: 110px; /* 9:16 with scroll */
+  }
+  .shape-a4 {
+    width: 78px;
+    height: 110px; /* 210:297 */
+  }
+  .shape-custom {
+    width: 130px;
+    height: 84px;
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+  .shape-custom::before { display: none; }
+
+  /* Scroll indicator on scrollable canvases */
+  .scroll-bar {
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    right: 3px;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 1px;
+  }
+  .scroll-bar::after {
+    content: '';
+    position: absolute;
+    top: 10%;
+    bottom: 45%;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 1px;
+  }
+  .canvas-card.active .scroll-bar::after {
+    background: rgba(198, 175, 255, 0.6);
+  }
+
+  /* Card labels */
+  .canvas-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.82);
+    text-align: center;
+  }
+  .canvas-card.active .canvas-label {
+    color: rgba(255, 255, 255, 0.95);
+  }
+  .canvas-dims {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+    margin-top: -8px;
+  }
+  .canvas-card.active .canvas-dims {
+    color: rgba(198, 175, 255, 0.75);
+  }
+
+  /* Active badge */
+  .active-badge {
+    position: absolute;
+    top: -10px;
+    right: 50%;
+    transform: translateX(50%);
+    padding: 4px 10px;
+    border-radius: 10px;
+    background: rgba(139, 92, 246, 0.95);
+    color: rgba(10, 10, 10, 0.95);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+  }
+
+  /* Bottom tagline under the row */
+  .bottom-copy {
+    margin-top: 52px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 0.08em;
+  }
+  .bottom-copy .divider {
+    display: inline-block;
+    margin: 0 14px;
+    color: rgba(255, 255, 255, 0.15);
+  }
+  .bottom-copy strong {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
+      <rect x="3" y="3" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="18" y="3" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="3" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="19.5" y="19.5" width="11" height="11" rx="1.5" fill="#8b5cf6"/>
+    </svg>
+    <span class="brand-wordmark">driftgrid</span>
+  </div>
+  <div class="chrome-label">demo-project · R1</div>
+
+  <div class="hero">
+    <h1 data-drift-editable>Frames are your canvas</h1>
+    <p data-drift-editable>
+      The grid shows previews. Each frame is <span class="accent">custom HTML at any size</span> —
+      16:9 slides, full-scroll websites, mobile, A4, or your own dimensions.
+    </p>
+  </div>
+
+  <div class="canvas-row">
+    <!-- 16:9 Landscape (active) -->
+    <div class="canvas-card active">
+      <div class="active-badge">★ This slide</div>
+      <div class="canvas-shape shape-landscape"></div>
+      <div class="canvas-label">16:9 Slide</div>
+      <div class="canvas-dims">1920 × 1080</div>
+    </div>
+
+    <!-- Desktop -->
+    <div class="canvas-card">
+      <div class="canvas-shape shape-desktop">
+        <div class="scroll-bar"></div>
+      </div>
+      <div class="canvas-label">Desktop</div>
+      <div class="canvas-dims">1440 · scroll</div>
+    </div>
+
+    <!-- Tablet -->
+    <div class="canvas-card">
+      <div class="canvas-shape shape-tablet">
+        <div class="scroll-bar"></div>
+      </div>
+      <div class="canvas-label">Tablet</div>
+      <div class="canvas-dims">768 · scroll</div>
+    </div>
+
+    <!-- Mobile -->
+    <div class="canvas-card">
+      <div class="canvas-shape shape-mobile">
+        <div class="scroll-bar"></div>
+      </div>
+      <div class="canvas-label">Mobile</div>
+      <div class="canvas-dims">375 · scroll</div>
+    </div>
+
+    <!-- A4 Portrait -->
+    <div class="canvas-card">
+      <div class="canvas-shape shape-a4"></div>
+      <div class="canvas-label">A4 Portrait</div>
+      <div class="canvas-dims">794 × 1123</div>
+    </div>
+
+    <!-- Custom -->
+    <div class="canvas-card">
+      <div class="canvas-shape shape-custom"></div>
+      <div class="canvas-label">Custom</div>
+      <div class="canvas-dims">your call</div>
+    </div>
+  </div>
+
+  <div class="bottom-copy">
+    The grid <strong>previews</strong>
+    <span class="divider">·</span>
+    The frame <strong>creates</strong>
+  </div>
+</body>
+</html>

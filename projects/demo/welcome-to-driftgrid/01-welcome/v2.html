@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>DriftGrid — Welcome</title>
+<title>DriftGrid — Welcome (Light)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -10,9 +10,9 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100vh; overflow: hidden; }
   body {
-    background: #0a0a0a;
+    background: #fafafa;
     font-family: 'JetBrains Mono', ui-monospace, monospace;
-    color: rgba(255, 255, 255, 0.92);
+    color: rgba(10, 10, 10, 0.88);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -27,7 +27,7 @@
     right: 32px;
     font-size: 10px;
     letter-spacing: 0.12em;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(10, 10, 10, 0.35);
     text-transform: uppercase;
   }
   .chrome-zoom {
@@ -36,7 +36,7 @@
     left: 32px;
     font-size: 9px;
     letter-spacing: 0.12em;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(10, 10, 10, 0.3);
     text-transform: uppercase;
   }
 
@@ -58,7 +58,7 @@
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.14em;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(10, 10, 10, 0.55);
     text-transform: lowercase;
   }
 
@@ -73,12 +73,12 @@
     letter-spacing: -0.02em;
     line-height: 1.1;
     margin-bottom: 20px;
-    color: rgba(255, 255, 255, 0.95);
+    color: rgba(10, 10, 10, 0.92);
   }
   .hero p {
     font-size: 16px;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(10, 10, 10, 0.55);
     letter-spacing: 0.01em;
     line-height: 1.7;
     display: flex;
@@ -101,12 +101,12 @@
     min-width: 22px;
     height: 22px;
     padding: 0 7px;
-    border: 1px solid rgba(139, 92, 246, 0.45);
-    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    background: rgba(139, 92, 246, 0.08);
     border-radius: 4px;
     font-size: 12px;
     font-weight: 500;
-    color: rgba(198, 175, 255, 0.95);
+    color: rgba(100, 60, 215, 0.95);
   }
 
   /* Stage */
@@ -130,7 +130,7 @@
   .column-label {
     font-size: 11px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(10, 10, 10, 0.45);
     text-transform: uppercase;
     letter-spacing: 0.12em;
     margin-bottom: 4px;
@@ -140,40 +140,57 @@
     position: relative;
     width: 220px;
     height: 124px;
-    background: #141414;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #ffffff;
+    border: 1px solid rgba(10, 10, 10, 0.08);
     border-radius: 8px;
     overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.05);
   }
   .card::before {
     content: '';
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03), transparent 60%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      radial-gradient(circle at 30% 30%, rgba(0, 0, 0, 0.02), transparent 60%),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.015), transparent);
   }
   .card .vlabel {
     position: absolute;
     bottom: 8px;
     right: 10px;
     font-size: 9px;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(10, 10, 10, 0.35);
     font-weight: 500;
   }
 
-  /* Column themes */
+  /* Column themes — cards keep their design-theme look to show variety.
+     On light canvas, their backgrounds contrast strongly. */
+
+  /* col-1 Dark Code — dark theme card */
+  .col-1 .card {
+    background: #141414;
+    border: 1px solid rgba(10, 10, 10, 0.15);
+  }
+  .col-1 .card::before {
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03), transparent 60%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+  }
   .col-1 .card::after {
     content: '';
     position: absolute;
     inset: 18px;
     background:
-      linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-      repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 28px);
+      linear-gradient(180deg, rgba(139, 92, 246, 0.18) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 28px);
     border-radius: 4px;
   }
-  .col-2 .card { background: #f5f5f5; }
-  .col-2 .card::before { display: none; }
+  .col-1 .card .vlabel { color: rgba(255, 255, 255, 0.4); }
+
+  /* col-2 Light Clean — white card */
+  .col-2 .card {
+    background: #ffffff;
+  }
   .col-2 .card::after {
     content: '';
     position: absolute;
@@ -185,61 +202,76 @@
       0 14px 0 rgba(0,0,0,0.6),
       0 28px 0 rgba(0,0,0,0.2);
   }
-  .col-2 .card .vlabel { color: rgba(0,0,0,0.35); }
+
+  /* col-3 Violet Bold — deep purple card */
   .col-3 .card {
     background: linear-gradient(135deg, #2a1757 0%, #0a0a0a 100%);
+    border: 1px solid rgba(10, 10, 10, 0.15);
+  }
+  .col-3 .card::before {
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.04), transparent 60%);
   }
   .col-3 .card::after {
     content: '';
     position: absolute;
     inset: 20px;
-    background: linear-gradient(180deg, rgba(139,92,246,0.35), transparent 60%);
+    background: linear-gradient(180deg, rgba(139,92,246,0.4), transparent 60%);
     border-radius: 4px;
   }
+  .col-3 .card .vlabel { color: rgba(255, 255, 255, 0.35); }
+
+  /* col-4 Warm Editorial — warm dark card */
   .col-4 .card {
     background: #1a1410;
+    border: 1px solid rgba(10, 10, 10, 0.15);
+  }
+  .col-4 .card::before {
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03), transparent 60%);
   }
   .col-4 .card::after {
     content: '';
     position: absolute;
     left: 18px; right: 18px; top: 30px;
     height: 7px;
-    background: rgba(234, 179, 80, 0.4);
+    background: rgba(234, 179, 80, 0.45);
     border-radius: 2px;
     box-shadow:
-      0 15px 0 rgba(255,255,255,0.08),
-      0 28px 0 rgba(255,255,255,0.06);
+      0 15px 0 rgba(255,255,255,0.1),
+      0 28px 0 rgba(255,255,255,0.07);
   }
+  .col-4 .card .vlabel { color: rgba(255, 255, 255, 0.4); }
 
-  /* NEW DRIFTED CARD — animates in at top of col-1 */
-  .card.new-drift {
+  /* NEW DRIFTED CARD — empty slot that drifts in at top of col-1 */
+  .col-1 .card.new-drift {
     width: 220px;
-    border: 1.5px dashed rgba(139, 92, 246, 0.7);
-    background: rgba(139, 92, 246, 0.04);
+    border: 1.5px dashed rgba(139, 92, 246, 0.6);
+    background: rgba(139, 92, 246, 0.08);
+    box-shadow: none;
     transform-origin: top center;
     animation: driftIn 13s ease-out infinite;
     opacity: 0;
   }
-  .card.new-drift::before { display: none; }
-  .card.new-drift::after {
-    /* Start invisible, then fill in after the slide-in */
+  .col-1 .card.new-drift::before { display: none; }
+  .col-1 .card.new-drift::after {
     content: '';
     position: absolute;
     inset: 18px;
     background:
-      linear-gradient(180deg, rgba(139, 92, 246, 0.25) 0%, transparent 50%),
-      repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0 2px, transparent 2px 28px);
+      linear-gradient(180deg, rgba(139, 92, 246, 0.22) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 28px);
     border-radius: 4px;
     opacity: 0;
     animation: driftFill 13s ease-out infinite;
   }
-  .card.new-drift .vlabel {
+  .col-1 .card.new-drift .vlabel {
     opacity: 0;
-    color: rgba(139, 92, 246, 0.8);
+    color: rgba(100, 60, 215, 0.95);
     animation: driftFill 13s ease-out infinite;
   }
 
-  /* Col-1 cards push-down: wrap cards 2-4 in a holder that shifts */
+  /* Col-1 cards push-down */
   .col-1 .card-stack {
     display: flex;
     flex-direction: column;
@@ -247,17 +279,17 @@
     animation: stackPush 13s ease-out infinite;
   }
   @keyframes stackPush {
-    0%, 7%     { transform: translateY(-140px); }  /* before drift — stack is at top */
-    14%, 100%  { transform: translateY(0); }       /* after drift — stack sits below new card */
+    0%, 7%     { transform: translateY(-140px); }
+    14%, 100%  { transform: translateY(0); }
   }
 
-  /* Drift-in animation: card slides down from above, becomes dashed, fills */
+  /* Drift-in animation */
   @keyframes driftIn {
     0%, 6%   { opacity: 0; transform: translateY(-30px) scale(0.98); }
-    8%       { opacity: 1; transform: translateY(0) scale(1); border-style: dashed; border-color: rgba(139, 92, 246, 0.7); background: rgba(139, 92, 246, 0.04); }
-    18%      { opacity: 1; transform: translateY(0) scale(1); border-style: dashed; border-color: rgba(139, 92, 246, 0.7); background: rgba(139, 92, 246, 0.04); }
-    22%      { opacity: 1; border-style: solid; border-color: rgba(255, 255, 255, 0.08); background: #141414; }
-    92%      { opacity: 1; border-style: solid; border-color: rgba(255, 255, 255, 0.08); background: #141414; }
+    8%       { opacity: 1; transform: translateY(0) scale(1); border-style: dashed; border-color: rgba(139, 92, 246, 0.6); background: rgba(139, 92, 246, 0.08); box-shadow: none; }
+    18%      { opacity: 1; transform: translateY(0) scale(1); border-style: dashed; border-color: rgba(139, 92, 246, 0.6); background: rgba(139, 92, 246, 0.08); box-shadow: none; }
+    22%      { opacity: 1; border-style: solid; border-color: rgba(10, 10, 10, 0.15); background: #141414; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05); }
+    92%      { opacity: 1; border-style: solid; border-color: rgba(10, 10, 10, 0.15); background: #141414; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05); }
     96%, 100% { opacity: 0; transform: translateY(-20px) scale(0.98); }
   }
   @keyframes driftFill {
@@ -267,11 +299,11 @@
     96%, 100% { opacity: 0; }
   }
 
-  /* NEW BRANCHED COLUMN SLOT — collapses cleanly when hidden */
+  /* NEW BRANCHED COLUMN SLOT */
   .new-col-slot {
     position: relative;
     width: 0;
-    margin-left: -44px;  /* cancel the flex gap while hidden */
+    margin-left: -44px;
     overflow: visible;
     animation: branchSlot 13s ease-out infinite;
   }
@@ -291,19 +323,24 @@
     96%, 100%   { opacity: 0; }
   }
   .col-new .card {
-    background: #111a14;
+    background: #0e1a12;
+    border: 1px solid rgba(10, 10, 10, 0.15);
+  }
+  .col-new .card::before {
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.04), transparent 60%);
   }
   .col-new .card::after {
     content: '';
     position: absolute;
     inset: 18px;
     background:
-      linear-gradient(180deg, rgba(74, 222, 128, 0.22) 0%, transparent 50%),
-      repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 28px);
+      linear-gradient(180deg, rgba(74, 222, 128, 0.26) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 28px);
     border-radius: 4px;
     opacity: 0;
     animation: branchContentFill 13s ease-out infinite;
   }
+  .col-new .card .vlabel { color: rgba(255, 255, 255, 0.4); }
   @keyframes branchContentFill {
     0%, 55%     { opacity: 0; }
     63%, 92%    { opacity: 1; }
@@ -311,14 +348,15 @@
   }
   .col-new .card.empty {
     border: 1.5px dashed rgba(74, 222, 128, 0.7);
-    background: rgba(74, 222, 128, 0.04);
+    background: rgba(74, 222, 128, 0.08);
+    box-shadow: none;
     animation: branchCardMorph 13s ease-out infinite;
   }
   @keyframes branchCardMorph {
-    0%, 48%     { border-style: dashed; border-color: rgba(74, 222, 128, 0.7); background: rgba(74, 222, 128, 0.04); }
-    58%         { border-style: dashed; border-color: rgba(74, 222, 128, 0.7); background: rgba(74, 222, 128, 0.04); }
-    64%, 92%    { border-style: solid; border-color: rgba(255, 255, 255, 0.08); background: #111a14; }
-    96%, 100%   { border-style: dashed; border-color: rgba(74, 222, 128, 0.7); background: rgba(74, 222, 128, 0.04); }
+    0%, 48%     { border-style: dashed; border-color: rgba(74, 222, 128, 0.7); background: rgba(74, 222, 128, 0.08); box-shadow: none; }
+    58%         { border-style: dashed; border-color: rgba(74, 222, 128, 0.7); background: rgba(74, 222, 128, 0.08); box-shadow: none; }
+    64%, 92%    { border-style: solid; border-color: rgba(10, 10, 10, 0.15); background: #0e1a12; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05); }
+    96%, 100%   { border-style: dashed; border-color: rgba(74, 222, 128, 0.7); background: rgba(74, 222, 128, 0.08); box-shadow: none; }
   }
 
   /* Action hints */
@@ -328,7 +366,7 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     font-weight: 500;
-    color: rgba(139, 92, 246, 0.85);
+    color: rgba(100, 60, 215, 0.95);
     opacity: 0;
     display: flex;
     align-items: center;
@@ -341,11 +379,11 @@
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    border: 1px solid rgba(139, 92, 246, 0.5);
+    border: 1px solid rgba(139, 92, 246, 0.55);
     background: rgba(139, 92, 246, 0.08);
     border-radius: 4px;
     font-size: 10px;
-    color: rgba(139, 92, 246, 0.95);
+    color: rgba(100, 60, 215, 0.98);
   }
   .hint-drift {
     top: -36px;
@@ -355,16 +393,16 @@
   }
   .hint-branch {
     top: -36px;
-    left: 110px;  /* fixed offset — half of the final column width */
+    left: 110px;
     transform: translateX(-50%);
-    color: rgba(74, 222, 128, 0.9);
+    color: rgba(34, 140, 80, 0.98);
     animation: hintBranch 13s ease-out infinite;
     white-space: nowrap;
   }
   .hint-branch .kbd {
-    border-color: rgba(74, 222, 128, 0.5);
-    background: rgba(74, 222, 128, 0.08);
-    color: rgba(74, 222, 128, 0.95);
+    border-color: rgba(74, 222, 128, 0.65);
+    background: rgba(74, 222, 128, 0.1);
+    color: rgba(34, 140, 80, 1);
   }
   @keyframes hintDrift {
     0%, 3%    { opacity: 0; }
@@ -381,9 +419,9 @@
 <body>
   <div class="brand">
     <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
-      <rect x="3" y="3" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
-      <rect x="18" y="3" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
-      <rect x="3" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="3" y="3" width="11" height="11" rx="1.5" fill="rgba(10,10,10,0.5)"/>
+      <rect x="18" y="3" width="11" height="11" rx="1.5" fill="rgba(10,10,10,0.5)"/>
+      <rect x="3" y="18" width="11" height="11" rx="1.5" fill="rgba(10,10,10,0.5)"/>
       <rect x="19.5" y="19.5" width="11" height="11" rx="1.5" fill="#8b5cf6"/>
     </svg>
     <span class="brand-wordmark">driftgrid</span>

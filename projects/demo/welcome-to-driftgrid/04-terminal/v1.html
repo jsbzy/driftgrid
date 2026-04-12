@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>DriftGrid — Copy to Terminal</title>
+<title>DriftGrid — Branch a New Concept</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Fraunces:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100vh; overflow: hidden; }
@@ -15,223 +15,591 @@
     color: rgba(255, 255, 255, 0.92);
     display: flex;
     flex-direction: column;
-    position: relative;
-  }
-  /* Top 55% — the DriftGrid frame view */
-  .top-half {
-    height: 55vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .topbar {
-    height: 44px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    display: flex;
     align-items: center;
-    padding: 0 32px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
-    letter-spacing: 0.05em;
-    gap: 10px;
-    flex-shrink: 0;
+    justify-content: flex-start;
+    padding: 88px 120px 80px;
   }
-  .crumb-sep { color: rgba(255, 255, 255, 0.2); }
-  .crumb-current { color: rgba(255, 255, 255, 0.92); }
-  .dot-group { display: flex; gap: 5px; margin-right: 16px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.1); }
 
-  .stage {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 30px 160px;
-    overflow: hidden;
-  }
-  .frame {
-    width: 1000px;
-    max-height: 100%;
-    background: #0f0f10;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 50px 70px;
-    position: relative;
-    overflow: hidden;
-  }
-  .brand {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-    color: rgba(255, 255, 255, 0.5);
-    margin-bottom: 18px;
+  /* Chrome */
+  .chrome-label {
+    position: fixed;
+    top: 24px;
+    right: 32px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.3);
     text-transform: uppercase;
   }
+  .breadcrumb {
+    position: fixed;
+    top: 24px;
+    left: 32px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  .crumb-sep { color: rgba(255, 255, 255, 0.2); padding: 0 8px; }
+  .crumb-current { color: rgba(255, 255, 255, 0.7); }
+
+  /* Hero */
   .hero {
-    font-size: 46px;
-    font-weight: 700;
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 600;
     letter-spacing: -0.02em;
-    line-height: 1.05;
-    margin-bottom: 20px;
+    line-height: 1.1;
+    margin-bottom: 18px;
+    color: rgba(255, 255, 255, 0.95);
   }
-  .desc {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.5);
-    max-width: 480px;
+  .hero p {
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.01em;
     line-height: 1.6;
-    margin-bottom: 28px;
   }
-  .cta {
+
+  /* Stage — zooms in at the start */
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 1520px;
+    height: 560px;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 24px;
+    animation: stageZoomIn 13s ease-out infinite;
+  }
+  @keyframes stageZoomIn {
+    0%        { opacity: 0; transform: scale(0.92); filter: blur(4px); }
+    6%, 94%   { opacity: 1; transform: scale(1); filter: blur(0); }
+    100%      { opacity: 0; transform: scale(0.92); filter: blur(4px); }
+  }
+
+  /* ────── ARTBOARD ────── */
+  .artboard {
+    flex: 1;
+    position: relative;
+    background: #141414;
+    border: 1.5px dashed rgba(74, 222, 128, 0.6);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(74, 222, 128, 0.08);
+    animation: artboardSolidify 13s ease-out infinite;
+  }
+  @keyframes artboardSolidify {
+    0%, 45%   { border-style: dashed; border-color: rgba(74, 222, 128, 0.6); }
+    55%, 92%  { border-style: solid; border-color: rgba(255, 255, 255, 0.1); }
+    96%, 100% { border-style: dashed; border-color: rgba(74, 222, 128, 0.6); }
+  }
+  /* Green-tinted dot grid while empty */
+  .artboard::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(74, 222, 128, 0.09) 1px, transparent 1px);
+    background-size: 22px 22px;
+    pointer-events: none;
+    animation: dotGridFade 13s ease-out infinite;
+  }
+  @keyframes dotGridFade {
+    0%, 40%   { opacity: 1; }
+    50%, 92%  { opacity: 0; }
+    96%, 100% { opacity: 1; }
+  }
+
+  /* ─── Empty state ─── */
+  .empty-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    z-index: 2;
+    opacity: 1;
+    animation: emptyFadeOut 13s ease-out infinite;
+  }
+  @keyframes emptyFadeOut {
+    0%, 12%   { opacity: 1; transform: translateY(0); }
+    22%       { opacity: 0.25; transform: translateY(-4px); }
+    26%, 100% { opacity: 0; transform: translateY(-8px); }
+  }
+  .empty-tag {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(74, 222, 128, 0.9);
+    font-weight: 500;
+  }
+  .empty-title {
+    font-size: 30px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: -0.01em;
+  }
+  .prompt-pill {
+    margin-top: 10px;
+    padding: 11px 22px;
+    background: rgba(74, 222, 128, 0.9);
+    color: rgba(10, 10, 10, 0.96);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(74, 222, 128, 0.22);
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    padding: 10px 16px;
-    border-radius: 5px;
-    font-size: 12px;
   }
-  /* Comment pin */
-  .pin {
-    position: absolute;
-    top: 60px;
-    left: 300px;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #8b5cf6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25), 0 0 20px rgba(139, 92, 246, 0.5);
+  .prompt-pill::before {
+    content: '+';
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .secondary-hint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.38);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .kbd-inline { display: inline-flex; align-items: center; gap: 3px; }
+  .kbd-inline .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    border: 1px solid rgba(74, 222, 128, 0.45);
+    background: rgba(74, 222, 128, 0.1);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(140, 235, 180, 0.95);
   }
 
-  /* Bottom 45% — terminal panel */
-  .terminal {
-    height: 45vh;
-    background: #1c1c1e;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  /* ─── Generating overlay ─── */
+  .generating-overlay {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
-    transform: translateY(100%);
-    animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s forwards;
-    box-shadow: 0 -30px 60px rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 3;
+    opacity: 0;
+    animation: generatingShow 13s ease-out infinite;
+    background: linear-gradient(180deg, rgba(74, 222, 128, 0.03) 0%, rgba(10, 10, 10, 0.2) 100%);
   }
-  @keyframes slideUp {
-    to { transform: translateY(0); }
+  @keyframes generatingShow {
+    0%, 22%   { opacity: 0; }
+    28%, 52%  { opacity: 1; }
+    58%, 100% { opacity: 0; }
   }
-  .term-titlebar {
-    height: 32px;
-    background: #2a2a2d;
+  .generating-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(74, 222, 128, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74, 222, 128, 0.12) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridDrift 2s linear infinite;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+  @keyframes gridDrift {
+    to { background-position: 40px 40px; }
+  }
+  .generating-overlay::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.9), transparent);
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.55);
+    animation: scanSweep 13s ease-in-out infinite;
+  }
+  @keyframes scanSweep {
+    0%, 23%    { top: 0; opacity: 0; }
+    28%        { top: 0; opacity: 1; }
+    52%        { top: 100%; opacity: 1; }
+    58%, 100%  { top: 0; opacity: 0; }
+  }
+  .generating-label {
+    position: relative;
+    z-index: 2;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(140, 235, 180, 0.95);
+    font-weight: 500;
     display: flex;
     align-items: center;
-    padding: 0 14px;
-    position: relative;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+    gap: 10px;
   }
-  .tlights { display: flex; gap: 8px; }
-  .tlight { width: 12px; height: 12px; border-radius: 50%; }
-  .tl-red { background: #ff5f57; }
-  .tl-yellow { background: #febc2e; }
-  .tl-green { background: #28c840; }
-  .term-title {
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(74, 222, 128, 0.2);
+    border-top-color: rgba(74, 222, 128, 0.95);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .generating-main {
+    position: relative;
+    z-index: 2;
+    font-size: 26px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.94);
+    letter-spacing: -0.01em;
+  }
+  .generating-main .dots::after {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    text-align: left;
+    animation: dots 1.2s steps(4, end) infinite;
+  }
+  @keyframes dots {
+    0%   { content: ''; }
+    25%  { content: '.'; }
+    50%  { content: '..'; }
+    75%  { content: '...'; }
+  }
+
+  /* ─── New design: Warm Editorial direction ─── */
+  .new-design {
     position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    inset: 40px;
+    opacity: 0;
+    animation: designMaterialize 13s ease-out infinite;
+    display: flex;
+    flex-direction: column;
+    padding: 56px 88px;
+    background: #1a1410;
+    border-radius: 6px;
+  }
+  @keyframes designMaterialize {
+    0%, 48%   { opacity: 0; transform: scale(0.98); filter: blur(6px); }
+    58%       { opacity: 1; transform: scale(1); filter: blur(0); }
+    92%       { opacity: 1; transform: scale(1); filter: blur(0); }
+    96%, 100% { opacity: 0; transform: scale(0.98); filter: blur(6px); }
+  }
+  .new-design .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 54px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(234, 179, 80, 0.18);
+  }
+  .new-design .logo {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: rgba(234, 179, 80, 0.9);
+    letter-spacing: -0.01em;
+  }
+  .new-design .nav-right {
+    display: flex;
+    gap: 28px;
+  }
+  .new-design .nav-item {
+    width: 44px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 1px;
+  }
+  .new-design .headline-serif {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    font-size: 76px;
+    line-height: 0.95;
+    color: rgba(244, 232, 210, 0.96);
+    letter-spacing: -0.025em;
+    margin-bottom: 8px;
+    max-width: 80%;
+  }
+  .new-design .headline-line {
+    width: 78%;
+    height: 78px;
+    background: rgba(244, 232, 210, 0.92);
+    border-radius: 3px;
+    margin-bottom: 10px;
+  }
+  .new-design .headline-line.short {
+    width: 54%;
+    margin-bottom: 36px;
+  }
+  .new-design .sub {
+    width: 58%;
+    height: 8px;
+    background: rgba(234, 179, 80, 0.5);
+    border-radius: 1px;
+    margin-bottom: 10px;
+  }
+  .new-design .sub.thinner {
+    width: 42%;
+    background: rgba(255, 255, 255, 0.18);
+    margin-bottom: 42px;
+  }
+  .new-design .cta {
+    width: 180px;
+    height: 44px;
+    background: rgba(234, 179, 80, 0.9);
+    border-radius: 2px;
+    box-shadow: 0 8px 24px rgba(234, 179, 80, 0.2);
+  }
+
+  /* ────── THREAD PANEL ────── */
+  .thread {
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 0;
+  }
+  .thread-label {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  /* User bubble — types in during phase 1 */
+  .bubble-user {
+    background: rgba(20, 20, 20, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 2px solid rgba(74, 222, 128, 0.7);
+    border-radius: 8px;
+    padding: 14px 16px 12px;
+    opacity: 0;
+    animation: bubbleUser 13s ease-out infinite;
+  }
+  @keyframes bubbleUser {
+    0%, 6%    { opacity: 0; transform: translateX(16px); }
+    12%, 100% { opacity: 1; transform: translateX(0); }
+  }
+  .bubble-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .bubble-chip {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+  }
+  .bubble-chip.user {
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.5);
+    color: rgba(140, 235, 180, 0.95);
+  }
+  .bubble-chip.agent {
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.5);
+    color: rgba(140, 235, 180, 0.95);
+  }
+  .bubble-meta {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+  }
+  .bubble-body {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
+    min-height: 18px;
+  }
+  /* Typing effect on the user bubble */
+  .bubble-body .typed-wrap {
+    display: inline-block;
+    overflow: hidden;
+    white-space: normal;
+    max-width: 0;
+    vertical-align: bottom;
+    animation: userType 13s steps(60, end) infinite;
+  }
+  @keyframes userType {
+    0%, 10%   { max-width: 0; }
+    24%, 92%  { max-width: 100%; }
+    96%, 100% { max-width: 0; }
+  }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: rgba(20, 20, 20, 0.5);
+    border: 1px solid rgba(74, 222, 128, 0.15);
+    border-radius: 8px;
+    opacity: 0;
+    animation: typingShow 13s ease-out infinite;
+  }
+  @keyframes typingShow {
+    0%, 27%   { opacity: 0; transform: translateX(8px); }
+    33%, 56%  { opacity: 1; transform: translateX(0); }
+    62%, 100% { opacity: 0; transform: translateX(0); }
+  }
+  .typing-dots { display: flex; gap: 4px; }
+  .typing-dots span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(74, 222, 128, 0.7);
+    animation: typingBlink 1.2s ease-in-out infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes typingBlink {
+    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+    30%           { opacity: 1; transform: translateY(-2px); }
+  }
+  .typing-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: rgba(74, 222, 128, 0.85);
+    text-transform: uppercase;
     font-weight: 500;
   }
-  .term-body {
-    flex: 1;
-    padding: 24px 36px;
-    font-size: 15px;
-    line-height: 1.8;
-    color: rgba(255, 255, 255, 0.85);
-    overflow: hidden;
-  }
-  .line {
-    opacity: 0;
-    animation: fadeLine 0.4s ease-out forwards;
-  }
-  @keyframes fadeLine {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .line:nth-child(1) { animation-delay: 0.8s; }
-  .line:nth-child(2) { animation-delay: 1.0s; }
-  .line:nth-child(3) { animation-delay: 1.2s; }
-  .line:nth-child(4) { animation-delay: 1.4s; }
-  .line:nth-child(5) { animation-delay: 1.6s; }
-  .line:nth-child(6) { animation-delay: 1.9s; }
-  .line:nth-child(7) { animation-delay: 2.4s; }
-  .line:nth-child(8) { animation-delay: 2.7s; }
 
-  .muted { color: rgba(255, 255, 255, 0.4); }
-  .path { color: #8b5cf6; }
-  .check { color: #4ade80; }
-  .spinner {
-    display: inline-block;
-    animation: spin 0.8s steps(10) infinite;
-    color: #8b5cf6;
+  /* Agent reply bubble */
+  .bubble-agent {
+    background: rgba(12, 22, 16, 0.92);
+    border: 1px solid rgba(74, 222, 128, 0.25);
+    border-left: 2px solid rgba(74, 222, 128, 0.7);
+    border-radius: 8px;
+    padding: 14px 16px 12px;
+    opacity: 0;
+    animation: bubbleAgent 13s ease-out infinite;
+    box-shadow: 0 8px 24px rgba(74, 222, 128, 0.05);
   }
-  @keyframes spin {
-    0%   { content: '⠋'; }
-    10%  { content: '⠙'; }
-    20%  { content: '⠹'; }
-    30%  { content: '⠸'; }
-    40%  { content: '⠼'; }
-    50%  { content: '⠴'; }
-    60%  { content: '⠦'; }
-    70%  { content: '⠧'; }
-    80%  { content: '⠇'; }
-    90%  { content: '⠏'; }
-    100% { content: '⠋'; }
+  @keyframes bubbleAgent {
+    0%, 60%   { opacity: 0; transform: translateX(16px); }
+    66%       { opacity: 1; transform: translateX(0); }
+    92%       { opacity: 1; transform: translateX(0); }
+    96%, 100% { opacity: 0; transform: translateX(16px); }
   }
-  .spinner::before {
-    content: '⠋';
-    animation: spin 0.8s steps(10) infinite;
+  .bubble-done {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(74, 222, 128, 0.9);
+    margin-top: 8px;
+    letter-spacing: 0.06em;
   }
-  .prompt-arrow { color: rgba(255, 255, 255, 0.3); }
+  .check { color: rgba(74, 222, 128, 0.95); font-weight: 700; }
 </style>
 </head>
 <body>
-  <div class="top-half">
-    <div class="topbar">
-      <div class="dot-group">
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-      </div>
-      <span>demo</span><span class="crumb-sep">/</span>
-      <span>wavelength</span><span class="crumb-sep">/</span>
-      <span>Dark Code</span><span class="crumb-sep">/</span>
-      <span class="crumb-current">v3</span>
-    </div>
-    <div class="stage">
-      <div class="frame">
-        <div class="brand">WAVELENGTH</div>
-        <h1 class="hero" data-drift-editable>Ship products your team<br>can actually maintain.</h1>
-        <p class="desc" data-drift-editable>A lightweight framework for engineering teams who want clarity over cleverness.</p>
-        <div class="cta">Get started <span>→</span></div>
-        <div class="pin"></div>
-      </div>
-    </div>
+  <div class="breadcrumb">
+    <span>demo-project</span>
+    <span class="crumb-sep">›</span>
+    <span>new-concept</span>
+    <span class="crumb-sep">›</span>
+    <span class="crumb-current">v1</span>
+  </div>
+  <div class="chrome-label">demo-project · R1</div>
+
+  <div class="hero">
+    <h1 data-drift-editable>Branch a new concept</h1>
+    <p data-drift-editable>Same loop, sideways. Your agent creates a whole new direction.</p>
   </div>
 
-  <div class="terminal">
-    <div class="term-titlebar">
-      <div class="tlights">
-        <div class="tlight tl-red"></div>
-        <div class="tlight tl-yellow"></div>
-        <div class="tlight tl-green"></div>
+  <div class="stage">
+    <div class="artboard">
+      <!-- Empty state for the new concept -->
+      <div class="empty-center">
+        <div class="empty-tag">new-concept · v1</div>
+        <div class="empty-title">New concept</div>
+        <div class="prompt-pill">Click to prompt</div>
+        <div class="secondary-hint">
+          or press <span class="kbd-inline"><span class="kbd">C</span></span>
+        </div>
       </div>
-      <div class="term-title">Claude Code</div>
+
+      <!-- Generating overlay -->
+      <div class="generating-overlay">
+        <div class="generating-label">
+          <span class="spinner"></span>
+          Agent · Claude Code
+        </div>
+        <div class="generating-main">Generating new concept<span class="dots"></span></div>
+      </div>
+
+      <!-- New design: warm editorial direction -->
+      <div class="new-design">
+        <div class="nav">
+          <div class="logo">Fraunces</div>
+          <div class="nav-right">
+            <div class="nav-item"></div>
+            <div class="nav-item"></div>
+            <div class="nav-item"></div>
+          </div>
+        </div>
+        <div class="headline-line"></div>
+        <div class="headline-line short"></div>
+        <div class="sub"></div>
+        <div class="sub thinner"></div>
+        <div class="cta"></div>
+      </div>
     </div>
-    <div class="term-body">
-      <div class="line"><span class="prompt-arrow">&gt;</span> Source: <span class="path">~/driftgrid/.../concept-1/v3.html</span></div>
-      <div class="line"><span class="prompt-arrow">&gt;</span> Target: <span class="path">~/driftgrid/.../concept-1/v4.html</span> <span class="muted">(new)</span></div>
-      <div class="line">&nbsp;</div>
-      <div class="line"><span class="prompt-arrow">&gt;</span> Drift v3 with this change:</div>
-      <div class="line"><span class="muted">&nbsp;&nbsp;</span>make it warmer and more inviting</div>
-      <div class="line">&nbsp;</div>
-      <div class="line"><span class="check">✓</span> Reading v3.html...</div>
-      <div class="line"><span class="check">✓</span> Writing v4.html &nbsp;&nbsp; <span class="check">✓</span> Replied in thread</div>
+
+    <!-- Thread panel -->
+    <div class="thread">
+      <div class="thread-label">thread</div>
+
+      <div class="bubble-user">
+        <div class="bubble-head">
+          <span class="bubble-chip user">C</span>
+          <span class="bubble-meta">you · just now</span>
+        </div>
+        <div class="bubble-body"><span class="typed-wrap">Start a warm editorial direction — tan palette, display serif, generous whitespace.</span></div>
+      </div>
+
+      <div class="typing-indicator">
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+        <div class="typing-label">agent working</div>
+      </div>
+
+      <div class="bubble-agent">
+        <div class="bubble-head">
+          <span class="bubble-chip agent">A</span>
+          <span class="bubble-meta">agent · claude</span>
+        </div>
+        <div class="bubble-body">Created warm editorial concept — display serif headline, tan palette, wide margins.</div>
+        <div class="bubble-done"><span class="check">✓</span> done</div>
+      </div>
     </div>
   </div>
 </body>

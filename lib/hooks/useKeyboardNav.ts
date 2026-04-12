@@ -65,6 +65,15 @@ export function useKeyboardNav({
         e.target instanceof HTMLTextAreaElement ||
         (e.target instanceof HTMLElement && e.target.isContentEditable)
       ) return;
+      // Also guard against the active element being an editable field —
+      // covers the race where automated key events arrive with stale targets
+      // (e.g. just after drifting, while the prompt textarea has just mounted).
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        (active instanceof HTMLElement && active.isContentEditable)
+      ) return;
 
       // Don't handle space (used for panning)
       if (e.key === ' ') return;

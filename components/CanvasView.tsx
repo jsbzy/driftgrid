@@ -467,12 +467,20 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     }
     // Clear multi-select on regular click
     if (multiSelected.size > 0) onMultiSelectClear();
+    // Single-click on an empty drift slot jumps straight to the prompt panel
+    // via onSelect, which Viewer intercepts for empty slots.
+    const concept = concepts[ci];
+    const version = concept?.versions[vi];
+    if (version?.changelog === 'New drift slot — empty') {
+      onSelect(ci, vi);
+      return;
+    }
     if (ci === conceptIndex && vi === versionIndex) {
       onZoomLevelChange('z4');
     } else {
       onHighlight(ci, vi);
     }
-  }, [isPanning, spaceHeld, conceptIndex, versionIndex, onHighlight, onZoomLevelChange, concepts, multiSelected]);
+  }, [isPanning, spaceHeld, conceptIndex, versionIndex, onHighlight, onZoomLevelChange, concepts, multiSelected, onMultiSelectToggle, onMultiSelectClear, onSelect, recentlyPanned]);
 
   const handleThumbnailDoubleClick = useCallback((ci: number, vi: number) => {
     if (isPanning || spaceHeld || recentlyPanned.current) return;
@@ -690,45 +698,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             );
           })}
 
-          {/* Insert concept "+" zones between columns and at the end */}
-          {onInsertConcept && layout.labels.length > 0 && mode !== 'client' && (
-            <>
-              {/* Between each pair of columns */}
-              {layout.labels.map((label, i) => {
-                if (i === 0) return null; // no zone before the first column
-                const prevLabel = layout.labels[i - 1];
-                const gapX = prevLabel.x + layout.cardWidth;
-                const gapWidth = label.x - gapX;
-                return (
-                  <InsertZone
-                    key={`insert-${i}`}
-                    x={gapX}
-                    y={label.y}
-                    width={gapWidth}
-                    height={layout.cardHeight + 40}
-                    afterIndex={i - 1}
-                    onInsert={onInsertConcept}
-                  />
-                );
-              })}
-              {/* After the last column */}
-              {(() => {
-                const last = layout.labels[layout.labels.length - 1];
-                return (
-                  <InsertZone
-                    key="insert-end"
-                    x={last.x + layout.cardWidth}
-                    y={last.y}
-                    width={layout.columnGap + 40}
-                    height={layout.cardHeight + 40}
-                    afterIndex={layout.labels.length - 1}
-                    onInsert={onInsertConcept}
-                  />
-                );
-              })()}
-            </>
-          )}
-
           <CardLayer
             layout={layout}
             concepts={concepts}
@@ -792,66 +761,6 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     </div>
   );
 });
-
-/**
- * Hover "+" zone rendered in the gap between columns.
- * Appears as a faint vertical line with a "+" circle on hover.
- */
-function InsertZone({ x, y, width, height, afterIndex, onInsert }: {
-  x: number; y: number; width: number; height: number;
-  afterIndex: number;
-  onInsert: (label: string, afterConceptIndex?: number) => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      data-card
-      className="absolute flex items-start justify-center"
-      style={{ left: x, top: y, width, height, cursor: 'pointer', zIndex: hovered ? 20 : 1 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={(e) => {
-        e.stopPropagation();
-        const label = window.prompt('Concept name:');
-        if (label?.trim()) onInsert(label.trim(), afterIndex);
-      }}
-    >
-      {/* Vertical line */}
-      <div
-        style={{
-          width: 1,
-          height: '100%',
-          background: 'var(--foreground)',
-          opacity: hovered ? 0.15 : 0,
-          transition: 'opacity 0.15s ease',
-        }}
-      />
-      {/* "+" circle */}
-      <div
-        className="absolute flex items-center justify-center"
-        style={{
-          top: -4,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 20,
-          height: 20,
-          borderRadius: '50%',
-          background: hovered ? 'var(--foreground)' : 'transparent',
-          color: hovered ? 'var(--background)' : 'transparent',
-          fontSize: 14,
-          fontWeight: 300,
-          lineHeight: 1,
-          opacity: hovered ? 0.6 : 0,
-          transition: 'all 0.15s ease',
-          pointerEvents: 'none',
-        }}
-      >
-        +
-      </div>
-    </div>
-  );
-}
 
 /**
  * Extracted card layer with viewport culling. Only renders cards visible
@@ -942,7 +851,9 @@ const CardLayer = memo(function CardLayer({
         const isLatest = pos.versionIndex === concept.versions.length - 1;
 
         return (
-          <div key={`${pos.conceptIndex}-${pos.versionIndex}`}
+          <div
+            key={`${pos.conceptIndex}-${pos.versionIndex}`}
+            data-card-id={`${concept.id}:${version.id}`}
             style={{ opacity: isHidden ? 0.3 : 1, transition: 'opacity 0.15s ease' }}
           >
             <CanvasCard

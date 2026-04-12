@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Grid and Canvas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #0a0a0a;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 88px 80px 80px;
+  }
+
+  /* Brand (top-left) */
+  .brand {
+    position: fixed;
+    top: 24px;
+    left: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-mark { width: 20px; height: 20px; flex-shrink: 0; }
+  .brand-wordmark {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: lowercase;
+  }
+
+  .chrome-label {
+    position: fixed;
+    top: 24px;
+    right: 32px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 18px;
+    color: rgba(255, 255, 255, 0.95);
+  }
+  .hero p {
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.01em;
+    line-height: 1.6;
+  }
+  .hero p strong { color: rgba(255, 255, 255, 0.92); font-weight: 500; }
+
+  /* Stage */
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 1440px;
+    height: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ────── GRID VIEW (phase 1) — mirrors slide 1's final grid state ────── */
+  .grid-view {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    gap: 44px;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 16px;
+    transform-origin: 36% 28%;  /* origin at the Light Clean column's top card */
+    animation: gridZoomOut 13s ease-in-out infinite;
+  }
+  @keyframes gridZoomOut {
+    0%, 22%    { opacity: 1; transform: scale(1); filter: blur(0); }
+    30%        { opacity: 0; transform: scale(3); filter: blur(3px); }
+    32%, 92%   { opacity: 0; transform: scale(3); filter: blur(3px); }
+    96%, 100%  { opacity: 1; transform: scale(1); filter: blur(0); }
+  }
+
+  .mini-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 220px;
+  }
+  .mini-col .label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
+  .mini-card {
+    width: 220px;
+    height: 124px;
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .mini-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03), transparent 60%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+  }
+  .mini-card.col-1::after {
+    content: '';
+    position: absolute;
+    inset: 18px;
+    background:
+      linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 28px);
+    border-radius: 4px;
+  }
+  .mini-card.col-2 { background: #f5f5f5; }
+  .mini-card.col-2::before { display: none; }
+  .mini-card.col-2::after {
+    content: '';
+    position: absolute;
+    left: 18px; right: 18px; top: 24px;
+    height: 6px;
+    background: #1a1a1a;
+    border-radius: 2px;
+    box-shadow: 0 14px 0 rgba(0,0,0,0.6), 0 28px 0 rgba(0,0,0,0.2);
+  }
+  .mini-card.col-3 {
+    background: linear-gradient(135deg, #2a1757 0%, #0a0a0a 100%);
+  }
+  .mini-card.col-3::after {
+    content: '';
+    position: absolute;
+    inset: 20px;
+    background: linear-gradient(180deg, rgba(139,92,246,0.35), transparent 60%);
+    border-radius: 4px;
+  }
+  .mini-card.col-4 { background: #1a1410; }
+  .mini-card.col-4::after {
+    content: '';
+    position: absolute;
+    left: 18px; right: 18px; top: 28px;
+    height: 7px;
+    background: rgba(234, 179, 80, 0.4);
+    border-radius: 2px;
+    box-shadow: 0 15px 0 rgba(255,255,255,0.08), 0 28px 0 rgba(255,255,255,0.06);
+  }
+  .mini-card.col-new { background: #111a14; }
+  .mini-card.col-new::after {
+    content: '';
+    position: absolute;
+    inset: 18px;
+    background:
+      linear-gradient(180deg, rgba(74, 222, 128, 0.22) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 28px);
+    border-radius: 4px;
+  }
+
+  /* NEW VERSION pill on the top Dark Code card (matches slide 1) */
+  .new-tag {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 3px;
+    white-space: nowrap;
+    z-index: 5;
+  }
+  .new-tag.version {
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.45);
+    color: rgba(210, 190, 255, 0.96);
+  }
+  .new-tag.concept {
+    background: rgba(74, 222, 128, 0.16);
+    border: 1px solid rgba(74, 222, 128, 0.42);
+    color: rgba(150, 240, 185, 0.96);
+  }
+
+  /* Highlight — target of zoom (Light Clean top card), only after cursor arrives */
+  .mini-card.highlighted {
+    outline: 2px solid rgba(139, 92, 246, 0);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0);
+    animation: highlightReveal 13s ease-out infinite;
+  }
+  @keyframes highlightReveal {
+    0%, 12%   { outline-color: rgba(139, 92, 246, 0); box-shadow: 0 0 0 4px rgba(139, 92, 246, 0); }
+    16%, 22%  { outline-color: rgba(139, 92, 246, 0.7); box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.22); }
+    30%, 100% { outline-color: rgba(139, 92, 246, 0); box-shadow: 0 0 0 4px rgba(139, 92, 246, 0); }
+  }
+
+  /* Cursor — moves across the grid and selects a card */
+  .grid-cursor {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0;
+    animation: cursorPath 13s ease-out infinite;
+  }
+  .grid-cursor svg { width: 100%; height: 100%; }
+  @keyframes cursorPath {
+    0%, 1%    { opacity: 0; top: 85%; left: 65%; }
+    3%        { opacity: 1; top: 85%; left: 65%; }
+    7%        { opacity: 1; top: 55%; left: 52%; }  /* hovering mid area */
+    11%       { opacity: 1; top: 35%; left: 40%; }  /* approaching target */
+    14%       { opacity: 1; top: 20%; left: 36%; }  /* landing on Light Clean top */
+    15%       { opacity: 1; top: 20%; left: 36%; transform: scale(0.8); } /* click */
+    17%, 22%  { opacity: 1; top: 20%; left: 36%; transform: scale(1); }
+    26%, 100% { opacity: 0; top: 20%; left: 36%; }
+  }
+
+  /* ────── FRAME VIEW (phase 2) ────── */
+  .frame-view {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    animation: frameFadeIn 13s ease-in-out infinite;
+  }
+  @keyframes frameFadeIn {
+    0%, 26%   { opacity: 0; transform: scale(0.92); }
+    34%, 92%  { opacity: 1; transform: scale(1); }
+    96%, 100% { opacity: 0; transform: scale(0.92); }
+  }
+
+  /* Desktop frame — browser-like container */
+  .browser {
+    width: 900px;
+    height: 520px;
+    background: #ffffff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Browser chrome (address bar) */
+  .browser-chrome {
+    height: 40px;
+    background: #e8e8e8;
+    border-bottom: 1px solid rgba(10, 10, 10, 0.08);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 10px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 3;
+  }
+  .tlights { display: flex; gap: 6px; }
+  .tlight { width: 10px; height: 10px; border-radius: 50%; }
+  .tlight.red { background: #ff5f57; }
+  .tlight.yellow { background: #febc2e; }
+  .tlight.green { background: #28c840; }
+  .addr-bar {
+    flex: 1;
+    height: 22px;
+    background: #ffffff;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-size: 10px;
+    color: rgba(10, 10, 10, 0.5);
+    letter-spacing: 0.02em;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    border: 1px solid rgba(10, 10, 10, 0.06);
+  }
+  .canvas-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    color: rgba(100, 60, 215, 0.95);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Scrollable content area */
+  .browser-body {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    background: #fafafa;
+  }
+
+  /* Long page content that scrolls */
+  .page {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    animation: scrollPage 13s ease-in-out infinite;
+  }
+  @keyframes scrollPage {
+    0%, 38%    { transform: translateY(0); }
+    50%        { transform: translateY(-40%); }
+    64%        { transform: translateY(-80%); }
+    74%        { transform: translateY(-40%); }
+    84%, 100%  { transform: translateY(0); }
+  }
+
+  /* Page sections (wireframe content) */
+  .page-section {
+    padding: 36px 56px;
+    border-bottom: 1px solid rgba(10, 10, 10, 0.05);
+  }
+  .page-section:last-child { border-bottom: none; }
+
+  .sec-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 56px;
+    border-bottom: 1px solid rgba(10, 10, 10, 0.08);
+  }
+  .sec-nav .logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #1a1a1a;
+  }
+  .sec-nav .nav-items { display: flex; gap: 24px; }
+  .sec-nav .nav-item {
+    width: 50px;
+    height: 6px;
+    background: rgba(10, 10, 10, 0.3);
+    border-radius: 2px;
+  }
+
+  .sec-hero {
+    padding: 60px 56px 80px;
+  }
+  .sec-hero .heading {
+    width: 70%;
+    height: 32px;
+    background: #1a1a1a;
+    border-radius: 3px;
+    margin-bottom: 10px;
+  }
+  .sec-hero .heading.two {
+    width: 52%;
+    margin-bottom: 28px;
+  }
+  .sec-hero .subtext {
+    width: 50%;
+    height: 6px;
+    background: rgba(10, 10, 10, 0.35);
+    border-radius: 1px;
+    margin-bottom: 6px;
+  }
+  .sec-hero .subtext.short {
+    width: 40%;
+    margin-bottom: 32px;
+  }
+  .sec-hero .cta {
+    width: 140px;
+    height: 38px;
+    background: #8b5cf6;
+    border-radius: 5px;
+  }
+
+  .sec-image {
+    padding: 0 56px 60px;
+  }
+  .sec-image .image-block {
+    width: 100%;
+    height: 240px;
+    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .sec-image .image-block::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(135deg, rgba(10,10,10,0.04) 25%, transparent 25%, transparent 50%, rgba(10,10,10,0.04) 50%, rgba(10,10,10,0.04) 75%, transparent 75%);
+    background-size: 22px 22px;
+  }
+
+  .sec-features {
+    padding: 60px 56px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+  .feature {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .feature .icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    margin-bottom: 4px;
+  }
+  .feature .line {
+    height: 6px;
+    background: rgba(10, 10, 10, 0.35);
+    border-radius: 1px;
+  }
+  .feature .line.short { width: 70%; }
+  .feature .line.thin { background: rgba(10, 10, 10, 0.18); height: 5px; }
+
+  .sec-quote {
+    padding: 70px 56px;
+    background: #f0eee9;
+  }
+  .sec-quote .quote {
+    width: 82%;
+    height: 16px;
+    background: rgba(10, 10, 10, 0.7);
+    border-radius: 2px;
+    margin-bottom: 10px;
+  }
+  .sec-quote .quote.short { width: 60%; margin-bottom: 24px; }
+  .sec-quote .author {
+    width: 100px;
+    height: 6px;
+    background: rgba(10, 10, 10, 0.4);
+    border-radius: 1px;
+  }
+
+  .sec-footer {
+    padding: 36px 56px;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+  .sec-footer .f-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.8);
+  }
+  .sec-footer .f-item {
+    width: 56px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 1px;
+  }
+
+  /* Scrollbar indicator */
+  .scrollbar {
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    right: 4px;
+    width: 3px;
+    background: rgba(10, 10, 10, 0.08);
+    border-radius: 2px;
+    z-index: 5;
+  }
+  .scrollbar .thumb {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 24%;
+    background: rgba(10, 10, 10, 0.35);
+    border-radius: 2px;
+    top: 0;
+    animation: scrollbarMove 13s ease-in-out infinite;
+  }
+  @keyframes scrollbarMove {
+    0%, 38%    { top: 0; }
+    50%        { top: 30%; }
+    64%        { top: 76%; }
+    74%        { top: 30%; }
+    84%, 100%  { top: 0; }
+  }
+
+  /* Bottom tagline */
+  .bottom-copy {
+    margin-top: 36px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: 0.08em;
+  }
+  .bottom-copy strong {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+  }
+  .bottom-copy .divider {
+    display: inline-block;
+    margin: 0 14px;
+    color: rgba(255, 255, 255, 0.2);
+  }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
+      <rect x="3" y="3" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="19.5" y="1.5" width="11" height="11" rx="1.5" fill="#8b5cf6"/>
+      <rect x="3" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="18" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+    </svg>
+    <span class="brand-wordmark">driftgrid</span>
+  </div>
+  <div class="chrome-label">demo-project · R1</div>
+
+  <div class="hero">
+    <h1 data-drift-editable>Every frame is a full canvas</h1>
+    <p data-drift-editable>
+      The grid is your studio — a preview of every frame. Each frame is its own <strong>canvas</strong> at any size.
+    </p>
+  </div>
+
+  <div class="stage">
+
+    <!-- GRID VIEW — mirrors slide 1's final state (after the drift) -->
+    <div class="grid-view">
+      <div class="mini-col">
+        <div class="label">Dark Code</div>
+        <div class="mini-card col-1"><span class="new-tag version">new version</span></div>
+        <div class="mini-card col-1"></div>
+        <div class="mini-card col-1"></div>
+        <div class="mini-card col-1"></div>
+      </div>
+      <div class="mini-col">
+        <div class="label">Light Clean</div>
+        <div class="mini-card col-2 highlighted"></div>
+        <div class="mini-card col-2"></div>
+        <div class="mini-card col-2"></div>
+      </div>
+      <div class="mini-col">
+        <div class="label">Violet Bold</div>
+        <div class="mini-card col-3"></div>
+        <div class="mini-card col-3"></div>
+        <div class="mini-card col-3"></div>
+        <div class="mini-card col-3"></div>
+      </div>
+      <div class="mini-col">
+        <div class="label">Warm Editorial</div>
+        <div class="mini-card col-4"></div>
+        <div class="mini-card col-4"></div>
+        <div class="mini-card col-4"></div>
+      </div>
+      <div class="mini-col">
+        <div class="label">New Concept</div>
+        <div class="mini-card col-new"></div>
+      </div>
+    </div>
+
+    <!-- Cursor that moves across the grid and selects the target card -->
+    <div class="grid-cursor">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M 2 2 L 2 16 L 6 12 L 10 18 L 12 17 L 8 11 L 14 11 Z"
+              fill="#ffffff" stroke="#0a0a0a" stroke-width="1.2" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- FRAME VIEW: desktop browser with scrollable page -->
+    <div class="frame-view">
+      <div class="browser">
+        <div class="browser-chrome">
+          <div class="tlights">
+            <div class="tlight red"></div>
+            <div class="tlight yellow"></div>
+            <div class="tlight green"></div>
+          </div>
+          <div class="addr-bar">light-clean.html</div>
+          <div class="canvas-tag">Desktop · 1440</div>
+        </div>
+        <div class="browser-body">
+          <div class="scrollbar"><div class="thumb"></div></div>
+          <div class="page">
+            <!-- Nav -->
+            <div class="sec-nav">
+              <div class="logo"></div>
+              <div class="nav-items">
+                <div class="nav-item"></div>
+                <div class="nav-item"></div>
+                <div class="nav-item"></div>
+                <div class="nav-item"></div>
+              </div>
+            </div>
+
+            <!-- Hero -->
+            <div class="sec-hero">
+              <div class="heading"></div>
+              <div class="heading two"></div>
+              <div class="subtext"></div>
+              <div class="subtext short"></div>
+              <div class="cta"></div>
+            </div>
+
+            <!-- Image -->
+            <div class="sec-image">
+              <div class="image-block"></div>
+            </div>
+
+            <!-- Features -->
+            <div class="sec-features">
+              <div class="feature">
+                <div class="icon"></div>
+                <div class="line"></div>
+                <div class="line short thin"></div>
+                <div class="line thin"></div>
+              </div>
+              <div class="feature">
+                <div class="icon"></div>
+                <div class="line"></div>
+                <div class="line short thin"></div>
+                <div class="line thin"></div>
+              </div>
+              <div class="feature">
+                <div class="icon"></div>
+                <div class="line"></div>
+                <div class="line short thin"></div>
+                <div class="line thin"></div>
+              </div>
+            </div>
+
+            <!-- Quote -->
+            <div class="sec-quote">
+              <div class="quote"></div>
+              <div class="quote short"></div>
+              <div class="author"></div>
+            </div>
+
+            <!-- Footer -->
+            <div class="sec-footer">
+              <div class="f-logo"></div>
+              <div class="f-item"></div>
+              <div class="f-item"></div>
+              <div class="f-item"></div>
+              <div class="f-item"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-copy">
+    The grid <strong>previews</strong>
+    <span class="divider">·</span>
+    The frame <strong>creates</strong>
+  </div>
+</body>
+</html>

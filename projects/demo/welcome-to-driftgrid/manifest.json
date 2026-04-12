@@ -14,237 +14,705 @@
     {
       "id": "round-1",
       "number": 1,
-      "name": "Walkthrough",
+      "name": "Walkthrough (archive)",
       "createdAt": "2026-04-10T00:00:00.000Z",
       "selects": [],
       "concepts": [
+        {
+          "id": "intro",
+          "slug": "intro",
+          "label": "00 — DriftGrid",
+          "description": "Opening logo slide",
+          "position": 1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "00-intro/v1.html",
+              "parentId": null,
+              "changelog": "Opening logo",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T00:00:00.000Z",
+              "thumbnail": ".thumbs/intro-v1.webp"
+            }
+          ]
+        },
         {
           "id": "welcome",
           "slug": "welcome",
           "label": "01 — Welcome",
           "description": "The grid — rapid design iteration and sharing",
-          "position": 0,
+          "position": 2,
           "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "01-welcome/v1.html",
-            "parentId": null,
-            "changelog": "Welcome beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "01-welcome/v1.html",
+              "parentId": null,
+              "changelog": "Welcome beat",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ".thumbs/welcome-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "01-welcome/v2.html",
+              "parentId": null,
+              "changelog": "Light mode variant",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T16:31:33.034Z",
+              "thumbnail": ".thumbs/welcome-v2.webp"
+            }
+          ]
+        },
+        {
+          "id": "canvas",
+          "slug": "canvas",
+          "label": "02 — Canvas",
+          "description": "Grid previews, frame creates",
+          "position": 3,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "01b-canvas/v1.html",
+              "parentId": null,
+              "changelog": "Grid vs frame · canvas types",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T00:00:00.000Z",
+              "thumbnail": ".thumbs/canvas-v1.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "01b-canvas/v2.html",
+              "parentId": "v1",
+              "changelog": "Light mode variant",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T16:42:53.188Z",
+              "thumbnail": ".thumbs/canvas-v2.webp"
+            },
+            {
+              "id": "v3",
+              "number": 3,
+              "file": "01b-canvas/v3.html",
+              "parentId": "v1",
+              "changelog": "Grid → desktop frame with scroll animation",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T16:47:37.953Z",
+              "thumbnail": ".thumbs/canvas-v3.webp"
+            }
+          ]
         },
         {
           "id": "frame",
           "slug": "frame",
-          "label": "02 — Frame",
+          "label": "03 — Frame",
           "description": "Enter a frame to view the live HTML",
-          "position": 1,
+          "position": 4,
           "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "02-frame/v1.html",
-            "parentId": null,
-            "changelog": "Frame beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
+          "versions": [
+            {
+              "id": "version-pksvgnt9",
+              "number": 1,
+              "file": "02-frame/v1.html",
+              "parentId": null,
+              "changelog": "New drift slot — empty",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T16:07:09.925Z",
+              "thumbnail": ".thumbs/frame-version-pksvgnt9.webp"
+            },
+            {
+              "id": "v2",
+              "number": 2,
+              "file": "02-frame/v2.html",
+              "parentId": "version-pksvgnt9",
+              "changelog": "Comment + edit on existing frame",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T17:02:13.129Z",
+              "thumbnail": ".thumbs/frame-v2.webp"
+            }
+          ]
         },
         {
           "id": "prompt",
           "slug": "prompt",
-          "label": "03 — Prompt",
+          "label": "04 — Prompt",
           "description": "Press C to leave a prompt for your agent",
-          "position": 2,
+          "position": 5,
           "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "03-prompt/v1.html",
-            "parentId": null,
-            "changelog": "Prompt beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "03-prompt/v1.html",
+              "parentId": null,
+              "changelog": "Frame beat",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ".thumbs/prompt-v1.webp"
+            }
+          ]
         },
         {
           "id": "terminal",
           "slug": "terminal",
-          "label": "04 — Terminal",
+          "label": "05 — Terminal",
           "description": "Copy the prompt into your terminal agent",
-          "position": 3,
+          "position": 6,
           "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "04-terminal/v1.html",
-            "parentId": null,
-            "changelog": "Terminal beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "04-terminal/v1.html",
+              "parentId": null,
+              "changelog": "Prompt beat",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ".thumbs/terminal-v1.webp"
+            }
+          ]
         },
         {
           "id": "reply",
           "slug": "reply",
-          "label": "05 — Reply",
+          "label": "06 — Reply",
           "description": "Agent edits the file and replies in the thread",
-          "position": 4,
+          "position": 7,
           "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "05-reply/v1.html",
-            "parentId": null,
-            "changelog": "Reply beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "05-reply/v1.html",
+              "parentId": null,
+              "changelog": "Terminal beat",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ".thumbs/reply-v1.webp"
+            }
+          ]
         },
         {
           "id": "drift-down",
           "slug": "drift-down",
-          "label": "06 — Drift Down",
+          "label": "07 — Drift Down",
           "description": "Press D to open a new version slot",
-          "position": 5,
+          "position": 8,
           "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "06-drift-down/v1.html",
-            "parentId": null,
-            "changelog": "Drift down beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "06-drift-down/v1.html",
+              "parentId": null,
+              "changelog": "Reply beat",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ".thumbs/drift-down-v1.webp"
+            }
+          ]
         },
         {
           "id": "drift-roundtrip",
           "slug": "drift-roundtrip",
-          "label": "07 — Drift Roundtrip",
+          "label": "08 — Drift Roundtrip",
           "description": "Same loop — new version filled by the agent",
-          "position": 6,
+          "position": 9,
           "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "07-drift-roundtrip/v1.html",
-            "parentId": null,
-            "changelog": "Drift roundtrip beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "07-drift-roundtrip/v1.html",
+              "parentId": null,
+              "changelog": "Drift down beat",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ".thumbs/drift-roundtrip-v1.webp"
+            }
+          ]
         },
         {
           "id": "branch",
           "slug": "branch",
-          "label": "08 — Branch",
-          "description": "Press Shift+D for a new concept column",
-          "position": 7,
+          "label": "09 — Round 2",
+          "description": "Round 2 is live with fresh drifts",
+          "position": 10,
           "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "08-branch/v1.html",
-            "parentId": null,
-            "changelog": "Branch beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "08-branch/v1.html",
+              "parentId": null,
+              "changelog": "Drift roundtrip beat",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ".thumbs/branch-v1.webp"
+            }
+          ]
         },
         {
           "id": "branch-roundtrip",
           "slug": "branch-roundtrip",
-          "label": "09 — Branch Roundtrip",
-          "description": "New concept, same loop",
-          "position": 8,
-          "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "09-branch-roundtrip/v1.html",
-            "parentId": null,
-            "changelog": "Branch roundtrip beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
-        },
-        {
-          "id": "star",
-          "slug": "star",
-          "label": "10 — Star",
-          "description": "Press S to mark your selects",
-          "position": 9,
-          "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "10-star/v1.html",
-            "parentId": null,
-            "changelog": "Star beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
-        },
-        {
-          "id": "present",
-          "slug": "present",
-          "label": "11 — Present",
-          "description": "Press P to present starred versions fullscreen",
-          "position": 10,
-          "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "11-present/v1.html",
-            "parentId": null,
-            "changelog": "Present beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
-        },
-        {
-          "id": "share",
-          "slug": "share",
-          "label": "12 — Share",
-          "description": "Share a public link with your client",
+          "label": "10 — DriftGrid",
+          "description": "The end — DriftGrid logo",
           "position": 11,
           "visible": true,
-          "versions": [{
-            "id": "v1",
-            "number": 1,
-            "file": "12-share/v1.html",
-            "parentId": null,
-            "changelog": "Share beat",
-            "visible": true,
-            "starred": false,
-            "created": "2026-04-10T00:00:00.000Z",
-            "thumbnail": ""
-          }]
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "09-branch-roundtrip/v1.html",
+              "parentId": null,
+              "changelog": "Branch beat",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-10T00:00:00.000Z",
+              "thumbnail": ".thumbs/branch-roundtrip-v1.webp"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "round-2",
+      "number": 2,
+      "name": "Walkthrough v2",
+      "createdAt": "2026-04-11T12:00:00.000Z",
+      "selects": [],
+      "concepts": [
+        {
+          "id": "r2-intro",
+          "slug": "intro",
+          "label": "00 — DriftGrid",
+          "description": "Opening logo slide",
+          "position": 1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "round-2/00-intro/v1.html",
+              "parentId": null,
+              "changelog": "Clean rebuild baseline",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T12:00:00.000Z",
+              "thumbnail": ".thumbs/r2-intro-v1.webp",
+              "annotations": []
+            }
+          ]
+        },
+        {
+          "id": "r2-welcome",
+          "slug": "welcome",
+          "label": "01 — Welcome to DriftGrid",
+          "description": "Organize · iterate · share agent-generated designs",
+          "position": 2,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "round-2/01-welcome/v1.html",
+              "parentId": null,
+              "changelog": "Added positioning eyebrow, purged branch terminology",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T12:00:00.000Z",
+              "thumbnail": ".thumbs/r2-welcome-v1.webp",
+              "annotations": []
+            }
+          ]
+        },
+        {
+          "id": "r2-canvas",
+          "slug": "canvas",
+          "label": "02 — Grid previews, frame creates",
+          "description": "The grid is your studio. Each frame is a full canvas.",
+          "position": 3,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "round-2/02-canvas/v1.html",
+              "parentId": null,
+              "changelog": "Clean rebuild baseline",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T12:00:00.000Z",
+              "thumbnail": ".thumbs/r2-canvas-v1.webp",
+              "annotations": []
+            }
+          ]
+        },
+        {
+          "id": "r2-comment",
+          "slug": "comment",
+          "label": "03 — Comment on anything",
+          "description": "Press C to drop a prompt on any frame",
+          "position": 4,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "round-2/03-comment/v1.html",
+              "parentId": null,
+              "changelog": "Clean rebuild baseline",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T12:00:00.000Z",
+              "thumbnail": ".thumbs/r2-comment-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-8smfc2yu",
+                  "x": 0.45588235294117646,
+                  "y": 0.6624843161856964,
+                  "element": null,
+                  "text": "I think we just make it says SEND TO AGENT and COPY FOR AGENT? Thoughts?",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T20:29:30.664Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-ezwdqy9p",
+                  "x": 0.410427807486631,
+                  "y": 0.562107904642409,
+                  "element": null,
+                  "text": "lets hide the comment field, while its updating, and then bring it back with the agent comment.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T21:02:34.209Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-l8dw4w3p",
+                  "x": 0.6437165775401069,
+                  "y": 0.19949811794228356,
+                  "element": null,
+                  "text": "This text isnt quite right. Lets describe what happens, send edits direct to agent via MCP or copy edits  and context and paste in agent terminal.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T22:40:14.370Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "r2-loop-down",
+          "slug": "loop-down",
+          "label": "04 — The loop closes",
+          "description": "Your agent edits the file, DriftGrid refreshes, reply lands in the thread",
+          "position": 5,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "round-2/04-loop-down/v1.html",
+              "parentId": null,
+              "changelog": "Split-screen terminal + artboard rebuild",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T12:00:00.000Z",
+              "thumbnail": ".thumbs/r2-loop-down-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-rrh5f3ti",
+                  "x": 0.15106951871657753,
+                  "y": 0.30238393977415307,
+                  "element": null,
+                  "text": "Maybe add something like prompt or message via DriftGrtid",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T21:03:20.560Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-vsylahvw",
+                  "x": 0.5588235294117647,
+                  "y": 0.4328732747804266,
+                  "element": null,
+                  "text": "Lets make this slide bigger still, so the concept beside it is off the screen slightly and you can really only see half of the next concept.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T22:42:02.960Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-p5m4x1k3",
+                  "x": 0.5447860962566845,
+                  "y": 0.4090338770388959,
+                  "element": null,
+                  "text": "Lets slow down the prompt and also show the empty state example, that says Prompt Agent, or whatever.  Then lets show a clearly different concept, that has a dot notification on it when done. Lets also show AGENT WORKING while its updating.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T22:43:54.603Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "r2-drift-right",
+          "slug": "drift-right",
+          "label": "05 — Drift right — new direction",
+          "description": "Same loop, sideways — a whole new concept",
+          "position": 6,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "round-2/05-drift-right/v1.html",
+              "parentId": null,
+              "changelog": "Retitled from Branch, split-screen terminal treatment",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T12:00:00.000Z",
+              "thumbnail": ".thumbs/r2-drift-right-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-28wwo171",
+                  "x": 0.5427807486631016,
+                  "y": 0.5922208281053952,
+                  "element": null,
+                  "text": "lets do this from the grid view.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T20:07:01.555Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-ll81ikts",
+                  "x": 0.7185828877005348,
+                  "y": 0.35131744040150564,
+                  "element": null,
+                  "text": "same deail, lets zoom into the grid a bit more, as we did in the previous one.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T20:32:14.693Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-x6ggy4ik",
+                  "x": 0.6457219251336899,
+                  "y": 0.5006273525721455,
+                  "element": null,
+                  "text": "zoom in more so it is like really just like maybe 1-2 slide view",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T21:05:22.536Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-zsmvk1au",
+                  "x": 0.4692513368983957,
+                  "y": 0.18695106649937265,
+                  "element": null,
+                  "text": "This copy is too vague",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T21:05:36.287Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "r2-stars",
+          "slug": "stars",
+          "label": "06 — Star your picks",
+          "description": "Mark the winners across concepts. Present or share them as a set.",
+          "position": 7,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "round-2/06-stars/v1.html",
+              "parentId": null,
+              "changelog": "Clean rebuild baseline",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T12:00:00.000Z",
+              "thumbnail": ".thumbs/r2-stars-v1.webp"
+            }
+          ]
+        },
+        {
+          "id": "r2-client-review",
+          "slug": "client-review",
+          "label": "07 — Client review",
+          "description": "Share a link. Your client comments. You see it in real time.",
+          "position": 8,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "round-2/07-client-review/v1.html",
+              "parentId": null,
+              "changelog": "Clean rebuild baseline",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T12:00:00.000Z",
+              "thumbnail": ".thumbs/r2-client-review-v1.webp",
+              "annotations": []
+            }
+          ]
+        },
+        {
+          "id": "r2-round-2-drift",
+          "slug": "round-2-drift",
+          "label": "08 — Drift to Round 2",
+          "description": "Send every comment to your agent. All concepts drift in parallel.",
+          "position": 9,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "round-2/08-round-2-drift/v1.html",
+              "parentId": null,
+              "changelog": "Clean rebuild baseline",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T12:00:00.000Z",
+              "thumbnail": ".thumbs/r2-round-2-drift-v1.webp"
+            }
+          ]
+        },
+        {
+          "id": "r2-round-2-live",
+          "slug": "round-2-live",
+          "label": "09 — Round 2 is live",
+          "description": "Fresh drifts across every concept. R1 is still there when you need it.",
+          "position": 10,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "round-2/09-round-2-live/v1.html",
+              "parentId": null,
+              "changelog": "Clean rebuild baseline",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T12:00:00.000Z",
+              "thumbnail": ".thumbs/r2-round-2-live-v1.webp",
+              "annotations": [
+                {
+                  "id": "a-rkoml90s",
+                  "x": 0.5,
+                  "y": 0.12797992471769135,
+                  "element": null,
+                  "text": "Something like, and keep iterating , showing animations that kind of continue on like work is being done, a drift, a comment, the agent working, on, multiple slides while the grid gets bigger, and the eventually fades out. this is the closing moment.  Kind of ..and beyond.   To create the best work you can.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T20:35:42.345Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-sx19wuz9",
+                  "x": 0.46189839572192515,
+                  "y": 0.5056461731493099,
+                  "element": null,
+                  "text": "Make it grow just one version or concept at a time and only in logical directions up, and to the right.  Scrap \"And beyond\"",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T21:07:24.999Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-6exhxitc",
+                  "x": 0.4692513368983957,
+                  "y": 0.3086574654956085,
+                  "element": null,
+                  "text": "This is a mess, it should behave like drift grid does, should dshow a clean grid, that expands one at a time, in the same way the grid would, pushing versions down and expanding to the right.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T22:07:36.087Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "r2-closer",
+          "slug": "closer",
+          "label": "10 — DriftGrid",
+          "description": "Rapid design iteration for you and your agent",
+          "position": 11,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "round-2/10-closer/v1.html",
+              "parentId": null,
+              "changelog": "Terminal CTA rebuild",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T12:00:00.000Z",
+              "thumbnail": ".thumbs/r2-closer-v1.webp"
+            }
+          ]
         }
       ]
     }

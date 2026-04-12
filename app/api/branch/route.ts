@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { getManifest, writeManifest } from '@/lib/manifest';
 import { conceptSlug } from '@/lib/letters';
-import { emptyCanvasBoilerplate } from '@/lib/canvas-boilerplate';
+import { driftPromptBoilerplate } from '@/lib/canvas-boilerplate';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -56,9 +56,11 @@ export async function POST(request: Request) {
   const destPath = path.join(projectDir, newFile);
   const newLabel = label || `Concept ${nextN}`;
 
-  const boilerplate = emptyCanvasBoilerplate(
+  const boilerplate = driftPromptBoilerplate(
     typeof manifest.project.canvas === 'string' ? manifest.project.canvas : 'desktop',
     `${manifest.project.name} — ${newLabel}`,
+    newLabel,
+    1,
   );
 
   try {
@@ -71,14 +73,19 @@ export async function POST(request: Request) {
   const newConceptId = `concept-${generateId()}`;
   const newVersionId = `version-${generateId()}`;
 
-  // Build the new concept entry
+  // Build the new concept entry — remember the source concept and branch link
+  // so we can show the "← Source" breadcrumb.
   const newConcept = {
     id: newConceptId,
     slug: conceptSlug(newLabel),
     label: newLabel,
     description: 'New drift slot — empty',
-    position: manifest.concepts.length,
+    position: 0, // will be renumbered below
     visible: true,
+    branchedFrom: {
+      conceptId: sourceConcept.id,
+      versionId: sourceVersion.id,
+    },
     versions: [{
       id: newVersionId,
       number: 1,
@@ -92,7 +99,15 @@ export async function POST(request: Request) {
     }],
   };
 
-  manifest.concepts.push(newConcept);
+  // Insert immediately after the source concept, not at the end.
+  // manifest.concepts is a reference to the active round's concepts array,
+  // so mutating it here also mutates the round.
+  const sourceIndex = manifest.concepts.findIndex(c => c.id === sourceConcept.id);
+  const insertAt = sourceIndex >= 0 ? sourceIndex + 1 : manifest.concepts.length;
+  manifest.concepts.splice(insertAt, 0, newConcept);
+  // Renumber positions so layout stays consistent
+  manifest.concepts.forEach((c, i) => { c.position = i + 1; });
+
   await writeManifest(client, project, manifest);
 
   const absolutePath = path.resolve(destPath);

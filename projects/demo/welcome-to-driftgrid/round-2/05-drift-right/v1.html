@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DriftGrid — Drift Right</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100vh; overflow: hidden; }
+  body {
+    background: #0a0a0a;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 88px 80px 60px;
+  }
+
+  /* Chrome */
+  .brand {
+    position: fixed;
+    top: 24px;
+    left: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-mark { width: 20px; height: 20px; flex-shrink: 0; }
+  .brand-wordmark {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: lowercase;
+  }
+  .chrome-label {
+    position: fixed;
+    top: 24px;
+    right: 32px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    margin-bottom: 44px;
+  }
+  .hero h1 {
+    font-size: 44px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    color: rgba(255, 255, 255, 0.95);
+  }
+  .hero p {
+    font-size: 15px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.005em;
+    line-height: 1.6;
+  }
+
+  /* Stage — terminal + grid */
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 1720px;
+    height: 560px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 32px;
+  }
+
+  /* ────── TERMINAL ────── */
+  .terminal {
+    width: 420px;
+    flex-shrink: 0;
+    align-self: stretch;
+    background: #0e0e0e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  }
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    background: rgba(22, 22, 22, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .traffic { display: flex; gap: 6px; }
+  .traffic span { width: 11px; height: 11px; border-radius: 50%; }
+  .traffic span:nth-child(1) { background: #ff5f57; }
+  .traffic span:nth-child(2) { background: #febc2e; }
+  .traffic span:nth-child(3) { background: #28c840; }
+  .terminal-title {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.35);
+    padding-right: 52px;
+  }
+  .terminal-body {
+    flex: 1;
+    padding: 22px 22px 20px;
+    font-size: 12px;
+    line-height: 1.75;
+    color: rgba(255, 255, 255, 0.78);
+    position: relative;
+  }
+  .term-line { display: block; white-space: nowrap; opacity: 0; }
+  .term-line .sigil { display: inline-block; width: 16px; text-align: left; }
+  .term-line .sigil.prompt { color: rgba(74, 222, 128, 0.95); font-weight: 600; }
+  .term-line .sigil.arrow  { color: rgba(140, 235, 180, 0.7); }
+  .term-line .sigil.dot    { color: rgba(74, 222, 128, 0.9); }
+  .term-line .sigil.caret  { color: rgba(140, 205, 235, 0.85); }
+  .term-line.cmd  { color: rgba(255, 255, 255, 0.92); }
+  .term-line.user { color: rgba(255, 255, 255, 0.88); }
+  .term-line.think { color: rgba(140, 205, 235, 0.85); }
+  .term-line.edit  { color: rgba(255, 212, 150, 0.82); }
+  .term-line.done  { color: rgba(140, 235, 180, 0.98); font-weight: 500; }
+  .term-blank { display: block; height: 14px; }
+  .term-cursor {
+    display: inline-block;
+    width: 7px;
+    height: 13px;
+    background: rgba(140, 235, 180, 0.9);
+    vertical-align: text-top;
+    margin-left: 3px;
+    animation: termCursorBlink 1s steps(2) infinite;
+  }
+  @keyframes termCursorBlink { to { opacity: 0; } }
+
+  .t1 { animation: t1 13s ease-out infinite; }
+  @keyframes t1 { 0%, 6% { opacity: 0; } 10%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+  .t2 { animation: t2 13s ease-out infinite; }
+  @keyframes t2 { 0%, 14% { opacity: 0; } 18%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+  .t3 { animation: t3 13s ease-out infinite; }
+  @keyframes t3 { 0%, 24% { opacity: 0; } 28%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+  .t4 { animation: t4 13s ease-out infinite; }
+  @keyframes t4 { 0%, 34% { opacity: 0; } 38%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+  .t5 { animation: t5 13s ease-out infinite; }
+  @keyframes t5 { 0%, 50% { opacity: 0; } 54%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+  .t6 { animation: t6 13s ease-out infinite; }
+  @keyframes t6 { 0%, 58% { opacity: 0; } 62%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+  /* ────── GRID VIEW (zoomed — showing rightmost columns + new concept) ────── */
+  .grid-view {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 34px;
+    padding-top: 4px;
+    max-height: 560px;
+  }
+  .column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    max-height: 100%;
+    overflow: hidden;
+  }
+  .column-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 6px;
+    white-space: nowrap;
+  }
+  .card {
+    position: relative;
+    width: 500px;
+    height: 260px;
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03), transparent 60%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+  }
+  .card .vlabel {
+    position: absolute;
+    bottom: 7px;
+    right: 9px;
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 500;
+  }
+
+  /* Column themes — bigger cards with more visible content */
+  .col-3 .card { background: linear-gradient(135deg, #2a1757 0%, #0a0a0a 100%); }
+  .col-3 .card::after {
+    content: '';
+    position: absolute;
+    inset: 24px;
+    background: linear-gradient(180deg, rgba(139,92,246,0.35), transparent 60%);
+    border-radius: 5px;
+  }
+  .col-4 .card { background: #1a1410; }
+  .col-4 .card::after {
+    content: '';
+    position: absolute;
+    left: 22px; right: 22px; top: 28px;
+    height: 8px;
+    background: rgba(234, 179, 80, 0.4);
+    border-radius: 2px;
+    box-shadow: 0 18px 0 rgba(255,255,255,0.08), 0 36px 0 rgba(255,255,255,0.06);
+  }
+
+  /* ─── NEW CONCEPT COLUMN — drift right animation ─── */
+  .new-col-slot {
+    position: relative;
+    width: 0;
+    margin-left: -34px;   /* cancel the flex gap while hidden */
+    overflow: visible;
+    animation: slotOpen 13s ease-out infinite;
+  }
+  @keyframes slotOpen {
+    0%, 16%     { width: 0; margin-left: -34px; }
+    24%, 92%    { width: 500px; margin-left: 0; }
+    96%, 100%   { width: 0; margin-left: -34px; }
+  }
+  .new-col-slot .col-new {
+    width: 500px;
+    opacity: 0;
+    animation: newColFade 13s ease-out infinite;
+  }
+  @keyframes newColFade {
+    0%, 20%     { opacity: 0; }
+    30%, 92%    { opacity: 1; }
+    96%, 100%   { opacity: 0; }
+  }
+  .col-new .card {
+    background: #111a14;
+  }
+  .col-new .card::after {
+    content: '';
+    position: absolute;
+    inset: 22px;
+    background:
+      linear-gradient(180deg, rgba(74, 222, 128, 0.22) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 30px);
+    border-radius: 5px;
+    opacity: 0;
+    animation: newContentFill 13s ease-out infinite;
+  }
+  @keyframes newContentFill {
+    0%, 58%     { opacity: 0; }
+    66%, 92%    { opacity: 1; }
+    96%, 100%   { opacity: 0; }
+  }
+  .col-new .card.empty {
+    border: 1.5px dashed rgba(74, 222, 128, 0.7);
+    background: rgba(74, 222, 128, 0.04);
+    animation: newCardMorph 13s ease-out infinite;
+  }
+  @keyframes newCardMorph {
+    0%, 52%     { border-style: dashed; border-color: rgba(74, 222, 128, 0.7); background: rgba(74, 222, 128, 0.04); }
+    62%, 92%    { border-style: solid; border-color: rgba(255, 255, 255, 0.08); background: #111a14; }
+    96%, 100%   { border-style: dashed; border-color: rgba(74, 222, 128, 0.7); background: rgba(74, 222, 128, 0.04); }
+  }
+
+  /* NEW CONCEPT tag */
+  .new-tag {
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 7px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: 2px;
+    white-space: nowrap;
+    z-index: 6;
+    background: rgba(74, 222, 128, 0.18);
+    border: 1px solid rgba(74, 222, 128, 0.5);
+    color: rgba(150, 240, 185, 0.98);
+  }
+
+  /* Updating overlay on the new card */
+  .card-updating {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    opacity: 0;
+    background: rgba(12, 26, 18, 0.55);
+    animation: cardUpdatingShow 13s ease-out infinite;
+    overflow: hidden;
+  }
+  @keyframes cardUpdatingShow {
+    0%, 30%   { opacity: 0; }
+    36%, 58%  { opacity: 1; }
+    64%, 100% { opacity: 0; }
+  }
+  .card-updating::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(74, 222, 128, 0.24) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74, 222, 128, 0.24) 1px, transparent 1px);
+    background-size: 16px 16px;
+    animation: cardGridDrift 2s linear infinite;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 85%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 85%);
+  }
+  @keyframes cardGridDrift { to { background-position: 16px 16px; } }
+  .card-updating::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1.5px;
+    background: linear-gradient(90deg, transparent, rgba(150, 240, 185, 0.95), transparent);
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.65);
+    animation: cardScanSweep 13s ease-in-out infinite;
+  }
+  @keyframes cardScanSweep {
+    0%, 30%   { top: 0; opacity: 0; }
+    36%       { top: 0; opacity: 1; }
+    58%       { top: 100%; opacity: 1; }
+    64%, 100% { top: 0; opacity: 0; }
+  }
+
+  /* Static preview mode */
+  body.static .new-col-slot { width: 500px !important; margin-left: 0 !important; animation: none !important; }
+  body.static .new-col-slot .col-new { opacity: 1 !important; animation: none !important; }
+  body.static .col-new .card.empty { border-style: solid !important; border-color: rgba(255, 255, 255, 0.08) !important; background: #111a14 !important; animation: none !important; }
+  body.static .col-new .card::after { opacity: 1 !important; animation: none !important; }
+  body.static .card-updating { opacity: 0 !important; animation: none !important; }
+  body.static .term-line { opacity: 1 !important; animation: none !important; }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
+      <rect x="3" y="3" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="19.5" y="1.5" width="11" height="11" rx="1.5" fill="#8b5cf6"/>
+      <rect x="3" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="18" y="18" width="11" height="11" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+    </svg>
+    <span class="brand-wordmark">driftgrid</span>
+  </div>
+  <div class="chrome-label">demo-project · R1</div>
+
+  <div class="hero">
+    <h1 data-drift-editable>Drift right — new concept</h1>
+    <p data-drift-editable>Each column is a different design direction. Your agent spins up a whole new one from scratch.</p>
+  </div>
+
+  <div class="stage">
+    <!-- Terminal panel — designer's CLI agent creating the new concept -->
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="traffic"><span></span><span></span><span></span></div>
+        <div class="terminal-title">~/driftgrid — claude-code — 80×24</div>
+      </div>
+      <div class="terminal-body">
+        <span class="term-line cmd t1"><span class="sigil prompt">$</span>claude-code</span>
+        <span class="term-blank"></span>
+        <span class="term-line user t2"><span class="sigil arrow">&gt;</span>Start a warm editorial direction —</span>
+        <span class="term-line user t2" style="padding-left: 16px;">tan palette, display serif.</span>
+        <span class="term-blank"></span>
+        <span class="term-line think t3"><span class="sigil caret">▸</span>Creating new-concept/</span>
+        <span class="term-line edit t4"><span class="sigil caret">▸</span>Writing v1.html · 152 tokens</span>
+        <span class="term-line done t5"><span class="sigil dot">●</span>Done · 2.4s</span>
+        <span class="term-blank"></span>
+        <span class="term-line cmd t6"><span class="sigil prompt">$</span><span class="term-cursor"></span></span>
+      </div>
+    </div>
+
+    <!-- Grid view — one existing column + new concept column sliding in from right -->
+    <div class="grid-view">
+      <div class="column col-4">
+        <div class="column-label">Warm Editorial</div>
+        <div class="card"><span class="vlabel">v3</span></div>
+        <div class="card"><span class="vlabel">v2</span></div>
+      </div>
+      <div class="new-col-slot">
+        <div class="column col-new">
+          <div class="column-label">New Concept</div>
+          <div class="card empty">
+            <span class="new-tag">new concept</span>
+            <div class="card-updating"></div>
+            <span class="vlabel">v1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

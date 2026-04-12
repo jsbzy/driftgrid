@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>DriftGrid — Drift Down</title>
+<title>DriftGrid — Client Review</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,44 +16,84 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 120px 160px 80px;
+    justify-content: flex-start;
+    padding: 88px 80px 80px;
   }
-  .header {
-    font-size: 12px;
+
+  .chrome-label {
+    position: fixed;
+    top: 24px;
+    right: 32px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
     color: rgba(255, 255, 255, 0.3);
-    letter-spacing: 0.15em;
     text-transform: uppercase;
+  }
+  .chrome-zoom {
+    position: fixed;
+    bottom: 24px;
+    left: 32px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.25);
+    text-transform: uppercase;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
     margin-bottom: 40px;
   }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(4, 240px);
-    gap: 56px;
-    align-items: start;
-    flex: 1;
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 18px;
+    color: rgba(255, 255, 255, 0.95);
   }
-  .column {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  .hero p {
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.01em;
+    line-height: 1.6;
   }
-  .column-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.5);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 4px;
-    height: 16px;
-  }
-  .card {
+
+  /* Stage */
+  .stage {
     position: relative;
-    width: 240px;
-    height: 135px;
+    width: 1680px;
+    height: 620px;
+    margin: 0 auto;
+  }
+
+  /* ────── Row of 5 starred cards (inherited from slide 5 end state) ────── */
+  .row-container {
+    position: absolute;
+    left: 50%;
+    top: 180px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 56px;
+    animation: rowShift 13s ease-out infinite;
+  }
+  @keyframes rowShift {
+    0%, 20%   { transform: translateX(-50%) scale(1); }
+    28%, 94%  { transform: translateX(calc(-50% - 220px)) scale(0.85); }
+    97%, 100% { transform: translateX(-50%) scale(1); }
+  }
+
+  .card {
+    width: 220px;
+    height: 124px;
     background: #141414;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
+    border-radius: 8px;
+    position: relative;
     overflow: hidden;
+    box-shadow: 0 0 0 2px rgba(234, 179, 80, 0.55);
+    flex-shrink: 0;
   }
   .card::before {
     content: '';
@@ -63,140 +103,382 @@
       radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03), transparent 60%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
   }
-  .card .vlabel {
+  .vlabel {
     position: absolute;
     bottom: 8px;
     right: 10px;
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.3);
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.35);
     font-weight: 500;
+    z-index: 2;
   }
-  /* Column 1 content */
-  .col-1 .card::after {
+  .card-star {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 16px;
+    height: 16px;
+    z-index: 4;
+  }
+  .card-star svg { width: 100%; height: 100%; fill: #facc15; stroke: #facc15; }
+
+  .card.dark-code::after {
+    content: '';
+    position: absolute;
+    inset: 16px;
+    background:
+      linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 26px);
+    border-radius: 3px;
+  }
+  .card.light-clean { background: #f5f5f5; }
+  .card.light-clean::before { display: none; }
+  .card.light-clean::after {
+    content: '';
+    position: absolute;
+    left: 16px; right: 16px; top: 22px;
+    height: 5px;
+    background: #1a1a1a;
+    border-radius: 1px;
+    box-shadow: 0 13px 0 rgba(0,0,0,0.6), 0 26px 0 rgba(0,0,0,0.2);
+  }
+  .card.light-clean .vlabel { color: rgba(0,0,0,0.35); }
+  .card.violet-bold {
+    background: linear-gradient(135deg, #2a1757 0%, #0a0a0a 100%);
+  }
+  .card.violet-bold::after {
     content: '';
     position: absolute;
     inset: 18px;
-    background:
-      linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-      repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 28px);
-    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(139,92,246,0.4), transparent 60%);
+    border-radius: 3px;
   }
-  /* Dim neighbors */
-  .col-2, .col-3, .col-4 { opacity: 0.35; }
-  .col-2 .card { background: #f5f5f5; }
-  .col-2 .card::before { display: none; }
-  .col-2 .card::after {
+  .card.new-concept { background: #1a1410; }
+  .card.new-concept::after {
     content: '';
     position: absolute;
-    left: 18px; right: 18px; top: 24px;
-    height: 6px;
-    background: #1a1a1a;
-    border-radius: 2px;
-    box-shadow: 0 14px 0 rgba(0,0,0,0.6), 0 28px 0 rgba(0,0,0,0.2);
-  }
-  .col-3 .card {
-    background: linear-gradient(135deg, #2a1757, #0a0a0a);
-  }
-  .col-4 .card {
-    background: #1a1410;
+    inset: 14px 20px;
+    background:
+      linear-gradient(90deg, rgba(244, 232, 210, 0.85) 0%, rgba(244, 232, 210, 0.85) 62%, transparent 62%);
+    background-size: 100% 12px;
+    background-position: 0 0;
+    background-repeat: no-repeat;
   }
 
-  /* New empty slot */
-  .new-card {
-    position: relative;
-    width: 240px;
-    height: 135px;
-    border: 2px dashed rgba(139, 92, 246, 0.5);
-    border-radius: 10px;
-    background: rgba(139, 92, 246, 0.04);
+  /* Comment indicators on specific cards */
+  .comment-badge {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 11px;
+    background: rgba(34, 211, 238, 0.95);
+    color: rgba(10, 10, 10, 0.95);
+    font-size: 10px;
+    font-weight: 700;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    outline: 3px solid #8b5cf6;
-    outline-offset: -4px;
-    transform: translateY(-30px);
+    gap: 3px;
+    box-shadow: 0 4px 14px rgba(34, 211, 238, 0.4);
     opacity: 0;
-    animation: slideIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s forwards;
+    z-index: 5;
   }
-  @keyframes slideIn {
-    to { transform: translateY(0); opacity: 1; }
-  }
-  .nc-version {
-    font-size: 14px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.92);
-  }
-  .nc-tag {
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: #8b5cf6;
-    font-weight: 600;
-  }
-  .nc-prompt {
+  .comment-badge::before {
+    content: '💬';
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.4);
-    margin-top: 4px;
-    font-style: italic;
   }
-  .hint {
-    margin-top: 60px;
+  .badge-1 { animation: badgeIn1 13s ease-out infinite; }
+  .badge-2 { animation: badgeIn2 13s ease-out infinite; }
+  @keyframes badgeIn1 {
+    0%, 55%   { opacity: 0; transform: scale(0.2); }
+    60%       { opacity: 1; transform: scale(1.25); }
+    64%, 94%  { opacity: 1; transform: scale(1); }
+    97%, 100% { opacity: 0; }
+  }
+  @keyframes badgeIn2 {
+    0%, 72%   { opacity: 0; transform: scale(0.2); }
+    77%       { opacity: 1; transform: scale(1.25); }
+    81%, 94%  { opacity: 1; transform: scale(1); }
+    97%, 100% { opacity: 0; }
+  }
+
+  /* ────── Share link toast ────── */
+  .share-toast {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    padding: 12px 18px;
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(140, 235, 180, 0.95);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+    opacity: 0;
+    animation: toastIn 13s ease-out infinite;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  @keyframes toastIn {
+    0%, 6%    { opacity: 0; transform: translateX(16px); }
+    12%       { opacity: 1; transform: translateX(0); }
+    32%, 94%  { opacity: 0.4; transform: translateX(0); }
+    97%, 100% { opacity: 0; }
+  }
+  .share-toast .check {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(74, 222, 128, 0.9);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #0a0a0a;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  /* ────── Client device mockup (right side) ────── */
+  .device {
+    position: absolute;
+    top: 120px;
+    right: -40px;
+    width: 440px;
+    height: 560px;
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    padding: 24px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateX(60px) scale(0.94);
+    animation: deviceIn 13s ease-out infinite;
+    overflow: hidden;
+  }
+  @keyframes deviceIn {
+    0%, 14%   { opacity: 0; transform: translateX(60px) scale(0.94); }
+    22%       { opacity: 1; transform: translateX(0) scale(1); }
+    90%       { opacity: 1; transform: translateX(0) scale(1); }
+    94%, 100% { opacity: 0; transform: translateX(60px) scale(0.94); }
+  }
+  .device::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .device-header {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    margin-top: 14px;
+    margin-bottom: 14px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 10px;
+  }
+  .device-header strong {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+  }
+
+  /* Inner frame view in device */
+  .device-frame {
+    flex: 1;
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .device-frame::before {
+    content: '';
+    position: absolute;
+    inset: 16px;
+    background:
+      linear-gradient(180deg, rgba(139, 92, 246, 0.18) 0%, transparent 50%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 22px);
+    border-radius: 4px;
+  }
+  .device-frame-tag {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    font-size: 8px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    z-index: 2;
+  }
+
+  /* Client comment popup inside device */
+  .client-comment {
+    position: absolute;
+    top: 130px;
+    left: 18px;
+    right: 18px;
+    background: rgba(10, 10, 10, 0.94);
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    border-left: 2px solid rgba(34, 211, 238, 0.85);
+    border-radius: 8px;
+    padding: 14px 14px 12px;
+    opacity: 0;
+    z-index: 3;
+    animation: clientCommentIn 13s ease-out infinite;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
+  }
+  @keyframes clientCommentIn {
+    0%, 30%   { opacity: 0; transform: translateY(10px); }
+    38%       { opacity: 1; transform: translateY(0); }
+    90%       { opacity: 1; transform: translateY(0); }
+    94%, 100% { opacity: 0; transform: translateY(10px); }
+  }
+  .client-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .client-chip {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    background: rgba(34, 211, 238, 0.18);
+    border: 1px solid rgba(34, 211, 238, 0.5);
+    color: rgba(150, 220, 240, 0.95);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+  }
+  .client-meta {
+    font-size: 9px;
     letter-spacing: 0.1em;
+    color: rgba(34, 211, 238, 0.85);
     text-transform: uppercase;
   }
-  kbd {
-    display: inline-block;
-    padding: 2px 7px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    font-family: inherit;
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.6);
-    margin: 0 3px;
+  .client-body {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
   }
+  .client-body .typed-wrap {
+    display: inline-block;
+    overflow: hidden;
+    white-space: normal;
+    max-width: 0;
+    vertical-align: bottom;
+    animation: clientType 13s steps(50, end) infinite;
+  }
+  @keyframes clientType {
+    0%, 38%   { max-width: 0; }
+    52%, 90%  { max-width: 100%; }
+    94%, 100% { max-width: 0; }
+  }
+
+  /* Count label at bottom of device */
+  .device-footer {
+    padding: 10px 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+    margin-top: 14px;
+  }
+  .device-footer .count {
+    color: rgba(34, 211, 238, 0.85);
+    font-weight: 600;
+  }
+
 </style>
 </head>
 <body>
-  <div class="header">DRIFT DOWN — NEW VERSION IN THIS CONCEPT</div>
+  <div class="chrome-label">demo-project · R1</div>
+  <div class="chrome-zoom">selects · 4 starred</div>
 
-  <div class="grid">
-    <div class="column col-1">
-      <div class="column-label">Dark Code</div>
-      <div class="new-card">
-        <div class="nc-version">v5</div>
-        <div class="nc-tag">NEW VERSION</div>
-        <div class="nc-prompt">What should this version be?</div>
-      </div>
-      <div class="card"><span class="vlabel">v4</span></div>
-      <div class="card"><span class="vlabel">v3</span></div>
-      <div class="card"><span class="vlabel">v2</span></div>
-      <div class="card"><span class="vlabel">v1</span></div>
-    </div>
-    <div class="column col-2">
-      <div class="column-label">Light Clean</div>
-      <div class="card"><span class="vlabel">v3</span></div>
-      <div class="card"><span class="vlabel">v2</span></div>
-      <div class="card"><span class="vlabel">v1</span></div>
-    </div>
-    <div class="column col-3">
-      <div class="column-label">Violet Bold</div>
-      <div class="card"><span class="vlabel">v4</span></div>
-      <div class="card"><span class="vlabel">v3</span></div>
-      <div class="card"><span class="vlabel">v2</span></div>
-      <div class="card"><span class="vlabel">v1</span></div>
-    </div>
-    <div class="column col-4">
-      <div class="column-label">Warm Editorial</div>
-      <div class="card"><span class="vlabel">v3</span></div>
-      <div class="card"><span class="vlabel">v2</span></div>
-      <div class="card"><span class="vlabel">v1</span></div>
-    </div>
+  <div class="hero">
+    <h1 data-drift-editable>Client review</h1>
+    <p data-drift-editable>Share a link. Your client comments. You see it in real time.</p>
   </div>
 
-  <div class="hint">press <kbd>D</kbd> to drift a new version</div>
+  <div class="stage">
+
+    <!-- Share link copied toast -->
+    <div class="share-toast">
+      <span class="check">✓</span>
+      Share link copied
+    </div>
+
+    <!-- Row of 5 selected cards (shrinks + shifts left to make room for device) -->
+    <div class="row-container">
+      <div class="card dark-code">
+        <span class="vlabel">v4</span>
+        <div class="card-star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></div>
+        <div class="comment-badge badge-1">1</div>
+      </div>
+      <div class="card dark-code">
+        <span class="vlabel">v3</span>
+        <div class="card-star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></div>
+      </div>
+      <div class="card light-clean">
+        <span class="vlabel">v2</span>
+        <div class="card-star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></div>
+      </div>
+      <div class="card violet-bold">
+        <span class="vlabel">v4</span>
+        <div class="card-star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></div>
+        <div class="comment-badge badge-2">1</div>
+      </div>
+      <div class="card new-concept">
+        <span class="vlabel">v1</span>
+        <div class="card-star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></div>
+      </div>
+    </div>
+
+    <!-- Client device mockup -->
+    <div class="device">
+      <div class="device-header">
+        reviewing <strong>demo-project</strong> · 5 selects
+      </div>
+
+      <div class="device-frame">
+        <div class="device-frame-tag">concept-1 · v4</div>
+
+        <div class="client-comment">
+          <div class="client-head">
+            <span class="client-chip">A</span>
+            <span class="client-meta">Alex · client</span>
+          </div>
+          <div class="client-body">
+            <span class="typed-wrap">Love the bold headline. Can we try more breathing room?</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="device-footer">
+        <span class="count">2</span> comments so far
+      </div>
+    </div>
+
+  </div>
 </body>
 </html>

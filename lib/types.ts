@@ -51,6 +51,12 @@ export interface Annotation {
   created: string;
   resolved: boolean;
   parentId?: string | null;
+  /**
+   * Optional state flag for whole-version drift prompts. When set to 'running',
+   * the drift slot displays the in-progress template (pulsing grid).
+   * Set by the MCP server when it picks up a prompt, or manually via the dev button.
+   */
+  status?: 'running';
 }
 
 export interface Round {

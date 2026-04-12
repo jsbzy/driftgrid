@@ -11,14 +11,14 @@
     {
       "id": "round-1",
       "number": 1,
-      "name": "Round 1 \u2014 Initial Explorations",
+      "name": "Round 1 — Initial Explorations",
       "createdAt": "2026-04-01T00:00:00.000Z",
       "selects": [],
       "concepts": [
         {
           "id": "concept-2",
           "label": "Dark Code",
-          "description": "Dark background, left-aligned, developer-oriented \u2014 JetBrains Mono, green accent",
+          "description": "Dark background, left-aligned, developer-oriented — JetBrains Mono, green accent",
           "position": 1,
           "visible": true,
           "slug": "concept-2",
@@ -39,7 +39,7 @@
               "number": 2,
               "file": "concept-2/v2.html",
               "parentId": "concept-2--v1",
-              "changelog": "Split layout \u2014 left messaging, right code-block feature list with YAML-style config",
+              "changelog": "Split layout — left messaging, right code-block feature list with YAML-style config",
               "visible": true,
               "starred": false,
               "created": "2026-04-01T00:00:00.000Z",
@@ -64,7 +64,7 @@
               "number": 3,
               "file": "concept-2/v3.html",
               "parentId": "concept-2--v2",
-              "changelog": "Full split \u2014 left hero with stats, right code panel with syntax highlighting and output block",
+              "changelog": "Full split — left hero with stats, right code panel with syntax highlighting and output block",
               "visible": true,
               "starred": true,
               "created": "2026-04-01T00:00:00.000Z",
@@ -75,19 +75,55 @@
               "number": 4,
               "file": "concept-2/v4.html",
               "parentId": null,
-              "changelog": "Full terminal takeover \u2014 boot log, ASCII logo, live system monitor, audio waveform footer, CRT scanlines",
+              "changelog": "Full terminal takeover — boot log, ASCII logo, live system monitor, audio waveform footer, CRT scanlines",
               "visible": true,
               "starred": false,
               "created": "2026-04-10T00:00:00.000Z",
               "thumbnail": ".thumbs/concept-2-concept-2--v4.webp"
+            },
+            {
+              "id": "v5",
+              "number": 5,
+              "file": "concept-2/v5.html",
+              "parentId": null,
+              "changelog": "New drift slot — empty",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T17:09:54.512Z",
+              "thumbnail": ""
+            }
+          ]
+        },
+        {
+          "id": "concept-6bt0tz0l",
+          "slug": "concept-5",
+          "label": "Concept 5",
+          "description": "New drift slot — empty",
+          "position": 2,
+          "visible": true,
+          "branchedFrom": {
+            "conceptId": "concept-2",
+            "versionId": "v5"
+          },
+          "versions": [
+            {
+              "id": "version-vigq867u",
+              "number": 1,
+              "file": "concept-5/v1.html",
+              "parentId": null,
+              "changelog": "New drift slot — empty",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-11T17:10:35.936Z",
+              "thumbnail": ".thumbs/concept-6bt0tz0l-version-vigq867u.webp"
             }
           ]
         },
         {
           "id": "concept-1",
           "label": "Light Clean",
-          "description": "White background, centered content, Inter font, blue accent \u2014 clean and restrained",
-          "position": 2,
+          "description": "White background, centered content, Inter font, blue accent — clean and restrained",
+          "position": 3,
           "visible": true,
           "slug": "concept-1",
           "versions": [
@@ -161,15 +197,30 @@
               "visible": true,
               "starred": true,
               "created": "2026-04-10T00:00:00.000Z",
-              "thumbnail": ".thumbs/concept-1-concept-1--v4.webp"
+              "thumbnail": ".thumbs/concept-1-concept-1--v4.webp",
+              "annotations": [
+                {
+                  "id": "a-umh5ddde",
+                  "x": 0.3,
+                  "y": 0.5,
+                  "element": null,
+                  "text": "bigger headline",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-11T04:48:04.695Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
             }
           ]
         },
         {
           "id": "concept-3",
           "label": "Violet Bold",
-          "description": "Purple-to-blue gradient, centered vibrant feel \u2014 DM Sans, white text",
-          "position": 3,
+          "description": "Purple-to-blue gradient, centered vibrant feel — DM Sans, white text",
+          "position": 4,
           "visible": true,
           "slug": "concept-3",
           "versions": [
@@ -240,7 +291,7 @@
           "id": "concept-4",
           "label": "Warm Editorial",
           "description": "Asymmetric magazine layout, Playfair Display serif headline, warm neutrals",
-          "position": 4,
+          "position": 5,
           "visible": true,
           "slug": "concept-4",
           "versions": [
@@ -271,7 +322,7 @@
               "number": 3,
               "file": "concept-4/v3.html",
               "parentId": "concept-4--v2",
-              "changelog": "Full editorial spread \u2014 oversized W letterform, pull quote, stats strip, dual CTAs",
+              "changelog": "Full editorial spread — oversized W letterform, pull quote, stats strip, dual CTAs",
               "visible": true,
               "starred": false,
               "created": "2026-04-01T00:00:00.000Z",
@@ -296,7 +347,7 @@
               "number": 4,
               "file": "concept-4/v4.html",
               "parentId": null,
-              "changelog": "Full newspaper broadsheet \u2014 masthead, two-column body with drop cap, pull quote sidebar, dossier stat table, footer ribbon",
+              "changelog": "Full newspaper broadsheet — masthead, two-column body with drop cap, pull quote sidebar, dossier stat table, footer ribbon",
               "visible": true,
               "starred": false,
               "created": "2026-04-10T00:00:00.000Z",

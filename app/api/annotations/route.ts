@@ -2,9 +2,15 @@ import { NextResponse } from 'next/server';
 import { getManifest, writeManifest } from '@/lib/manifest';
 import { promises as fs } from 'fs';
 import path from 'path';
-import type { Annotation } from '@/lib/types';
+import type { Annotation, Manifest } from '@/lib/types';
+import {
+  driftPromptBoilerplate,
+  awaitingAgentBoilerplate,
+  inProgressBoilerplate,
+} from '@/lib/canvas-boilerplate';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+const EMPTY_DRIFT_CHANGELOG = 'New drift slot — empty';
 
 function generateId(): string {
   return 'a-' + Math.random().toString(36).substring(2, 10);
@@ -71,9 +77,9 @@ export async function POST(request: Request) {
   version.annotations.push(annotation);
 
   await writeManifest(client, project, manifest);
-
-  // Write sidecar .feedback.md
   await writeFeedbackSidecar(client, project, concept!.label, version);
+  // Re-render the drift template if this annotation changed the slot's visible state
+  await maybeRewriteDriftTemplate(client, project, manifest, concept!, version);
 
   return NextResponse.json(annotation);
 }
@@ -99,16 +105,18 @@ export async function DELETE(request: Request) {
   version.annotations = version.annotations.filter(a => a.id !== annotationId);
   await writeManifest(client, project, manifest);
   await writeFeedbackSidecar(client, project, concept!.label, version);
+  await maybeRewriteDriftTemplate(client, project, manifest, concept!, version);
 
   return NextResponse.json({ ok: true });
 }
 
 /**
  * PATCH /api/annotations
- * Resolve/unresolve an annotation
+ * Update an annotation. Accepts optional `text`, `resolved`, and `status` ('running' | null).
+ * If none of these are supplied, toggles `resolved` for backwards compat.
  */
 export async function PATCH(request: Request) {
-  const { client, project, conceptId, versionId, annotationId, resolved } = await request.json();
+  const { client, project, conceptId, versionId, annotationId, resolved, text, status } = await request.json();
 
   if (!client || !project || !conceptId || !versionId || !annotationId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -120,11 +128,32 @@ export async function PATCH(request: Request) {
   const concept = manifest.concepts?.find(c => c.id === conceptId);
   const version = concept?.versions.find(v => v.id === versionId);
   const annotation = version?.annotations?.find(a => a.id === annotationId);
-  if (!annotation) return NextResponse.json({ error: 'Annotation not found' }, { status: 404 });
+  if (!annotation || !concept || !version) return NextResponse.json({ error: 'Annotation not found' }, { status: 404 });
 
-  annotation.resolved = resolved ?? !annotation.resolved;
+  let touched = false;
+  if (typeof text === 'string') {
+    annotation.text = text;
+    touched = true;
+  }
+  if (typeof resolved === 'boolean') {
+    annotation.resolved = resolved;
+    touched = true;
+  }
+  if (status === 'running') {
+    annotation.status = 'running';
+    touched = true;
+  } else if (status === null) {
+    delete annotation.status;
+    touched = true;
+  }
+  if (!touched) {
+    // Legacy behavior: toggle resolved when no field is provided
+    annotation.resolved = !annotation.resolved;
+  }
+
   await writeManifest(client, project, manifest);
-  await writeFeedbackSidecar(client, project, concept!.label, version!);
+  await writeFeedbackSidecar(client, project, concept.label, version);
+  await maybeRewriteDriftTemplate(client, project, manifest, concept, version);
 
   return NextResponse.json(annotation);
 }
@@ -156,4 +185,56 @@ async function writeFeedbackSidecar(
   const fullPath = path.join(PROJECTS_DIR, client, project, feedbackPath);
 
   await fs.writeFile(fullPath, lines.join('\n'), 'utf-8');
+}
+
+/**
+ * If the version is still an empty drift slot (changelog hasn't been overwritten by a real
+ * version yet), regenerate its HTML template based on the current annotation state.
+ *
+ * Transitions:
+ *   no whole-version prompt            → driftPromptBoilerplate   (empty)
+ *   prompt saved, no agent reply yet   → awaitingAgentBoilerplate (awaiting)
+ *   prompt with status='running'       → inProgressBoilerplate    (in progress)
+ *   agent reply present                → leave file alone (agent wrote real content)
+ */
+async function maybeRewriteDriftTemplate(
+  client: string,
+  project: string,
+  manifest: Manifest,
+  concept: { label: string; id: string; versions: { id: string; file: string; number: number; changelog: string; annotations?: Annotation[] }[] },
+  version: { id: string; file: string; number: number; changelog: string; annotations?: Annotation[] },
+) {
+  // Only drift slots get template rewrites
+  if (version.changelog !== EMPTY_DRIFT_CHANGELOG) return;
+
+  const annotations = version.annotations ?? [];
+  const wholeVersionPrompt = annotations.find(
+    a => a.x === null && a.y === null && (a.parentId == null),
+  );
+  const hasAgentReply = wholeVersionPrompt
+    ? annotations.some(a => a.parentId === wholeVersionPrompt.id && a.isAgent)
+    : false;
+
+  // If the agent has responded, the agent owns the file — don't overwrite.
+  if (hasAgentReply) return;
+
+  const canvas =
+    typeof manifest.project.canvas === 'string' ? manifest.project.canvas : 'desktop';
+  const title = `${manifest.project.name} — ${concept.label} v${version.number}`;
+
+  let html: string;
+  if (!wholeVersionPrompt) {
+    html = driftPromptBoilerplate(canvas, title, concept.label, version.number);
+  } else if (wholeVersionPrompt.status === 'running') {
+    html = inProgressBoilerplate(canvas, title, concept.label, version.number, wholeVersionPrompt.text);
+  } else {
+    html = awaitingAgentBoilerplate(canvas, title, concept.label, version.number, wholeVersionPrompt.text);
+  }
+
+  const fullPath = path.join(PROJECTS_DIR, client, project, version.file);
+  try {
+    await fs.writeFile(fullPath, html, 'utf-8');
+  } catch {
+    // Best-effort — don't fail the annotation save if the file write fails
+  }
 }
