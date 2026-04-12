@@ -35,12 +35,17 @@ DriftGrid is a design iteration platform for agents. When the user asks to start
 Ask these one at a time:
 1. **Client name** — who is this for? (e.g. "Acme", "Nike", or "personal")
 2. **Project name** — what are we making? (e.g. "Landing Page", "Pitch Deck", "Brand Identity")
-3. **Canvas preset** — what format? Explain the options briefly:
-   - `desktop` (1440px wide, scrollable) — websites, dashboards
-   - `mobile` (375px wide, scrollable) — app screens
-   - `landscape-16-9` (1920×1080, locked) — presentations, decks
-   - `a4-portrait` (794×1123, locked) — documents, one-pagers
-   - `tablet` (768px wide, scrollable) — tablet layouts
+3. **Canvas preset** — present as a numbered list so the user can just type a number:
+   ```
+   What format? (enter a number, default: 1)
+
+   1. Desktop (1440px, scrollable) — websites, dashboards
+   2. Mobile (375px, scrollable) — app screens
+   3. 16:9 Landscape (1920×1080) — presentations, slides, decks
+   4. A4 Portrait (794×1123) — documents, one-pagers
+   5. Tablet (768px, scrollable) — tablet layouts
+   ```
+   Map the number to the preset slug: 1=desktop, 2=mobile, 3=landscape-16-9, 4=a4-portrait, 5=tablet.
 
 ### Step 2 — Run init
 Use the built-in init script — do NOT create files manually:
