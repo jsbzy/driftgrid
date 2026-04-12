@@ -12,26 +12,34 @@ import Link from 'next/link';
 export default function PricingPage() {
   const [interval, setInterval] = useState<'month' | 'year'>('month');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const monthlyPrice = interval === 'month' ? '$10' : '$8';
   const billedLabel = interval === 'month' ? '/mo' : '/mo · billed $96/yr';
 
   async function handleUpgrade() {
     setLoading(true);
-    const res = await fetch('/api/stripe/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ interval }),
-    });
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      setLoading(false);
-      // If not authenticated, redirect to login
-      if (res.status === 401) {
-        window.location.href = `/login?next=/pricing`;
+    setError('');
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interval }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setLoading(false);
+        if (res.status === 401) {
+          window.location.href = `/login?next=/pricing`;
+        } else {
+          setError(data.error || `Checkout failed (${res.status})`);
+        }
       }
+    } catch (err) {
+      setLoading(false);
+      setError(err instanceof Error ? err.message : 'Network error');
     }
   }
 
@@ -136,6 +144,11 @@ export default function PricingPage() {
             >
               {loading ? '...' : 'upgrade to pro →'}
             </button>
+            {error && (
+              <p className="text-xs mt-3" style={{ color: '#e55', fontFamily: 'var(--font-mono, monospace)' }}>
+                {error}
+              </p>
+            )}
           </div>
 
         </div>
