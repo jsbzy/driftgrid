@@ -84,9 +84,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   // where each column = one step. Navigation drives the tour.
   const isWalkthrough = client === 'demo' && project === 'welcome-to-driftgrid';
 
-  // Tour — auto-starts on first visit (any mode). localStorage remembers dismissal.
+  // Tour — auto-starts on first visit (designer mode only). Disabled for client/share views.
   // In walkthrough mode, the tour is always active and follows conceptIndex.
-  const tour = useTour(true, {
+  const tour = useTour(mode !== 'client' && !shareToken, {
     mode: isWalkthrough ? 'walkthrough' : 'action',
     walkthroughStepIndex: conceptIndex,
     onWalkthroughDone: () => {
