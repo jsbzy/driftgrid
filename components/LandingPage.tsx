@@ -3,31 +3,61 @@
 import { useState } from 'react';
 
 const DEMO_URL = '/s/amVmZi9kZW1vL3dlbGNvbWUtdG8tZHJpZnRncmlk';
-const REAL_PROJECT_URL = '/s/amVmZi9kZW1vL3dhdmVsZW5ndGg';
 
 function QuickStart() {
+  const [tab, setTab] = useState<'claude' | 'terminal'>('claude');
   const [copied, setCopied] = useState(false);
-  const commands = [
+
+  const terminalCommands = [
     'git clone https://github.com/jsbzy/driftgrid.git',
     'cd driftgrid && npm install',
     'npm run dev',
   ];
 
+  const claudePrompt = `Clone https://github.com/jsbzy/driftgrid.git, install it, and help me set up my first design project.`;
+
   const copy = async () => {
+    const text = tab === 'claude' ? claudePrompt : terminalCommands.join('\n');
     try {
-      await navigator.clipboard.writeText(commands.join('\n'));
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {}
   };
 
+  const tabStyle = (active: boolean) => ({
+    padding: '8px 16px',
+    fontSize: 10,
+    fontWeight: active ? 600 : 400,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase' as const,
+    color: active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
+    background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
+    border: 'none',
+    borderRadius: 4,
+    cursor: 'pointer',
+    fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+    transition: 'all 120ms ease',
+  });
+
   return (
-    <div id="quickstart" style={{
-      width: '100%',
-      maxWidth: 720,
-      margin: '0 auto',
-    }}>
-      {/* Terminal window */}
+    <div id="quickstart" style={{ width: '100%', maxWidth: 720, margin: '0 auto' }}>
+      {/* Tab switcher */}
+      <div style={{
+        display: 'flex',
+        gap: 4,
+        marginBottom: 12,
+        justifyContent: 'center',
+      }}>
+        <button onClick={() => { setTab('claude'); setCopied(false); }} style={tabStyle(tab === 'claude')}>
+          Claude Code
+        </button>
+        <button onClick={() => { setTab('terminal'); setCopied(false); }} style={tabStyle(tab === 'terminal')}>
+          Terminal
+        </button>
+      </div>
+
+      {/* Content card */}
       <div style={{
         background: 'rgba(255,255,255,0.025)',
         border: '1px solid rgba(255,255,255,0.08)',
@@ -48,7 +78,6 @@ function QuickStart() {
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
           </div>
-
           <button
             onClick={copy}
             style={{
@@ -78,19 +107,44 @@ function QuickStart() {
           lineHeight: 2,
           textAlign: 'left',
         }}>
-          <div style={{
-            color: 'rgba(255,255,255,0.3)',
-            fontStyle: 'italic',
-            marginBottom: 4,
-          }}>
-            # Clone, install, run. Opens localhost:3000.
-          </div>
-          {commands.map((cmd, i) => (
-            <div key={i} style={{ color: 'rgba(255,255,255,0.9)' }}>
-              <span style={{ color: 'rgba(255,255,255,0.3)', userSelect: 'none' }}>$ </span>
-              {cmd}
-            </div>
-          ))}
+          {tab === 'claude' ? (
+            <>
+              <div style={{ color: 'rgba(255,255,255,0.3)', fontStyle: 'italic', marginBottom: 4 }}>
+                # Paste this into Claude Code
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.9)', lineHeight: 1.7 }}>
+                {claudePrompt}
+              </div>
+              <div style={{
+                marginTop: 16,
+                padding: '12px 16px',
+                background: 'rgba(255,255,255,0.03)',
+                borderRadius: 6,
+                border: '1px solid rgba(255,255,255,0.05)',
+              }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  What happens next
+                </div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8 }}>
+                  Claude clones the repo, installs dependencies, and walks you<br />
+                  through creating your first project — client name, canvas size,<br />
+                  brand guidelines. Then it starts designing.
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ color: 'rgba(255,255,255,0.3)', fontStyle: 'italic', marginBottom: 4 }}>
+                # Clone, install, run. Opens localhost:3000.
+              </div>
+              {terminalCommands.map((cmd, i) => (
+                <div key={i} style={{ color: 'rgba(255,255,255,0.9)' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.3)', userSelect: 'none' }}>$ </span>
+                  {cmd}
+                </div>
+              ))}
+            </>
+          )}
         </div>
       </div>
 
@@ -102,7 +156,9 @@ function QuickStart() {
         fontFamily: '"JetBrains Mono", ui-monospace, monospace',
         letterSpacing: '0.05em',
       }}>
-        macOS · Linux · Windows · Requires Node 20+
+        {tab === 'claude'
+          ? 'Works with Claude Code CLI, VS Code extension, or claude.ai/code'
+          : 'macOS · Linux · Windows · Requires Node 20+'}
       </p>
     </div>
   );
@@ -283,7 +339,7 @@ export function LandingPage() {
           </div>
         </div>
 
-        {/* Quick Start terminal directly under hero */}
+        {/* Quick Start — tabbed Claude Code / Terminal */}
         <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
           <QuickStart />
         </div>

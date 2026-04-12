@@ -29,16 +29,45 @@ DriftGrid is a design iteration and client presentation platform. Every design p
 
 ## Starting a New Project
 
-When the user says something like "Start a new project for [client] called [name], [format]":
+When the user asks to start a new project, or when this is a fresh install with no projects yet, walk them through onboarding step by step. Be conversational — explain what DriftGrid is doing at each step so new users learn the mental model.
 
-1. **Check client folder:** If `projects/{client-slug}/` doesn't exist, create it with `brand/` folder and starter `guidelines.md`
-2. **Create project folder:** `projects/{client-slug}/{project-slug}/`
-3. **Create first file:** `projects/{client-slug}/{project-slug}/concept-1/v1.html` using the correct canvas boilerplate (see Canvas Presets below)
-4. **Create manifest:** `projects/{client-slug}/{project-slug}/manifest.json` with project metadata, one concept, one version
-5. **Read brand guidelines:** Check `projects/{client-slug}/brand/guidelines.md` for brand context
-6. **Report back:** Confirm what was created and where to see it
+### Step 1 — Gather info (ask the user)
+Ask for these one at a time, not all at once:
+- **Client name** — who is this for? (e.g. "Acme", "RecovryAI", or "personal")
+- **Project name** — what are we making? (e.g. "Landing Page", "Pitch Deck", "Brand Identity")
+- **Canvas preset** — what format? Explain the options briefly:
+  - `desktop` (1440px wide, scrollable) — websites, dashboards
+  - `mobile` (375px wide, scrollable) — app screens
+  - `landscape-16-9` (1920×1080, locked) — presentations, decks
+  - `a4-portrait` (794×1123, locked) — documents, one-pagers
+  - `tablet` (768px wide, scrollable) — tablet layouts
 
-**Always ask for** (if not provided): client name, project name, canvas type.
+### Step 2 — Run init
+Use the built-in init script — do NOT create files manually:
+```bash
+node bin/driftgrid.js init "{client}" "{project}" --canvas {preset}
+```
+This creates the project structure with 3 empty concept slots (Direction A, B, C), a manifest, and brand guidelines.
+
+### Step 3 — Customize brand guidelines
+Read the generated `projects/{client}/brand/guidelines.md` and ask the user to fill in their brand details:
+- Colors (primary, secondary, accent, background)
+- Typography (heading font, body font — suggest Google Fonts)
+- Voice/tone
+- Reference links (website, Figma, etc.)
+
+If the user provides a website URL or reference, visit it and extract brand details automatically.
+
+### Step 4 — Start the server (if not running)
+```bash
+npm run dev
+```
+Tell the user: "Open **localhost:3000** — you'll see your project with 3 empty concept slots. Each one says 'awaiting prompt'. I'll fill them in next."
+
+### Step 5 — Create the first designs
+Fill in the 3 concept slots with different design directions. Each should be a complete, distinct take on the project brief. Use the brand guidelines, follow the canvas boilerplate rules below, and make each direction meaningfully different — not just color swaps.
+
+After creating designs, tell the user: "Your 3 directions are ready. Open the grid to browse them. Use arrow keys to navigate, Enter to zoom in, S to star your favorites."
 
 ## Canvas Presets
 
