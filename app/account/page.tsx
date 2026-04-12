@@ -80,11 +80,11 @@ export default async function AccountPage() {
           <div className="text-[10px] tracking-widest uppercase" style={{ color: 'var(--muted)', opacity: 0.6 }}>
             billing
           </div>
-          {profile.tier === 'free' ? (
+          {profile.tier !== 'pro' ? (
             <Link
               href="/pricing"
               className="inline-block text-xs tracking-widest uppercase py-2 px-4 border rounded"
-              style={{ color: 'var(--foreground)', borderColor: 'var(--border)' }}
+              style={{ color: 'var(--foreground)', borderColor: '#8b5cf6' }}
             >
               upgrade to pro →
             </Link>
