@@ -23,9 +23,11 @@ import { useUIVisibility } from '@/lib/hooks/useUIVisibility';
 import { useUndoManager } from '@/lib/hooks/useUndoManager';
 import { useHotReload } from '@/lib/hooks/useHotReload';
 import { useAnnotationState } from '@/lib/hooks/useAnnotationState';
+import { useClientComments } from '@/lib/hooks/useClientComments';
 import { usePresentationMode } from '@/lib/hooks/usePresentationMode';
 import { useManifestMutations } from '@/lib/hooks/useManifestMutations';
 import { AnnotationOverlay } from './AnnotationOverlay';
+import { ClientNamePrompt } from './ClientNamePrompt';
 import { GridPromptInput } from './GridPromptInput';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
@@ -161,6 +163,62 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   // Extracted hooks
   const annotationState = useAnnotationState(client, project, currentConcept?.id, currentVersion?.id, viewMode, shareToken);
 
+  // Client comments — DB-backed comments for shared projects.
+  // When shareToken is present, these override the demo-only annotations.
+  const clientComments = useClientComments(shareToken);
+
+  // Bridge client comments → Annotation[] for the AnnotationOverlay
+  const clientAnnotations = useMemo(() => {
+    if (!shareToken || !currentConcept || !currentVersion) return [];
+    return clientComments.getCommentsForVersion(currentConcept.id, currentVersion.id).map(c => ({
+      id: c.id,
+      x: c.x_rel,
+      y: c.y_rel,
+      element: c.element_selector,
+      text: c.body,
+      author: c.author_name,
+      isClient: true,
+      isAgent: false,
+      created: c.created_at,
+      resolved: c.status === 'resolved',
+      parentId: c.parent_comment_id,
+    }));
+  }, [shareToken, currentConcept, currentVersion, clientComments]);
+
+  // In share mode, override annotation handlers to route through client comments DB
+  const shareAnnotationHandlers = useMemo(() => {
+    if (!shareToken) return null;
+    return {
+      annotations: clientAnnotations,
+      annotationMode: annotationState.annotationMode,
+      setAnnotationMode: annotationState.setAnnotationMode,
+      handleAddAnnotation: async (x: number | null, y: number | null, text: string) => {
+        if (!currentConcept || !currentVersion || !clientComments.authorName) return;
+        await clientComments.addComment(
+          currentConcept.id, currentVersion.id, text, x, y,
+        );
+        annotationState.setAnnotationMode(false);
+        toast('Comment added');
+      },
+      handleDeleteAnnotation: async () => {},
+      handleResolveAnnotation: async (id: string) => {
+        await clientComments.resolveComment(id);
+      },
+      handleEditAnnotation: async () => {},
+      handleReplyAnnotation: async (parentId: string, text: string) => {
+        if (!currentConcept || !currentVersion || !clientComments.authorName) return;
+        await clientComments.addComment(
+          currentConcept.id, currentVersion.id, text, null, null,
+          undefined, parentId,
+        );
+      },
+      handleSetAnnotationStatus: async () => {},
+    };
+  }, [shareToken, clientAnnotations, annotationState, currentConcept, currentVersion, clientComments]);
+
+  // Use share handlers when available, otherwise default annotation state
+  const activeAnnotations = shareAnnotationHandlers ?? annotationState;
+
   // On first project load, bulk-mark all existing versions as read so the grid
   // doesn't light up entirely. Only runs once per project when the unread hook
   // initializes and we have a concept list to work with.
@@ -224,7 +282,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey) {
         if (viewMode === 'frame') {
           e.preventDefault();
-          annotationState.setAnnotationMode(v => !v);
+          activeAnnotations.setAnnotationMode(v => !v);
           tour.trigger('comment');
         } else if (viewMode === 'grid' && currentVersion?.changelog === 'New drift slot — empty') {
           e.preventDefault();
@@ -917,8 +975,8 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         </svg>
         <span style={actionBarKey}>D</span>
       </button>
-      <button onClick={() => annotationState.setAnnotationMode(v => !v)} className={actionBarBtn} title="Add comment (C)" style={{ opacity: annotationState.annotationMode ? 1 : undefined }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill={annotationState.annotationMode ? 'white' : 'none'} stroke="white" strokeWidth="2">
+      <button onClick={() => activeAnnotations.setAnnotationMode(v => !v)} className={actionBarBtn} title="Add comment (C)" style={{ opacity: activeAnnotations.annotationMode ? 1 : undefined }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill={activeAnnotations.annotationMode ? 'white' : 'none'} stroke="white" strokeWidth="2">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
         <span style={actionBarKey}>A</span>
@@ -1040,10 +1098,16 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     </div>
   ) : null;
 
+  // Client name prompt — shown when a client visits a share link for the first time
+  const namePrompt = shareToken && clientComments.needsName ? (
+    <ClientNamePrompt onSubmit={clientComments.setAuthorName} />
+  ) : null;
+
   // --- GRID VIEW ---
   if (viewMode === 'grid') {
     return (
       <div className="h-screen flex flex-col bg-[var(--background)]">
+        {namePrompt}
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
@@ -1056,8 +1120,60 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             onNext={tour.next}
           />
         )}
-        {/* Top-right: project name + round switcher */}
+        {/* Top-right: project name + round switcher + share */}
         <div className="fixed top-4 right-4 z-30 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
+          {/* Share button — designer mode only */}
+          {mode !== 'client' && !shareToken && (
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/share', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client, project }),
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    await navigator.clipboard.writeText(data.url);
+                    toast('Share link copied');
+                  } else {
+                    const err = await res.json();
+                    if (err.error?.includes('duplicate') || err.error?.includes('unique')) {
+                      // Share already exists — fetch it
+                      const listRes = await fetch(`/api/share?client=${encodeURIComponent(client)}&project=${encodeURIComponent(project)}`);
+                      if (listRes.ok) {
+                        const links = await listRes.json();
+                        if (links.length > 0) {
+                          const url = `${window.location.origin}/s/${links[0].token}`;
+                          await navigator.clipboard.writeText(url);
+                          toast('Share link copied');
+                          return;
+                        }
+                      }
+                    }
+                    toast('Sign in to share', 'info');
+                  }
+                } catch {
+                  toast('Share failed', 'error');
+                }
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:bg-white/10 transition-all"
+              style={{
+                fontSize: 10,
+                letterSpacing: '0.06em',
+                color: 'var(--foreground)',
+                opacity: 0.5,
+                border: '1px solid rgba(255,255,255,0.1)',
+              }}
+              title="Create share link for this project"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+              Share
+            </button>
+          )}
           {/* Round switcher — hidden when only 1 round or in client mode */}
           {rounds.length > 1 && mode !== 'client' && (
             <div className="flex items-center gap-1.5">
@@ -1248,6 +1364,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   // --- FRAME VIEW ---
   return (
     <div className="h-screen flex flex-col" style={{ background: mode === 'client' ? '#fff' : 'var(--background)' }}>
+      {namePrompt}
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
@@ -1302,13 +1419,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             />
           )}
           <AnnotationOverlay
-            annotations={annotationState.annotations}
-            annotationMode={annotationState.annotationMode}
-            onAdd={annotationState.handleAddAnnotation}
-            onDelete={annotationState.handleDeleteAnnotation}
-            onResolve={annotationState.handleResolveAnnotation}
-            onEdit={annotationState.handleEditAnnotation}
-            onReply={annotationState.handleReplyAnnotation}
+            annotations={activeAnnotations.annotations}
+            annotationMode={activeAnnotations.annotationMode}
+            onAdd={activeAnnotations.handleAddAnnotation}
+            onDelete={activeAnnotations.handleDeleteAnnotation}
+            onResolve={activeAnnotations.handleResolveAnnotation}
+            onEdit={activeAnnotations.handleEditAnnotation}
+            onReply={activeAnnotations.handleReplyAnnotation}
             frameContext={currentConcept && currentVersion ? {
               conceptLabel: currentConcept.label,
               versionNumber: currentVersion.number,

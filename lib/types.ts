@@ -115,6 +115,22 @@ export interface Comment {
   parentCommentId: string | null;
 }
 
+/** A comment left by an anonymous client on a shared project (stored in Supabase) */
+export interface ClientComment {
+  id: string;
+  share_token: string;
+  concept_id: string;
+  version_id: string;
+  author_name: string;
+  body: string;
+  x_rel: number | null;
+  y_rel: number | null;
+  element_selector: string | null;
+  parent_comment_id: string | null;
+  status: 'open' | 'resolved';
+  created_at: string;
+}
+
 export interface ClientEdit {
   versionId: string;
   edits: Record<string, string>;
