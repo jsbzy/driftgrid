@@ -49,6 +49,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Supabase email confirmation sends ?code= to the Site URL (root).
+  // Redirect to the auth callback to exchange the code for a session.
+  const code = request.nextUrl.searchParams.get('code');
+  if (code && !pathname.startsWith('/api/auth')) {
+    const callbackUrl = new URL('/api/auth/callback', request.url);
+    callbackUrl.searchParams.set('code', code);
+    callbackUrl.searchParams.set('next', '/');
+    return NextResponse.redirect(callbackUrl);
+  }
+
   // Root landing page — always allow (the page component decides whether to
   // show the public landing or the authed dashboard).
   if (pathname === '/') {
