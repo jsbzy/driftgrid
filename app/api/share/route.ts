@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getUserId } from '@/lib/auth';
+import { getUserId, getProfile, countUserShares } from '@/lib/auth';
 import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
 
 /**
@@ -20,6 +20,28 @@ export async function POST(request: Request) {
   const { client, project } = await request.json();
   if (!client || !project) {
     return NextResponse.json({ error: 'Missing client or project' }, { status: 400 });
+  }
+
+  // Check free tier share limit (1 project lifetime)
+  const profile = await getProfile();
+  if (profile && profile.tier === 'free') {
+    const existingCount = await countUserShares(userId);
+    if (existingCount > 0) {
+      // Check if the existing share is for THIS project (that's ok — return it)
+      const supabaseCheck = getSupabaseAdmin();
+      const { data: existing } = await supabaseCheck
+        .from('share_links')
+        .select('token')
+        .eq('user_id', userId)
+        .eq('client', client)
+        .eq('project', project)
+        .eq('is_active', true)
+        .single();
+
+      if (!existing) {
+        return NextResponse.json({ error: 'free_limit', message: 'Upgrade to Pro to share unlimited projects.' }, { status: 403 });
+      }
+    }
   }
 
   const supabase = getSupabaseAdmin();

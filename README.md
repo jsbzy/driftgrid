@@ -83,6 +83,10 @@ Self-hosted is free forever. The cloud tier ($10/month or $96/year) adds:
 - **Share links** — public URLs for client review, no login required
 - **Archive** — your full design practice, always accessible
 
+### Self-Hosted Sharing
+
+Prefer to run your own infrastructure? You can deploy DriftGrid with your own Vercel + Supabase setup. Full self-hosting docs coming soon at [docs.driftgrid.ai](https://docs.driftgrid.ai). In the meantime, see the environment variables in `.env.example` and the Supabase migrations in `supabase/migrations/`.
+
 ## Canvas Presets
 
 | Preset | Dimensions | Behavior |

@@ -1196,8 +1196,8 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                     toast('Share link copied');
                   } else {
                     const err = await res.json();
+                    // Duplicate — share already exists, copy it
                     if (err.error?.includes('duplicate') || err.error?.includes('unique')) {
-                      // Share already exists — fetch it
                       const listRes = await fetch(`/api/share?client=${encodeURIComponent(client)}&project=${encodeURIComponent(project)}`);
                       if (listRes.ok) {
                         const links = await listRes.json();
@@ -1209,7 +1209,19 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                         }
                       }
                     }
-                    toast('Sign in to share', 'info');
+                    // Free tier limit hit
+                    if (err.error === 'free_limit') {
+                      toast('Upgrade to Pro to share unlimited projects', 'info');
+                      window.open('/pricing', '_blank');
+                      return;
+                    }
+                    // Not authenticated — local mode or not logged in
+                    if (res.status === 400 || res.status === 401) {
+                      toast('Create an account to share with clients', 'info');
+                      window.open('/login?next=' + encodeURIComponent(`/admin/${client}/${project}`), '_blank');
+                      return;
+                    }
+                    toast('Share failed', 'error');
                   }
                 } catch {
                   toast('Share failed', 'error');
