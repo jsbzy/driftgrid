@@ -21,9 +21,13 @@ const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 const VALID_PRESETS = Object.keys(CANVAS_PRESETS);
 
 function usage(): never {
-  console.error('Usage: driftgrid init [client] [project] [--canvas <preset>]');
+  console.error('Usage: driftgrid init [client-name] [project-name] [--canvas <preset>]');
   console.error('');
   console.error('Canvas presets:', VALID_PRESETS.join(', '));
+  console.error('');
+  console.error('Examples:');
+  console.error('  driftgrid init Acme "Landing Page"');
+  console.error('  driftgrid init Acme "Pitch Deck" --canvas landscape-16-9');
   console.error('');
   console.error('Run without arguments for interactive mode.');
   process.exit(1);
@@ -90,8 +94,8 @@ async function main() {
 
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-    clientRaw = await ask(rl, '  Client slug (e.g. acme): ');
-    projectRaw = await ask(rl, '  Project slug (e.g. landing-page): ');
+    clientRaw = await ask(rl, '  Client name (e.g. Acme): ');
+    projectRaw = await ask(rl, '  Project name (e.g. Landing Page): ');
 
     console.log('');
     console.log('  Canvas presets:');
