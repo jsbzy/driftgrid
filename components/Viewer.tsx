@@ -24,6 +24,7 @@ import { useUndoManager } from '@/lib/hooks/useUndoManager';
 import { useHotReload } from '@/lib/hooks/useHotReload';
 import { useAnnotationState } from '@/lib/hooks/useAnnotationState';
 import { useClientComments } from '@/lib/hooks/useClientComments';
+import { useShareToken } from '@/lib/hooks/useShareToken';
 import { usePresentationMode } from '@/lib/hooks/usePresentationMode';
 import { useManifestMutations } from '@/lib/hooks/useManifestMutations';
 import { AnnotationOverlay } from './AnnotationOverlay';
@@ -164,8 +165,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const annotationState = useAnnotationState(client, project, currentConcept?.id, currentVersion?.id, viewMode, shareToken);
 
   // Client comments — DB-backed comments for shared projects.
-  // When shareToken is present, these override the demo-only annotations.
+  // When shareToken is present (client mode), these override the demo-only annotations.
   const clientComments = useClientComments(shareToken);
+
+  // Designer mode: fetch client comments via the project's share token so the
+  // designer can see feedback left by clients on their own grid.
+  const designerShareToken = useShareToken(client, project, mode !== 'client' && !shareToken);
+  const designerClientComments = useClientComments(designerShareToken ?? undefined);
 
   // Bridge client comments → Annotation[] for the AnnotationOverlay
   const clientAnnotations = useMemo(() => {
@@ -216,8 +222,40 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     };
   }, [shareToken, clientAnnotations, annotationState, currentConcept, currentVersion, clientComments]);
 
-  // Use share handlers when available, otherwise default annotation state
-  const activeAnnotations = shareAnnotationHandlers ?? annotationState;
+  // Designer mode: merge client comments (cyan pins) into the designer's annotations
+  const designerAnnotationsWithClientComments = useMemo(() => {
+    if (shareToken || !designerShareToken || !currentConcept || !currentVersion) return null;
+    const clientAnns = designerClientComments.getCommentsForVersion(currentConcept.id, currentVersion.id);
+    if (clientAnns.length === 0) return null;
+    const mapped = clientAnns.map(c => ({
+      id: c.id,
+      x: c.x_rel,
+      y: c.y_rel,
+      element: c.element_selector,
+      text: c.body,
+      author: c.author_name,
+      isClient: true,
+      isAgent: false,
+      created: c.created_at,
+      resolved: c.status === 'resolved',
+      parentId: c.parent_comment_id,
+    }));
+    return {
+      ...annotationState,
+      annotations: [...annotationState.annotations, ...mapped],
+      handleResolveAnnotation: async (id: string) => {
+        // Check if it's a client comment (UUID format) vs annotation
+        if (id.length > 20) {
+          await designerClientComments.resolveComment(id);
+        } else {
+          await annotationState.handleResolveAnnotation(id);
+        }
+      },
+    };
+  }, [shareToken, designerShareToken, currentConcept, currentVersion, designerClientComments, annotationState]);
+
+  // Use share handlers when available, designer+client merge, or default annotation state
+  const activeAnnotations = shareAnnotationHandlers ?? designerAnnotationsWithClientComments ?? annotationState;
 
   // On first project load, bulk-mark all existing versions as read so the grid
   // doesn't light up entirely. Only runs once per project when the unread hook

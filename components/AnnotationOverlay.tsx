@@ -355,7 +355,9 @@ export function AnnotationOverlay({
                 fontSize: 9,
                 fontWeight: 700,
                 color: '#fff',
-                background: annotation.isClient ? 'var(--accent-orange)' : 'var(--foreground)',
+                background: annotation.isClient
+                  ? (isClient ? 'var(--accent-orange)' : '#06b6d4')
+                  : 'var(--foreground)',
                 opacity: annotation.resolved ? 0.3 : 1,
                 boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
                 transition: 'transform 0.1s ease, opacity 0.15s ease',
