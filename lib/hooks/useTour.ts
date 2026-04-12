@@ -42,14 +42,14 @@ export const TOUR_STEPS: TourStep[] = [
     advanceOn: 'esc',
   },
   {
-    eyebrow: 'Drift — new version',
-    hint: 'Press D to open a new empty version slot. Tell your agent what you want — it fills it in.',
+    eyebrow: 'Drift up — new version',
+    hint: 'Press D to drift a new version of the current card. A new slot appears — tell your agent what to put in it.',
     keys: ['D'],
     advanceOn: 'drift',
   },
   {
-    eyebrow: 'Branch — new concept',
-    hint: 'Press Shift+D to start a new concept column — a new direction to explore.',
+    eyebrow: 'Drift right — new concept',
+    hint: 'Press Shift+D to drift a new concept column — a whole new direction to explore.',
     keys: ['⇧', 'D'],
     advanceOn: 'branch',
   },
@@ -92,22 +92,22 @@ export const WALKTHROUGH_STEPS: TourStep[] = [
     hint: 'Your agent edits the file and replies in the thread. DriftGrid refreshes.',
   },
   {
-    eyebrow: '6 · Drift Down',
-    hint: 'Press D to open a new empty version slot for your next iteration.',
+    eyebrow: '6 · Drift Up',
+    hint: 'Press D to drift a new version slot. Your next iteration appears above.',
     keys: ['D'],
   },
   {
     eyebrow: '7 · Drift Roundtrip',
-    hint: 'Same loop — you direct, the agent executes. Each version is a new slot.',
+    hint: 'Same loop — you direct, the agent executes. Keep drifting up.',
   },
   {
-    eyebrow: '8 · Branch Right',
-    hint: 'Press Shift+D to start a new concept column — a new direction.',
+    eyebrow: '8 · Drift Right',
+    hint: 'Press Shift+D to drift a new concept column — a new direction to explore.',
     keys: ['⇧', 'D'],
   },
   {
-    eyebrow: '9 · Branch Roundtrip',
-    hint: 'New column, same loop. Each concept is its own line of exploration.',
+    eyebrow: '9 · Drift Right Roundtrip',
+    hint: 'New column, same loop. Keep drifting up and to the right.',
   },
   {
     eyebrow: '10 · Star Your Picks',

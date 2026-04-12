@@ -94,8 +94,8 @@ BROWSE
   G              Back to grid from frame view
 
 ITERATE
-  D              Drift — create a new version of the current card
-  Shift+D        Branch — fork into a new concept column
+  D              Drift up — create a new version of the current card
+  Shift+D        Drift right — start a new concept column (new direction)
   C              Comment — leave feedback on a frame (press C, click to pin)
 
 CURATE
@@ -108,12 +108,12 @@ SHARE
   Clients can browse and leave comments — no account needed.
 
 TWO WAYS TO ITERATE
-  From the grid — use D to drift, Shift+D to branch, C to comment.
-    DriftGrid creates the slot, then you tell me what to put in it.
+  From the grid — D to drift up (new version), Shift+D to drift
+    right (new concept), C to comment. Keep drifting up and to the right.
   From here — just tell me what you want. Examples:
     "Make concept 2 bolder with bigger type"
     "Create a dark version of concept 1"
-    "Add a new concept with a split-layout approach"
+    "Drift right with a split-layout approach"
     "Iterate on all 3 with more whitespace"
   I'll write the HTML and it appears in your grid automatically.
 ```
