@@ -16,6 +16,7 @@ const PUBLIC_PATHS = [
   '/_next',
   '/favicon.ico',
   '/login',
+  '/pricing',       // pricing page — visible before sign-in
   '/api/auth',      // Supabase OAuth callback (/api/auth/callback)
   '/api/share',     // share link creation uses its own auth
   '/api/s/',        // public share link endpoints
