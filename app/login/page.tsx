@@ -31,6 +31,7 @@ function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const router = useRouter();
@@ -61,7 +62,8 @@ function LoginForm() {
       // Try an immediate sign-in after signup (works when email confirmation is disabled).
       const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
       if (loginError) {
-        setError('Account created — check your inbox to confirm, then sign in.');
+        setError('');
+        setInfo('Account created — check your inbox to confirm, then sign in.');
         setMode('login');
         setLoading(false);
         return;
@@ -143,6 +145,11 @@ function LoginForm() {
         {error && (
           <p className="text-xs" style={{ color: '#e55', fontFamily: 'var(--font-mono, monospace)' }}>
             {error}
+          </p>
+        )}
+        {info && (
+          <p className="text-xs" style={{ color: '#22c55e', fontFamily: 'var(--font-mono, monospace)' }}>
+            {info}
           </p>
         )}
 
