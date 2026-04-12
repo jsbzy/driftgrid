@@ -191,18 +191,44 @@ export const CanvasCard = memo(function CanvasCard({
               }}
             />
           ) : (
-            <div className="w-full h-full bg-[var(--background)]" style={{ padding: '14% 12%' }}>
-              {/* Content skeleton — indicates a design is loading */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8%', opacity: 0.12 }}>
-                <div style={{ width: '35%', height: 8, borderRadius: 4, background: 'var(--foreground)' }} />
-                <div style={{ width: '80%', height: 14, borderRadius: 4, background: 'var(--foreground)' }} />
-                <div style={{ width: '65%', height: 14, borderRadius: 4, background: 'var(--foreground)' }} />
-                <div style={{ marginTop: '4%', display: 'flex', flexDirection: 'column', gap: '6%' }}>
-                  <div style={{ width: '90%', height: 6, borderRadius: 3, background: 'var(--foreground)' }} />
-                  <div style={{ width: '75%', height: 6, borderRadius: 3, background: 'var(--foreground)' }} />
-                  <div style={{ width: '85%', height: 6, borderRadius: 3, background: 'var(--foreground)' }} />
+            <div className="w-full h-full" style={{ background: '#f5f5f5', position: 'relative', overflow: 'hidden' }}>
+              <style>{`
+                @keyframes shimmer {
+                  0% { transform: translateX(-100%); }
+                  100% { transform: translateX(100%); }
+                }
+              `}</style>
+              {/* Shimmer overlay */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)',
+                animation: 'shimmer 1.8s ease-in-out infinite',
+              }} />
+              {/* Skeleton layout */}
+              <div style={{ padding: '10% 8%', display: 'flex', flexDirection: 'column', gap: '6%' }}>
+                {/* Nav bar */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ width: '18%', height: 8, borderRadius: 4, background: 'rgba(0,0,0,0.06)' }} />
+                  <div style={{ display: 'flex', gap: '4%' }}>
+                    <div style={{ width: 24, height: 6, borderRadius: 3, background: 'rgba(0,0,0,0.04)' }} />
+                    <div style={{ width: 24, height: 6, borderRadius: 3, background: 'rgba(0,0,0,0.04)' }} />
+                    <div style={{ width: 24, height: 6, borderRadius: 3, background: 'rgba(0,0,0,0.04)' }} />
+                  </div>
                 </div>
-                <div style={{ marginTop: '6%', width: '25%', height: 10, borderRadius: 4, background: 'var(--foreground)' }} />
+                {/* Hero area */}
+                <div style={{ marginTop: '8%' }}>
+                  <div style={{ width: '30%', height: 5, borderRadius: 3, background: 'rgba(0,0,0,0.04)', marginBottom: '4%' }} />
+                  <div style={{ width: '70%', height: 12, borderRadius: 4, background: 'rgba(0,0,0,0.07)', marginBottom: '2%' }} />
+                  <div style={{ width: '50%', height: 12, borderRadius: 4, background: 'rgba(0,0,0,0.07)' }} />
+                </div>
+                {/* Body lines */}
+                <div style={{ marginTop: '4%', display: 'flex', flexDirection: 'column', gap: '3%' }}>
+                  <div style={{ width: '85%', height: 5, borderRadius: 3, background: 'rgba(0,0,0,0.04)' }} />
+                  <div style={{ width: '70%', height: 5, borderRadius: 3, background: 'rgba(0,0,0,0.04)' }} />
+                </div>
+                {/* CTA */}
+                <div style={{ marginTop: '4%', width: '22%', height: 10, borderRadius: 5, background: 'rgba(0,0,0,0.06)' }} />
               </div>
             </div>
           )}
