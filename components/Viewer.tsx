@@ -964,16 +964,29 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center text-sm text-[var(--muted)]">
-        Loading...
+      <div className="h-screen flex flex-col items-center justify-center gap-3" style={{ background: 'var(--background)' }}>
+        <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11, letterSpacing: '0.24em', color: 'var(--muted)', opacity: 0.4, textTransform: 'lowercase' }}>
+          driftgrid
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 12, color: 'var(--muted)', opacity: 0.3 }}>
+          Loading...
+        </div>
       </div>
     );
   }
 
   if (!filtered || !currentConcept || !currentVersion) {
     return (
-      <div className="h-screen flex items-center justify-center text-sm text-[var(--muted)]">
-        Project not found
+      <div className="h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'var(--background)' }}>
+        <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11, letterSpacing: '0.24em', color: 'var(--muted)', opacity: 0.4, textTransform: 'lowercase' }}>
+          driftgrid
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 14, color: 'var(--muted)' }}>
+          Project not found
+        </div>
+        <a href="/" style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11, color: 'var(--muted)', opacity: 0.5, textDecoration: 'none' }}>
+          ← Back to dashboard
+        </a>
       </div>
     );
   }
