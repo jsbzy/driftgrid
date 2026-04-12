@@ -106,9 +106,19 @@ CURATE
 SHARE
   Share button (top-right of grid) creates a link for client review.
   Clients can browse and leave comments — no account needed.
+
+TWO WAYS TO ITERATE
+  From the grid — use D to drift, Shift+D to branch, C to comment.
+    DriftGrid creates the slot, then you tell me what to put in it.
+  From here — just tell me what you want. Examples:
+    "Make concept 2 bolder with bigger type"
+    "Create a dark version of concept 1"
+    "Add a new concept with a split-layout approach"
+    "Iterate on all 3 with more whitespace"
+  I'll write the HTML and it appears in your grid automatically.
 ```
 
-Ask: "Want me to iterate on any of these directions? I can drift new versions, branch a concept, or start fresh."
+Ask: "Want me to iterate on any of these directions? You can also browse the grid and come back with feedback anytime."
 
 ## Canvas Presets
 
