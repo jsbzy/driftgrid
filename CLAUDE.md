@@ -83,7 +83,32 @@ open http://localhost:3000/admin/{client}/{project}
 
 Fill in each concept slot with a distinct design direction. Each should be a complete take on the project brief. Use the brand guidelines and any reference material, follow the canvas boilerplate rules below, and make each direction meaningfully different — not just color swaps.
 
-After creating designs, tell the user: "Your 3 directions are ready. Open the grid to browse them. Use arrow keys to navigate, Enter to zoom in, S to star your favorites."
+After creating designs, present a summary table of what you created (concept name + one-line vibe), then teach the user how to use DriftGrid:
+
+```
+Your designs are ready. Here's how to work with them:
+
+BROWSE
+  Arrow keys     Navigate between cards on the grid
+  Enter          Zoom into a frame (full view)
+  G              Back to grid from frame view
+
+ITERATE
+  D              Drift — create a new version of the current card
+  Shift+D        Branch — fork into a new concept column
+  C              Comment — leave feedback on a frame (press C, click to pin)
+
+CURATE
+  S              Star a card (mark as a favorite)
+  P              Present — fullscreen slideshow of starred versions
+  Cmd+C / Cmd+V  Copy and paste cards between concepts
+
+SHARE
+  Share button (top-right of grid) creates a link for client review.
+  Clients can browse and leave comments — no account needed.
+```
+
+Ask: "Want me to iterate on any of these directions? I can drift new versions, branch a concept, or start fresh."
 
 ## Canvas Presets
 
