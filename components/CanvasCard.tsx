@@ -16,6 +16,7 @@ interface CanvasCardProps {
   mode?: string;
   demoSlot?: boolean;
   isEmptySlot?: boolean;
+  isAgentWorking?: boolean;
   onStar?: () => void;
   onDelete?: () => void;
   onDrift?: () => void;
@@ -42,6 +43,7 @@ export const CanvasCard = memo(function CanvasCard({
   mode,
   demoSlot,
   isEmptySlot,
+  isAgentWorking,
   onStar,
   onDelete,
   onDrift,
@@ -157,23 +159,47 @@ export const CanvasCard = memo(function CanvasCard({
                 v{versionNumber}
               </div>
             </div>
+          ) : isAgentWorking ? (
+            <div
+              className="w-full h-full flex flex-col items-center justify-center gap-3"
+              style={{
+                background: '#fafafa',
+                borderRadius: 'inherit',
+                color: '#888',
+                fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              <style>{`
+                @keyframes pulse-dot { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+              `}</style>
+              <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out infinite' }} />
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out 0.2s infinite' }} />
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out 0.4s infinite' }} />
+              </div>
+              <div style={{ fontSize: 11, letterSpacing: '0.08em', opacity: 0.5 }}>
+                Agent working
+              </div>
+            </div>
           ) : isEmptySlot ? (
             <div
               className="w-full h-full flex flex-col items-center justify-center gap-3"
               style={{
-                background: '#0f0f0f',
+                background: '#fafafa',
                 borderRadius: 'inherit',
-                color: 'rgba(255,255,255,0.5)',
+                color: '#999',
                 fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
               }}
             >
-              <div style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.35 }}>
+              <div style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.4 }}>
                 Awaiting prompt
               </div>
-              <div style={{ fontSize: 12, opacity: 0.5, textAlign: 'center', padding: '0 24px', lineHeight: 1.5 }}>
-                Press <span style={{ padding: '1px 6px', borderRadius: 3, border: '1px solid rgba(255,255,255,0.2)', fontSize: 11 }}>C</span> to prompt your agent
+              <div style={{ fontSize: 12, opacity: 0.45, textAlign: 'center', padding: '0 24px', lineHeight: 1.5 }}>
+                Press <span style={{ padding: '1px 6px', borderRadius: 3, border: '1px solid rgba(0,0,0,0.15)', fontSize: 11, color: '#666' }}>C</span> to prompt your agent
               </div>
-              <div style={{ fontSize: 9, opacity: 0.2, letterSpacing: '0.08em', marginTop: 8 }}>
+              <div style={{ fontSize: 9, opacity: 0.25, letterSpacing: '0.08em', marginTop: 8 }}>
                 v{versionNumber}
               </div>
             </div>

@@ -80,6 +80,13 @@ Ask: "How many design directions would you like? (default: 3). Any reference mat
 
 **Important:** The init script already created the v1.html files. You MUST read each file before overwriting it (Claude Code requires Read before Write on existing files). Read all concept HTML files first, then write your designs.
 
+**Before writing designs**, update the manifest to show "Agent working" on each slot. This triggers a progress animation in the grid so the user sees all 3 cards being worked on:
+1. Read `manifest.json`
+2. Set `changelog: "Agent working"` on each concept's v1 version
+3. Write the updated manifest
+4. Then write the HTML files
+5. After all designs are done, update the manifest again with real changelogs (e.g., "Clean minimal direction with hero layout")
+
 Fill in each concept slot with a distinct design direction. Each should be a complete take on the project brief. Use any brand guidelines and reference material, follow the canvas boilerplate rules below, and make each direction meaningfully different — not just color swaps.
 
 **After creating each design, always include the localhost link:**

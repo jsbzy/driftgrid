@@ -869,6 +869,7 @@ const CardLayer = memo(function CardLayer({
               filePath={`~/driftgrid/projects/${client}/${project}/${version.file}`}
               demoSlot={!version.file}
               isEmptySlot={version.changelog === 'New drift slot — empty'}
+              isAgentWorking={version.changelog === 'Agent working'}
               mode={mode}
               onStar={() => onStarVersion(concept.id, version.id)}
               onDelete={() => onDeleteVersion(concept.id, version.id)}
