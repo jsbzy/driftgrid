@@ -29,18 +29,18 @@ DriftGrid is a design iteration and client presentation platform. Every design p
 
 ## Starting a New Project
 
-When the user asks to start a new project, or when this is a fresh install with no projects yet, walk them through onboarding step by step. Be conversational — explain what DriftGrid is doing at each step so new users learn the mental model.
+DriftGrid is a design iteration platform for agents. When the user asks to start a new project, or when this is a fresh install with no projects yet, walk them through onboarding. Tell them upfront: "I'll ask you 3 quick questions to set up your project, then we can start designing."
 
-### Step 1 — Gather info (ask the user)
-Ask for these one at a time, not all at once:
-- **Client name** — who is this for? (e.g. "Acme", "RecovryAI", or "personal")
-- **Project name** — what are we making? (e.g. "Landing Page", "Pitch Deck", "Brand Identity")
-- **Canvas preset** — what format? Explain the options briefly:
-  - `desktop` (1440px wide, scrollable) — websites, dashboards
-  - `mobile` (375px wide, scrollable) — app screens
-  - `landscape-16-9` (1920×1080, locked) — presentations, decks
-  - `a4-portrait` (794×1123, locked) — documents, one-pagers
-  - `tablet` (768px wide, scrollable) — tablet layouts
+### Step 1 — Gather info (3 questions)
+Ask these one at a time:
+1. **Client name** — who is this for? (e.g. "Acme", "Nike", or "personal")
+2. **Project name** — what are we making? (e.g. "Landing Page", "Pitch Deck", "Brand Identity")
+3. **Canvas preset** — what format? Explain the options briefly:
+   - `desktop` (1440px wide, scrollable) — websites, dashboards
+   - `mobile` (375px wide, scrollable) — app screens
+   - `landscape-16-9` (1920×1080, locked) — presentations, decks
+   - `a4-portrait` (794×1123, locked) — documents, one-pagers
+   - `tablet` (768px wide, scrollable) — tablet layouts
 
 ### Step 2 — Run init
 Use the built-in init script — do NOT create files manually:
@@ -49,41 +49,47 @@ node bin/driftgrid.js init "{client}" "{project}" --canvas {preset}
 ```
 This creates the project structure with 3 empty concept slots (Direction A, B, C), a manifest, and brand guidelines.
 
-### Step 3 — Customize brand guidelines
-Read the generated `projects/{client}/brand/guidelines.md` and ask the user to fill in their brand details:
-- Colors (primary, secondary, accent, background)
-- Typography (heading font, body font — suggest Google Fonts)
-- Voice/tone
-- Reference links (website, Figma, etc.)
+### Step 3 — Brand & reference (optional)
+Ask: "Want to set up brand guidelines now, or skip and jump straight into designing? You can always add brand details later."
 
-If the user provides a website URL or reference, visit it and extract brand details automatically.
+If they want to set up brand:
+- Read the generated `projects/{client}/brand/guidelines.md`
+- Ask for colors, fonts, voice, reference links
+- If they provide a website URL, visit it and extract brand details automatically
+
+If they skip, move on immediately.
 
 ### Step 4 — Start the server (if not running)
 ```bash
 npm run dev
 ```
-Tell the user: "Open **localhost:3000** — you'll see your project with 3 empty concept slots. Each one says 'awaiting prompt'. I'll fill them in next."
+Tell the user: "Open **localhost:3000** — you'll see your project. I'll start creating designs now."
 
-### Step 5 — Gather reference material
-Before designing, ask: "Do you have any other reference material? Copy docs, content briefs, product descriptions, existing designs, or anything I should work from?"
-
-If they provide files, URLs, or text — read and incorporate. If not, move on.
-
-### Step 6 — Create the first designs
-Ask: "How many design directions would you like? (default: 3)"
-
-If they say a number, use it. If they press enter or say "default", use 3. If the init script created a different number of concept slots than requested, create or remove slots to match using the iterate/branch APIs.
-
-Before writing any files, tell the user: "I'm creating your designs now. Open **http://localhost:3000/admin/{client}/{project}** to watch them appear in the grid." Then try to open the URL automatically:
+Before writing any files, open the browser:
 ```bash
 open http://localhost:3000/admin/{client}/{project}
 ```
 
+### Step 5 — Create the first designs
+Ask: "How many design directions would you like? (default: 3). Any reference material — copy docs, briefs, existing designs?"
+
 **Important:** The init script already created the v1.html files. You MUST read each file before overwriting it (Claude Code requires Read before Write on existing files). Read all concept HTML files first, then write your designs.
 
-Fill in each concept slot with a distinct design direction. Each should be a complete take on the project brief. Use the brand guidelines and any reference material, follow the canvas boilerplate rules below, and make each direction meaningfully different — not just color swaps.
+Fill in each concept slot with a distinct design direction. Each should be a complete take on the project brief. Use any brand guidelines and reference material, follow the canvas boilerplate rules below, and make each direction meaningfully different — not just color swaps.
 
-After creating designs, present a summary table of what you created (concept name + one-line vibe), then teach the user how to use DriftGrid:
+**After creating each design, always include the localhost link:**
+Tell the user: "Direction A is ready → http://localhost:3000/admin/{client}/{project}#concept-slug/v1"
+
+After creating designs, present a summary table with links to each design, then teach the user how to use DriftGrid. Always include the localhost URL for each concept:
+
+Example:
+| # | Direction | Link |
+|---|-----------|------|
+| 1 | Clean Minimal | http://localhost:3000/admin/{client}/{project}#concept-slug/v1 |
+| 2 | Dark Athletic | http://localhost:3000/admin/{client}/{project}#concept-slug/v1 |
+| 3 | Mint Split | http://localhost:3000/admin/{client}/{project}#concept-slug/v1 |
+
+Then show the keyboard reference:
 
 ```
 Your designs are ready. Here's how to work with them:
