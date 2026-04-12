@@ -1026,11 +1026,11 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         </svg>
         <span style={actionBarKey}>D</span>
       </button>
-      <button onClick={() => activeAnnotations.setAnnotationMode(v => !v)} className={actionBarBtn} title="Add comment (C)" style={{ opacity: activeAnnotations.annotationMode ? 1 : undefined }}>
+      <button onClick={() => activeAnnotations.setAnnotationMode(v => !v)} className={actionBarBtn} title="Prompt your agent (C)" style={{ opacity: activeAnnotations.annotationMode ? 1 : undefined }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill={activeAnnotations.annotationMode ? 'white' : 'none'} stroke="white" strokeWidth="2">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
-        <span style={actionBarKey}>A</span>
+        <span style={actionBarKey}>C</span>
       </button>
       <button onClick={async () => {
         const filePath = `~/driftgrid/projects/${client}/${project}/${currentVersion.file}`;
@@ -1051,7 +1051,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         } catch {}
         navigator.clipboard.writeText(text);
         toast('Copied');
-      }} className={actionBarBtn} title="Copy path + feedback">
+      }} className={actionBarBtn} title="Copy path + prompts (⌘C)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
           <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
         </svg>

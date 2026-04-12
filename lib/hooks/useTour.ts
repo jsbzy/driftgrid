@@ -30,8 +30,8 @@ export const TOUR_STEPS: TourStep[] = [
     advanceOn: 'enter',
   },
   {
-    eyebrow: 'Leave a comment',
-    hint: 'Press C to drop a comment anywhere on the frame. Your client sees it on the shared link.',
+    eyebrow: 'Leave a prompt',
+    hint: 'Press C to drop a prompt anywhere on the frame. Your agent reads it and edits the design.',
     keys: ['C'],
     advanceOn: 'comment',
   },

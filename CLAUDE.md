@@ -462,11 +462,19 @@ DriftGrid has two types of annotations on frames:
 - If MCP is available: call `get_feedback(client, project, conceptId, versionId)`
 - If not: check for a `.feedback.md` sidecar file next to the HTML (e.g., `concept-1/v3.feedback.md`)
 
-**When designer feedback exists:**
-- List the annotations and ask: "I see N feedback items on this version. Want me to apply them?"
+**When designer feedback (prompts) exist:**
+- List the prompts and ask: "I see N prompts on this version. Want me to apply them?"
 - Wait for confirmation before making changes
-- After applying, create a new version (drift) with the changes — don't overwrite
-- **Reply to each annotation you addressed** using `add_feedback` with `parentId` set to the original annotation's ID. Example: annotation says "Make headline bigger" → after fixing, reply with "Done — increased from 32px to 48px". This creates a threaded conversation visible in DriftGrid.
+- **Before starting work**, set the prompt status to 'running' so the grid shows a loading animation:
+  ```
+  PATCH /api/annotations { client, project, conceptId, versionId, annotationId, status: 'running' }
+  ```
+- Create a new version (drift) with the changes — don't overwrite the original
+- **Reply to each prompt you addressed** using `add_feedback` with `parentId` set to the original prompt's ID. Example: prompt says "Make headline bigger" → after fixing, reply with "Done — increased from 32px to 48px". This creates a threaded conversation visible in DriftGrid.
+- **Clear the running status** after work is complete:
+  ```
+  PATCH /api/annotations { client, project, conceptId, versionId, annotationId, status: null }
+  ```
 
 **When client feedback exists (isClient: true):**
 - Mention it: "There's also client feedback on this version — want me to review it?"

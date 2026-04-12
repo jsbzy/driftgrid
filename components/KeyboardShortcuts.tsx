@@ -16,7 +16,7 @@ const shortcuts: { key: string; desc: string }[] = [
   { key: '\u21e7D', desc: 'Drift \u2192 new concept' },
   { key: 'S', desc: 'Star / unstar' },
   { key: 'P', desc: 'Present selects' },
-  { key: 'C', desc: 'Comment (in frame)' },
+  { key: 'C', desc: 'Prompt (in frame)' },
   { key: 'Del / \u232b', desc: 'Delete version' },
   { key: '\u2318Z', desc: 'Undo' },
   { key: '\u2318K', desc: 'Command palette' },

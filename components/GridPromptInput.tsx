@@ -33,7 +33,6 @@ interface GridPromptInputProps {
 
 type PromptState = 'empty' | 'awaiting' | 'in-progress' | 'done';
 
-const MCP_INSTALL_MESSAGE = 'MCP required — install the DriftGrid MCP server to send prompts directly to an agent.';
 const BOX_WIDTH = 300;
 const BOX_MARGIN = 16;
 const CARD_GAP = 12;
@@ -428,7 +427,7 @@ export function GridPromptInput({
           </button>
         )}
         <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
-          {/* Copy for agent — visible in empty and awaiting states */}
+          {/* Copy — visible in empty and awaiting states */}
           {(state === 'empty' || state === 'awaiting') && (
             <button
               type="button"
@@ -457,39 +456,11 @@ export function GridPromptInput({
                 transition: 'background 0.15s ease, color 0.15s ease',
               }}
             >
-              {copyState === 'copied' ? 'Copied' : 'Copy for agent'}
+              {copyState === 'copied' ? 'Copied' : 'Copy'}
             </button>
           )}
 
-          {/* Send to Agent — disabled stub in empty/awaiting states */}
-          {(state === 'empty' || state === 'awaiting') && (
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={(e) => {
-                e.stopPropagation();
-                toast(MCP_INSTALL_MESSAGE, 'info');
-                textareaRef.current?.focus();
-              }}
-              title="Install the DriftGrid MCP server to enable"
-              style={{
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: 9,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                padding: '5px 9px',
-                borderRadius: 5,
-                border: '1px dashed rgba(255,255,255,0.12)',
-                background: 'rgba(255,255,255,0.02)',
-                color: 'rgba(255,255,255,0.3)',
-                cursor: 'pointer',
-              }}
-            >
-              Send to Agent
-            </button>
-          )}
-
-          {/* Dev — mark as running (simulates MCP pickup) */}
+          {/* Mark as running (simulates agent pickup) */}
           {state === 'awaiting' && onSetStatus && (
             <button
               type="button"

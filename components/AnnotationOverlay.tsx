@@ -4,12 +4,6 @@ import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react
 import type { Annotation } from '@/lib/types';
 import { toast } from '@/components/Toast';
 
-const MCP_INSTALL_MESSAGE = 'MCP required — install the DriftGrid MCP server to send comments directly to an agent.';
-
-function handleSendToAgentStub() {
-  toast(MCP_INSTALL_MESSAGE, 'info');
-}
-
 interface AnnotationOverlayProps {
   annotations: Annotation[];
   editMode?: boolean;
@@ -303,7 +297,7 @@ export function AnnotationOverlay({
               textTransform: 'uppercase',
             }}
           >
-            Add Comment
+            {isClient ? 'Add Comment' : 'Place Prompt'}
           </span>
           <span
             style={{
@@ -414,7 +408,7 @@ export function AnnotationOverlay({
                         : 'rgba(255,255,255,0.35)',
                     }}
                   >
-                    {annotation.resolved ? 'Resolved' : 'Comment'} · {annotation.isClient ? annotation.author : 'designer'}
+                    {annotation.resolved ? 'Resolved' : (isClient ? 'Comment' : 'Prompt')} · {annotation.isClient ? annotation.author : 'designer'}
                   </span>
                   {/* Delete icon — designer only */}
                   {!isClient && (
@@ -610,7 +604,7 @@ export function AnnotationOverlay({
                           e.stopPropagation();
                           const message = buildAnnotationAgentMessage(annotation);
                           navigator.clipboard?.writeText(message).catch(() => {});
-                          toast('Copied for agent');
+                          toast('Copied');
                         }}
                         style={{
                           fontFamily: 'var(--font-mono, monospace)',
@@ -625,59 +619,8 @@ export function AnnotationOverlay({
                           cursor: 'pointer',
                         }}
                       >
-                        Copy for agent
+                        Copy
                       </button>
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSendToAgentStub();
-                        }}
-                        title="Install the DriftGrid MCP server to enable"
-                        style={{
-                          fontFamily: 'var(--font-mono, monospace)',
-                          fontSize: 9,
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          padding: '5px 9px',
-                          borderRadius: 5,
-                          border: '1px dashed rgba(255,255,255,0.12)',
-                          background: 'rgba(255,255,255,0.02)',
-                          color: 'rgba(255,255,255,0.3)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Send to Agent
-                      </button>
-                      {onReply && (
-                        <button
-                          type="button"
-                          tabIndex={-1}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const text = window.prompt('Agent reply text:');
-                            if (text && text.trim()) {
-                              onReply(annotation.id, text.trim(), true);
-                            }
-                          }}
-                          title="Dev — simulate an agent reply without MCP"
-                          style={{
-                            fontFamily: 'var(--font-mono, monospace)',
-                            fontSize: 9,
-                            letterSpacing: '0.08em',
-                            textTransform: 'uppercase',
-                            padding: '5px 9px',
-                            borderRadius: 5,
-                            border: '1px dashed rgba(212,168,74,0.4)',
-                            background: 'rgba(212,168,74,0.08)',
-                            color: 'rgba(212,168,74,0.8)',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          + reply
-                        </button>
-                      )}
                     </div>
                   </div>
                 )}
@@ -743,7 +686,7 @@ export function AnnotationOverlay({
                 marginBottom: 8,
               }}
             >
-              Comment
+              {isClient ? 'Comment' : 'Prompt'}
             </div>
             <textarea
               ref={inputRef}
@@ -762,7 +705,7 @@ export function AnnotationOverlay({
                 // Stop propagation so keyboard shortcuts don't fire
                 e.stopPropagation();
               }}
-              placeholder="Leave a note…"
+              placeholder={isClient ? 'Leave a note…' : 'Tell the agent…'}
               rows={1}
               style={{
                 width: '100%',
@@ -843,31 +786,7 @@ export function AnnotationOverlay({
                       transition: 'background 0.15s ease, color 0.15s ease',
                     }}
                   >
-                    {copyState === 'copied' ? 'Copied' : 'Copy for agent'}
-                  </button>
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSendToAgentStub();
-                      inputRef.current?.focus();
-                    }}
-                    title="Install the DriftGrid MCP server to enable"
-                    style={{
-                      fontFamily: 'var(--font-mono, monospace)',
-                      fontSize: 9,
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                      padding: '5px 9px',
-                      borderRadius: 5,
-                      border: '1px dashed rgba(255,255,255,0.12)',
-                      background: 'rgba(255,255,255,0.02)',
-                      color: 'rgba(255,255,255,0.3)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Send to Agent
+                    {copyState === 'copied' ? 'Copied' : 'Copy'}
                   </button>
                 </>
               )}

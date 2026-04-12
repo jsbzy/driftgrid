@@ -73,7 +73,7 @@ export function useAnnotationState(
       }));
       setAnnotations(prev => [...prev, annotation]);
       setAnnotationMode(false);
-      toast('Comment added');
+      toast('Prompt placed');
       return;
     }
 
@@ -95,7 +95,7 @@ export function useAnnotationState(
       setAnnotationMode(false);
       // Don't toast on whole-version (drift prompt) saves — the caller handles its own feedback
       if (x !== null && y !== null) {
-        toast('Annotation added');
+        toast('Prompt placed');
       }
     }
   }, [client, project, conceptId, versionId, shareToken]);
