@@ -163,6 +163,21 @@ export function LandingPage() {
           >
             Demo
           </a>
+          <a
+            href="/login"
+            style={{
+              fontSize: 10,
+              letterSpacing: '0.12em',
+              color: 'rgba(255,255,255,0.75)',
+              textDecoration: 'none',
+              textTransform: 'uppercase',
+              padding: '6px 14px',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: 4,
+            }}
+          >
+            Log in
+          </a>
         </div>
       </nav>
 
