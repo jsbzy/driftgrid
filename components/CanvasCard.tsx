@@ -15,6 +15,7 @@ interface CanvasCardProps {
   filePath?: string;
   mode?: string;
   demoSlot?: boolean;
+  isEmptySlot?: boolean;
   onStar?: () => void;
   onDelete?: () => void;
   onDrift?: () => void;
@@ -40,6 +41,7 @@ export const CanvasCard = memo(function CanvasCard({
   filePath,
   mode,
   demoSlot,
+  isEmptySlot,
   onStar,
   onDelete,
   onDrift,
@@ -152,6 +154,26 @@ export const CanvasCard = memo(function CanvasCard({
                 Direct your agent<br />to fill this in
               </div>
               <div style={{ fontSize: 9, opacity: 0.25, letterSpacing: '0.08em', marginTop: 4 }}>
+                v{versionNumber}
+              </div>
+            </div>
+          ) : isEmptySlot ? (
+            <div
+              className="w-full h-full flex flex-col items-center justify-center gap-3"
+              style={{
+                background: '#0f0f0f',
+                borderRadius: 'inherit',
+                color: 'rgba(255,255,255,0.5)',
+                fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              }}
+            >
+              <div style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.35 }}>
+                Awaiting prompt
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.5, textAlign: 'center', padding: '0 24px', lineHeight: 1.5 }}>
+                Press <span style={{ padding: '1px 6px', borderRadius: 3, border: '1px solid rgba(255,255,255,0.2)', fontSize: 11 }}>C</span> to prompt your agent
+              </div>
+              <div style={{ fontSize: 9, opacity: 0.2, letterSpacing: '0.08em', marginTop: 8 }}>
                 v{versionNumber}
               </div>
             </div>
