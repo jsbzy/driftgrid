@@ -45,6 +45,42 @@ export async function getClients(userId: string | null): Promise<ClientInfo[]> {
   return getClients();
 }
 
+export async function writeHtmlFile(userId: string | null, client: string, project: string, filePath: string, content: string): Promise<void> {
+  if (isCloudMode() && userId) {
+    const { writeHtmlFileCloud } = await cloud();
+    return writeHtmlFileCloud(userId, client, project, filePath, content);
+  }
+  // Local mode: write to filesystem
+  const { promises: fs } = await import('fs');
+  const path = await import('path');
+  const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+  const destPath = path.resolve(path.join(PROJECTS_DIR, client, project, filePath));
+  if (!destPath.startsWith(path.resolve(PROJECTS_DIR))) return;
+  await fs.mkdir(path.dirname(destPath), { recursive: true });
+  await fs.writeFile(destPath, content, 'utf-8');
+}
+
+export async function copyFile(userId: string | null, client: string, project: string, srcPath: string, destPath: string): Promise<void> {
+  if (isCloudMode() && userId) {
+    const { copyFileCloud } = await cloud();
+    return copyFileCloud(userId, client, project, srcPath, destPath);
+  }
+  // Local mode: copy on filesystem
+  const { promises: fs } = await import('fs');
+  const pathMod = await import('path');
+  const PROJECTS_DIR = pathMod.join(process.cwd(), 'projects');
+  const srcFull = pathMod.resolve(pathMod.join(PROJECTS_DIR, client, project, srcPath));
+  const destFull = pathMod.resolve(pathMod.join(PROJECTS_DIR, client, project, destPath));
+  if (!srcFull.startsWith(pathMod.resolve(PROJECTS_DIR))) return;
+  if (!destFull.startsWith(pathMod.resolve(PROJECTS_DIR))) return;
+  await fs.mkdir(pathMod.dirname(destFull), { recursive: true });
+  try {
+    await fs.copyFile(srcFull, destFull);
+  } catch {
+    await fs.writeFile(destFull, '<!-- copied -->', 'utf-8');
+  }
+}
+
 export async function getHtmlFile(userId: string | null, client: string, project: string, filePath: string): Promise<string | null> {
   if (isCloudMode() && userId) {
     const { getHtmlFileCloud } = await cloud();

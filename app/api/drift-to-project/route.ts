@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { getManifest, writeManifest } from '@/lib/manifest';
+import { getManifest, writeManifest, writeHtmlFile, getHtmlFile } from '@/lib/storage';
+import { getUserId } from '@/lib/auth';
 import type { Manifest } from '@/lib/types';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
@@ -28,23 +25,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const sourceManifest = await getManifest(client, project);
+  const userId = await getUserId();
+  const sourceManifest = await getManifest(userId, client, project);
   if (!sourceManifest) {
     return NextResponse.json({ error: 'Source project not found' }, { status: 404 });
   }
 
   const slug = newProject.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const newProjectDir = path.join(PROJECTS_DIR, client, slug);
-
-  try {
-    await fs.stat(newProjectDir);
-    return NextResponse.json({ error: `Project already exists: ${client}/${slug}` }, { status: 409 });
-  } catch {
-    // Good
-  }
-
-  await fs.mkdir(path.join(newProjectDir, '.thumbs'), { recursive: true });
-
   const canvas = newCanvas || sourceManifest.project.canvas;
   const now = new Date().toISOString();
   const projectName = newProject.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -58,13 +45,11 @@ export async function POST(request: Request) {
     if (!sourceConcept || !sourceVersion) continue;
 
     const conceptFolder = `concept-${i + 1}`;
-    const conceptDir = path.join(newProjectDir, conceptFolder);
-    await fs.mkdir(conceptDir, { recursive: true });
+    const newFile = `${conceptFolder}/v1.html`;
 
-    // Copy HTML file
-    const sourceHtmlPath = path.join(PROJECTS_DIR, client, project, sourceVersion.file);
-    const destHtmlPath = path.join(conceptDir, 'v1.html');
-    await fs.copyFile(sourceHtmlPath, destHtmlPath);
+    // Read from source project, write to new project
+    const html = await getHtmlFile(userId, client, project, sourceVersion.file);
+    await writeHtmlFile(userId, client, slug, newFile, html || '<!-- copied -->');
 
     concepts.push({
       id: `concept-${generateId()}`,
@@ -76,7 +61,7 @@ export async function POST(request: Request) {
       versions: [{
         id: `version-${generateId()}`,
         number: 1,
-        file: `${conceptFolder}/v1.html`,
+        file: newFile,
         parentId: null,
         changelog: `Drifted from ${project}`,
         visible: true,
@@ -107,7 +92,7 @@ export async function POST(request: Request) {
     clientEdits: [],
   };
 
-  await writeManifest(client, slug, manifest);
+  await writeManifest(userId, client, slug, manifest);
 
   return NextResponse.json({
     client,

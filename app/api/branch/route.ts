@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
 import path from 'path';
-import { getManifest, writeManifest } from '@/lib/manifest';
+import { getManifest, writeManifest, writeHtmlFile } from '@/lib/storage';
+import { getUserId } from '@/lib/auth';
 import { conceptSlug } from '@/lib/letters';
 import { driftPromptBoilerplate } from '@/lib/canvas-boilerplate';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
@@ -18,7 +16,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const manifest = await getManifest(client, project);
+  const userId = await getUserId();
+  const manifest = await getManifest(userId, client, project);
   if (!manifest) {
     return NextResponse.json({ error: 'Manifest not found' }, { status: 404 });
   }
@@ -33,27 +32,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Version not found' }, { status: 404 });
   }
 
-  const projectDir = path.join(PROJECTS_DIR, client, project);
-
-  // Determine next concept folder number by scanning existing concept-N folders
-  const entries = await fs.readdir(projectDir);
+  // Determine next concept folder number from manifest (works for both local and cloud)
   let maxN = 0;
-  for (const entry of entries) {
-    const match = entry.match(/^concept-(\d+)$/);
-    if (match) {
-      const n = parseInt(match[1], 10);
-      if (n > maxN) maxN = n;
+  for (const round of manifest.rounds) {
+    for (const c of round.concepts) {
+      for (const v of c.versions) {
+        const match = v.file.match(/concept-(\d+)\//);
+        if (match) {
+          const n = parseInt(match[1], 10);
+          if (n > maxN) maxN = n;
+        }
+      }
     }
   }
   const nextN = maxN + 1;
   const newFolder = `concept-${nextN}`;
 
-  // Create the new concept folder
-  await fs.mkdir(path.join(projectDir, newFolder), { recursive: true });
-
-  // Write empty canvas boilerplate as v1.html — designer directs agent to fill it in
+  // Write empty canvas boilerplate as v1.html
   const newFile = `${newFolder}/v1.html`;
-  const destPath = path.join(projectDir, newFile);
   const newLabel = label || `Concept ${nextN}`;
 
   const boilerplate = driftPromptBoilerplate(
@@ -63,24 +59,18 @@ export async function POST(request: Request) {
     1,
   );
 
-  try {
-    await fs.writeFile(destPath, boilerplate, 'utf-8');
-  } catch {
-    return NextResponse.json({ error: 'Failed to create file' }, { status: 500 });
-  }
+  await writeHtmlFile(userId, client, project, newFile, boilerplate);
 
   // Create new concept and version IDs
   const newConceptId = `concept-${generateId()}`;
   const newVersionId = `version-${generateId()}`;
 
-  // Build the new concept entry — remember the source concept and branch link
-  // so we can show the "← Source" breadcrumb.
   const newConcept = {
     id: newConceptId,
     slug: conceptSlug(newLabel),
     label: newLabel,
     description: 'New drift slot — empty',
-    position: 0, // will be renumbered below
+    position: 0,
     visible: true,
     branchedFrom: {
       conceptId: sourceConcept.id,
@@ -99,18 +89,16 @@ export async function POST(request: Request) {
     }],
   };
 
-  // Insert immediately after the source concept, not at the end.
-  // manifest.concepts is a reference to the active round's concepts array,
-  // so mutating it here also mutates the round.
+  // Insert immediately after the source concept
   const sourceIndex = manifest.concepts.findIndex(c => c.id === sourceConcept.id);
   const insertAt = sourceIndex >= 0 ? sourceIndex + 1 : manifest.concepts.length;
   manifest.concepts.splice(insertAt, 0, newConcept);
-  // Renumber positions so layout stays consistent
   manifest.concepts.forEach((c, i) => { c.position = i + 1; });
 
-  await writeManifest(client, project, manifest);
+  await writeManifest(userId, client, project, manifest);
 
-  const absolutePath = path.resolve(destPath);
+  const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+  const absolutePath = path.resolve(path.join(PROJECTS_DIR, client, project, newFile));
 
   return NextResponse.json({
     conceptId: newConceptId,

@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
 import path from 'path';
-import { getManifest, writeManifest, getRoundConcepts } from '@/lib/manifest';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getManifest, writeManifest, copyFile } from '@/lib/storage';
+import { getUserId } from '@/lib/auth';
 
 export async function POST(request: Request) {
   const { client, project, sourceFile, sourceLabel, sourceNumber, targetConceptId, targetRoundId } = await request.json();
@@ -12,14 +10,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const manifest = await getManifest(client, project);
+  const userId = await getUserId();
+  const manifest = await getManifest(userId, client, project);
   if (!manifest) {
     return NextResponse.json({ error: 'Manifest not found' }, { status: 404 });
   }
 
   // Find target concept in the correct round
-  const roundData = getRoundConcepts(manifest, targetRoundId);
-  const concepts = roundData?.concepts ?? manifest.concepts;
+  let concepts = manifest.concepts;
+  if (targetRoundId) {
+    const round = manifest.rounds.find(r => r.id === targetRoundId);
+    if (round) concepts = round.concepts;
+  }
 
   const targetConcept = concepts.find(c => c.id === targetConceptId);
   if (!targetConcept) {
@@ -38,24 +40,14 @@ export async function POST(request: Request) {
     ? path.dirname(targetConcept.versions[0].file)
     : targetConceptId;
   const newFile = `${conceptFolder}/v${nextNumber}.html`;
-  const projectDir = path.join(PROJECTS_DIR, client, project);
 
-  // Copy the HTML file
-  const srcPath = path.join(projectDir, sourceFile);
-  const destPath = path.join(projectDir, newFile);
-
-  try {
-    await fs.mkdir(path.dirname(destPath), { recursive: true });
-    await fs.copyFile(srcPath, destPath);
-  } catch {
-    return NextResponse.json({ error: 'Failed to copy file' }, { status: 500 });
-  }
+  // Copy the HTML file via storage dispatch
+  await copyFile(userId, client, project, sourceFile, newFile);
 
   // Build changelog
   const fromLabel = sourceLabel ? `${sourceLabel} v${sourceNumber || '?'}` : 'clipboard';
   const changelog = `Pasted from ${fromLabel}`;
 
-  // Add new version to target concept
   const newVersion = {
     id: nextId,
     number: nextNumber,
@@ -69,9 +61,10 @@ export async function POST(request: Request) {
   };
 
   targetConcept.versions.push(newVersion);
-  await writeManifest(client, project, manifest);
+  await writeManifest(userId, client, project, manifest);
 
-  const absolutePath = path.resolve(destPath);
+  const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+  const absolutePath = path.resolve(path.join(PROJECTS_DIR, client, project, newFile));
   return NextResponse.json({
     versionId: newVersion.id,
     versionNumber: nextNumber,

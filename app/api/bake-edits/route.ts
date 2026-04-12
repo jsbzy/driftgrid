@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { getManifest } from '@/lib/manifest';
-
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+import { getManifest, getHtmlFile, writeHtmlFile } from '@/lib/storage';
+import { getUserId } from '@/lib/auth';
 
 export async function POST(request: Request) {
   const { client, project, conceptId, versionId, edits } = await request.json();
@@ -16,7 +13,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No edits to apply' }, { status: 400 });
   }
 
-  const manifest = await getManifest(client, project);
+  const userId = await getUserId();
+  const manifest = await getManifest(userId, client, project);
   if (!manifest) {
     return NextResponse.json({ error: 'Manifest not found' }, { status: 404 });
   }
@@ -31,20 +29,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Version not found' }, { status: 404 });
   }
 
-  const filePath = path.join(PROJECTS_DIR, client, project, version.file);
-
-  // Validate path stays within projects dir
-  const resolved = path.resolve(filePath);
-  if (!resolved.startsWith(path.resolve(PROJECTS_DIR))) {
-    return NextResponse.json({ error: 'Invalid file path' }, { status: 400 });
-  }
-
-  let html: string;
-  try {
-    html = await fs.readFile(filePath, 'utf-8');
-  } catch {
+  const rawHtml = await getHtmlFile(userId, client, project, version.file);
+  if (!rawHtml) {
     return NextResponse.json({ error: 'Failed to read HTML file' }, { status: 500 });
   }
+  let html: string = rawHtml;
 
   // Replace innerHTML for each data-drift-editable element
   let appliedCount = 0;
@@ -61,11 +50,7 @@ export async function POST(request: Request) {
     html = newHtml;
   }
 
-  try {
-    await fs.writeFile(filePath, html, 'utf-8');
-  } catch {
-    return NextResponse.json({ error: 'Failed to write HTML file' }, { status: 500 });
-  }
+  await writeHtmlFile(userId, client, project, version.file, html);
 
   return NextResponse.json({ success: true, appliedCount });
 }

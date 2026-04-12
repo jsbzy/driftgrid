@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
 import path from 'path';
-import { getManifest, writeManifest } from '@/lib/manifest';
+import { getManifest, writeManifest, writeHtmlFile } from '@/lib/storage';
+import { getUserId } from '@/lib/auth';
 import { driftPromptBoilerplate } from '@/lib/canvas-boilerplate';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
@@ -13,7 +13,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const manifest = await getManifest(client, project);
+  const userId = await getUserId();
+  const manifest = await getManifest(userId, client, project);
   if (!manifest) {
     return NextResponse.json({ error: 'Manifest not found' }, { status: 404 });
   }
@@ -48,10 +49,8 @@ export async function POST(request: Request) {
   // Determine new file path (same concept folder, next version)
   const conceptFolder = path.dirname(version.file);
   const newFile = `${conceptFolder}/v${nextNumber}.html`;
-  const projectDir = path.join(PROJECTS_DIR, client, project);
-  const destPath = path.join(projectDir, newFile);
 
-  // Write the drift-prompt boilerplate — polished empty state asking the user to prompt their agent
+  // Write the drift-prompt boilerplate
   const boilerplate = driftPromptBoilerplate(
     typeof manifest.project.canvas === 'string' ? manifest.project.canvas : 'desktop',
     `${manifest.project.name} — ${concept.label} v${nextNumber}`,
@@ -59,12 +58,7 @@ export async function POST(request: Request) {
     nextNumber,
   );
 
-  try {
-    await fs.mkdir(path.dirname(destPath), { recursive: true });
-    await fs.writeFile(destPath, boilerplate, 'utf-8');
-  } catch {
-    return NextResponse.json({ error: 'Failed to create file' }, { status: 500 });
-  }
+  await writeHtmlFile(userId, client, project, newFile, boilerplate);
 
   // Add new version to manifest
   const newVersion = {
@@ -80,10 +74,10 @@ export async function POST(request: Request) {
   };
 
   concept.versions.push(newVersion);
-  await writeManifest(client, project, manifest);
+  await writeManifest(userId, client, project, manifest);
 
   // Return the new version info + absolute path for clipboard
-  const absolutePath = path.resolve(destPath);
+  const absolutePath = path.resolve(path.join(PROJECTS_DIR, client, project, newFile));
 
   return NextResponse.json({
     versionId: nextId,

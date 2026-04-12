@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getManifest, writeManifest } from '@/lib/manifest';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { getManifest, writeManifest, writeHtmlFile } from '@/lib/storage';
+import { getUserId } from '@/lib/auth';
 import type { Annotation, Manifest } from '@/lib/types';
 import {
   driftPromptBoilerplate,
@@ -9,7 +8,6 @@ import {
   inProgressBoilerplate,
 } from '@/lib/canvas-boilerplate';
 
-const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 const EMPTY_DRIFT_CHANGELOG = 'New drift slot — empty';
 
 function generateId(): string {
@@ -31,7 +29,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Missing required params' }, { status: 400 });
   }
 
-  const manifest = await getManifest(client, project);
+  const userId = await getUserId();
+  const manifest = await getManifest(userId, client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
   const concept = manifest.concepts?.find(c => c.id === conceptId);
@@ -52,7 +51,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const manifest = await getManifest(client, project);
+  const userId = await getUserId();
+  const manifest = await getManifest(userId, client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
   const concept = manifest.concepts?.find(c => c.id === conceptId);
@@ -76,10 +76,10 @@ export async function POST(request: Request) {
   if (!version.annotations) version.annotations = [];
   version.annotations.push(annotation);
 
-  await writeManifest(client, project, manifest);
-  await writeFeedbackSidecar(client, project, concept!.label, version);
+  await writeManifest(userId, client, project, manifest);
+  await writeFeedbackSidecar(userId, client, project, concept!.label, version);
   // Re-render the drift template if this annotation changed the slot's visible state
-  await maybeRewriteDriftTemplate(client, project, manifest, concept!, version);
+  await maybeRewriteDriftTemplate(userId, client, project, manifest, concept!, version);
 
   return NextResponse.json(annotation);
 }
@@ -95,7 +95,8 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const manifest = await getManifest(client, project);
+  const userId = await getUserId();
+  const manifest = await getManifest(userId, client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
   const concept = manifest.concepts?.find(c => c.id === conceptId);
@@ -103,9 +104,9 @@ export async function DELETE(request: Request) {
   if (!version?.annotations) return NextResponse.json({ error: 'No annotations' }, { status: 404 });
 
   version.annotations = version.annotations.filter(a => a.id !== annotationId);
-  await writeManifest(client, project, manifest);
-  await writeFeedbackSidecar(client, project, concept!.label, version);
-  await maybeRewriteDriftTemplate(client, project, manifest, concept!, version);
+  await writeManifest(userId, client, project, manifest);
+  await writeFeedbackSidecar(userId, client, project, concept!.label, version);
+  await maybeRewriteDriftTemplate(userId, client, project, manifest, concept!, version);
 
   return NextResponse.json({ ok: true });
 }
@@ -122,7 +123,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const manifest = await getManifest(client, project);
+  const userId = await getUserId();
+  const manifest = await getManifest(userId, client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
   const concept = manifest.concepts?.find(c => c.id === conceptId);
@@ -151,9 +153,9 @@ export async function PATCH(request: Request) {
     annotation.resolved = !annotation.resolved;
   }
 
-  await writeManifest(client, project, manifest);
-  await writeFeedbackSidecar(client, project, concept.label, version);
-  await maybeRewriteDriftTemplate(client, project, manifest, concept, version);
+  await writeManifest(userId, client, project, manifest);
+  await writeFeedbackSidecar(userId, client, project, concept.label, version);
+  await maybeRewriteDriftTemplate(userId, client, project, manifest, concept, version);
 
   return NextResponse.json(annotation);
 }
@@ -162,6 +164,7 @@ export async function PATCH(request: Request) {
  * Write a .feedback.md sidecar file next to the HTML version
  */
 async function writeFeedbackSidecar(
+  userId: string | null,
   client: string,
   project: string,
   conceptLabel: string,
@@ -180,11 +183,8 @@ async function writeFeedbackSidecar(
   lines.push('', '---');
   lines.push(`File: ~/driftgrid/projects/${client}/${project}/${version.file}`);
 
-  const htmlPath = version.file;
-  const feedbackPath = htmlPath.replace(/\.html$/, '.feedback.md');
-  const fullPath = path.join(PROJECTS_DIR, client, project, feedbackPath);
-
-  await fs.writeFile(fullPath, lines.join('\n'), 'utf-8');
+  const feedbackPath = version.file.replace(/\.html$/, '.feedback.md');
+  await writeHtmlFile(userId, client, project, feedbackPath, lines.join('\n'));
 }
 
 /**
@@ -198,6 +198,7 @@ async function writeFeedbackSidecar(
  *   agent reply present                → leave file alone (agent wrote real content)
  */
 async function maybeRewriteDriftTemplate(
+  userId: string | null,
   client: string,
   project: string,
   manifest: Manifest,
@@ -215,7 +216,6 @@ async function maybeRewriteDriftTemplate(
     ? annotations.some(a => a.parentId === wholeVersionPrompt.id && a.isAgent)
     : false;
 
-  // If the agent has responded, the agent owns the file — don't overwrite.
   if (hasAgentReply) return;
 
   const canvas =
@@ -231,10 +231,9 @@ async function maybeRewriteDriftTemplate(
     html = awaitingAgentBoilerplate(canvas, title, concept.label, version.number, wholeVersionPrompt.text);
   }
 
-  const fullPath = path.join(PROJECTS_DIR, client, project, version.file);
   try {
-    await fs.writeFile(fullPath, html, 'utf-8');
+    await writeHtmlFile(userId, client, project, version.file, html);
   } catch {
-    // Best-effort — don't fail the annotation save if the file write fails
+    // Best-effort
   }
 }

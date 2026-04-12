@@ -122,6 +122,36 @@ export async function getClientsCloud(userId: string): Promise<ClientInfo[]> {
   return clients;
 }
 
+/** Write an HTML file to Supabase Storage */
+export async function writeHtmlFileCloud(userId: string, client: string, project: string, filePath: string, content: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const storagePath = `${userId}/${client}/${project}/${filePath}`;
+  const blob = new Blob([content], { type: 'text/html; charset=utf-8' });
+  await supabase.storage.from(BUCKET).upload(storagePath, blob, { upsert: true });
+}
+
+/** Copy a file within Supabase Storage (read source → write dest) */
+export async function copyFileCloud(userId: string, client: string, project: string, srcPath: string, destPath: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const srcFull = `${userId}/${client}/${project}/${srcPath}`;
+  const destFull = `${userId}/${client}/${project}/${destPath}`;
+
+  const { data, error } = await supabase.storage.from(BUCKET).download(srcFull);
+  if (error || !data) {
+    // Source doesn't exist — write a placeholder
+    const blob = new Blob(['<!-- copied -->'], { type: 'text/html; charset=utf-8' });
+    await supabase.storage.from(BUCKET).upload(destFull, blob, { upsert: true });
+    return;
+  }
+
+  await supabase.storage.from(BUCKET).upload(destFull, data, {
+    upsert: true,
+    contentType: destPath.endsWith('.html') ? 'text/html; charset=utf-8'
+      : destPath.endsWith('.json') ? 'application/json'
+      : 'application/octet-stream',
+  });
+}
+
 /** Read an HTML file from Supabase Storage */
 export async function getHtmlFileCloud(userId: string, client: string, project: string, filePath: string): Promise<string | null> {
   const supabase = getSupabaseAdmin();
