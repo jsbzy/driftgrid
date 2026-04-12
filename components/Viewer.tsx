@@ -1353,7 +1353,18 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             );
           })()}
         </div>
-        {multiSelectBar || actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame (Enter)', '↵')}
+        {mode === 'client' ? (
+          <div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-full"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)' }}
+          >
+            <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.4)', padding: '0 4px' }}>
+              Click a card to review
+            </span>
+          </div>
+        ) : (
+          multiSelectBar || actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame (Enter)', '↵')
+        )}
         <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />
         {commandPalette}
         <ToastContainer />
@@ -1442,6 +1453,28 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         </div>
         {/* Frame action bar */}
         {mode !== 'client' && !ui.navGridHidden && !presentation.isPresenting && actionBar(() => handleToggleGridView(), gridIcon, 'Back to grid (G)', 'G')}
+        {/* Client review action bar — comment + back to grid */}
+        {mode === 'client' && (
+          <div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 px-2 py-1.5 rounded-full"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)' }}
+          >
+            <button onClick={() => activeAnnotations.setAnnotationMode(v => !v)} className={actionBarBtn} title="Add comment (C)" style={{ opacity: activeAnnotations.annotationMode ? 1 : undefined }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill={activeAnnotations.annotationMode ? 'white' : 'none'} stroke="white" strokeWidth="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              <span style={actionBarKey}>C</span>
+            </button>
+            <button onClick={() => { setViewMode('grid'); }} className={actionBarBtn} title="Back to grid (G)">
+              {gridIcon}
+              <span style={actionBarKey}>G</span>
+            </button>
+            <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.12)' }} />
+            <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.35)', padding: '0 4px' }}>
+              {currentConcept.label} · v{currentVersion.number}
+            </span>
+          </div>
+        )}
         {/* Presentation mode indicator */}
         {presentation.isPresenting && (
           <div
