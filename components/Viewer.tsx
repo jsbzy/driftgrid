@@ -1432,6 +1432,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           <AnnotationOverlay
             annotations={activeAnnotations.annotations}
             annotationMode={activeAnnotations.annotationMode}
+            viewMode={mode === 'client' ? 'client' : 'designer'}
             onAdd={activeAnnotations.handleAddAnnotation}
             onDelete={activeAnnotations.handleDeleteAnnotation}
             onResolve={activeAnnotations.handleResolveAnnotation}

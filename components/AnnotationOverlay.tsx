@@ -15,6 +15,8 @@ interface AnnotationOverlayProps {
   editMode?: boolean;
   placingPin?: boolean;
   annotationMode?: boolean;
+  /** 'client' hides agent/designer actions (resolve, copy for agent, send to agent, reply) */
+  viewMode?: 'designer' | 'client';
   onAdd: (x: number | null, y: number | null, text: string) => void;
   onResolve: (id: string) => void;
   onDelete: (id: string) => void;
@@ -38,6 +40,7 @@ export function AnnotationOverlay({
   editMode,
   placingPin,
   annotationMode,
+  viewMode = 'designer',
   onAdd,
   onResolve,
   onDelete,
@@ -45,6 +48,7 @@ export function AnnotationOverlay({
   onReply,
   frameContext,
 }: AnnotationOverlayProps) {
+  const isClient = viewMode === 'client';
   // Unified: overlay captures clicks when in legacy annotationMode OR when placing a pin in edit mode
   const isCapturing = annotationMode || (editMode && placingPin);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -410,49 +414,51 @@ export function AnnotationOverlay({
                   >
                     {annotation.resolved ? 'Resolved' : 'Comment'} · {annotation.isClient ? annotation.author : 'designer'}
                   </span>
-                  {/* Delete icon — subtle, top-right */}
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(annotation.id);
-                      setActivePin(null);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 16,
-                      height: 16,
-                      borderRadius: 3,
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      color: 'rgba(255,255,255,0.3)',
-                      transition: 'color 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = '#ef4444';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)';
-                    }}
-                  >
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                  {/* Delete icon — designer only */}
+                  {!isClient && (
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(annotation.id);
+                        setActivePin(null);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 16,
+                        height: 16,
+                        borderRadius: 3,
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        color: 'rgba(255,255,255,0.3)',
+                        transition: 'color 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.color = '#ef4444';
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)';
+                      }}
                     >
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
+                      <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
 
                 {/* Note — editable textarea unless the comment has replies (then locked) */}
@@ -552,51 +558,28 @@ export function AnnotationOverlay({
                   </div>
                 )}
 
-                {/* Actions row: Copy / Send / Resolve */}
-                <div
-                  style={{
-                    marginTop: 10,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 6,
-                  }}
-                >
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onResolve(annotation.id);
-                    }}
+                {/* Actions row — client gets a minimal view, designer gets full controls */}
+                {isClient ? (
+                  <div style={{ marginTop: 8, fontFamily: 'var(--font-mono, monospace)', fontSize: 9, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.06em' }}>
+                    {new Date(annotation.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    {annotation.resolved && ' · resolved'}
+                  </div>
+                ) : (
+                  <div
                     style={{
-                      fontFamily: 'var(--font-mono, monospace)',
-                      fontSize: 9,
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                      padding: '5px 9px',
-                      borderRadius: 5,
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      background: annotation.resolved
-                        ? 'rgba(34,197,94,0.12)'
-                        : 'rgba(255,255,255,0.05)',
-                      color: annotation.resolved
-                        ? 'rgba(74,222,128,0.9)'
-                        : 'rgba(255,255,255,0.6)',
-                      cursor: 'pointer',
+                      marginTop: 10,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 6,
                     }}
                   >
-                    {annotation.resolved ? 'Resolved' : 'Resolve'}
-                  </button>
-                  <div style={{ display: 'flex', gap: 6 }}>
                     <button
                       type="button"
                       tabIndex={-1}
                       onClick={(e) => {
                         e.stopPropagation();
-                        const message = buildAnnotationAgentMessage(annotation);
-                        navigator.clipboard?.writeText(message).catch(() => {});
-                        toast('Copied for agent');
+                        onResolve(annotation.id);
                       }}
                       style={{
                         fontFamily: 'var(--font-mono, monospace)',
@@ -606,48 +589,27 @@ export function AnnotationOverlay({
                         padding: '5px 9px',
                         borderRadius: 5,
                         border: '1px solid rgba(255,255,255,0.1)',
-                        background: 'rgba(255,255,255,0.05)',
-                        color: 'rgba(255,255,255,0.7)',
+                        background: annotation.resolved
+                          ? 'rgba(34,197,94,0.12)'
+                          : 'rgba(255,255,255,0.05)',
+                        color: annotation.resolved
+                          ? 'rgba(74,222,128,0.9)'
+                          : 'rgba(255,255,255,0.6)',
                         cursor: 'pointer',
                       }}
                     >
-                      Copy for agent
+                      {annotation.resolved ? 'Resolved' : 'Resolve'}
                     </button>
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSendToAgentStub();
-                      }}
-                      title="Install the DriftGrid MCP server to enable"
-                      style={{
-                        fontFamily: 'var(--font-mono, monospace)',
-                        fontSize: 9,
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        padding: '5px 9px',
-                        borderRadius: 5,
-                        border: '1px dashed rgba(255,255,255,0.12)',
-                        background: 'rgba(255,255,255,0.02)',
-                        color: 'rgba(255,255,255,0.3)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Send to Agent
-                    </button>
-                    {onReply && (
+                    <div style={{ display: 'flex', gap: 6 }}>
                       <button
                         type="button"
                         tabIndex={-1}
                         onClick={(e) => {
                           e.stopPropagation();
-                          const text = window.prompt('Agent reply text:');
-                          if (text && text.trim()) {
-                            onReply(annotation.id, text.trim(), true);
-                          }
+                          const message = buildAnnotationAgentMessage(annotation);
+                          navigator.clipboard?.writeText(message).catch(() => {});
+                          toast('Copied for agent');
                         }}
-                        title="Dev — simulate an agent reply without MCP"
                         style={{
                           fontFamily: 'var(--font-mono, monospace)',
                           fontSize: 9,
@@ -655,17 +617,68 @@ export function AnnotationOverlay({
                           textTransform: 'uppercase',
                           padding: '5px 9px',
                           borderRadius: 5,
-                          border: '1px dashed rgba(212,168,74,0.4)',
-                          background: 'rgba(212,168,74,0.08)',
-                          color: 'rgba(212,168,74,0.8)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          background: 'rgba(255,255,255,0.05)',
+                          color: 'rgba(255,255,255,0.7)',
                           cursor: 'pointer',
                         }}
                       >
-                        + reply
+                        Copy for agent
                       </button>
-                    )}
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSendToAgentStub();
+                        }}
+                        title="Install the DriftGrid MCP server to enable"
+                        style={{
+                          fontFamily: 'var(--font-mono, monospace)',
+                          fontSize: 9,
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          padding: '5px 9px',
+                          borderRadius: 5,
+                          border: '1px dashed rgba(255,255,255,0.12)',
+                          background: 'rgba(255,255,255,0.02)',
+                          color: 'rgba(255,255,255,0.3)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Send to Agent
+                      </button>
+                      {onReply && (
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const text = window.prompt('Agent reply text:');
+                            if (text && text.trim()) {
+                              onReply(annotation.id, text.trim(), true);
+                            }
+                          }}
+                          title="Dev — simulate an agent reply without MCP"
+                          style={{
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontSize: 9,
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase',
+                            padding: '5px 9px',
+                            borderRadius: 5,
+                            border: '1px dashed rgba(212,168,74,0.4)',
+                            background: 'rgba(212,168,74,0.08)',
+                            color: 'rgba(212,168,74,0.8)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          + reply
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -773,59 +786,89 @@ export function AnnotationOverlay({
                 gap: 6,
               }}
             >
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCopyForAgent();
-                  inputRef.current?.focus();
-                }}
-                disabled={!pendingText.trim()}
-                style={{
-                  fontFamily: 'var(--font-mono, monospace)',
-                  fontSize: 9,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  padding: '5px 9px',
-                  borderRadius: 5,
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: copyState === 'copied'
-                    ? 'rgba(34,197,94,0.12)'
-                    : 'rgba(255,255,255,0.05)',
-                  color: copyState === 'copied'
-                    ? 'rgba(74,222,128,0.9)'
-                    : (pendingText.trim() ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)'),
-                  cursor: pendingText.trim() ? 'pointer' : 'default',
-                  transition: 'background 0.15s ease, color 0.15s ease',
-                }}
-              >
-                {copyState === 'copied' ? 'Copied' : 'Copy for agent'}
-              </button>
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSendToAgentStub();
-                  inputRef.current?.focus();
-                }}
-                title="Install the DriftGrid MCP server to enable"
-                style={{
-                  fontFamily: 'var(--font-mono, monospace)',
-                  fontSize: 9,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  padding: '5px 9px',
-                  borderRadius: 5,
-                  border: '1px dashed rgba(255,255,255,0.12)',
-                  background: 'rgba(255,255,255,0.02)',
-                  color: 'rgba(255,255,255,0.3)',
-                  cursor: 'pointer',
-                }}
-              >
-                Send to Agent
-              </button>
+              {isClient ? (
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSubmitPending();
+                  }}
+                  disabled={!pendingText.trim()}
+                  style={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: 9,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    padding: '5px 12px',
+                    borderRadius: 5,
+                    border: 'none',
+                    background: pendingText.trim() ? '#fff' : 'rgba(255,255,255,0.1)',
+                    color: pendingText.trim() ? '#000' : 'rgba(255,255,255,0.2)',
+                    cursor: pendingText.trim() ? 'pointer' : 'default',
+                    fontWeight: 600,
+                    transition: 'background 0.15s ease, color 0.15s ease',
+                  }}
+                >
+                  Add Comment
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyForAgent();
+                      inputRef.current?.focus();
+                    }}
+                    disabled={!pendingText.trim()}
+                    style={{
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontSize: 9,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      padding: '5px 9px',
+                      borderRadius: 5,
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      background: copyState === 'copied'
+                        ? 'rgba(34,197,94,0.12)'
+                        : 'rgba(255,255,255,0.05)',
+                      color: copyState === 'copied'
+                        ? 'rgba(74,222,128,0.9)'
+                        : (pendingText.trim() ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)'),
+                      cursor: pendingText.trim() ? 'pointer' : 'default',
+                      transition: 'background 0.15s ease, color 0.15s ease',
+                    }}
+                  >
+                    {copyState === 'copied' ? 'Copied' : 'Copy for agent'}
+                  </button>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSendToAgentStub();
+                      inputRef.current?.focus();
+                    }}
+                    title="Install the DriftGrid MCP server to enable"
+                    style={{
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontSize: 9,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      padding: '5px 9px',
+                      borderRadius: 5,
+                      border: '1px dashed rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.02)',
+                      color: 'rgba(255,255,255,0.3)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Send to Agent
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
