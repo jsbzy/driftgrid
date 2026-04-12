@@ -13,6 +13,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
+import * as readline from 'readline';
 import { CANVAS_PRESETS } from '../lib/constants';
 import type { Manifest } from '../lib/types';
 
@@ -20,14 +21,16 @@ const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 const VALID_PRESETS = Object.keys(CANVAS_PRESETS);
 
 function usage(): never {
-  console.error('Usage: npx tsx scripts/init-project.ts <client> <project> [--canvas <preset>]');
+  console.error('Usage: driftgrid init [client] [project] [--canvas <preset>]');
   console.error('');
   console.error('Canvas presets:', VALID_PRESETS.join(', '));
   console.error('');
-  console.error('Examples:');
-  console.error('  npx tsx scripts/init-project.ts acme landing-page');
-  console.error('  npx tsx scripts/init-project.ts acme pitch-deck --canvas landscape-16-9');
+  console.error('Run without arguments for interactive mode.');
   process.exit(1);
+}
+
+function ask(rl: readline.Interface, question: string): Promise<string> {
+  return new Promise(resolve => rl.question(question, resolve));
 }
 
 function slugify(input: string): string {
@@ -62,20 +65,59 @@ async function fileExists(filePath: string): Promise<boolean> {
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.length < 2) {
-    usage();
-  }
-
-  const clientRaw = args[0];
-  const projectRaw = args[1];
+  let clientRaw: string;
+  let projectRaw: string;
   let canvasPreset = 'desktop';
 
-  // Parse --canvas flag
-  for (let i = 2; i < args.length; i++) {
-    if (args[i] === '--canvas' && args[i + 1]) {
-      canvasPreset = args[i + 1];
-      i++;
+  if (args.length >= 2 && !args[0].startsWith('--')) {
+    // Non-interactive: args provided
+    clientRaw = args[0];
+    projectRaw = args[1];
+    for (let i = 2; i < args.length; i++) {
+      if (args[i] === '--canvas' && args[i + 1]) {
+        canvasPreset = args[i + 1];
+        i++;
+      }
     }
+  } else if (args.includes('--help') || args.includes('-h')) {
+    usage();
+  } else {
+    // Interactive wizard
+    console.log('');
+    console.log('  DriftGrid — New Project');
+    console.log('  ──────────────────────');
+    console.log('');
+
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+    clientRaw = await ask(rl, '  Client slug (e.g. acme): ');
+    projectRaw = await ask(rl, '  Project slug (e.g. landing-page): ');
+
+    console.log('');
+    console.log('  Canvas presets:');
+    VALID_PRESETS.forEach((p, i) => {
+      const preset = CANVAS_PRESETS[p];
+      const dims = typeof preset.height === 'number'
+        ? `${preset.width}×${preset.height}`
+        : `${preset.width} × auto`;
+      const marker = p === 'desktop' ? ' (default)' : '';
+      console.log(`    ${i + 1}. ${p} — ${dims}${marker}`);
+    });
+    console.log('');
+
+    const canvasInput = await ask(rl, '  Canvas preset [desktop]: ');
+    if (canvasInput.trim()) {
+      // Accept number or name
+      const num = parseInt(canvasInput.trim(), 10);
+      if (!isNaN(num) && num >= 1 && num <= VALID_PRESETS.length) {
+        canvasPreset = VALID_PRESETS[num - 1];
+      } else {
+        canvasPreset = canvasInput.trim();
+      }
+    }
+
+    rl.close();
+    console.log('');
   }
 
   const client = slugify(clientRaw);
