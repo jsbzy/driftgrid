@@ -29,6 +29,7 @@ import { usePresentationMode } from '@/lib/hooks/usePresentationMode';
 import { useManifestMutations } from '@/lib/hooks/useManifestMutations';
 import { AnnotationOverlay } from './AnnotationOverlay';
 import { ClientNamePrompt } from './ClientNamePrompt';
+import { SharePanel } from './SharePanel';
 import { GridPromptInput } from './GridPromptInput';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
@@ -70,6 +71,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('overview');
   // Grid-view prompt input — open when user presses C on an empty card, or auto-opens after drift/branch
   const [gridPromptOpen, setGridPromptOpen] = useState(false);
+  const [sharePanelOpen, setSharePanelOpen] = useState(false);
   const autoOpenGridPromptRef = useRef(false);
 
   // Demo drift state — only used in share mode (shareToken present).
@@ -1166,6 +1168,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     return (
       <div className="h-screen flex flex-col bg-[var(--background)]">
         {namePrompt}
+        <SharePanel open={sharePanelOpen} onClose={() => setSharePanelOpen(false)} client={client} project={project} />
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
@@ -1183,49 +1186,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           {/* Share button — designer mode only */}
           {mode !== 'client' && !shareToken && (
             <button
-              onClick={async () => {
-                try {
-                  const res = await fetch('/api/share', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ client, project }),
-                  });
-                  if (res.ok) {
-                    const data = await res.json();
-                    await navigator.clipboard.writeText(data.url);
-                    toast('Share link copied');
-                  } else {
-                    const err = await res.json();
-                    // Duplicate — share already exists, copy it
-                    if (err.error?.includes('duplicate') || err.error?.includes('unique')) {
-                      const listRes = await fetch(`/api/share?client=${encodeURIComponent(client)}&project=${encodeURIComponent(project)}`);
-                      if (listRes.ok) {
-                        const links = await listRes.json();
-                        if (links.length > 0) {
-                          const url = `${window.location.origin}/s/${links[0].token}`;
-                          await navigator.clipboard.writeText(url);
-                          toast('Share link copied');
-                          return;
-                        }
-                      }
-                    }
-                    // Free tier limit hit
-                    if (err.error === 'free_limit') {
-                      toast('Upgrade to Pro to share unlimited projects', 'info');
-                      window.open('/pricing', '_blank');
-                      return;
-                    }
-                    // Not authenticated or local mode
-                    if (res.status === 400 || res.status === 401) {
-                      toast('Share with clients → sign up at driftgrid.ai', 'info');
-                      return;
-                    }
-                    toast('Share failed', 'error');
-                  }
-                } catch {
-                  toast('Share failed', 'error');
-                }
-              }}
+              onClick={() => setSharePanelOpen(true)}
               className="flex items-center gap-2 px-5 py-2 rounded-lg transition-all"
               style={{
                 fontSize: 12,
@@ -1243,7 +1204,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLElement).style.background = '#fff';
               }}
-              title="Create share link for this project"
+              title="Share with clients"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
