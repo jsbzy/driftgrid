@@ -169,9 +169,19 @@ export const CanvasCard = memo(function CanvasCard({
               }}
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[var(--background)]">
-              <span className="text-[11px] font-medium" style={{ color: 'var(--foreground)', opacity: 0.4 }}>{conceptLabel}</span>
-              <span className="text-[10px]" style={{ color: 'var(--foreground)', opacity: 0.25 }}>v{versionNumber}</span>
+            <div className="w-full h-full bg-[var(--background)]" style={{ padding: '14% 12%' }}>
+              {/* Content skeleton — indicates a design is loading */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8%', opacity: 0.12 }}>
+                <div style={{ width: '35%', height: 8, borderRadius: 4, background: 'var(--foreground)' }} />
+                <div style={{ width: '80%', height: 14, borderRadius: 4, background: 'var(--foreground)' }} />
+                <div style={{ width: '65%', height: 14, borderRadius: 4, background: 'var(--foreground)' }} />
+                <div style={{ marginTop: '4%', display: 'flex', flexDirection: 'column', gap: '6%' }}>
+                  <div style={{ width: '90%', height: 6, borderRadius: 3, background: 'var(--foreground)' }} />
+                  <div style={{ width: '75%', height: 6, borderRadius: 3, background: 'var(--foreground)' }} />
+                  <div style={{ width: '85%', height: 6, borderRadius: 3, background: 'var(--foreground)' }} />
+                </div>
+                <div style={{ marginTop: '6%', width: '25%', height: 10, borderRadius: 4, background: 'var(--foreground)' }} />
+              </div>
             </div>
           )}
         </div>
