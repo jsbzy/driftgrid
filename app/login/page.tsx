@@ -75,8 +75,10 @@ function LoginForm() {
       }
     }
 
-    router.push(next);
-    router.refresh();
+    // Hard redirect (not client-side push) so the middleware re-runs
+    // with the new auth cookie. router.push + router.refresh doesn't
+    // guarantee the cookie is re-read by the server on the next render.
+    window.location.href = next;
   }
 
   async function handleOAuth(provider: 'google' | 'github') {
