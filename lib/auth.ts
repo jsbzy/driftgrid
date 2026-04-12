@@ -1,6 +1,6 @@
 /**
- * Server-side auth helpers for extracting user info from requests.
- * Works in both local mode (no auth needed) and cloud mode (Supabase session).
+ * Server-side auth helpers for extracting user + profile info from requests.
+ * Cloud-mode only — local dev has no auth and these helpers return null.
  */
 
 import { cookies } from 'next/headers';
@@ -10,6 +10,19 @@ import { createServerClient } from '@supabase/ssr';
 export interface AuthUser {
   id: string;
   email: string;
+}
+
+export interface Profile {
+  id: string;
+  email: string;
+  display_name: string | null;
+  tier: 'free' | 'pro';
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  subscription_status: string | null;
+  subscription_period_end: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 /** Get the current user from the request. Returns null in local mode or if not authenticated. */
@@ -26,7 +39,7 @@ export async function getUser(): Promise<AuthUser | null> {
           return cookieStore.getAll();
         },
         setAll() {
-          // Read-only in server components/route handlers — cookie writes happen in middleware
+          // Read-only in server components/route handlers — cookie writes happen in middleware.
         },
       },
     }
@@ -38,10 +51,47 @@ export async function getUser(): Promise<AuthUser | null> {
   return { id: user.id, email: user.email || '' };
 }
 
-/** Get userId for storage operations. Returns null in local mode (storage ignores null userId). */
+/** Get userId for storage operations. Returns null in local mode. */
 export async function getUserId(): Promise<string | null> {
   const user = await getUser();
   return user?.id ?? null;
+}
+
+/**
+ * Get the current user's profile row (joins auth.users → public.profiles).
+ * Returns null if not authenticated or if the profile row doesn't exist yet
+ * (which shouldn't happen once the handle_new_user trigger is in place, but
+ * we handle it defensively).
+ */
+export async function getProfile(): Promise<Profile | null> {
+  const user = await getUser();
+  if (!user) return null;
+
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (error || !data) return null;
+  return data as Profile;
+}
+
+/**
+ * Count the number of active share links owned by a user. Used for the
+ * free-tier paywall check (free = max 1 lifetime share).
+ */
+export async function countUserShares(userId: string): Promise<number> {
+  const supabase = getSupabaseAdmin();
+  const { count, error } = await supabase
+    .from('share_links')
+    .select('token', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('is_active', true);
+
+  if (error) return 0;
+  return count ?? 0;
 }
 
 /** Resolve a share token to the project owner's userId + project info */
