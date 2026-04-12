@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   '/login',
   '/pricing',       // pricing page — visible before sign-in
   '/api/auth',      // Supabase OAuth callback (/api/auth/callback)
+  '/api/stripe',    // Stripe webhook + checkout (routes do their own auth)
   '/api/share',     // share link creation uses its own auth
   '/api/s/',        // public share link endpoints
   '/s/',            // v1 share link pages
