@@ -70,7 +70,11 @@ Before designing, ask: "Do you have any other reference material? Copy docs, con
 If they provide files, URLs, or text — read and incorporate. If not, move on.
 
 ### Step 6 — Create the first designs
-Fill in the 3 concept slots with different design directions. Each should be a complete, distinct take on the project brief. Use the brand guidelines and any reference material, follow the canvas boilerplate rules below, and make each direction meaningfully different — not just color swaps.
+Ask: "How many design directions would you like? (default: 3)"
+
+If they say a number, use it. If they press enter or say "default", use 3. If the init script created a different number of concept slots than requested, create or remove slots to match using the iterate/branch APIs.
+
+Fill in each concept slot with a distinct design direction. Each should be a complete take on the project brief. Use the brand guidelines and any reference material, follow the canvas boilerplate rules below, and make each direction meaningfully different — not just color swaps.
 
 After creating designs, tell the user: "Your 3 directions are ready. Open the grid to browse them. Use arrow keys to navigate, Enter to zoom in, S to star your favorites."
 
