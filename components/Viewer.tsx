@@ -1215,10 +1215,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                       window.open('/pricing', '_blank');
                       return;
                     }
-                    // Not authenticated — local mode or not logged in
+                    // Not authenticated or local mode
                     if (res.status === 400 || res.status === 401) {
-                      toast('Create an account to share with clients', 'info');
-                      window.open('/login?next=' + encodeURIComponent(`/admin/${client}/${project}`), '_blank');
+                      toast('Share with clients → sign up at driftgrid.ai', 'info');
                       return;
                     }
                     toast('Share failed', 'error');
@@ -1227,23 +1226,22 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                   toast('Share failed', 'error');
                 }
               }}
-              className="flex items-center gap-2 px-4 py-1.5 rounded-full transition-all"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg transition-all"
               style={{
-                fontSize: 11,
-                fontWeight: 500,
-                letterSpacing: '0.06em',
-                color: '#fff',
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+                color: '#0a0a0a',
                 cursor: 'pointer',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.15)',
+                background: '#fff',
+                border: 'none',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.25)';
+                (e.currentTarget as HTMLElement).style.background = '#f0f0f0';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)';
+                (e.currentTarget as HTMLElement).style.background = '#fff';
               }}
               title="Create share link for this project"
             >
