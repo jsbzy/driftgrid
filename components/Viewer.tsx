@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import useSWR from 'swr';
 import type { Manifest, ViewMode, Concept, Version } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
-import { filterVisibleManifest } from '@/lib/filterManifest';
+import { filterVisibleManifest, filterStarredManifest } from '@/lib/filterManifest';
 import { letterToNumber, conceptSlug } from '@/lib/letters';
 import { HtmlFrame, type HtmlFrameHandle } from './HtmlFrame';
 import { TourOverlay } from './TourOverlay';
@@ -59,6 +59,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     shareToken ? 'grid' : mode === 'client' ? 'frame' : 'grid'
   );
   const [selections, setSelections] = useState<Set<string>>(new Set());
+  const [selectionsInitialized, setSelectionsInitialized] = useState(false);
   const [activeRoundId, setActiveRoundId] = useState<string | null>(null);
   const flash = useFlash();
   const ui = useUIVisibility();
@@ -97,6 +98,19 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
 
   // Unread versions (localStorage-backed, in-memory for share mode)
   const unread = useUnreadVersions(client, project, !!shareToken);
+
+  // Initialize selections from manifest.starred on first load
+  useEffect(() => {
+    if (selectionsInitialized || !manifest?.concepts) return;
+    const initial = new Set<string>();
+    for (const concept of manifest.concepts) {
+      for (const version of concept.versions) {
+        if (version.starred) initial.add(`${concept.id}:${version.id}`);
+      }
+    }
+    if (initial.size > 0) setSelections(initial);
+    setSelectionsInitialized(true);
+  }, [manifest, selectionsInitialized]);
 
   // Smooth zoom transition state
   const canvasRef = useRef<CanvasViewHandle>(null);
@@ -156,7 +170,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   }, [roundScopedManifest, shareToken, demoVersions, demoConcepts]);
 
   const filtered = demoManifest && mode === 'client'
-    ? filterVisibleManifest(demoManifest)
+    ? filterStarredManifest(filterVisibleManifest(demoManifest))
     : demoManifest;
   const concepts = filtered?.concepts ?? [];
   const currentConcept = concepts[conceptIndex];
@@ -572,19 +586,46 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   );
 
   const handleToggleSelect = useCallback(() => {
-    if (!currentConcept || !currentVersion) return;
+    if (!currentConcept || !currentVersion || !manifest) return;
+    const key = `${currentConcept.id}:${currentVersion.id}`;
     setSelections(prev => {
       const next = new Set(prev);
-      const key = `${currentConcept.id}:${currentVersion.id}`;
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
+      if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
-
-  }, [currentConcept, currentVersion]);
+    // Persist starred state to manifest
+    const newStarred = !selections.has(key);
+    const updated = {
+      ...manifest,
+      concepts: manifest.concepts.map(c =>
+        c.id !== currentConcept.id ? c : {
+          ...c,
+          versions: c.versions.map(v =>
+            v.id !== currentVersion.id ? v : { ...v, starred: newStarred }
+          ),
+        }
+      ),
+    };
+    if (manifest.rounds?.length) {
+      updated.rounds = manifest.rounds.map(r => ({
+        ...r,
+        concepts: r.concepts.map(c =>
+          c.id !== currentConcept.id ? c : {
+            ...c,
+            versions: c.versions.map(v =>
+              v.id !== currentVersion.id ? v : { ...v, starred: newStarred }
+            ),
+          }
+        ),
+      }));
+    }
+    fetch(`/api/manifest/${client}/${project}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated),
+    });
+    mutate(updated, false);
+  }, [currentConcept, currentVersion, manifest, selections, client, project, mutate]);
 
   const handleDeleteCurrent = useCallback(() => {
     if (!currentConcept || !currentVersion) return;
@@ -596,18 +637,46 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   }, [currentConcept, currentVersion, skipDeleteConfirm, mutations.executeDelete]);
 
   const handleStarVersion = useCallback((conceptId: string, versionId: string) => {
+    if (!manifest) return;
+    const key = `${conceptId}:${versionId}`;
     setSelections(prev => {
       const next = new Set(prev);
-      const key = `${conceptId}:${versionId}`;
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
+      if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
-
-  }, []);
+    // Persist starred state to manifest
+    const newStarred = !selections.has(key);
+    const updated = {
+      ...manifest,
+      concepts: manifest.concepts.map(c =>
+        c.id !== conceptId ? c : {
+          ...c,
+          versions: c.versions.map(v =>
+            v.id !== versionId ? v : { ...v, starred: newStarred }
+          ),
+        }
+      ),
+    };
+    if (manifest.rounds?.length) {
+      updated.rounds = manifest.rounds.map(r => ({
+        ...r,
+        concepts: r.concepts.map(c =>
+          c.id !== conceptId ? c : {
+            ...c,
+            versions: c.versions.map(v =>
+              v.id !== versionId ? v : { ...v, starred: newStarred }
+            ),
+          }
+        ),
+      }));
+    }
+    fetch(`/api/manifest/${client}/${project}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated),
+    });
+    mutate(updated, false);
+  }, [manifest, selections, client, project, mutate]);
 
   const isClientMode = mode === 'client';
   const clientEdits = useClientEdits({

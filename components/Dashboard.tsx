@@ -96,25 +96,10 @@ export function Dashboard() {
           {isCloud ? (
             <div>
               <p className="text-sm text-[var(--muted)] mb-4">
-                No projects uploaded yet.
+                No shared projects yet.
               </p>
               <p className="text-xs text-[var(--muted)] mb-6" style={{ opacity: 0.5, maxWidth: 400, margin: '0 auto 24px', lineHeight: 1.6 }}>
-                Design locally with your agent, then push projects here to share with clients.
-              </p>
-              <div style={{
-                display: 'inline-block',
-                padding: '12px 20px',
-                background: 'var(--card-bg, #f5f5f5)',
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: 12,
-                color: 'var(--foreground)',
-              }}>
-                driftgrid push
-              </div>
-              <p className="text-[10px] text-[var(--muted)] mt-3" style={{ opacity: 0.4 }}>
-                Run this in your local DriftGrid directory
+                Design locally with your agent, then click Share in your project to publish it here.
               </p>
             </div>
           ) : (
