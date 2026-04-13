@@ -74,6 +74,12 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('Checkout error:', err);
     const message = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const details = err instanceof Error ? err.constructor.name : typeof err;
+    return NextResponse.json({
+      error: message,
+      type: details,
+      keyPresent: !!process.env.STRIPE_SECRET_KEY,
+      keyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 8),
+    }, { status: 500 });
   }
 }
