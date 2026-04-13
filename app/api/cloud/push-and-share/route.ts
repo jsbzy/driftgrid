@@ -74,25 +74,25 @@ export async function POST(request: Request) {
 
   const files = await collectFiles(projectDir, '');
 
-  // Also collect brand assets if they exist
+  // Push project files to cloud
+  const pushResult = await pushFilesToCloud(accessToken, client, project, files);
+
+  // Also push brand assets at client level (separate scope)
   const brandDir = path.join(PROJECTS_DIR, client, 'brand');
   try {
     await fs.stat(brandDir);
     const brandFiles = await collectFiles(brandDir, '');
-    // Prefix brand files with ../brand/ relative path
-    for (const file of brandFiles) {
-      files.push({
-        path: `../brand/${file.path}`,
-        content: file.content,
-        contentType: file.contentType,
-      });
+    const brandEntries = brandFiles.map(f => ({
+      path: `brand/${f.path}`,
+      content: f.content,
+      contentType: f.contentType,
+    }));
+    if (brandEntries.length > 0) {
+      await pushFilesToCloud(accessToken, client, project, brandEntries, undefined, 'client');
     }
   } catch {
     // No brand directory — that's fine
   }
-
-  // Push files to cloud
-  const pushResult = await pushFilesToCloud(accessToken, client, project, files);
   if (!pushResult.success && pushResult.uploaded === 0) {
     return NextResponse.json({ error: 'Failed to push files to cloud', details: pushResult.errors }, { status: 500 });
   }

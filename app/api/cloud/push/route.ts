@@ -36,10 +36,17 @@ export async function POST(request: Request) {
   const userId = user.id;
 
   const body = await request.json();
-  const { client, project, files } = body;
+  const { client, project, files, scope } = body;
 
-  if (!client || !project || !Array.isArray(files) || files.length === 0) {
-    return NextResponse.json({ error: 'Missing client, project, or files' }, { status: 400 });
+  if (!client || !Array.isArray(files) || files.length === 0) {
+    return NextResponse.json({ error: 'Missing client or files' }, { status: 400 });
+  }
+
+  // scope: 'project' (default) stores at {userId}/{client}/{project}/{path}
+  // scope: 'client' stores at {userId}/{client}/{path} (for brand assets)
+  const fileScope = scope || 'project';
+  if (fileScope === 'project' && !project) {
+    return NextResponse.json({ error: 'Missing project for project-scoped files' }, { status: 400 });
   }
 
   let uploaded = 0;
@@ -53,7 +60,9 @@ export async function POST(request: Request) {
       continue;
     }
 
-    const storagePath = `${userId}/${client}/${project}/${filePath}`;
+    const storagePath = fileScope === 'client'
+      ? `${userId}/${client}/${filePath}`
+      : `${userId}/${client}/${project}/${filePath}`;
 
     // Determine if content is base64-encoded (binary) or plain text
     const isText = ['text/html', 'application/json', 'image/svg+xml', 'text/markdown', 'text/css', 'text/plain']

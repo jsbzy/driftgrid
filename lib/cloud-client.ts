@@ -92,6 +92,7 @@ export async function pushFilesToCloud(
   project: string,
   files: FileEntry[],
   onProgress?: (uploaded: number, total: number) => void,
+  scope?: 'project' | 'client',
 ): Promise<PushResult> {
   // Split files into batches by estimated size
   const batches: FileEntry[][] = [];
@@ -123,7 +124,7 @@ export async function pushFilesToCloud(
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({ client, project, files: batch }),
+      body: JSON.stringify({ client, project, files: batch, ...(scope && { scope }) }),
     });
 
     if (!res.ok) {
