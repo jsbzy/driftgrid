@@ -36,7 +36,9 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      httpClient: Stripe.createNodeHttpClient(),
+    });
 
     // Reuse or create a Stripe customer for this user.
     const supabase = getSupabaseAdmin();
