@@ -208,18 +208,6 @@ export function LandingPage() {
             GitHub
           </a>
           <a
-            href={DEMO_URL}
-            style={{
-              fontSize: 10,
-              letterSpacing: '0.12em',
-              color: 'rgba(255,255,255,0.4)',
-              textDecoration: 'none',
-              textTransform: 'uppercase',
-            }}
-          >
-            Demo
-          </a>
-          <a
             href="/login"
             style={{
               fontSize: 10,
@@ -320,6 +308,7 @@ export function LandingPage() {
             >
               Get Started ↓
             </a>
+            {/* Demo button removed — demo links need updating
             <a
               href={DEMO_URL}
               style={{
@@ -335,7 +324,7 @@ export function LandingPage() {
               }}
             >
               See a Demo
-            </a>
+            </a> */}
           </div>
         </div>
 
