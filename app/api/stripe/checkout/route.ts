@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import { getUser } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
@@ -35,8 +36,7 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    const Stripe = (await import('stripe')).default;
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
     // Reuse or create a Stripe customer for this user.
     const supabase = getSupabaseAdmin();
