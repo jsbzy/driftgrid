@@ -7,7 +7,7 @@ const CLOUD_URL = process.env.NEXT_PUBLIC_DRIFTGRID_CLOUD_URL || 'https://driftg
 const STORAGE_KEY = 'driftgrid-cloud-auth';
 const INCLUDE_MEDIA_KEY = (client: string, project: string) => `driftgrid-share-${client}-${project}-include-media`;
 
-type ShareState = 'closed' | 'checking' | 'auth' | 'syncing' | 'ready' | 'upgrade' | 'error';
+type ShareState = 'closed' | 'checking' | 'auth' | 'syncing' | 'ready' | 'ready-stale' | 'upgrade' | 'error';
 
 type SkippedSummary = {
   totalCount: number;
@@ -104,6 +104,7 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
   const [errorMsg, setErrorMsg] = useState('');
   const [email, setEmail] = useState('');
   const [commentsCopied, setCommentsCopied] = useState(false);
+  const [lastPublishedAt, setLastPublishedAt] = useState<string | null>(null);
   // When the user clicks "sign out", the popup may accidentally find a live cloud
   // session and postMessage tokens back — which would immediately re-auth us into
   // the account we're trying to leave. This ref blocks those messages briefly.
@@ -179,15 +180,57 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
       storeCredentials({ ...creds, email: resolvedEmail });
     }
 
-    // Check if token is likely expired (with 5min buffer)
-    if (creds.expiresAt && Date.now() > creds.expiresAt - 300000) {
-      // Token might be expired — try pushing anyway, the orchestrator handles refresh
-      pushAndShare(creds.accessToken, creds.refreshToken);
-      return;
+    // Lightweight lookup: does a share already exist for this project?
+    //   • yes → show `ready-stale` with a "Publish updates" primary button
+    //   • no  → show `auth`-style landing with a "Create share" primary button
+    // NO upload happens here. The user decides when to publish.
+    try {
+      const res = await fetch('/api/cloud/share-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client, project, accessToken: creds.accessToken }),
+      });
+      if (res.status === 401) {
+        // Token rejected — try to refresh by running a full push (which handles refresh);
+        // but since this is just a status check, fall back to auth.
+        clearCredentials();
+        setState('auth');
+        return;
+      }
+      const data = await res.json();
+      if (data.exists) {
+        setShareUrl(data.url);
+        setLastPublishedAt(data.lastPublishedAt || null);
+        setState('ready-stale');
+      } else {
+        // Signed in, but no share yet — reuse the `auth` layout that shows
+        // the primary "Sign in to share / Create share" button.
+        setState('ready-stale');
+        setShareUrl(null);
+        setLastPublishedAt(null);
+      }
+    } catch {
+      // Network or cloud error — fall back to letting the user publish, which
+      // will surface any real errors itself.
+      setShareUrl(null);
+      setLastPublishedAt(null);
+      setState('ready-stale');
     }
+  }
 
-    // Token looks valid — push
-    pushAndShare(creds.accessToken, creds.refreshToken);
+  /** Format a timestamp as "5 min ago" / "2 hr ago" / "Apr 15". */
+  function formatAgo(iso: string | null): string {
+    if (!iso) return '';
+    const then = new Date(iso).getTime();
+    const delta = Date.now() - then;
+    if (delta < 60_000) return 'Just now';
+    const minutes = Math.floor(delta / 60_000);
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.floor(delta / 3_600_000);
+    if (hours < 24) return `${hours} hr ago`;
+    const days = Math.floor(delta / 86_400_000);
+    if (days < 7) return `${days}d ago`;
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
   async function pushAndShare(accessToken: string, refreshToken: string, opts?: { includeMedia?: boolean }) {
@@ -673,8 +716,42 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
             );
           })()}
 
-          {/* READY STATE */}
-          {state === 'ready' && shareUrl && (
+          {/* Signed in, no share yet — show the create-share landing card */}
+          {state === 'ready-stale' && !shareUrl && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>
+                Share this project with clients. Only starred versions from the current round will be published.
+              </p>
+              <button
+                onClick={() => {
+                  const creds = getStoredCredentials();
+                  if (creds) pushAndShare(creds.accessToken, creds.refreshToken);
+                }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  padding: '12px 0',
+                  textAlign: 'center',
+                  background: '#111',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  cursor: 'pointer',
+                }}
+              >
+                Create share link
+              </button>
+              <p style={{ fontSize: 11, color: '#bbb', lineHeight: 1.5, margin: 0 }}>
+                Your designs stay local. Only shared projects are visible to clients.
+              </p>
+            </div>
+          )}
+
+          {/* READY STATE — existing share (ready-stale) OR just-published (ready) */}
+          {(state === 'ready' || state === 'ready-stale') && shareUrl && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#22c55e' }}>
@@ -683,8 +760,13 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
                   </svg>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>Share link ready</span>
                 </div>
-                {progress && (
+                {state === 'ready' && progress && (
                   <div style={{ fontSize: 10, color: '#aaa', paddingLeft: 24 }}>{progress}</div>
+                )}
+                {state === 'ready-stale' && lastPublishedAt && (
+                  <div style={{ fontSize: 10, color: '#aaa', paddingLeft: 24 }}>
+                    Last published {formatAgo(lastPublishedAt)}
+                  </div>
                 )}
               </div>
 
@@ -807,7 +889,8 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
                 </div>
               )}
 
-              {/* Re-sync + account info */}
+              {/* Publish updates — primary when opening against an existing share,
+                  secondary after a just-completed sync. */}
               <div style={{ paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <button
                   onClick={() => {
@@ -816,19 +899,20 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
                   }}
                   style={{
                     width: '100%',
-                    padding: '10px 0',
+                    padding: state === 'ready-stale' ? '12px 0' : '10px 0',
                     textAlign: 'center',
-                    background: '#fff',
-                    color: '#666',
-                    border: '1px solid rgba(0,0,0,0.08)',
+                    background: state === 'ready-stale' ? '#111' : '#fff',
+                    color: state === 'ready-stale' ? '#fff' : '#666',
+                    border: state === 'ready-stale' ? 'none' : '1px solid rgba(0,0,0,0.08)',
                     borderRadius: 8,
-                    fontSize: 11,
-                    fontWeight: 500,
+                    fontSize: state === 'ready-stale' ? 12 : 11,
+                    fontWeight: state === 'ready-stale' ? 600 : 500,
                     cursor: 'pointer',
                     letterSpacing: '0.04em',
                   }}
+                  title={state === 'ready-stale' ? 'Re-upload starred versions so clients see the latest' : 'Re-upload to update the client-facing share'}
                 >
-                  Re-sync latest changes
+                  {state === 'ready-stale' ? 'Publish updates' : 'Re-sync latest changes'}
                 </button>
 
                 <p style={{ fontSize: 11, color: '#bbb', margin: 0 }}>
