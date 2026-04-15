@@ -53,10 +53,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
 
   const [conceptIndex, setConceptIndex] = useState(0);
   const [versionIndex, setVersionIndex] = useState(0);
-  // Share demos open in grid view (show the whole landscape first).
-  // Non-shared client review still opens to frame (clients want to dive in).
+  // Client/share views open directly into slide 1 (frame view). Designer starts in grid.
   const [viewMode, setViewMode] = useState<'frame' | 'grid'>(
-    shareToken ? 'grid' : mode === 'client' ? 'frame' : 'grid'
+    mode === 'client' ? 'frame' : 'grid'
   );
   const [selections, setSelections] = useState<Set<string>>(new Set());
   const [selectionsInitialized, setSelectionsInitialized] = useState(false);
@@ -1580,11 +1579,6 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               {gridIcon}
               <span style={actionBarKey}>G</span>
             </button>
-            <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.12)' }} />
-            <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.35)', padding: '0 4px' }}>
-              {currentConcept.label} · v{currentVersion.number}
-            </span>
-            <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.12)' }} />
             <button
               onClick={() => ui.setNavGridHidden(v => !v)}
               className={actionBarBtn}
@@ -1597,6 +1591,10 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               </svg>
               <span style={actionBarKey}>H</span>
             </button>
+            <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.12)' }} />
+            <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.35)', padding: '0 4px' }}>
+              {currentConcept.label} · v{currentVersion.number}
+            </span>
           </div>
         )}
         {/* Presentation mode indicator */}
