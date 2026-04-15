@@ -1425,19 +1425,18 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         ) : (
           multiSelectBar
         )}
-        {mode !== 'client' && (
-          <ShortcutsBar
-            visible={ui.shortcutsVisible && !ui.navGridHidden}
-            onToggle={() => {
-              if (ui.navGridHidden) {
-                ui.setNavGridHidden(false);
-                ui.setShortcutsVisible(true);
-              } else {
-                ui.setShortcutsVisible(v => !v);
-              }
-            }}
-          />
-        )}
+        <ShortcutsBar
+          visible={ui.shortcutsVisible && !ui.navGridHidden}
+          mode={mode}
+          onToggle={() => {
+            if (ui.navGridHidden) {
+              ui.setNavGridHidden(false);
+              ui.setShortcutsVisible(true);
+            } else {
+              ui.setShortcutsVisible(v => !v);
+            }
+          }}
+        />
         {commandPalette}
         <ToastContainer />
       </div>
@@ -1583,19 +1582,18 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           mode={mode}
         />
       )}
-      {mode !== 'client' && (
-        <ShortcutsBar
-          visible={ui.shortcutsVisible && !ui.navGridHidden}
-          onToggle={() => {
-            if (ui.navGridHidden) {
-              ui.setNavGridHidden(false);
-              ui.setShortcutsVisible(true);
-            } else {
-              ui.setShortcutsVisible(v => !v);
-            }
-          }}
-        />
-      )}
+      <ShortcutsBar
+        visible={ui.shortcutsVisible && !ui.navGridHidden}
+        mode={mode}
+        onToggle={() => {
+          if (ui.navGridHidden) {
+            ui.setNavGridHidden(false);
+            ui.setShortcutsVisible(true);
+          } else {
+            ui.setShortcutsVisible(v => !v);
+          }
+        }}
+      />
       {commandPalette}
       <ToastContainer />
     </div>

@@ -5,12 +5,14 @@ import { memo } from 'react';
 interface ShortcutsBarProps {
   visible: boolean;
   onToggle: () => void;
+  /** 'client' shows a minimal pill (Hide only). Anything else shows the full designer set. */
+  mode?: 'designer' | 'client' | string;
 }
 
 type Item = { keys: string; label: string };
 
-// Flat, frequency-ordered. No section headers.
-const ITEMS: Item[] = [
+// Full designer set.
+const DESIGNER_ITEMS: Item[] = [
   { keys: 'G', label: 'Toggle Grid' },
   { keys: 'D', label: 'Drift Up (New Version)' },
   { keys: 'Shift + D', label: 'Drift Right (New Concept)' },
@@ -19,7 +21,13 @@ const ITEMS: Item[] = [
   { keys: 'H', label: 'Hide' },
 ];
 
-export const ShortcutsBar = memo(function ShortcutsBar({ visible, onToggle }: ShortcutsBarProps) {
+// Client (share) view — only the one action they need.
+const CLIENT_ITEMS: Item[] = [
+  { keys: 'H', label: 'Hide' },
+];
+
+export const ShortcutsBar = memo(function ShortcutsBar({ visible, onToggle, mode }: ShortcutsBarProps) {
+  const ITEMS = mode === 'client' ? CLIENT_ITEMS : DESIGNER_ITEMS;
   if (!visible) {
     return (
       <button

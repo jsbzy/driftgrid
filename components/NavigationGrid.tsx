@@ -64,12 +64,6 @@ export const NavigationGrid = memo(function NavigationGrid({
     return selections.has(`${cid}:${vid}`);
   }, [isClient, selections, conceptIds, versionIds]);
 
-  // Synthesize arrow keypresses so mouse users get the same nav behavior as the
-  // keyboard path (which already handles edge cases like round boundaries).
-  const fireKey = useCallback((key: string) => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
-  }, []);
-
   return (
     <div
       className="fixed bottom-14 right-14 z-50"
@@ -134,56 +128,6 @@ export const NavigationGrid = memo(function NavigationGrid({
           </div>
         </>
       )}
-
-      {isClient && (
-        <ClientNav fireKey={fireKey} />
-      )}
     </div>
   );
 });
-
-function ClientNav({ fireKey }: { fireKey: (key: string) => void }) {
-  const arrowBtn: React.CSSProperties = {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    border: '1px solid var(--border)',
-    background: 'var(--background)',
-    color: 'var(--foreground)',
-    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-    fontSize: 12,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity: 0.7,
-    transition: 'opacity 0.15s ease, background 0.15s ease',
-  };
-  const hover = (enter: boolean) => (e: React.MouseEvent<HTMLButtonElement>) => {
-    (e.currentTarget as HTMLElement).style.opacity = enter ? '1' : '0.7';
-  };
-
-  return (
-    <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <button type="button" style={arrowBtn} onMouseEnter={hover(true)} onMouseLeave={hover(false)} onClick={() => fireKey('ArrowUp')} title="Previous version (↑)">↑</button>
-      <div style={{ display: 'flex', gap: 6 }}>
-        <button type="button" style={arrowBtn} onMouseEnter={hover(true)} onMouseLeave={hover(false)} onClick={() => fireKey('ArrowLeft')} title="Previous concept (←)">←</button>
-        <button type="button" style={arrowBtn} onMouseEnter={hover(true)} onMouseLeave={hover(false)} onClick={() => fireKey('ArrowRight')} title="Next concept (→)">→</button>
-      </div>
-      <button type="button" style={arrowBtn} onMouseEnter={hover(true)} onMouseLeave={hover(false)} onClick={() => fireKey('ArrowDown')} title="Next version (↓)">↓</button>
-      <div style={{
-        marginTop: 6,
-        fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-        fontSize: 9,
-        color: 'var(--muted)',
-        opacity: 0.65,
-        letterSpacing: '0.04em',
-        display: 'flex',
-        gap: 10,
-      }}>
-        <span><strong>G</strong> Toggle Grid</span>
-        <span><strong>H</strong> Hide</span>
-      </div>
-    </div>
-  );
-}
