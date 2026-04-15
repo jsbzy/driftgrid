@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import useSWR from 'swr';
 import type { Manifest, ViewMode, Concept, Version } from '@/lib/types';
-import { resolveCanvas } from '@/lib/constants';
+import { resolveCanvas, isAwaitingFirstPrompt } from '@/lib/constants';
 import { filterVisibleManifest, filterStarredManifest } from '@/lib/filterManifest';
 import { letterToNumber, conceptSlug } from '@/lib/letters';
 import { HtmlFrame, type HtmlFrameHandle } from './HtmlFrame';
@@ -12,7 +12,7 @@ import { useTour } from '@/lib/hooks/useTour';
 import { useUnreadVersions } from '@/lib/hooks/useUnreadVersions';
 import { NavigationGrid } from './NavigationGrid';
 import { CanvasView, type CanvasViewHandle } from './CanvasView';
-import { KeyboardShortcuts } from './KeyboardShortcuts';
+import { ShortcutsBar } from './ShortcutsBar';
 import { CommandPalette } from './CommandPalette';
 import { toast, ToastContainer } from './Toast';
 import { useKeyboardNav, type ZoomLevel } from '@/lib/hooks/useKeyboardNav';
@@ -179,7 +179,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
 
   // Auto-close grid prompt when the slot gets filled by the agent
   useEffect(() => {
-    if (gridPromptOpen && currentVersion && currentVersion.changelog !== 'New drift slot — empty') {
+    if (gridPromptOpen && currentVersion && !isAwaitingFirstPrompt(currentVersion.changelog)) {
       setGridPromptOpen(false);
     }
   }, [gridPromptOpen, currentVersion]);
@@ -222,12 +222,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       annotationMode: annotationState.annotationMode,
       setAnnotationMode: annotationState.setAnnotationMode,
       handleAddAnnotation: async (x: number | null, y: number | null, text: string) => {
-        if (!currentConcept || !currentVersion || !clientComments.authorName) return;
+        if (!currentConcept || !currentVersion || !clientComments.authorName) return null;
         await clientComments.addComment(
           currentConcept.id, currentVersion.id, text, x, y,
         );
         annotationState.setAnnotationMode(false);
         toast('Comment added');
+        return null;
       },
       handleDeleteAnnotation: async () => {},
       handleResolveAnnotation: async (id: string) => {
@@ -331,10 +332,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         e.preventDefault();
         ui.setCommandPaletteOpen(v => !v);
       }
-      if (e.key === '?') {
-        e.preventDefault();
-        ui.setShortcutsVisible(v => !v);
-      }
+      // H: hide both the shortcuts bar and the minimap. A small ? pill remains to unhide.
       if (e.key === 'h' || e.key === 'H') {
         e.preventDefault();
         ui.setNavGridHidden(v => !v);
@@ -345,7 +343,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           e.preventDefault();
           activeAnnotations.setAnnotationMode(v => !v);
           tour.trigger('comment');
-        } else if (viewMode === 'grid' && currentVersion?.changelog === 'New drift slot — empty') {
+        } else if (viewMode === 'grid' && isAwaitingFirstPrompt(currentVersion?.changelog)) {
           e.preventDefault();
           setGridPromptOpen(true);
         }
@@ -542,7 +540,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       // stay on the grid and open the prompt modal instead.
       const concept = concepts[conceptIndex];
       const version = concept?.versions[versionIndex];
-      if (version?.changelog === 'New drift slot — empty') {
+      if (isAwaitingFirstPrompt(version?.changelog)) {
         setGridPromptOpen(true);
         return 'grid';
       }
@@ -575,8 +573,8 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         const slug = concept.slug || conceptSlug(concept.label);
         window.history.replaceState(null, '', `#${slug}/v${version.number}`);
       }
-      // Empty drift slots: stay on the grid and open the prompt modal instead of entering the frame
-      if (version?.changelog === 'New drift slot — empty') {
+      // Drift slots awaiting a first prompt: stay on the grid and open the prompt modal.
+      if (isAwaitingFirstPrompt(version?.changelog)) {
         setGridPromptOpen(true);
         return;
       }
@@ -765,24 +763,30 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     if (shareToken) return handleDemoDrift;
     return async () => {
       autoOpenGridPromptRef.current = true;
+      // Don't auto-pan to the new card — keep the viewport where the user left it.
+      canvasRef.current?.suppressNextPan();
+      // Drift from frame view → drop back to grid so the prompt modal mounts & opens.
+      if (viewMode === 'frame') setViewMode('grid');
       await mutations.handleDriftVersion(currentConcept.id, currentVersion.id);
     };
-  }, [currentConcept, currentVersion, mutations.handleDriftVersion, shareToken, handleDemoDrift]);
+  }, [currentConcept, currentVersion, mutations.handleDriftVersion, shareToken, handleDemoDrift, viewMode]);
 
   const handleBranch = useMemo(() => {
     if (!currentConcept || !currentVersion) return undefined;
     if (shareToken) return handleDemoBranch;
     return async () => {
       autoOpenGridPromptRef.current = true;
+      canvasRef.current?.suppressNextPan();
+      if (viewMode === 'frame') setViewMode('grid');
       await mutations.handleBranchVersion(currentConcept.id, currentVersion.id);
     };
-  }, [currentConcept, currentVersion, mutations.handleBranchVersion, shareToken, handleDemoBranch]);
+  }, [currentConcept, currentVersion, mutations.handleBranchVersion, shareToken, handleDemoBranch, viewMode]);
 
   // Consume the auto-open flag once the new (empty) version becomes current
   useEffect(() => {
     if (!autoOpenGridPromptRef.current) return;
     if (viewMode !== 'grid') return;
-    if (currentVersion?.changelog !== 'New drift slot — empty') return;
+    if (!isAwaitingFirstPrompt(currentVersion?.changelog)) return;
     autoOpenGridPromptRef.current = false;
     setGridPromptOpen(true);
   }, [currentVersion, viewMode]);
@@ -1082,90 +1086,11 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const thumbFilename = currentVersion.thumbnail?.replace('.thumbs/', '') || null;
   const thumbSrc = thumbFilename ? `/api/thumbs/${client}/${project}/${thumbFilename}` : null;
 
-  // Shared action bar renderer — used in both grid and frame views
-  const isCurrentStarred = selections.has(`${currentConcept.id}:${currentVersion.id}`);
+  // Designer floating action bar removed — ShortcutsBar covers all actions via keybindings.
+  // These are still used by the client-mode review action bar below (which hosts its own
+  // minimal Comment + Back-to-Grid controls, since clients don't have access to shortcuts).
   const actionBarBtn = "flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-white/10 transition-colors";
   const actionBarKey = { fontFamily: 'var(--font-mono, monospace)', fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em' } as const;
-
-  const actionBar = (toggleAction: () => void, toggleIcon: React.ReactNode, toggleTitle: string, toggleKey: string) => (
-    <div
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 px-2 py-1.5 rounded-full"
-      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)' }}
-    >
-      <button onClick={() => handleStarVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="Add to selects (S)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill={isCurrentStarred ? '#facc15' : 'none'} stroke={isCurrentStarred ? '#facc15' : 'white'} strokeWidth="2">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
-        <span style={actionBarKey}>S</span>
-      </button>
-      <button onClick={() => mutations.handleDriftVersion(currentConcept.id, currentVersion.id)} className={actionBarBtn} title="New iteration (D)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-          <path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
-        </svg>
-        <span style={actionBarKey}>D</span>
-      </button>
-      <button onClick={() => activeAnnotations.setAnnotationMode(v => !v)} className={actionBarBtn} title="Prompt your agent (C)" style={{ opacity: activeAnnotations.annotationMode ? 1 : undefined }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill={activeAnnotations.annotationMode ? 'white' : 'none'} stroke="white" strokeWidth="2">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-        <span style={actionBarKey}>C</span>
-      </button>
-      <button onClick={async () => {
-        const filePath = `~/driftgrid/projects/${client}/${project}/${currentVersion.file}`;
-        let text = filePath;
-        try {
-          const res = await fetch(`/api/annotations?client=${client}&project=${project}&conceptId=${currentConcept.id}&versionId=${currentVersion.id}`);
-          if (res.ok) {
-            const anns = await res.json();
-            if (Array.isArray(anns) && anns.length > 0) {
-              const lines = [filePath, '', 'Feedback:'];
-              anns.forEach((a: { text: string; resolved?: boolean }, i: number) => {
-                const prefix = a.resolved ? '✓ [RESOLVED] ' : '';
-                lines.push(`${i + 1}. ${prefix}${a.text}`);
-              });
-              text = lines.join('\n');
-            }
-          }
-        } catch {}
-        navigator.clipboard.writeText(text);
-        toast('Copied');
-      }} className={actionBarBtn} title="Copy path + prompts (⌘C)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-          <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-        <span style={actionBarKey}>⌘C</span>
-      </button>
-      <button onClick={handleExportPng} className={actionBarBtn} title="Export as PNG (↓)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
-        <span style={actionBarKey}>↓</span>
-      </button>
-      {selections.size > 0 && (
-        <button onClick={() => presentation.handlePresent()} className={actionBarBtn} title="Present selects fullscreen (P)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-            <polygon points="5 3 19 12 5 21 5 3" />
-          </svg>
-          <span style={actionBarKey}>P</span>
-        </button>
-      )}
-      <button onClick={toggleAction} className={actionBarBtn} title={toggleTitle}>
-        {toggleIcon}
-        <span style={actionBarKey}>{toggleKey}</span>
-      </button>
-      <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.12)' }} />
-      <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.35)', padding: '0 4px' }}>
-        {currentConcept.label} · v{currentVersion.number}
-      </span>
-      <a href="/" className={actionBarBtn} title="Back to all projects" style={{ marginLeft: -2 }}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ opacity: 0.5 }}>
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-      </a>
-    </div>
-  );
-
-  const enterFrameIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></svg>;
   const gridIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>;
 
   // Multi-select action bar (replaces normal action bar when items are multi-selected)
@@ -1237,7 +1162,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     return (
       <div className="h-screen flex flex-col bg-[var(--background)]">
         {namePrompt}
-        <SharePanel open={sharePanelOpen} onClose={() => setSharePanelOpen(false)} client={client} project={project} />
+        <SharePanel open={sharePanelOpen} onClose={() => setSharePanelOpen(false)} client={client} project={project} roundId={activeRoundId} />
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
@@ -1250,34 +1175,21 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             onNext={tour.next}
           />
         )}
-        {/* Top-right: project name + round switcher + share */}
+        {/* Top-left: home + project name */}
+        <div className="fixed top-4 left-4 z-30 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
+          <a
+            href="/"
+            className="flex items-center gap-1.5 no-underline hover:opacity-80 transition-opacity"
+            style={{ fontSize: 11, color: 'var(--muted)', opacity: 0.6 }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            {filtered?.project.name}
+          </a>
+        </div>
+        {/* Top-right: round switcher + share */}
         <div className="fixed top-4 right-4 z-30 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
-          {/* Share button — designer mode only */}
-          {mode !== 'client' && !shareToken && (
-            <button
-              onClick={() => setSharePanelOpen(true)}
-              className="flex items-center gap-1.5 transition-all"
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                letterSpacing: '0.06em',
-                color: 'var(--foreground)',
-                cursor: 'pointer',
-                background: 'none',
-                border: 'none',
-                opacity: 0.5,
-                padding: 0,
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.5'; }}
-              title="Share with clients"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
-              </svg>
-              Share
-            </button>
-          )}
           {/* Round switcher — hidden when only 1 round or in client mode */}
           {rounds.length > 1 && mode !== 'client' && (
             <div className="flex items-center gap-1.5">
@@ -1307,16 +1219,58 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               ))}
             </div>
           )}
-          <a
-            href="/"
-            className="flex items-center gap-1.5 no-underline hover:opacity-80 transition-opacity"
-            style={{ fontSize: 11, color: 'var(--muted)', opacity: 0.6 }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
-            {filtered?.project.name}
-          </a>
+          {/* Present button — fullscreen slideshow of starred versions */}
+          {mode !== 'client' && selections.size > 0 && (
+            <button
+              onClick={() => presentation.handlePresent()}
+              className="flex items-center gap-1.5 transition-all"
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '0.06em',
+                color: 'var(--foreground)',
+                cursor: 'pointer',
+                background: 'none',
+                border: 'none',
+                opacity: 0.5,
+                padding: 0,
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.5'; }}
+              title="Present starred versions fullscreen (P)"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                <polygon points="6 4 20 12 6 20 6 4" />
+              </svg>
+              Present
+            </button>
+          )}
+          {/* Share button — designer mode only */}
+          {mode !== 'client' && !shareToken && (
+            <button
+              onClick={() => setSharePanelOpen(true)}
+              className="flex items-center gap-1.5 transition-all"
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '0.06em',
+                color: 'var(--foreground)',
+                cursor: 'pointer',
+                background: 'none',
+                border: 'none',
+                opacity: 0.5,
+                padding: 0,
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.5'; }}
+              title="Share with clients"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+              Share
+            </button>
+          )}
         </div>
         <div className="flex-1 min-h-0">
           <CanvasView
@@ -1442,13 +1396,15 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                 targetPath={targetPath}
                 referenceLabel={referenceLabel}
                 referencePath={referencePath}
+                client={client}
+                project={project}
+                conceptId={currentConcept.id}
+                versionId={currentVersion.id}
                 cardSelector={`[data-card-id="${currentConcept.id}:${currentVersion.id}"]`}
                 existingPrompt={existingPrompt}
                 replies={promptReplies}
                 onCancel={() => setGridPromptOpen(false)}
-                onSave={async (text) => {
-                  await annotationState.handleAddAnnotation(null, null, text);
-                }}
+                onSave={(text) => annotationState.handleAddAnnotation(null, null, text)}
                 onEdit={annotationState.handleEditAnnotation}
                 onReply={annotationState.handleReplyAnnotation}
                 onResolve={annotationState.handleResolveAnnotation}
@@ -1467,9 +1423,21 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             </span>
           </div>
         ) : (
-          multiSelectBar || actionBar(() => handleGridSelect(conceptIndex, versionIndex), enterFrameIcon, 'Enter frame (Enter)', '↵')
+          multiSelectBar
         )}
-        <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />
+        {mode !== 'client' && (
+          <ShortcutsBar
+            visible={ui.shortcutsVisible && !ui.navGridHidden}
+            onToggle={() => {
+              if (ui.navGridHidden) {
+                ui.setNavGridHidden(false);
+                ui.setShortcutsVisible(true);
+              } else {
+                ui.setShortcutsVisible(v => !v);
+              }
+            }}
+          />
+        )}
         {commandPalette}
         <ToastContainer />
       </div>
@@ -1543,6 +1511,10 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             onEdit={activeAnnotations.handleEditAnnotation}
             onReply={activeAnnotations.handleReplyAnnotation}
             frameContext={currentConcept && currentVersion ? {
+              client,
+              project,
+              conceptId: currentConcept.id,
+              versionId: currentVersion.id,
               conceptLabel: currentConcept.label,
               versionNumber: currentVersion.number,
               filePath: `~/driftgrid/projects/${client}/${project}/${currentVersion.file}`,
@@ -1556,8 +1528,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         >
           DriftGrid
         </div>
-        {/* Frame action bar */}
-        {mode !== 'client' && !ui.navGridHidden && !presentation.isPresenting && actionBar(() => handleToggleGridView(), gridIcon, 'Back to grid (G)', 'G')}
+        {/* Designer frame floating action bar removed — shortcuts card handles all actions. */}
         {/* Client review action bar — comment + back to grid */}
         {mode === 'client' && (
           <div
@@ -1600,7 +1571,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           </div>
         )}
       </div>
-      {!presentation.isPresenting && !ui.navGridHidden && (
+      {mode !== 'client' && !presentation.isPresenting && !ui.navGridHidden && (
         <NavigationGrid
           conceptIndex={conceptIndex}
           versionIndex={versionIndex}
@@ -1611,7 +1582,19 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           currentVersionNumber={currentVersion?.number}
         />
       )}
-      <KeyboardShortcuts visible={ui.shortcutsVisible} onClose={() => ui.setShortcutsVisible(false)} />
+      {mode !== 'client' && (
+        <ShortcutsBar
+          visible={ui.shortcutsVisible && !ui.navGridHidden}
+          onToggle={() => {
+            if (ui.navGridHidden) {
+              ui.setNavGridHidden(false);
+              ui.setShortcutsVisible(true);
+            } else {
+              ui.setShortcutsVisible(v => !v);
+            }
+          }}
+        />
+      )}
       {commandPalette}
       <ToastContainer />
     </div>

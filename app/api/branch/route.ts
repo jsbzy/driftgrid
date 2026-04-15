@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
-import { getManifest, writeManifest, writeHtmlFile } from '@/lib/storage';
+import { getManifest, writeManifest, copyFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import { conceptSlug } from '@/lib/letters';
-import { driftPromptBoilerplate } from '@/lib/canvas-boilerplate';
+import { DRIFT_COPY_CHANGELOG } from '@/lib/constants';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
@@ -48,18 +48,12 @@ export async function POST(request: Request) {
   const nextN = maxN + 1;
   const newFolder = `concept-${nextN}`;
 
-  // Write empty canvas boilerplate as v1.html
+  // Branch = working copy in a new column. Duplicate the source version's HTML as v1
+  // of the new concept so the agent iterates on a real starting point, not a blank slate.
   const newFile = `${newFolder}/v1.html`;
   const newLabel = label || `Concept ${nextN}`;
 
-  const boilerplate = driftPromptBoilerplate(
-    typeof manifest.project.canvas === 'string' ? manifest.project.canvas : 'desktop',
-    `${manifest.project.name} — ${newLabel}`,
-    newLabel,
-    1,
-  );
-
-  await writeHtmlFile(userId, client, project, newFile, boilerplate);
+  await copyFile(userId, client, project, sourceVersion.file, newFile);
 
   // Create new concept and version IDs
   const newConceptId = `concept-${generateId()}`;
@@ -69,7 +63,7 @@ export async function POST(request: Request) {
     id: newConceptId,
     slug: conceptSlug(newLabel),
     label: newLabel,
-    description: 'New drift slot — empty',
+    description: DRIFT_COPY_CHANGELOG,
     position: 0,
     visible: true,
     branchedFrom: {
@@ -81,7 +75,7 @@ export async function POST(request: Request) {
       number: 1,
       file: newFile,
       parentId: null,
-      changelog: 'New drift slot — empty',
+      changelog: DRIFT_COPY_CHANGELOG,
       visible: true,
       starred: false,
       created: new Date().toISOString(),

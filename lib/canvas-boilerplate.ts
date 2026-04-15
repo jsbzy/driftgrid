@@ -15,13 +15,13 @@ import { CANVAS_PRESETS } from './constants';
 
 const JETBRAINS_MONO_LINK = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">`;
 
-/** Shared dark-theme styles used by all three drift-state templates. */
+/** Shared light-theme styles used by all three drift-state templates. */
 const SHARED_STYLES = `
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-      background: #0f0f0f;
-      color: #f2f2f0;
+      background: #ffffff;
+      color: #111111;
       -webkit-font-smoothing: antialiased;
       display: flex;
       align-items: center;
@@ -39,23 +39,23 @@ const SHARED_STYLES = `
       font-size: 11px;
       font-weight: 500;
       letter-spacing: 0.12em;
-      color: rgba(255, 255, 255, 0.35);
+      color: rgba(0, 0, 0, 0.4);
       margin-bottom: 24px;
     }
     .eyebrow .accent {
-      color: rgba(212, 168, 74, 0.9);
+      color: rgba(180, 130, 30, 0.9);
     }
     .title {
       font-size: 56px;
       font-weight: 500;
       letter-spacing: -0.02em;
-      color: #f2f2f0;
+      color: #111111;
       margin-bottom: 32px;
       line-height: 1.05;
     }
     .hint {
       font-size: 13px;
-      color: rgba(255, 255, 255, 0.35);
+      color: rgba(0, 0, 0, 0.4);
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -66,12 +66,12 @@ const SHARED_STYLES = `
       margin-top: 24px;
       margin-bottom: 0;
       padding: 16px 20px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(0, 0, 0, 0.015);
       font-size: 13px;
       line-height: 1.6;
-      color: rgba(255, 255, 255, 0.72);
+      color: rgba(0, 0, 0, 0.72);
       text-align: left;
       max-height: 180px;
       overflow: hidden;
@@ -84,7 +84,7 @@ const SHARED_STYLES = `
       right: 0;
       bottom: 0;
       height: 40px;
-      background: linear-gradient(to bottom, rgba(15, 15, 15, 0), rgba(15, 15, 15, 1));
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
       pointer-events: none;
     }
     kbd {
@@ -93,24 +93,24 @@ const SHARED_STYLES = `
       font-weight: 600;
       padding: 2px 7px;
       border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: rgba(255, 255, 255, 0.04);
-      color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      background: rgba(0, 0, 0, 0.03);
+      color: rgba(0, 0, 0, 0.7);
     }
     /* Subtle pulsing grid for the in-progress state */
     .grid-bg {
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+        linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
       background-size: 56px 56px;
       animation: grid-pulse 3.2s ease-in-out infinite;
       z-index: 0;
     }
     @keyframes grid-pulse {
-      0%, 100% { opacity: 0.35; }
-      50%      { opacity: 1; }
+      0%, 100% { opacity: 0.3; }
+      50%      { opacity: 0.8; }
     }`;
 
 function wrapDocument(

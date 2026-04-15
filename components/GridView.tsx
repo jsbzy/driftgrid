@@ -122,10 +122,9 @@ export function GridView({
               if (selectedVersionId) {
                 const version = concept.versions.find(v => v.id === selectedVersionId);
                 if (version) {
-                  const thumbFilename = version.thumbnail?.replace('.thumbs/', '') || null;
-                  const thumbSrc = thumbFilename
-                    ? `/api/thumbs/${client}/${project}/${thumbFilename}`
-                    : null;
+                  const thumbFilename = version.thumbnail?.replace('.thumbs/', '')
+                    || `${concept.id}-${version.id}.webp`;
+                  const thumbSrc = `/api/thumbs/${client}/${project}/${thumbFilename}`;
                   const vi = concept.versions.indexOf(version);
                   const ci = concepts.indexOf(concept);
                   return (
@@ -172,10 +171,9 @@ export function GridView({
                 {reversed.map((version) => {
                   // Map back to the original index for navigation
                   const row = concept.versions.indexOf(version);
-                  const thumbFilename = version.thumbnail?.replace('.thumbs/', '') || null;
-                  const thumbSrc = thumbFilename
-                    ? `/api/thumbs/${client}/${project}/${thumbFilename}`
-                    : null;
+                  const thumbFilename = version.thumbnail?.replace('.thumbs/', '')
+                    || `${concept.id}-${version.id}.webp`;
+                  const thumbSrc = `/api/thumbs/${client}/${project}/${thumbFilename}`;
                   const isStarred = selections.get(concept.id) === version.id;
                   return (
                     <GridCell

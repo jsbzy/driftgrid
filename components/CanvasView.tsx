@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback, useMemo, memo, forwardRef, useImperativeHandle } from 'react';
 import type { Concept, ViewMode } from '@/lib/types';
+import { isAwaitingFirstPrompt } from '@/lib/constants';
 import { computeCanvasLayout, getColumnBounds, getCardBounds, GRID_SIZE } from '@/lib/hooks/useCanvasLayout';
 import type { CanvasLayout } from '@/lib/hooks/useCanvasLayout';
 import { useCanvasTransform } from '@/lib/hooks/useCanvasTransform';
@@ -12,6 +13,9 @@ import type { ZoomLevel } from '@/lib/hooks/useKeyboardNav';
 export interface CanvasViewHandle {
   /** Animates the canvas to zoom into a specific card */
   zoomToCard: (ci: number, vi: number) => void;
+  /** Suppress the next auto-pan-to-visible effect (used when drifting, so the viewport
+   *  doesn't jump to the newly-created card). */
+  suppressNextPan: () => void;
 }
 
 interface CanvasViewProps {
@@ -127,11 +131,14 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   // Flag to suppress auto-pan during reorder operations
   const skipReorderPan = useRef(false);
 
-  // Expose zoomToCard to parent (Viewer) for smooth enter transitions
+  // Expose zoomToCard + suppressNextPan to parent (Viewer)
   useImperativeHandle(ref, () => ({
     zoomToCard: (ci: number, vi: number) => {
       const bounds = getCardBounds(layout, ci, vi);
       zoomToRect(bounds, 40);
+    },
+    suppressNextPan: () => {
+      skipReorderPan.current = true;
     },
   }), [layout, zoomToRect]);
 
@@ -471,7 +478,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     // via onSelect, which Viewer intercepts for empty slots.
     const concept = concepts[ci];
     const version = concept?.versions[vi];
-    if (version?.changelog === 'New drift slot — empty') {
+    if (isAwaitingFirstPrompt(version?.changelog)) {
       onSelect(ci, vi);
       return;
     }
@@ -605,6 +612,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
                 ? 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)'
                 : 'none',
             willChange: 'transform',
+            ['--canvas-scale' as string]: transform.scale,
           }}
         >
 

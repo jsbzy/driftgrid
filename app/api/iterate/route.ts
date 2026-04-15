@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
-import { getManifest, writeManifest, writeHtmlFile } from '@/lib/storage';
+import { getManifest, writeManifest, copyFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
-import { driftPromptBoilerplate } from '@/lib/canvas-boilerplate';
+import { DRIFT_COPY_CHANGELOG } from '@/lib/constants';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -50,23 +50,17 @@ export async function POST(request: Request) {
   const conceptFolder = path.dirname(version.file);
   const newFile = `${conceptFolder}/v${nextNumber}.html`;
 
-  // Write the drift-prompt boilerplate
-  const boilerplate = driftPromptBoilerplate(
-    typeof manifest.project.canvas === 'string' ? manifest.project.canvas : 'desktop',
-    `${manifest.project.name} — ${concept.label} v${nextNumber}`,
-    concept.label,
-    nextNumber,
-  );
-
-  await writeHtmlFile(userId, client, project, newFile, boilerplate);
+  // Drift = working copy + prompt. Duplicate the source version's HTML into the new slot
+  // so the agent iterates on a real starting point instead of a blank placeholder.
+  await copyFile(userId, client, project, version.file, newFile);
 
   // Add new version to manifest
   const newVersion = {
     id: nextId,
     number: nextNumber,
     file: newFile,
-    parentId: null,
-    changelog: 'New drift slot — empty',
+    parentId: version.id,
+    changelog: DRIFT_COPY_CHANGELOG,
     visible: true,
     starred: false,
     created: new Date().toISOString(),

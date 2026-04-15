@@ -86,3 +86,17 @@ export function resolveCanvas(
   // Unknown string — fall back to Desktop defaults
   return { width: 1440, height: 'auto', label: canvas || 'Desktop', displayLabel: `Desktop · 1440w · Responsive` };
 }
+
+
+// Changelog values used on Version records to flag drift slots waiting for their first prompt.
+// EMPTY_DRIFT_CHANGELOG — slot rendered with the placeholder boilerplate (used by `driftgrid init`
+// and by the annotation template-rewriter).
+// DRIFT_COPY_CHANGELOG — slot was created by copying the source version's HTML (used by /api/iterate
+// and /api/branch). The rewriter ignores these so the copied content is preserved.
+export const EMPTY_DRIFT_CHANGELOG = 'New drift slot — empty';
+export const DRIFT_COPY_CHANGELOG = 'Drift copy — awaiting prompt';
+
+export function isAwaitingFirstPrompt(changelog: string | undefined | null): boolean {
+  return changelog === EMPTY_DRIFT_CHANGELOG || changelog === DRIFT_COPY_CHANGELOG;
+}
+
