@@ -879,7 +879,7 @@ const CardLayer = memo(function CardLayer({
               isEmptySlot={version.changelog === 'New drift slot — empty' && !version.annotations?.some(a => a.status === 'running')}
               isAgentWorking={version.changelog === 'Agent working' || !!version.annotations?.some(a => a.status === 'running')}
               mode={mode}
-              onStar={() => onStarVersion(concept.id, version.id)}
+              onStar={mode === 'client' ? undefined : () => onStarVersion(concept.id, version.id)}
               onDelete={() => onDeleteVersion(concept.id, version.id)}
               onDrift={() => onDriftVersion(concept.id, version.id)}
               onClick={(shiftKey, metaKey) => onThumbnailClick(pos.conceptIndex, pos.versionIndex, shiftKey, metaKey)}

@@ -1571,7 +1571,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           </div>
         )}
       </div>
-      {mode !== 'client' && !presentation.isPresenting && !ui.navGridHidden && (
+      {!presentation.isPresenting && !ui.navGridHidden && (
         <NavigationGrid
           conceptIndex={conceptIndex}
           versionIndex={versionIndex}
@@ -1580,6 +1580,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           conceptIds={navGridConceptIds}
           versionIds={navGridVersionIds}
           currentVersionNumber={currentVersion?.number}
+          mode={mode}
         />
       )}
       {mode !== 'client' && (
