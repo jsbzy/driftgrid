@@ -147,9 +147,13 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
 
     setEmail(resolvedEmail);
 
-    // Start syncing immediately
+    // Only auto-upload when the user was explicitly waiting on a sign-in (either
+    // the initial 'auth' screen or the 'upgrade' screen where they'd need to
+    // re-auth with a different account). Already-signed-in sessions should never
+    // trigger an unexpected upload — the user drives uploads via Publish updates.
+    if (state !== 'auth' && state !== 'upgrade') return;
     pushAndShare(accessToken, refreshToken || '');
-  }, [client, project]);
+  }, [client, project, state]);
 
   useEffect(() => {
     window.addEventListener('message', handleMessage);
