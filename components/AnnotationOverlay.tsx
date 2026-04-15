@@ -15,13 +15,17 @@ interface AnnotationOverlayProps {
   annotationMode?: boolean;
   /** 'client' hides agent/designer actions (resolve, copy for agent, send to agent, reply) */
   viewMode?: 'designer' | 'client';
-  onAdd: (x: number | null, y: number | null, text: string) => void;
+  onAdd: (x: number | null, y: number | null, text: string) => Promise<Annotation | null> | void;
   onResolve: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit?: (id: string, text: string) => void;
   onReply?: (parentId: string, text: string, asAgent?: boolean) => void;
   /** Frame context — used to build rich agent messages that include the slide path */
   frameContext?: {
+    client?: string;
+    project?: string;
+    conceptId?: string;
+    versionId?: string;
     conceptLabel: string;
     versionNumber: number;
     filePath: string;
@@ -99,7 +103,9 @@ export function AnnotationOverlay({
     onEdit?.(id, trimmed);
   }, [editDrafts, annotations, onEdit]);
 
-  // Build the agent-ready message for an existing annotation — includes slide context, pin location, and any replies
+  // Build the agent-ready message for an existing annotation — includes slide context,
+  // pin location, thread history, and reply-back instructions so the agent can POST
+  // a threaded reply after applying the change (Option A: pre-MCP).
   const buildAnnotationAgentMessage = useCallback((annotation: Annotation) => {
     const lines: string[] = [];
     if (frameContext) {
@@ -110,8 +116,10 @@ export function AnnotationOverlay({
       const yPct = Math.round(annotation.y * 100);
       lines.push(`Pin: (${xPct}%, ${yPct}%)`);
     }
-    if (lines.length > 0) lines.push('');
-    lines.push(annotation.text);
+    lines.push(`Annotation ID: ${annotation.id}`);
+    lines.push('');
+    lines.push(`> ${annotation.text.split('\n').join('\n> ')}`);
+
     const replies = repliesByParent[annotation.id] || [];
     if (replies.length > 0) {
       lines.push('');
@@ -119,6 +127,23 @@ export function AnnotationOverlay({
         const who = r.isAgent ? 'Agent' : (r.author || 'Reply');
         lines.push(`↳ ${who}: ${r.text}`);
       }
+    }
+
+    // Reply-back instructions — so the agent can close the loop with a threaded reply.
+    if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
+      lines.push('');
+      lines.push('---');
+      lines.push('After applying the change, reply to this prompt by POSTing to');
+      lines.push(`http://localhost:3000/api/annotations with:`);
+      lines.push('  {');
+      lines.push(`    "client": "${frameContext.client}",`);
+      lines.push(`    "project": "${frameContext.project}",`);
+      lines.push(`    "conceptId": "${frameContext.conceptId}",`);
+      lines.push(`    "versionId": "${frameContext.versionId}",`);
+      lines.push(`    "parentId": "${annotation.id}",`);
+      lines.push(`    "text": "<brief summary of what you changed>",`);
+      lines.push(`    "isAgent": true`);
+      lines.push('  }');
     }
     return lines.join('\n');
   }, [frameContext, repliesByParent]);
@@ -213,31 +238,30 @@ export function AnnotationOverlay({
     [isCapturing]
   );
 
-  const handleSubmitPending = useCallback(() => {
-    if (!pendingPin || !pendingText.trim()) return;
-    onAdd(pendingPin.x, pendingPin.y, pendingText.trim());
+  // Save pending prompt. Returns the saved annotation (so Copy can grab its ID).
+  const handleSubmitPending = useCallback(async (): Promise<Annotation | null> => {
+    if (!pendingPin || !pendingText.trim()) return null;
+    const result = await Promise.resolve(onAdd(pendingPin.x, pendingPin.y, pendingText.trim()));
     setPendingPin(null);
     setPendingText('');
+    return (result as Annotation | null | undefined) ?? null;
   }, [pendingPin, pendingText, onAdd]);
 
-  const handleCopyForAgent = useCallback(() => {
-    const text = pendingText.trim();
-    if (!text) return;
-    const lines: string[] = [];
-    if (frameContext) {
-      lines.push(`Slide: ${frameContext.conceptLabel} v${frameContext.versionNumber} — ${frameContext.filePath}`);
+  // Copy = save + copy the full payload (slide context, pin, annotation ID, reply-back instructions).
+  const handleCopyForAgent = useCallback(async () => {
+    if (!pendingText.trim()) return;
+    const saved = await handleSubmitPending();
+    if (!saved) return;
+    const message = buildAnnotationAgentMessage(saved);
+    try {
+      await navigator.clipboard?.writeText(message);
+    } catch {
+      // clipboard may fail silently
     }
-    if (pendingPin) {
-      const xPct = Math.round(pendingPin.x * 100);
-      const yPct = Math.round(pendingPin.y * 100);
-      lines.push(`Pin: (${xPct}%, ${yPct}%)`);
-    }
-    if (lines.length > 0) lines.push('');
-    lines.push(text);
-    navigator.clipboard?.writeText(lines.join('\n')).catch(() => {});
     setCopyState('copied');
     window.setTimeout(() => setCopyState('idle'), 1500);
-  }, [pendingText, pendingPin, frameContext]);
+    toast('Copied — paste into your agent');
+  }, [pendingText, handleSubmitPending, buildAnnotationAgentMessage]);
 
   const handlePinClick = useCallback(
     (e: React.MouseEvent, id: string) => {
@@ -382,6 +406,9 @@ export function AnnotationOverlay({
                     ? { top: 22 }
                     : { bottom: 22 }),
                   width: 300,
+                  maxHeight: 'min(70vh, 560px)',
+                  overflowY: 'auto',
+                  overscrollBehavior: 'contain',
                   background: 'rgba(20, 20, 20, 0.95)',
                   backdropFilter: 'blur(12px)',
                   borderRadius: 10,
@@ -414,51 +441,49 @@ export function AnnotationOverlay({
                   >
                     {annotation.resolved ? 'Resolved' : (isClient ? 'Comment' : 'Prompt')} · {annotation.isClient ? annotation.author : 'designer'}
                   </span>
-                  {/* Delete icon — designer only */}
-                  {!isClient && (
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(annotation.id);
-                        setActivePin(null);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 16,
-                        height: 16,
-                        borderRadius: 3,
-                        border: 'none',
-                        background: 'transparent',
-                        cursor: 'pointer',
-                        color: 'rgba(255,255,255,0.3)',
-                        transition: 'color 0.15s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.color = '#ef4444';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)';
-                      }}
+                  {/* Close icon — universal (designer + client). Closes popup, never deletes. */}
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActivePin(null);
+                    }}
+                    title="Close (Esc)"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 16,
+                      height: 16,
+                      borderRadius: 3,
+                      border: 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      color: 'rgba(255,255,255,0.3)',
+                      transition: 'color 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.8)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)';
+                    }}
+                  >
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
-                      <svg
-                        width="10"
-                        height="10"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
-                  )}
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
                 </div>
 
                 {/* Note — editable textarea unless the comment has replies (then locked) */}
@@ -565,87 +590,147 @@ export function AnnotationOverlay({
                     {annotation.resolved && ' · resolved'}
                   </div>
                 ) : (
-                  <div
-                    style={{
-                      marginTop: 10,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 6,
-                    }}
-                  >
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onResolve(annotation.id);
-                      }}
+                  <>
+                    <div
                       style={{
-                        fontFamily: 'var(--font-mono, monospace)',
-                        fontSize: 9,
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        padding: '5px 9px',
-                        borderRadius: 5,
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        background: annotation.resolved
-                          ? 'rgba(34,197,94,0.12)'
-                          : 'rgba(255,255,255,0.05)',
-                        color: annotation.resolved
-                          ? 'rgba(74,222,128,0.9)'
-                          : 'rgba(255,255,255,0.6)',
-                        cursor: 'pointer',
+                        marginTop: 10,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 6,
                       }}
                     >
-                      {annotation.resolved ? 'Resolved' : 'Resolve'}
-                    </button>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                      {/* Trash — delete (bottom-left, far from close) */}
                       <button
                         type="button"
                         tabIndex={-1}
                         onClick={(e) => {
                           e.stopPropagation();
-                          const message = buildAnnotationAgentMessage(annotation);
-                          navigator.clipboard?.writeText(message).catch(() => {});
-                          toast('Copied');
+                          onDelete(annotation.id);
+                          setActivePin(null);
                         }}
+                        title="Delete prompt"
                         style={{
-                          fontFamily: 'var(--font-mono, monospace)',
-                          fontSize: 9,
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          padding: '5px 9px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 28,
+                          height: 28,
                           borderRadius: 5,
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          background: 'rgba(255,255,255,0.05)',
-                          color: 'rgba(255,255,255,0.7)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          background: 'transparent',
                           cursor: 'pointer',
+                          color: 'rgba(255,255,255,0.35)',
+                          transition: 'color 0.15s ease, border-color 0.15s ease, background 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.color = '#ef4444';
+                          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.3)';
+                          (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.08)';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)';
+                          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                          (e.currentTarget as HTMLElement).style.background = 'transparent';
                         }}
                       >
-                        Copy
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6" />
+                          <path d="M14 11v6" />
+                          <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                        </svg>
                       </button>
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        onClick={(e) => { e.stopPropagation(); handleSendToAgent(); }}
-                        style={{
-                          fontFamily: 'var(--font-mono, monospace)',
-                          fontSize: 9,
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          padding: '5px 9px',
-                          borderRadius: 5,
-                          border: '1px dashed rgba(255,255,255,0.12)',
-                          background: 'rgba(255,255,255,0.02)',
-                          color: 'rgba(255,255,255,0.3)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Send to Agent
-                      </button>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onResolve(annotation.id);
+                          }}
+                          style={{
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontSize: 9,
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase',
+                            padding: '5px 9px',
+                            borderRadius: 5,
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: annotation.resolved
+                              ? 'rgba(34,197,94,0.12)'
+                              : 'rgba(255,255,255,0.05)',
+                            color: annotation.resolved
+                              ? 'rgba(74,222,128,0.9)'
+                              : 'rgba(255,255,255,0.6)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {annotation.resolved ? 'Resolved' : 'Resolve'}
+                        </button>
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const message = buildAnnotationAgentMessage(annotation);
+                            navigator.clipboard?.writeText(message).catch(() => {});
+                            toast('Copied — paste into your agent');
+                            setActivePin(null);
+                          }}
+                          title="Copy prompt + context + reply-back instructions for the agent"
+                          style={{
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontSize: 9,
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase',
+                            padding: '5px 9px',
+                            borderRadius: 5,
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(255,255,255,0.05)',
+                            color: 'rgba(255,255,255,0.7)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Copy
+                        </button>
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          onClick={(e) => { e.stopPropagation(); handleSendToAgent(); }}
+                          title="Send to Agent (coming soon — requires MCP)"
+                          style={{
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontSize: 9,
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase',
+                            padding: '5px 9px',
+                            borderRadius: 5,
+                            border: '1px dashed rgba(255,255,255,0.12)',
+                            background: 'rgba(255,255,255,0.02)',
+                            color: 'rgba(255,255,255,0.3)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Send to Agent
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                    {/* Helper microcopy — explains what Copy does */}
+                    <div
+                      style={{
+                        marginTop: 8,
+                        fontFamily: 'var(--font-mono, monospace)',
+                        fontSize: 9,
+                        lineHeight: 1.5,
+                        color: 'rgba(255,255,255,0.25)',
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      Copy includes the prompt, context, and reply instructions — paste into your agent chat.
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -699,17 +784,56 @@ export function AnnotationOverlay({
               boxShadow: '0 6px 24px rgba(0,0,0,0.5)',
             }}
           >
+            {/* Header — eyebrow + close (×) */}
             <div
               style={{
-                fontFamily: 'var(--font-mono, monospace)',
-                fontSize: 9,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: 'rgba(255,255,255,0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 marginBottom: 8,
               }}
             >
-              {isClient ? 'Comment' : 'Prompt'}
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: 9,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,0.35)',
+                }}
+              >
+                {isClient ? 'Comment' : 'Prompt'}
+              </span>
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPendingPin(null);
+                  setPendingText('');
+                }}
+                title="Close (Esc)"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 16,
+                  height: 16,
+                  borderRadius: 3,
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  color: 'rgba(255,255,255,0.35)',
+                  transition: 'color 0.15s ease',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.8)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
             </div>
             <textarea
               ref={inputRef}
@@ -718,7 +842,7 @@ export function AnnotationOverlay({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  handleSubmitPending();
+                  handleCopyForAgent();
                 }
                 if (e.key === 'Escape') {
                   e.preventDefault();
@@ -788,24 +912,25 @@ export function AnnotationOverlay({
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCopyForAgent();
-                      inputRef.current?.focus();
                     }}
                     disabled={!pendingText.trim()}
+                    title="Save + copy for agent (↵)"
                     style={{
                       fontFamily: 'var(--font-mono, monospace)',
                       fontSize: 9,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
-                      padding: '5px 9px',
+                      padding: '5px 12px',
                       borderRadius: 5,
-                      border: '1px solid rgba(255,255,255,0.1)',
+                      border: 'none',
                       background: copyState === 'copied'
                         ? 'rgba(34,197,94,0.12)'
-                        : 'rgba(255,255,255,0.05)',
+                        : (pendingText.trim() ? '#fff' : 'rgba(255,255,255,0.1)'),
                       color: copyState === 'copied'
                         ? 'rgba(74,222,128,0.9)'
-                        : (pendingText.trim() ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)'),
+                        : (pendingText.trim() ? '#000' : 'rgba(255,255,255,0.2)'),
                       cursor: pendingText.trim() ? 'pointer' : 'default',
+                      fontWeight: 600,
                       transition: 'background 0.15s ease, color 0.15s ease',
                     }}
                   >
@@ -815,6 +940,7 @@ export function AnnotationOverlay({
                     type="button"
                     tabIndex={-1}
                     onClick={(e) => { e.stopPropagation(); handleSendToAgent(); inputRef.current?.focus(); }}
+                    title="Send to Agent (coming soon — requires MCP)"
                     style={{
                       fontFamily: 'var(--font-mono, monospace)',
                       fontSize: 9,
@@ -833,6 +959,21 @@ export function AnnotationOverlay({
                 </>
               )}
             </div>
+            {/* Helper microcopy — below the buttons, describes Copy */}
+            {!isClient && (
+              <div
+                style={{
+                  marginTop: 10,
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: 9,
+                  lineHeight: 1.5,
+                  color: 'rgba(255,255,255,0.3)',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                Hit RETURN to copy. Copy includes the prompt + slide context — paste into your agent chat.
+              </div>
+            )}
           </div>
         </div>
       )}

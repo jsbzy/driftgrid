@@ -46,27 +46,34 @@ async function findHtmlPathForThumb(
   // Thumbnail filename is "{conceptId}-{versionId}.webp" (or legacy .png)
   const baseName = thumbFilename.replace(/\.(webp|png)$/, '');
 
-  for (const concept of manifest.concepts) {
-    for (const version of concept.versions) {
-      const expectedName = `${concept.id}-${version.id}`;
-      if (expectedName === baseName) {
-        const projectDir = path.join(PROJECTS_DIR, client, project);
-        const htmlPath = path.resolve(projectDir, version.file);
+  // Search all rounds (not just manifest.concepts which is the latest-round alias)
+  const allConceptSets = manifest.rounds?.length
+    ? manifest.rounds.map(r => r.concepts)
+    : [manifest.concepts];
 
-        // Use concept-level canvas override if set
-        const canvasConfig = concept.canvas ?? manifest.project.canvas;
-        let width: number;
-        let height: number | 'auto';
-        if (typeof canvasConfig === 'object' && canvasConfig !== null) {
-          width = (canvasConfig as any).width ?? 1440;
-          height = (canvasConfig as any).height ?? 'auto';
-        } else {
-          const preset = CANVAS_PRESETS[canvasConfig];
-          width = typeof preset?.width === 'number' ? preset.width : 1440;
-          height = typeof preset?.height === 'number' ? preset.height : 'auto';
+  for (const concepts of allConceptSets) {
+    for (const concept of concepts) {
+      for (const version of concept.versions) {
+        const expectedName = `${concept.id}-${version.id}`;
+        if (expectedName === baseName) {
+          const projectDir = path.join(PROJECTS_DIR, client, project);
+          const htmlPath = path.resolve(projectDir, version.file);
+
+          // Use concept-level canvas override if set
+          const canvasConfig = concept.canvas ?? manifest.project.canvas;
+          let width: number;
+          let height: number | 'auto';
+          if (typeof canvasConfig === 'object' && canvasConfig !== null) {
+            width = (canvasConfig as any).width ?? 1440;
+            height = (canvasConfig as any).height ?? 'auto';
+          } else {
+            const preset = CANVAS_PRESETS[canvasConfig];
+            width = typeof preset?.width === 'number' ? preset.width : 1440;
+            height = typeof preset?.height === 'number' ? preset.height : 'auto';
+          }
+
+          return { htmlPath, conceptId: concept.id, versionId: version.id, width, height };
         }
-
-        return { htmlPath, conceptId: concept.id, versionId: version.id, width, height };
       }
     }
   }
@@ -225,17 +232,22 @@ export async function GET(
 
       await generateThumbnail(info.htmlPath, resolved, info.width, info.height);
 
-      // Update manifest with thumbnail path
+      // Update manifest with thumbnail path (search all rounds)
       const manifest = await getCachedManifest(client, project);
       if (manifest) {
         let updated = false;
-        for (const concept of manifest.concepts) {
-          for (const version of concept.versions) {
-            const expectedName = `${concept.id}-${version.id}`;
-            if (expectedName === thumbFilename.replace(/\.(webp|png)$/, '')) {
-              if (!version.thumbnail) {
-                version.thumbnail = `.thumbs/${thumbFilename}`;
-                updated = true;
+        const allConceptSets = manifest.rounds?.length
+          ? manifest.rounds.map(r => r.concepts)
+          : [manifest.concepts];
+        for (const concepts of allConceptSets) {
+          for (const concept of concepts) {
+            for (const version of concept.versions) {
+              const expectedName = `${concept.id}-${version.id}`;
+              if (expectedName === thumbFilename.replace(/\.(webp|png)$/, '')) {
+                if (!version.thumbnail) {
+                  version.thumbnail = `.thumbs/${thumbFilename}`;
+                  updated = true;
+                }
               }
             }
           }

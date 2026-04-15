@@ -26,17 +26,34 @@ function getSupabaseBrowser() {
 function ConnectFlow() {
   const searchParams = useSearchParams();
   const openerOrigin = searchParams.get('origin') || '*';
+  const signOutRequested = searchParams.get('signout') === '1';
 
   const [state, setState] = useState<'checking' | 'login' | 'connected' | 'error'>('checking');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
 
   useEffect(() => {
-    checkExistingSession();
-  }, []);
+    if (signOutRequested) {
+      doSignOut();
+    } else {
+      checkExistingSession();
+    }
+  }, [signOutRequested]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Clear the cloud Supabase session, then close the popup. Keep the UI in
+   *  the 'checking' state so the user sees a neutral spinner, not a green
+   *  "Connected" check, during the brief sign-out window. */
+  async function doSignOut() {
+    try {
+      const supabase = getSupabaseBrowser();
+      await supabase.auth.signOut();
+    } catch { /* ignore — opener has already cleared local creds */ }
+    try { window.close(); } catch { /* popup can't close itself on some browsers */ }
+  }
 
   async function checkExistingSession() {
     const supabase = getSupabaseBrowser();
@@ -71,6 +88,7 @@ function ConnectFlow() {
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setInfo('');
     setLoading(true);
 
     const supabase = getSupabaseBrowser();
@@ -85,7 +103,7 @@ function ConnectFlow() {
       const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
       if (loginError) {
         setError('');
-        setError('Account created — check your inbox to confirm, then sign in.');
+        setInfo('Account created — check your inbox to confirm, then sign in.');
         setMode('login');
         setLoading(false);
         return;
@@ -108,6 +126,7 @@ function ConnectFlow() {
 
   async function handleOAuth(provider: 'google' | 'github') {
     setError('');
+    setInfo('');
     setLoading(true);
     const supabase = getSupabaseBrowser();
 
@@ -209,6 +228,9 @@ function ConnectFlow() {
           {error && (
             <p style={{ fontSize: 11, color: '#e55', margin: 0 }}>{error}</p>
           )}
+          {info && (
+            <p style={{ fontSize: 11, color: '#22c55e', margin: 0 }}>{info}</p>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <button
@@ -230,7 +252,7 @@ function ConnectFlow() {
             </button>
             <button
               type="button"
-              onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
+              onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setInfo(''); }}
               style={{
                 background: 'none',
                 border: 'none',

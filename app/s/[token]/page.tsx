@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
 import { Viewer } from '@/components/Viewer';
 
@@ -60,16 +60,7 @@ export default async function SharePage({
     notFound();
   }
 
-  // Verify the project exists in storage
-  if (isCloudMode() && userId) {
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase.storage
-      .from('projects')
-      .download(`${userId}/${client}/${project}/manifest.json`);
-    if (error) {
-      notFound();
-    }
-  }
-
-  return <Viewer client={client} project={project} mode="client" shareToken={token} />;
+  // Canonicalize: the new share URL format is /s/{client}/{token}. Redirect so
+  // users always see the readable URL, and bookmarks of legacy links get upgraded.
+  redirect(`/s/${client}/${token}`);
 }

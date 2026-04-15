@@ -12,14 +12,20 @@ interface GridPromptInputProps {
   /** Reference context: the slide this was drifted from (parent version or branch source) */
   referenceLabel?: string;
   referencePath?: string;
+  /** IDs needed to generate the reply-back instructions in the copy payload */
+  client?: string;
+  project?: string;
+  conceptId?: string;
+  versionId?: string;
   /** DOM selector for the selected card wrapper — used to anchor the prompt near it */
   cardSelector: string;
   /** Existing whole-version prompt annotation, if one has already been saved */
   existingPrompt?: Annotation;
   /** Replies threaded under the existing prompt (including agent replies) */
   replies?: Annotation[];
-  /** Save a new prompt (only called in the `empty` state) */
-  onSave: (text: string) => void;
+  /** Save a new prompt (only called in the `empty` state). Returns the saved annotation so
+   *  the copy payload can reference it by ID (needed for threaded agent replies). */
+  onSave: (text: string) => Promise<Annotation | null> | void;
   /** Edit the text of an existing prompt (awaiting state only) */
   onEdit?: (id: string, text: string) => void;
   /** Add a reply to an existing prompt */
@@ -58,6 +64,10 @@ export function GridPromptInput({
   targetPath,
   referenceLabel,
   referencePath,
+  client,
+  project,
+  conceptId,
+  versionId,
   cardSelector,
   existingPrompt,
   replies,
@@ -201,40 +211,80 @@ export function GridPromptInput({
     };
   }, [onCancel]);
 
-  /** Build the agent-ready copy payload (reference + target + prompt) */
-  const buildAgentMessage = useCallback(() => {
+  /**
+   * Build the agent-ready copy payload.
+   *
+   * Includes slide context + target path + annotation ID + explicit "write directly to
+   * the target, do NOT create a new version" instruction + reply-back instructions so
+   * the agent can POST a threaded reply (Option A, pre-MCP).
+   *
+   * `annotationId` is passed in after saving — it's the ID of the whole-version prompt.
+   */
+  const buildAgentMessage = useCallback((annotationId?: string) => {
     const trimmed = text.trim();
     if (!trimmed) return '';
     const lines: string[] = [];
     if (referenceLabel && referencePath) {
       lines.push(`Reference: ${referenceLabel} — ${referencePath}`);
     }
-    lines.push(`Target: ${conceptLabel} v${versionNumber} — ${targetPath}`);
+    const targetTag = referenceLabel ? `(working copy of ${referenceLabel} — iterate here)` : '(drift slot — iterate here)';
+    lines.push(`Target: ${conceptLabel} v${versionNumber} — ${targetPath} ${targetTag}`);
+    if (annotationId) {
+      lines.push(`Annotation ID: ${annotationId}`);
+    }
     lines.push('');
-    lines.push(trimmed);
+    lines.push(`> ${trimmed.split('\n').join('\n> ')}`);
+    lines.push('');
+    lines.push('---');
+    lines.push('Instructions for the agent:');
+    lines.push(`1. The Target file already contains a working copy of the Reference. Edit it in place to apply the prompt above — do NOT create a new version or a new file. Overwrite the Target file directly.`);
+    if (annotationId && client && project && conceptId && versionId) {
+      lines.push(`2. After applying the change, reply to this prompt by POSTing to http://localhost:3000/api/annotations with:`);
+      lines.push('   {');
+      lines.push(`     "client": "${client}",`);
+      lines.push(`     "project": "${project}",`);
+      lines.push(`     "conceptId": "${conceptId}",`);
+      lines.push(`     "versionId": "${versionId}",`);
+      lines.push(`     "parentId": "${annotationId}",`);
+      lines.push(`     "text": "<brief summary of what you changed>",`);
+      lines.push(`     "isAgent": true`);
+      lines.push('   }');
+    }
     return lines.join('\n');
-  }, [text, referenceLabel, referencePath, conceptLabel, versionNumber, targetPath]);
+  }, [text, referenceLabel, referencePath, conceptLabel, versionNumber, targetPath, client, project, conceptId, versionId]);
 
-  const handleCopy = useCallback(() => {
-    const message = buildAgentMessage();
-    if (!message) return;
-    navigator.clipboard?.writeText(message).catch(() => {});
-    setCopyState('copied');
-    window.setTimeout(() => setCopyState('idle'), 1500);
-  }, [buildAgentMessage]);
-
-  /** Enter in the textarea: save new prompt OR save an edit */
-  const handleSubmit = useCallback(() => {
+  /**
+   * Copy = save (if new) + build full payload with ID + reply-back + close.
+   * Mirrors the comment-box behavior: Copy is the primary action.
+   */
+  const handleCopy = useCallback(async () => {
     const trimmed = text.trim();
     if (!trimmed) return;
+
+    let annotationId: string | undefined;
     if (state === 'empty') {
-      onSave(trimmed);
+      const saved = await Promise.resolve(onSave(trimmed));
+      const result = (saved as Annotation | null | undefined) ?? null;
+      if (!result) return;
+      annotationId = result.id;
       toast('Prompt saved');
-    } else if (state === 'awaiting' && existingPrompt && trimmed !== existingPrompt.text) {
-      onEdit?.(existingPrompt.id, trimmed);
-      toast('Prompt updated');
+    } else if (state === 'awaiting' && existingPrompt) {
+      if (trimmed !== existingPrompt.text) {
+        onEdit?.(existingPrompt.id, trimmed);
+      }
+      annotationId = existingPrompt.id;
     }
-  }, [text, state, existingPrompt, onSave, onEdit]);
+
+    const message = buildAgentMessage(annotationId);
+    if (!message) return;
+    try { await navigator.clipboard?.writeText(message); }
+    catch { /* clipboard may fail silently */ }
+
+    setCopyState('copied');
+    window.setTimeout(() => setCopyState('idle'), 1500);
+    toast('Copied — paste into your agent');
+    onCancel();
+  }, [text, state, existingPrompt, onSave, onEdit, buildAgentMessage, onCancel]);
 
   // Running status and agent replies are set by the agent via API (PATCH /api/annotations)
 
@@ -278,6 +328,9 @@ export function GridPromptInput({
         top: anchor.top,
         left: anchor.left,
         width: BOX_WIDTH,
+        maxHeight: 'min(70vh, 560px)',
+        overflowY: 'auto',
+        overscrollBehavior: 'contain',
         transform: `translateY(-${textareaGrowth}px)`,
         background: 'rgba(20, 20, 20, 0.95)',
         backdropFilter: 'blur(12px)',
@@ -309,7 +362,7 @@ export function GridPromptInput({
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSubmit();
+            handleCopy();
           }
           e.stopPropagation();
         }}
@@ -343,8 +396,6 @@ export function GridPromptInput({
             display: 'flex',
             flexDirection: 'column',
             gap: 10,
-            maxHeight: 200,
-            overflowY: 'auto',
           }}
         >
           {replies.map(reply => (
@@ -421,24 +472,25 @@ export function GridPromptInput({
               onClick={(e) => {
                 e.stopPropagation();
                 handleCopy();
-                textareaRef.current?.focus();
               }}
               disabled={!text.trim()}
+              title="Save + copy for agent (↵)"
               style={{
                 fontFamily: 'var(--font-mono, monospace)',
                 fontSize: 9,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                padding: '5px 9px',
+                padding: '5px 12px',
                 borderRadius: 5,
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: 'none',
                 background: copyState === 'copied'
                   ? 'rgba(34,197,94,0.12)'
-                  : 'rgba(255,255,255,0.05)',
+                  : (text.trim() ? '#fff' : 'rgba(255,255,255,0.1)'),
                 color: copyState === 'copied'
                   ? 'rgba(74,222,128,0.9)'
-                  : (text.trim() ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)'),
+                  : (text.trim() ? '#000' : 'rgba(255,255,255,0.2)'),
                 cursor: text.trim() ? 'pointer' : 'default',
+                fontWeight: 600,
                 transition: 'background 0.15s ease, color 0.15s ease',
               }}
             >
@@ -478,6 +530,21 @@ export function GridPromptInput({
           {/* Agent replies appear automatically via API */}
         </div>
       </div>
+      {/* Helper microcopy — describes what Copy does */}
+      {(state === 'empty' || state === 'awaiting') && (
+        <div
+          style={{
+            marginTop: 8,
+            fontFamily: 'var(--font-mono, monospace)',
+            fontSize: 9,
+            lineHeight: 1.5,
+            color: 'rgba(255,255,255,0.3)',
+            letterSpacing: '0.02em',
+          }}
+        >
+          Hit RETURN to copy. Copy includes the prompt, slide context, and reply instructions — paste into your agent chat.
+        </div>
+      )}
     </div>
   );
 }

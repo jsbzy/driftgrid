@@ -10,7 +10,6 @@ interface NavigationGridProps {
   conceptIds?: string[];
   /** versionIds[conceptIdx][versionIdx] = versionId */
   versionIds?: string[][];
-  inSelectsRow?: boolean;
   /** Number of versions hidden in collapsed rounds */
   collapsedCount?: number;
   /** The version.number of the currently selected version */
@@ -26,7 +25,6 @@ export const NavigationGrid = memo(function NavigationGrid({
   selections,
   conceptIds,
   versionIds,
-  inSelectsRow = false,
   collapsedCount = 0,
   currentVersionNumber,
 }: NavigationGridProps) {
@@ -34,8 +32,6 @@ export const NavigationGrid = memo(function NavigationGrid({
   const maxVersions = versionCounts.length > 0 ? Math.max(...versionCounts) : 0;
   const cell = 10;
   const gap = 3;
-
-  const hasSelections = selections && selections.size > 0;
 
   const currentConceptCount = versionCounts[conceptIndex] ?? 0;
   const currentRow = currentConceptCount - 1 - versionIndex;
@@ -64,43 +60,6 @@ export const NavigationGrid = memo(function NavigationGrid({
       className="fixed bottom-14 right-14 z-50"
       style={{ opacity: 0.45 }}
     >
-      {/* Selects row at top */}
-      {hasSelections && conceptIds && (
-        <>
-          <div
-            className="grid"
-            style={{
-              gridTemplateColumns: `repeat(${conceptCount}, ${cell}px)`,
-              gap: `${gap}px`,
-              marginBottom: gap + 2,
-            }}
-          >
-            {conceptIds.map((cid, col) => {
-              const hasSelect = versionIds?.[col]?.some(vid => selections.has(`${cid}:${vid}`)) ?? false;
-              const isActive = inSelectsRow && col === conceptIndex;
-              return (
-                <div
-                  key={`sel-${col}`}
-                  style={{
-                    width: cell,
-                    height: cell,
-                    borderRadius: 2,
-                    background: hasSelect ? '#facc15' : undefined,
-                    border: isActive
-                      ? '2px solid var(--foreground)'
-                      : hasSelect
-                        ? undefined
-                        : '1px dashed rgba(0,0,0,0.08)',
-                    boxShadow: isActive ? '0 0 0 1px var(--foreground)' : undefined,
-                  }}
-                />
-              );
-            })}
-          </div>
-          <div style={{ height: 1, background: 'rgba(0,0,0,0.08)', marginBottom: gap + 2 }} />
-        </>
-      )}
-
       {hasOverflowTop && (
         <div style={{ textAlign: 'center', fontSize: 8, color: 'var(--muted)', marginBottom: 2 }}>···</div>
       )}
@@ -136,7 +95,7 @@ export const NavigationGrid = memo(function NavigationGrid({
                   background: isCurrent
                     ? 'var(--foreground)'
                     : isStarred
-                      ? '#facc15'
+                      ? '#fef3c7'
                       : undefined,
                   border: isCurrent || isStarred
                     ? undefined
@@ -160,18 +119,6 @@ export const NavigationGrid = memo(function NavigationGrid({
           </div>
         </>
       )}
-      <div style={{
-        fontFamily: 'var(--font-mono, monospace)',
-        fontSize: 9,
-        color: 'var(--muted)',
-        marginTop: 10,
-        display: 'flex',
-        gap: 8,
-        opacity: 0.7,
-      }}>
-        <span><strong>H</strong> Hide</span>
-        <span><strong>G</strong> Grid</span>
-      </div>
     </div>
   );
 });

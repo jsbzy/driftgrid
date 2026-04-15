@@ -27,6 +27,10 @@ export function useAnnotationState(
   // Fetch annotations whenever the current card selection changes.
   // We fetch in both frame AND grid view so the grid prompt panel can
   // detect existing whole-version prompts and reply threads on drift slots.
+  //
+  // Agents can POST threaded replies at any time (Option A flow), so we also:
+  //   • Refetch on window focus (user comes back from their agent chat)
+  //   • Poll every 4s as a fallback so replies surface without a refresh
   useEffect(() => {
     if (!conceptId || !versionId) {
       setAnnotations([]);
@@ -38,10 +42,43 @@ export function useAnnotationState(
       setAnnotations(demoAnnotations[key] || []);
       return;
     }
-    fetch(`/api/annotations?client=${client}&project=${project}&conceptId=${conceptId}&versionId=${versionId}`)
-      .then(r => r.json())
-      .then(data => { if (Array.isArray(data)) setAnnotations(data); })
-      .catch(() => {});
+
+    let cancelled = false;
+    const url = `/api/annotations?client=${client}&project=${project}&conceptId=${conceptId}&versionId=${versionId}`;
+
+    const fetchAnnotations = () => {
+      fetch(url)
+        .then(r => r.json())
+        .then(data => {
+          if (cancelled) return;
+          if (Array.isArray(data)) {
+            setAnnotations(prev => {
+              // Avoid spurious re-renders if nothing actually changed
+              if (prev.length === data.length) {
+                const prevKey = prev.map(a => `${a.id}:${a.text.length}:${a.resolved ? 1 : 0}`).join('|');
+                const nextKey = data.map(a => `${a.id}:${a.text.length}:${a.resolved ? 1 : 0}`).join('|');
+                if (prevKey === nextKey) return prev;
+              }
+              return data;
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchAnnotations();
+    const interval = setInterval(fetchAnnotations, 4000);
+    const onFocus = () => fetchAnnotations();
+    const onVisible = () => { if (!document.hidden) fetchAnnotations(); };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [client, project, conceptId, versionId, shareToken, demoAnnotations]);
 
   // Clear annotation mode when leaving frame
@@ -49,8 +86,8 @@ export function useAnnotationState(
     if (viewMode !== 'frame') setAnnotationMode(false);
   }, [viewMode]);
 
-  const handleAddAnnotation = useCallback(async (x: number | null, y: number | null, text: string) => {
-    if (!conceptId || !versionId) return;
+  const handleAddAnnotation = useCallback(async (x: number | null, y: number | null, text: string): Promise<Annotation | null> => {
+    if (!conceptId || !versionId) return null;
 
     if (shareToken) {
       // Client-side only — persist in demoAnnotations state
@@ -74,7 +111,7 @@ export function useAnnotationState(
       setAnnotations(prev => [...prev, annotation]);
       setAnnotationMode(false);
       toast('Prompt placed');
-      return;
+      return annotation;
     }
 
     const res = await fetch('/api/annotations', {
@@ -97,7 +134,9 @@ export function useAnnotationState(
       if (x !== null && y !== null) {
         toast('Prompt placed');
       }
+      return annotation;
     }
+    return null;
   }, [client, project, conceptId, versionId, shareToken]);
 
   const handleDeleteAnnotation = useCallback(async (id: string) => {

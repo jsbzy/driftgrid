@@ -48,6 +48,7 @@ function LoginForm() {
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setInfo('');
     setLoading(true);
 
     const supabase = getSupabaseBrowser();
@@ -164,7 +165,7 @@ function LoginForm() {
           </button>
           <button
             type="button"
-            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
+            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setInfo(''); }}
             className="text-xs tracking-widest uppercase cursor-pointer"
             style={{ color: 'var(--muted)', opacity: 0.5, fontFamily: 'var(--font-mono, monospace)' }}
           >

@@ -81,12 +81,12 @@ export const CanvasCard = memo(function CanvasCard({
         <div
           className="absolute pointer-events-none"
           style={{
-            top: -4,
-            left: -4,
-            right: -4,
-            bottom: -4,
-            borderRadius: 'calc(var(--radius-md) + 4px)',
-            border: '3px solid #8b5cf6',
+            top: 'calc(-4px / var(--canvas-scale, 1))',
+            left: 'calc(-4px / var(--canvas-scale, 1))',
+            right: 'calc(-4px / var(--canvas-scale, 1))',
+            bottom: 'calc(-4px / var(--canvas-scale, 1))',
+            borderRadius: 'calc(var(--radius-md) + 4px / var(--canvas-scale, 1))',
+            border: 'calc(2.5px / var(--canvas-scale, 1)) solid #8b5cf6',
             boxSizing: 'border-box',
             zIndex: 20,
           }}
@@ -96,12 +96,12 @@ export const CanvasCard = memo(function CanvasCard({
         <div
           className="absolute pointer-events-none"
           style={{
-            top: -2,
-            left: -2,
-            right: -2,
-            bottom: -2,
-            borderRadius: 'calc(var(--radius-md) + 2px)',
-            border: '2px solid rgba(139, 92, 246, 0.5)',
+            top: 'calc(-2px / var(--canvas-scale, 1))',
+            left: 'calc(-2px / var(--canvas-scale, 1))',
+            right: 'calc(-2px / var(--canvas-scale, 1))',
+            bottom: 'calc(-2px / var(--canvas-scale, 1))',
+            borderRadius: 'calc(var(--radius-md) + 2px / var(--canvas-scale, 1))',
+            border: 'calc(2px / var(--canvas-scale, 1)) solid rgba(139, 92, 246, 0.5)',
             boxSizing: 'border-box',
             zIndex: 19,
           }}

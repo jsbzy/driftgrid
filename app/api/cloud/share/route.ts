@@ -63,7 +63,7 @@ export async function POST(request: Request) {
 
       if (existing) {
         const { origin } = new URL(request.url);
-        return NextResponse.json({ token: existing.token, url: `${origin}/s/${existing.token}`, created_at: existing.created_at });
+        return NextResponse.json({ token: existing.token, url: `${origin}/s/${client}/${existing.token}`, created_at: existing.created_at });
       }
 
       return NextResponse.json({ error: 'free_limit', message: 'Upgrade to Pro to share unlimited projects.' }, { status: 403 });
@@ -91,12 +91,12 @@ export async function POST(request: Request) {
 
       if (existing) {
         const { origin } = new URL(request.url);
-        return NextResponse.json({ token: existing.token, url: `${origin}/s/${existing.token}`, created_at: existing.created_at });
+        return NextResponse.json({ token: existing.token, url: `${origin}/s/${client}/${existing.token}`, created_at: existing.created_at });
       }
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   const { origin } = new URL(request.url);
-  return NextResponse.json({ token: data.token, url: `${origin}/s/${data.token}`, created_at: data.created_at });
+  return NextResponse.json({ token: data.token, url: `${origin}/s/${client}/${data.token}`, created_at: data.created_at });
 }

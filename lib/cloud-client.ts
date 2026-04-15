@@ -91,7 +91,7 @@ export async function pushFilesToCloud(
   client: string,
   project: string,
   files: FileEntry[],
-  onProgress?: (uploaded: number, total: number) => void,
+  onProgress?: (uploaded: number, total: number, bytesUploaded: number) => void,
   scope?: 'project' | 'client',
 ): Promise<PushResult> {
   // Split files into batches by estimated size
@@ -115,9 +115,11 @@ export async function pushFilesToCloud(
 
   let totalUploaded = 0;
   let totalFailed = 0;
+  let totalBytesUploaded = 0;
   const allErrors: string[] = [];
 
   for (const batch of batches) {
+    const batchBytes = batch.reduce((n, f) => n + f.content.length, 0);
     const res = await fetch(`${CLOUD_URL}/api/cloud/push`, {
       method: 'POST',
       headers: {
@@ -137,9 +139,10 @@ export async function pushFilesToCloud(
     const result: PushResult = await res.json();
     totalUploaded += result.uploaded;
     totalFailed += result.failed;
+    totalBytesUploaded += batchBytes;
     if (result.errors) allErrors.push(...result.errors);
 
-    onProgress?.(totalUploaded, files.length);
+    onProgress?.(totalUploaded, files.length, totalBytesUploaded);
   }
 
   return {
