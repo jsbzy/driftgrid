@@ -1,5 +1,6 @@
 'use client';
 
+// v2: status-first (no auto-upload on open) — 2026-04-15
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from './Toast';
 
@@ -152,7 +153,7 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
     // re-auth with a different account). Already-signed-in sessions should never
     // trigger an unexpected upload — the user drives uploads via Publish updates.
     if (state !== 'auth' && state !== 'upgrade') return;
-    pushAndShare(accessToken, refreshToken || '');
+    pushAndShare(accessToken, refreshToken || '', { intentional: true });
   }, [client, project, state]);
 
   useEffect(() => {
@@ -237,7 +238,18 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
     return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
-  async function pushAndShare(accessToken: string, refreshToken: string, opts?: { includeMedia?: boolean }) {
+  async function pushAndShare(accessToken: string, refreshToken: string, opts?: { includeMedia?: boolean; intentional?: boolean }) {
+    // Belt-and-suspenders: pushAndShare must only run from an explicit user action
+    // (Create share link / Publish updates / Sign in). If it somehow fires from a
+    // stale handler or a bad state machine transition, bail.
+    if (opts?.intentional !== true) {
+      // intentional flag wasn't set — this is an unintended invocation
+      // (log + bail instead of silently consuming bandwidth)
+      if (typeof window !== 'undefined' && window.console) {
+        window.console.warn('[SharePanel] pushAndShare called without intentional flag — ignoring');
+      }
+      return;
+    }
     const includeMedia = opts?.includeMedia ?? readIncludeMedia();
 
     setState('syncing');
@@ -698,7 +710,7 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
                       onClick={() => {
                         writeIncludeMedia(true);
                         const creds = getStoredCredentials();
-                        if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { includeMedia: true });
+                        if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { includeMedia: true, intentional: true });
                       }}
                       style={{
                         marginTop: 8,
@@ -729,7 +741,7 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
               <button
                 onClick={() => {
                   const creds = getStoredCredentials();
-                  if (creds) pushAndShare(creds.accessToken, creds.refreshToken);
+                  if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { intentional: true });
                 }}
                 style={{
                   display: 'block',
@@ -874,7 +886,7 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
                     onClick={() => {
                       writeIncludeMedia(true);
                       const creds = getStoredCredentials();
-                      if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { includeMedia: true });
+                      if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { includeMedia: true, intentional: true });
                     }}
                     style={{
                       marginTop: 8,
@@ -899,7 +911,7 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
                 <button
                   onClick={() => {
                     const creds = getStoredCredentials();
-                    if (creds) pushAndShare(creds.accessToken, creds.refreshToken);
+                    if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { intentional: true });
                   }}
                   style={{
                     width: '100%',
