@@ -69,7 +69,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const [showHidden, setShowHidden] = useState(false);
   const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set());
   const [clipboard, setClipboard] = useState<{ conceptId: string; versionId: string; file: string; label: string; number: number }[] | null>(null);
-  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('overview');
+  // Share/client views land at a closer zoom so a client immediately sees readable
+  // card content — they're here to review, not to get a map of the project.
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(mode === 'client' ? 'z2' : 'overview');
   // Grid-view prompt input — open when user presses C on an empty card, or auto-opens after drift/branch
   const [gridPromptOpen, setGridPromptOpen] = useState(false);
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
@@ -1414,29 +1416,63 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           })()}
         </div>
         {mode === 'client' ? (
-          <div
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-full"
-            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)' }}
-          >
-            <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.4)', padding: '0 4px' }}>
-              Click a card to review
-            </span>
-          </div>
+          !ui.navGridHidden && (
+            <div
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-3 py-2 rounded-full"
+              style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)' }}
+            >
+              <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.4)', padding: '0 4px' }}>
+                Click a card to review
+              </span>
+              <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.12)' }} />
+              <button
+                onClick={() => ui.setNavGridHidden(v => !v)}
+                title="Hide (H)"
+                style={{
+                  background: 'none', border: 'none', padding: '0 4px', cursor: 'pointer',
+                  fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+                  fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em',
+                }}
+              >
+                <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>H</span>{' '}
+                <span>Hide</span>
+              </button>
+            </div>
+          )
         ) : (
           multiSelectBar
         )}
-        <ShortcutsBar
-          visible={ui.shortcutsVisible && !ui.navGridHidden}
-          mode={mode}
-          onToggle={() => {
-            if (ui.navGridHidden) {
-              ui.setNavGridHidden(false);
-              ui.setShortcutsVisible(true);
-            } else {
-              ui.setShortcutsVisible(v => !v);
-            }
-          }}
-        />
+        {mode !== 'client' && (
+          <ShortcutsBar
+            visible={ui.shortcutsVisible && !ui.navGridHidden}
+            mode={mode}
+            onToggle={() => {
+              if (ui.navGridHidden) {
+                ui.setNavGridHidden(false);
+                ui.setShortcutsVisible(true);
+              } else {
+                ui.setShortcutsVisible(v => !v);
+              }
+            }}
+          />
+        )}
+        {/* Client-mode: tiny ? pill to unhide when H has hidden everything */}
+        {mode === 'client' && ui.navGridHidden && (
+          <button
+            type="button"
+            onClick={() => ui.setNavGridHidden(false)}
+            title="Show shortcuts"
+            style={{
+              position: 'fixed', left: 14, bottom: 14, zIndex: 40,
+              width: 22, height: 22, borderRadius: 999,
+              background: 'transparent', border: 'none',
+              color: 'var(--foreground)',
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 11, fontWeight: 500,
+              cursor: 'pointer', opacity: 0.25,
+            }}
+          >?</button>
+        )}
         {commandPalette}
         <ToastContainer />
       </div>
@@ -1528,8 +1564,8 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           DriftGrid
         </div>
         {/* Designer frame floating action bar removed — shortcuts card handles all actions. */}
-        {/* Client review action bar — comment + back to grid */}
-        {mode === 'client' && (
+        {/* Client review action bar — comment + back to grid + hide */}
+        {mode === 'client' && !ui.navGridHidden && (
           <div
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 px-2 py-1.5 rounded-full"
             style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)' }}
@@ -1548,6 +1584,19 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             <span style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 10, color: 'rgba(255,255,255,0.35)', padding: '0 4px' }}>
               {currentConcept.label} · v{currentVersion.number}
             </span>
+            <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.12)' }} />
+            <button
+              onClick={() => ui.setNavGridHidden(v => !v)}
+              className={actionBarBtn}
+              title="Hide (H)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+                <line x1="4" y1="20" x2="20" y2="4" />
+              </svg>
+              <span style={actionBarKey}>H</span>
+            </button>
           </div>
         )}
         {/* Presentation mode indicator */}
@@ -1582,18 +1631,37 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           mode={mode}
         />
       )}
-      <ShortcutsBar
-        visible={ui.shortcutsVisible && !ui.navGridHidden}
-        mode={mode}
-        onToggle={() => {
-          if (ui.navGridHidden) {
-            ui.setNavGridHidden(false);
-            ui.setShortcutsVisible(true);
-          } else {
-            ui.setShortcutsVisible(v => !v);
-          }
-        }}
-      />
+      {mode !== 'client' && (
+        <ShortcutsBar
+          visible={ui.shortcutsVisible && !ui.navGridHidden}
+          mode={mode}
+          onToggle={() => {
+            if (ui.navGridHidden) {
+              ui.setNavGridHidden(false);
+              ui.setShortcutsVisible(true);
+            } else {
+              ui.setShortcutsVisible(v => !v);
+            }
+          }}
+        />
+      )}
+      {/* Client-mode: tiny ? pill to unhide when H has hidden everything */}
+      {mode === 'client' && ui.navGridHidden && (
+        <button
+          type="button"
+          onClick={() => ui.setNavGridHidden(false)}
+          title="Show controls"
+          style={{
+            position: 'fixed', left: 14, bottom: 14, zIndex: 40,
+            width: 22, height: 22, borderRadius: 999,
+            background: 'transparent', border: 'none',
+            color: 'var(--foreground)',
+            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+            fontSize: 11, fontWeight: 500,
+            cursor: 'pointer', opacity: 0.25,
+          }}
+        >?</button>
+      )}
       {commandPalette}
       <ToastContainer />
     </div>
