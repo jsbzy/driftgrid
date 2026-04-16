@@ -25,10 +25,12 @@ export async function POST(request: NextRequest) {
 
     const { interval = 'month' } = await request.json().catch(() => ({}));
 
-    // Pick the right price by interval.
-    const priceId = interval === 'year'
+    // Pick the right price by interval. Trim whitespace defensively — env vars
+    // pasted into Vercel sometimes carry a trailing newline that Stripe rejects
+    // with "No such price: 'price_xxx\n'".
+    const priceId = (interval === 'year'
       ? process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_ANNUAL
-      : process.env.NEXT_PUBLIC_STRIPE_PRICE_ID;
+      : process.env.NEXT_PUBLIC_STRIPE_PRICE_ID)?.trim();
 
     if (!priceId) {
       return NextResponse.json({
