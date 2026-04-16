@@ -7,16 +7,18 @@ import { toast } from './Toast';
 const CLOUD_URL = process.env.NEXT_PUBLIC_DRIFTGRID_CLOUD_URL || 'https://driftgrid.ai';
 const STORAGE_KEY = 'driftgrid-cloud-auth';
 const INCLUDE_MEDIA_KEY = (client: string, project: string) => `driftgrid-share-${client}-${project}-include-media`;
-// Cached share URL + last-published time, keyed per project. Written after a successful
-// publish; read on panel open so "Publish updates" appears immediately even when the
-// local /api/cloud/share-status endpoint can't reach the cloud (dev mode returns 400).
-const LAST_SHARE_KEY = (client: string, project: string) => `driftgrid-share-${client}-${project}-last`;
+// Cached share URL + last-published time, keyed per (project, round). Written after a
+// successful publish; read on panel open so "Publish updates" appears immediately even
+// when the local /api/cloud/share-status endpoint can't reach the cloud. Including the
+// round in the key means a round switch can't surface the wrong round's URL.
+const LAST_SHARE_KEY = (client: string, project: string, roundNumber: number | null) =>
+  `driftgrid-share-${client}-${project}-r${roundNumber ?? 'none'}-last`;
 
 type CachedShare = { url: string; lastPublishedAt: string };
 
-function readCachedShare(client: string, project: string): CachedShare | null {
+function readCachedShare(client: string, project: string, roundNumber: number | null): CachedShare | null {
   try {
-    const raw = localStorage.getItem(LAST_SHARE_KEY(client, project));
+    const raw = localStorage.getItem(LAST_SHARE_KEY(client, project, roundNumber));
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (typeof parsed?.url !== 'string') return null;
@@ -26,14 +28,14 @@ function readCachedShare(client: string, project: string): CachedShare | null {
   }
 }
 
-function writeCachedShare(client: string, project: string, url: string, lastPublishedAt: string) {
+function writeCachedShare(client: string, project: string, roundNumber: number | null, url: string, lastPublishedAt: string) {
   try {
-    localStorage.setItem(LAST_SHARE_KEY(client, project), JSON.stringify({ url, lastPublishedAt }));
+    localStorage.setItem(LAST_SHARE_KEY(client, project, roundNumber), JSON.stringify({ url, lastPublishedAt }));
   } catch { /* ignore */ }
 }
 
-function clearCachedShare(client: string, project: string) {
-  try { localStorage.removeItem(LAST_SHARE_KEY(client, project)); } catch { /* ignore */ }
+function clearCachedShare(client: string, project: string, roundNumber: number | null) {
+  try { localStorage.removeItem(LAST_SHARE_KEY(client, project, roundNumber)); } catch { /* ignore */ }
 }
 
 type ShareState = 'closed' | 'checking' | 'auth' | 'syncing' | 'ready' | 'ready-stale' | 'upgrade' | 'error';
@@ -81,6 +83,8 @@ interface SharePanelProps {
   project: string;
   /** Active round ID — the share filter only includes starred versions in this round. */
   roundId?: string | null;
+  /** Round number — scopes the share row so each round has its own pinned URL. */
+  roundNumber?: number | null;
 }
 
 function getStoredCredentials(): StoredCredentials | null {
@@ -145,7 +149,7 @@ const SYNC_MESSAGES: Record<SyncPhase, string[]> = {
   ],
 };
 
-export function SharePanel({ open, onClose, client, project, roundId }: SharePanelProps) {
+export function SharePanel({ open, onClose, client, project, roundId, roundNumber }: SharePanelProps) {
   const [state, setState] = useState<ShareState>('closed');
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -258,7 +262,7 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
     // status check below is authoritative and will correct the view if the share
     // was deleted — but if the status endpoint is unreachable (local dev returns
     // 400 without DRIFT_CLOUD=1), the cache keeps the panel useful.
-    const cached = readCachedShare(client, project);
+    const cached = readCachedShare(client, project, roundNumber ?? null);
     if (cached) {
       setShareUrl(cached.url);
       setLastPublishedAt(cached.lastPublishedAt || null);
@@ -274,7 +278,7 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
       const res = await fetch('/api/cloud/share-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client, project, accessToken: creds.accessToken }),
+        body: JSON.stringify({ client, project, accessToken: creds.accessToken, roundNumber: roundNumber ?? null }),
       });
       if (res.status === 401) {
         // Token rejected — try to refresh by running a full push (which handles refresh);
@@ -301,12 +305,12 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
       if (data.exists) {
         setShareUrl(data.url);
         setLastPublishedAt(data.lastPublishedAt || null);
-        writeCachedShare(client, project, data.url, data.lastPublishedAt || '');
+        writeCachedShare(client, project, roundNumber ?? null, data.url, data.lastPublishedAt || '');
         setStatusDebug(null);
         setState('ready-stale');
       } else {
         // Cloud says no share → clear any stale cache, show create-share landing.
-        clearCachedShare(client, project);
+        clearCachedShare(client, project, roundNumber ?? null);
         setShareUrl(null);
         setLastPublishedAt(null);
         setStatusDebug({ kind: 'missing' });
@@ -486,7 +490,7 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
               setShareUrl(url);
               const publishedAt = new Date().toISOString();
               setLastPublishedAt(publishedAt);
-              writeCachedShare(client, project, url, publishedAt);
+              writeCachedShare(client, project, roundNumber ?? null, url, publishedAt);
               setStatusDebug(null);
               const synced = evt.filesUploaded as number;
               const skippedCount = (evt.filesSkipped as number) || 0;
@@ -861,8 +865,11 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
               : null;
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div style={{ fontSize: 10, color: '#aaa', letterSpacing: '0.02em' }}>
-                  Unpublished
+                <div style={{ fontSize: 10, color: '#aaa', letterSpacing: '0.02em', display: 'flex', gap: 10 }}>
+                  {roundNumber !== null && roundNumber !== undefined && (
+                    <span style={{ color: '#111', fontWeight: 600 }}>Round {roundNumber}</span>
+                  )}
+                  <span>Unpublished</span>
                 </div>
 
                 <div
@@ -928,11 +935,14 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
                   </svg>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>Share link ready</span>
                 </div>
-                {lastPublishedAt && (
-                  <div style={{ fontSize: 10, color: '#aaa', paddingLeft: 24 }}>
-                    Last published {formatAgo(lastPublishedAt)}
-                  </div>
-                )}
+                <div style={{ fontSize: 10, color: '#aaa', paddingLeft: 24, display: 'flex', gap: 10 }}>
+                  {roundNumber !== null && roundNumber !== undefined && (
+                    <span style={{ color: '#111', fontWeight: 600 }}>Round {roundNumber}</span>
+                  )}
+                  {lastPublishedAt && (
+                    <span>Last published {formatAgo(lastPublishedAt)}</span>
+                  )}
+                </div>
               </div>
 
               <div

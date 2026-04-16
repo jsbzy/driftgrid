@@ -2,20 +2,21 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
 
 /**
- * POST /api/cloud/share — create a share link via JWT auth (for local→cloud flow).
+ * POST /api/cloud/share — create or republish a share link via JWT auth.
  *
- * Same logic as /api/share but authenticates via Authorization header (JWT)
- * instead of cookie session. Used by the local push-and-share orchestrator.
+ * Round-aware (since 2026-04-17): shares are keyed on
+ * (user_id, client, project, round_number). Republishing within the same
+ * round reuses the same token and bumps updated_at. Moving to a new round
+ * mints a new URL while older round URLs stay alive for historical review.
  *
- * Body: { client, project }
- * Returns: { token, url, created_at }
+ * Body: { client, project, roundNumber? }
+ * Returns: { token, url, created_at, updated_at, round_number }
  */
 export async function POST(request: Request) {
   if (!isCloudMode()) {
     return NextResponse.json({ error: 'Cloud mode only' }, { status: 400 });
   }
 
-  // Validate JWT
   const authHeader = request.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return NextResponse.json({ error: 'Missing authorization' }, { status: 401 });
@@ -30,13 +31,18 @@ export async function POST(request: Request) {
   }
 
   const userId = user.id;
-  const { client, project } = await request.json();
+  const body = await request.json();
+  const { client, project } = body;
+  const roundNumber = typeof body.roundNumber === 'number' ? body.roundNumber : null;
 
   if (!client || !project) {
     return NextResponse.json({ error: 'Missing client or project' }, { status: 400 });
   }
 
-  // Check free tier limit
+  const { origin } = new URL(request.url);
+
+  // ── Free-tier check: 1 distinct (client, project) with active shares.
+  // Any number of rounds within that one project is fine.
   const { data: profile } = await supabase
     .from('profiles')
     .select('tier')
@@ -44,85 +50,95 @@ export async function POST(request: Request) {
     .single();
 
   if (profile?.tier === 'free') {
-    const { count } = await supabase
+    const { data: distinctShares } = await supabase
       .from('share_links')
-      .select('token', { count: 'exact', head: true })
+      .select('client, project')
       .eq('user_id', userId)
       .eq('is_active', true);
 
-    if ((count ?? 0) > 0) {
-      // Check if existing share is for THIS project (that's ok)
-      const { data: existing } = await supabase
-        .from('share_links')
-        .select('token, created_at')
-        .eq('user_id', userId)
-        .eq('client', client)
-        .eq('project', project)
-        .eq('is_active', true)
-        .single();
+    const distinctKeys = new Set<string>();
+    for (const s of distinctShares ?? []) distinctKeys.add(`${s.client}/${s.project}`);
+    const requestedKey = `${client}/${project}`;
 
-      if (existing) {
-        const updated = await bumpUpdatedAt(existing.token);
-        const { origin } = new URL(request.url);
-        return NextResponse.json({
-          token: existing.token,
-          url: `${origin}/s/${client}/${existing.token}`,
-          created_at: existing.created_at,
-          updated_at: updated ?? new Date().toISOString(),
-        });
-      }
-
-      return NextResponse.json({ error: 'free_limit', message: 'Upgrade to Pro to share unlimited projects.' }, { status: 403 });
+    if (distinctKeys.size > 0 && !distinctKeys.has(requestedKey)) {
+      return NextResponse.json({
+        error: 'free_limit',
+        message: 'Upgrade to Pro to share more than one project.',
+      }, { status: 403 });
     }
   }
 
-  // Create share link
+  // ── Find existing share for this exact (user, client, project, round).
+  let existingQuery = supabase
+    .from('share_links')
+    .select('token, created_at')
+    .eq('user_id', userId)
+    .eq('client', client)
+    .eq('project', project)
+    .eq('is_active', true);
+  existingQuery = roundNumber === null
+    ? existingQuery.is('round_number', null)
+    : existingQuery.eq('round_number', roundNumber);
+  const { data: existing } = await existingQuery.maybeSingle();
+
+  if (existing) {
+    const updated = await bumpUpdatedAt(existing.token);
+    return NextResponse.json({
+      token: existing.token,
+      url: `${origin}/s/${client}/${existing.token}`,
+      created_at: existing.created_at,
+      updated_at: updated ?? new Date().toISOString(),
+      round_number: roundNumber,
+    });
+  }
+
+  // ── No match → insert a new share for this round.
   const { data, error } = await supabase
     .from('share_links')
-    .insert({ user_id: userId, client, project })
+    .insert({ user_id: userId, client, project, round_number: roundNumber })
     .select('token, created_at, updated_at')
     .single();
 
   if (error) {
-    // Handle duplicate — return existing share + bump updated_at so the
-    // Dashboard card shows "Last published just now".
+    // Race: another request inserted the same (user, client, project, round)
+    // between our lookup and insert. Fall back to the existing row.
     if (error.code === '23505') {
-      const { data: existing } = await supabase
+      let raceQuery = supabase
         .from('share_links')
-        .select('token, created_at')
+        .select('token, created_at, updated_at')
         .eq('user_id', userId)
         .eq('client', client)
         .eq('project', project)
-        .eq('is_active', true)
-        .single();
+        .eq('is_active', true);
+      raceQuery = roundNumber === null
+        ? raceQuery.is('round_number', null)
+        : raceQuery.eq('round_number', roundNumber);
+      const { data: raced } = await raceQuery.maybeSingle();
 
-      if (existing) {
-        const updated = await bumpUpdatedAt(existing.token);
-        const { origin } = new URL(request.url);
+      if (raced) {
+        const updated = await bumpUpdatedAt(raced.token);
         return NextResponse.json({
-          token: existing.token,
-          url: `${origin}/s/${client}/${existing.token}`,
-          created_at: existing.created_at,
-          updated_at: updated ?? new Date().toISOString(),
+          token: raced.token,
+          url: `${origin}/s/${client}/${raced.token}`,
+          created_at: raced.created_at,
+          updated_at: updated ?? raced.updated_at,
+          round_number: roundNumber,
         });
       }
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const { origin } = new URL(request.url);
   return NextResponse.json({
     token: data.token,
     url: `${origin}/s/${client}/${data.token}`,
     created_at: data.created_at,
     updated_at: data.updated_at ?? data.created_at,
+    round_number: roundNumber,
   });
 }
 
-/**
- * Stamp updated_at = now() on the given share. Swallows errors so a republish
- * still succeeds even if the column is missing (pre-migration state).
- */
+/** Stamp updated_at = now() on the given share. Silent on failure. */
 async function bumpUpdatedAt(token: string): Promise<string | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

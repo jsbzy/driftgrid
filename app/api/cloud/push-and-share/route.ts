@@ -112,6 +112,9 @@ export async function POST(request: Request) {
         // upload only those versions' files (plus manifest and thumbs).
         // If nothing is starred, fall back to uploading everything (backward compat).
         const allowList = await computeStarredAllowList(projectDir, roundId);
+        // Resolve round_number for the share row so republishing within the same
+        // round reuses the same token.
+        const roundNumber = await resolveRoundNumber(projectDir, roundId);
 
         const { files, skipped } = await collectFiles(projectDir, '', {
           includeMedia: !!includeMedia,
@@ -205,7 +208,7 @@ export async function POST(request: Request) {
 
         // --- Create share link ---
         send({ type: 'phase', phase: 'sharing' });
-        const shareResult = await createCloudShare(accessToken, client, project);
+        const shareResult = await createCloudShare(accessToken, client, project, roundNumber);
         if ('error' in shareResult) {
           if (shareResult.error === 'free_limit') {
             send({ type: 'freeLimit', filesUploaded: pushResult.uploaded });
@@ -367,4 +370,28 @@ function anyAllowedUnder(dirPrefix: string, allowList: Set<string>): boolean {
     if (p === dirPrefix || p.startsWith(prefix)) return true;
   }
   return false;
+}
+
+/**
+ * Resolve the round.number to use when keying the share row.
+ *   - roundId given + matches a round → that round's number
+ *   - no roundId but rounds exist → the last round's number (current one)
+ *   - no rounds in manifest → null (legacy flat layout; one share for the project)
+ */
+async function resolveRoundNumber(
+  projectDir: string,
+  roundId?: string | null,
+): Promise<number | null> {
+  try {
+    const raw = await fs.readFile(path.join(projectDir, 'manifest.json'), 'utf-8');
+    const manifest = JSON.parse(raw);
+    type RoundLike = { id: string; number: number };
+    const rounds: RoundLike[] = Array.isArray(manifest.rounds) ? manifest.rounds : [];
+    if (rounds.length === 0) return null;
+    const match = roundId ? rounds.find(r => r.id === roundId) : null;
+    const active = match ?? rounds[rounds.length - 1];
+    return typeof active.number === 'number' ? active.number : null;
+  } catch {
+    return null;
+  }
 }

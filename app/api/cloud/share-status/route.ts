@@ -16,7 +16,9 @@ import { getCloudShareStatus } from '@/lib/cloud-client';
  * Returns: { exists: boolean, token?, url?, lastPublishedAt? } or { needsAuth: true }
  */
 export async function POST(request: Request) {
-  const { client, project, accessToken } = await request.json();
+  const body = await request.json();
+  const { client, project, accessToken } = body;
+  const roundNumber = typeof body.roundNumber === 'number' ? body.roundNumber : null;
   if (!client || !project || !accessToken) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
@@ -24,7 +26,7 @@ export async function POST(request: Request) {
   // Local dev — proxy to the cloud so existing shares are discoverable.
   if (!isCloudMode()) {
     try {
-      const result = await getCloudShareStatus(accessToken, client, project);
+      const result = await getCloudShareStatus(accessToken, client, project, roundNumber);
       if ('needsAuth' in result && result.needsAuth) {
         return NextResponse.json({ needsAuth: true }, { status: 401 });
       }
@@ -43,14 +45,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ needsAuth: true }, { status: 401 });
   }
 
-  const { data } = await supabase
+  // Scope the lookup by round_number so each round has its own share/URL.
+  let query = supabase
     .from('share_links')
-    .select('token, created_at, updated_at')
+    .select('token, created_at, updated_at, round_number')
     .eq('user_id', user.id)
     .eq('client', client)
     .eq('project', project)
-    .eq('is_active', true)
-    .maybeSingle();
+    .eq('is_active', true);
+  query = roundNumber === null ? query.is('round_number', null) : query.eq('round_number', roundNumber);
+  const { data } = await query.maybeSingle();
 
   if (!data) {
     return NextResponse.json({ exists: false });
@@ -62,5 +66,6 @@ export async function POST(request: Request) {
     token: data.token,
     url: `${origin}/s/${client}/${data.token}`,
     lastPublishedAt: data.updated_at ?? data.created_at,
+    roundNumber: data.round_number,
   });
 }

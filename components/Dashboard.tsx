@@ -48,6 +48,7 @@ type ShareRecord = {
   token: string;
   client: string;
   project: string;
+  round_number?: number | null;
   created_at: string;
   updated_at?: string | null;
   is_active: boolean;
@@ -62,11 +63,17 @@ export function Dashboard() {
 
   const isEmpty = clients && clients.length === 0;
 
-  // Build a lookup: "client/project" → share metadata (token + timestamps)
+  // Build a lookup: "client/project" → latest active share (across all rounds).
+  // We want the round that was *most recently published*, so compare by
+  // updated_at (falling back to created_at for legacy rows).
   const shareMap = new Map<string, ShareRecord>();
   if (shares) {
     for (const s of shares) {
-      if (s.is_active) shareMap.set(`${s.client}/${s.project}`, s);
+      if (!s.is_active) continue;
+      const key = `${s.client}/${s.project}`;
+      const prev = shareMap.get(key);
+      const t = (r: ShareRecord) => new Date(r.updated_at || r.created_at).getTime();
+      if (!prev || t(s) > t(prev)) shareMap.set(key, s);
     }
   }
 
@@ -131,6 +138,7 @@ export function Dashboard() {
               const share = shareMap.get(`${client.slug}/${project.slug}`);
               const shareUrl = share ? `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${share.client}/${share.token}` : null;
               const lastPublishedAt = share?.updated_at || share?.created_at || null;
+              const roundNumber = share?.round_number ?? null;
 
               return isCloud ? (
                 <CloudProjectCard
@@ -140,6 +148,7 @@ export function Dashboard() {
                   canvas={resolved.label}
                   shareUrl={shareUrl}
                   lastPublishedAt={lastPublishedAt}
+                  roundNumber={roundNumber}
                 />
               ) : (
                 <Link
@@ -213,12 +222,13 @@ function formatAgo(iso: string | null): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt }: {
+function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt, roundNumber }: {
   client: string;
   project: { slug: string; name: string; conceptCount: number; versionCount: number };
   canvas: string;
   shareUrl: string | null;
   lastPublishedAt: string | null;
+  roundNumber: number | null;
 }) {
   const [copied, setCopied] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -272,8 +282,11 @@ function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt }
         {project.conceptCount} concept{project.conceptCount !== 1 ? 's' : ''} &middot; {project.versionCount} version{project.versionCount !== 1 ? 's' : ''} &middot; {canvas}
       </div>
       {url && lastPublishedAt && (
-        <div style={{ fontSize: 10, fontFamily: 'var(--font-mono, monospace)' }} className="text-[var(--muted)] mb-2" title={new Date(lastPublishedAt).toLocaleString()}>
-          Last published {formatAgo(lastPublishedAt)}
+        <div style={{ fontSize: 10, fontFamily: 'var(--font-mono, monospace)', display: 'flex', gap: 8 }} className="text-[var(--muted)] mb-2" title={new Date(lastPublishedAt).toLocaleString()}>
+          {roundNumber !== null && (
+            <span style={{ color: 'var(--foreground)', fontWeight: 500 }}>Round {roundNumber}</span>
+          )}
+          <span>Last published {formatAgo(lastPublishedAt)}</span>
         </div>
       )}
 

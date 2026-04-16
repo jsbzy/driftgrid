@@ -161,6 +161,7 @@ export async function createCloudShare(
   accessToken: string,
   client: string,
   project: string,
+  roundNumber?: number | null,
 ): Promise<ShareResult | { error: string }> {
   const res = await fetch(`${CLOUD_URL}/api/cloud/share`, {
     method: 'POST',
@@ -168,7 +169,7 @@ export async function createCloudShare(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ client, project }),
+    body: JSON.stringify({ client, project, roundNumber: roundNumber ?? null }),
   });
 
   return res.json();
@@ -183,8 +184,9 @@ export async function getCloudShareStatus(
   accessToken: string,
   client: string,
   project: string,
+  roundNumber?: number | null,
 ): Promise<
-  | { exists: true; token: string; url: string; lastPublishedAt?: string }
+  | { exists: true; token: string; url: string; lastPublishedAt?: string; roundNumber?: number | null }
   | { exists: false }
   | { needsAuth: true }
   | { error: string }
@@ -192,7 +194,7 @@ export async function getCloudShareStatus(
   const res = await fetch(`${CLOUD_URL}/api/cloud/share-status`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ client, project, accessToken }),
+    body: JSON.stringify({ client, project, accessToken, roundNumber: roundNumber ?? null }),
   });
   if (res.status === 401) return { needsAuth: true };
   return res.json();

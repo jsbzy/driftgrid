@@ -45,10 +45,34 @@ export async function POST(request: Request) {
   }
 
   const supabase = getSupabaseAdmin();
+
+  // Reuse existing non-round share if one is already active for this project
+  // (the unique index on (user, client, project, coalesce(round_number, -1))
+  // would otherwise reject a second insert).
+  const { data: existing } = await supabase
+    .from('share_links')
+    .select('token, created_at, updated_at')
+    .eq('user_id', userId)
+    .eq('client', client)
+    .eq('project', project)
+    .is('round_number', null)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (existing) {
+    const { origin } = new URL(request.url);
+    return NextResponse.json({
+      token: existing.token,
+      url: `${origin}/s/${client}/${existing.token}`,
+      created_at: existing.created_at,
+      updated_at: existing.updated_at,
+    });
+  }
+
   const { data, error } = await supabase
     .from('share_links')
     .insert({ user_id: userId, client, project })
-    .select('token, created_at')
+    .select('token, created_at, updated_at')
     .single();
 
   if (error) {
@@ -56,9 +80,12 @@ export async function POST(request: Request) {
   }
 
   const { origin } = new URL(request.url);
-  const shareUrl = `${origin}/s/${data.token}`;
-
-  return NextResponse.json({ token: data.token, url: shareUrl, created_at: data.created_at });
+  return NextResponse.json({
+    token: data.token,
+    url: `${origin}/s/${client}/${data.token}`,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  });
 }
 
 export async function GET(request: Request) {

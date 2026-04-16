@@ -1163,7 +1163,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     return (
       <div className="h-screen flex flex-col bg-[var(--background)]">
         {namePrompt}
-        <SharePanel open={sharePanelOpen} onClose={() => setSharePanelOpen(false)} client={client} project={project} roundId={activeRoundId} />
+        <SharePanel open={sharePanelOpen} onClose={() => setSharePanelOpen(false)} client={client} project={project} roundId={activeRoundId} roundNumber={activeRound?.number ?? null} />
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
