@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
+import { areValidSlugs } from '@/lib/slug';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 const BUCKET = 'projects';
@@ -25,6 +26,10 @@ export async function POST(request: Request) {
   const { client, project } = await request.json();
   if (!client || !project) {
     return NextResponse.json({ error: 'Missing client or project' }, { status: 400 });
+  }
+
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);

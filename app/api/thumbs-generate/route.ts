@@ -4,6 +4,7 @@ import path from 'path';
 import { getManifest, writeManifest } from '@/lib/manifest';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { generateThumbnail } from '@/lib/thumbnails';
+import { areValidSlugs } from '@/lib/slug';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -17,6 +18,10 @@ export async function POST(request: Request) {
         { error: 'Missing required fields: client, project, conceptId, versionId' },
         { status: 400 }
       );
+    }
+
+    if (!areValidSlugs(client, project)) {
+      return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
     }
 
     const manifest = await getManifest(client, project);

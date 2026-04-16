@@ -28,12 +28,21 @@ export async function getManifest(userId: string | null, client: string, project
 }
 
 export async function writeManifest(userId: string | null, client: string, project: string, manifest: Manifest): Promise<void> {
-  if (isCloudMode() && userId) {
-    const { writeManifestCloud } = await cloud();
-    return writeManifestCloud(userId, client, project, manifest);
+  // Invalidate the in-process manifest cache on every write so thumbnail
+  // regeneration (and other readers) don't serve stale data for up to 5s.
+  const { invalidateManifestCache } = await import('./manifest-cache');
+  invalidateManifestCache(client, project);
+  try {
+    if (isCloudMode() && userId) {
+      const { writeManifestCloud } = await cloud();
+      await writeManifestCloud(userId, client, project, manifest);
+      return;
+    }
+    const { writeManifest } = await local();
+    await writeManifest(client, project, manifest);
+  } finally {
+    invalidateManifestCache(client, project);
   }
-  const { writeManifest } = await local();
-  return writeManifest(client, project, manifest);
 }
 
 export async function getClients(userId: string | null): Promise<ClientInfo[]> {

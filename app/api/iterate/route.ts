@@ -3,6 +3,8 @@ import path from 'path';
 import { getManifest, writeManifest, copyFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import { DRIFT_COPY_CHANGELOG } from '@/lib/constants';
+import { areValidSlugs } from '@/lib/slug';
+import { invalidateManifestCache } from '@/lib/manifest-cache';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -11,6 +13,10 @@ export async function POST(request: Request) {
 
   if (!client || !project || !conceptId || !versionId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const userId = await getUserId();
@@ -69,6 +75,7 @@ export async function POST(request: Request) {
 
   concept.versions.push(newVersion);
   await writeManifest(userId, client, project, manifest);
+  invalidateManifestCache(client, project);
 
   // Return the new version info + absolute path for clipboard
   const absolutePath = path.resolve(path.join(PROJECTS_DIR, client, project, newFile));

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { areValidSlugs } from '@/lib/slug';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -9,6 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ client: string }> }
 ) {
   const { client } = await params;
+  if (!areValidSlugs(client)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
   const brandDir = path.join(PROJECTS_DIR, client, 'brand');
 
   // Read guidelines

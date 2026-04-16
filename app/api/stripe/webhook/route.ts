@@ -44,14 +44,17 @@ export async function POST(request: Request) {
     case 'checkout.session.completed': {
       const session = event.data.object;
       const userId = session.client_reference_id || session.metadata?.userId;
-      if (userId) {
-        await supabase.from('profiles').update({
-          tier: 'pro',
-          stripe_customer_id: session.customer as string,
-          stripe_subscription_id: session.subscription as string,
-          subscription_status: 'active',
-        }).eq('id', userId);
+      if (!userId) {
+        console.warn('[stripe webhook] checkout.session.completed without userId', { id: session.id });
+        break;
       }
+      const { error } = await supabase.from('profiles').update({
+        tier: 'pro',
+        stripe_customer_id: session.customer as string,
+        stripe_subscription_id: session.subscription as string,
+        subscription_status: 'active',
+      }).eq('id', userId);
+      if (error) console.error('[stripe webhook] checkout update failed', { userId, message: error.message });
       break;
     }
 
@@ -62,24 +65,42 @@ export async function POST(request: Request) {
       const rawEnd = (subscription as any).current_period_end;
       const periodEnd = rawEnd ? new Date(rawEnd * 1000).toISOString() : null;
 
-      await supabase.from('profiles').update({
+      // Scope by user_id from subscription metadata when present — belt-and-
+      // suspenders so we never update a row that doesn't belong to this user.
+      const metaUserId = subscription.metadata?.userId;
+      let q = supabase.from('profiles').update({
         subscription_status: status,
         subscription_period_end: periodEnd,
         // Keep tier as 'pro' while subscription is active or past_due. Only
         // downgrade to 'free' on deletion (see below).
         ...(status === 'active' || status === 'past_due' ? { tier: 'pro' } : {}),
       }).eq('stripe_subscription_id', subscription.id);
+      if (metaUserId) q = q.eq('id', metaUserId);
+      const { data, error } = await q.select('id');
+      if (error) {
+        console.error('[stripe webhook] subscription.updated failed', { subId: subscription.id, message: error.message });
+      } else if (!data || data.length === 0) {
+        console.warn('[stripe webhook] subscription.updated matched no rows', { subId: subscription.id });
+      }
       break;
     }
 
     case 'customer.subscription.deleted': {
       const subscription = event.data.object;
-      await supabase.from('profiles').update({
+      const metaUserId = subscription.metadata?.userId;
+      let q = supabase.from('profiles').update({
         tier: 'free',
         subscription_status: 'canceled',
         stripe_subscription_id: null,
         subscription_period_end: null,
       }).eq('stripe_subscription_id', subscription.id);
+      if (metaUserId) q = q.eq('id', metaUserId);
+      const { data, error } = await q.select('id');
+      if (error) {
+        console.error('[stripe webhook] subscription.deleted failed', { subId: subscription.id, message: error.message });
+      } else if (!data || data.length === 0) {
+        console.warn('[stripe webhook] subscription.deleted matched no rows', { subId: subscription.id });
+      }
       break;
     }
   }

@@ -5,6 +5,7 @@ import { getManifest } from '@/lib/manifest';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { exportPdf, exportPdfFromHtml, exportPng, mergePdfs } from '@/lib/export-pdf';
 import { injectViewportLock } from '@/lib/viewport-lock';
+import { areValidSlugs } from '@/lib/slug';
 
 // Allow up to 30s for PDF generation with headless Chrome
 export const maxDuration = 30;
@@ -19,6 +20,10 @@ export async function POST(request: NextRequest) {
     workingSetId?: string;
     htmlContent?: string;
   };
+
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
 
   const manifest = await getManifest(client, project);
   if (!manifest) {

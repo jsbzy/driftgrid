@@ -4,6 +4,8 @@ import { getManifest, writeManifest, copyFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import { conceptSlug } from '@/lib/letters';
 import { DRIFT_COPY_CHANGELOG } from '@/lib/constants';
+import { areValidSlugs } from '@/lib/slug';
+import { invalidateManifestCache } from '@/lib/manifest-cache';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
@@ -14,6 +16,10 @@ export async function POST(request: Request) {
 
   if (!client || !project || !conceptId || !versionId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const userId = await getUserId();
@@ -90,6 +96,7 @@ export async function POST(request: Request) {
   manifest.concepts.forEach((c, i) => { c.position = i + 1; });
 
   await writeManifest(userId, client, project, manifest);
+  invalidateManifestCache(client, project);
 
   const PROJECTS_DIR = path.join(process.cwd(), 'projects');
   const absolutePath = path.resolve(path.join(PROJECTS_DIR, client, project, newFile));

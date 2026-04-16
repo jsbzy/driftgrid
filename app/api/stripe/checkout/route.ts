@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated — please log in first' }, { status: 401 });
     }
 
-    const { interval = 'month' } = await request.json().catch(() => ({}));
+    const body = await request.json().catch(() => ({}));
+    const interval: 'month' | 'year' = body.interval === 'year' ? 'year' : 'month';
 
     // Pick the right price by interval. Trim whitespace defensively — env vars
     // pasted into Vercel sometimes carry a trailing newline that Stripe rejects
@@ -46,13 +47,14 @@ export async function POST(request: NextRequest) {
       timeout: 20000,
     });
 
-    // Reuse or create a Stripe customer for this user.
+    // Reuse or create a Stripe customer for this user. Use maybeSingle() so a
+    // missing profile row (pre-trigger race, stale user) doesn't throw.
     const supabase = getSupabaseAdmin();
     const { data: profile } = await supabase
       .from('profiles')
       .select('stripe_customer_id')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     let customerId = profile?.stripe_customer_id;
     if (!customerId) {

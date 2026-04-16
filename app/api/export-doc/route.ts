@@ -3,6 +3,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { getManifest } from '@/lib/manifest';
 import { resolveCanvas } from '@/lib/constants';
+import { areValidSlugs } from '@/lib/slug';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -23,6 +24,10 @@ export async function GET(request: Request) {
 
   if (!client || !project) {
     return NextResponse.json({ error: 'Missing client/project' }, { status: 400 });
+  }
+
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const manifest = await getManifest(client, project);

@@ -5,12 +5,16 @@ import { getHtmlFile as getHtmlFileLocal } from '@/lib/manifest';
 import { getHtmlFile, getAsset, isCloudMode } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import { getEditScript } from '@/lib/editScript';
+import { areValidSlugs } from '@/lib/slug';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ client: string; project: string; path: string[] }> }
 ) {
   const { client, project, path: pathParts } = await params;
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
   const filePath = pathParts.join('/');
   const fullPath = path.join(process.cwd(), 'projects', client, project, filePath);
   await fs.mkdir(path.dirname(fullPath), { recursive: true });
@@ -40,6 +44,9 @@ export async function GET(
   { params }: { params: Promise<{ client: string; project: string; path: string[] }> }
 ) {
   const { client, project, path: pathParts } = await params;
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
   const filePath = pathParts.join('/');
   const ext = path.extname(filePath).toLowerCase();
 

@@ -2,30 +2,22 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import { getManifest } from '@/lib/manifest';
+import { getCachedManifest } from '@/lib/manifest-cache';
 import { isCloudMode } from '@/lib/supabase';
 import { getAsset } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { generateThumbnail } from '@/lib/thumbnails';
+import { areValidSlugs } from '@/lib/slug';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
 // Track in-flight regenerations to avoid duplicate work
 const regenerating = new Set<string>();
 
-// Cache manifests briefly to avoid re-parsing per thumbnail request (76 thumbs = 76 manifest reads)
-const manifestCache = new Map<string, { data: Awaited<ReturnType<typeof getManifest>>; ts: number }>();
-const MANIFEST_CACHE_TTL = 5000; // 5 seconds
-
-async function getCachedManifest(client: string, project: string) {
-  const key = `${client}/${project}`;
-  const cached = manifestCache.get(key);
-  if (cached && Date.now() - cached.ts < MANIFEST_CACHE_TTL) return cached.data;
-  const data = await getManifest(client, project);
-  manifestCache.set(key, { data, ts: Date.now() });
-  return data;
-}
+// Manifest cache now lives in lib/manifest-cache.ts so iterate/branch/rounds
+// routes can invalidate it immediately after writes — stale thumbnails were
+// showing up because this TTL-only cache held old manifests for up to 5s.
 
 function contentTypeForThumb(filename: string): string {
   return filename.endsWith('.png') ? 'image/png' : 'image/webp';
@@ -113,7 +105,12 @@ async function getResized(
     .toBuffer();
 
   // Cache to disk (fire and forget)
-  fs.writeFile(cachedPath, resized).catch(() => {});
+  fs.writeFile(cachedPath, resized).catch((err) => {
+    // Don't fail the request when the cache write fails (response is already
+    // heading out with `resized`), but surface the reason so disk-full or
+    // perm errors don't silently pile up.
+    console.warn('[thumbs] cache write failed', { cachedPath, message: err instanceof Error ? err.message : String(err) });
+  });
 
   return resized;
 }
@@ -131,6 +128,10 @@ export async function GET(
   const client = pathParts[0];
   const project = pathParts[1];
   const thumbFilename = pathParts.slice(2).join('/');
+
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
 
   // Cloud mode: serve from Supabase Storage (no generation, no resize)
   if (isCloudMode()) {
@@ -283,6 +284,10 @@ export async function HEAD(
   const client = pathParts[0];
   const project = pathParts[1];
   const thumbFilename = pathParts.slice(2).join('/');
+
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
 
   const filePath = path.join(
     PROJECTS_DIR,

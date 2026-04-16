@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { pushFilesToCloud, createCloudShare, verifyToken, refreshAccessToken } from '@/lib/cloud-client';
+import { areValidSlugs } from '@/lib/slug';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -62,6 +63,10 @@ export async function POST(request: Request) {
 
   if (!client || !project || !initialToken) {
     return NextResponse.json({ error: 'Missing client, project, or accessToken' }, { status: 400 });
+  }
+
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const encoder = new TextEncoder();

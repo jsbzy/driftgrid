@@ -2,12 +2,17 @@ import { NextResponse } from 'next/server';
 import path from 'path';
 import { getManifest, writeManifest, copyFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
+import { areValidSlugs } from '@/lib/slug';
 
 export async function POST(request: Request) {
   const { client, project, sourceFile, sourceLabel, sourceNumber, targetConceptId, targetRoundId } = await request.json();
 
   if (!client || !project || !sourceFile || !targetConceptId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const userId = await getUserId();
