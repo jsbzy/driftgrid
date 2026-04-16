@@ -36,8 +36,12 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
+    // Use the fetch-based client on Vercel serverless — createNodeHttpClient()
+    // intermittently throws "connection to Stripe" errors on Node 20+ runtimes.
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      httpClient: Stripe.createNodeHttpClient(),
+      httpClient: Stripe.createFetchHttpClient(),
+      maxNetworkRetries: 3,
+      timeout: 20000,
     });
 
     // Reuse or create a Stripe customer for this user.

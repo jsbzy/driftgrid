@@ -9,7 +9,9 @@ export async function POST(request: Request) {
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    httpClient: Stripe.createNodeHttpClient(),
+    httpClient: Stripe.createFetchHttpClient(),
+    maxNetworkRetries: 3,
+    timeout: 20000,
   });
 
   const userId = await getUserId();
