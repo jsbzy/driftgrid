@@ -1,23 +1,40 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
+import { getCloudShareStatus } from '@/lib/cloud-client';
 
 /**
- * POST /api/cloud/share-status — lightweight lookup used by the local
- * SharePanel when opening against an already-authenticated session. Returns
- * whether a share already exists for this (user, client, project) and, if so,
- * the URL + last-published timestamp. Does NOT upload anything.
+ * POST /api/cloud/share-status — lightweight lookup used by the SharePanel when
+ * opening against an already-authenticated session. Returns whether a share
+ * already exists for this (user, client, project) and, if so, the URL +
+ * last-published timestamp. Does NOT upload anything.
+ *
+ * When running on the cloud deployment: queries Supabase directly via admin.
+ * When running locally (cloud mode off): proxies the request to the cloud so
+ * the SharePanel can still see existing shares.
  *
  * Body: { client, project, accessToken }
  * Returns: { exists: boolean, token?, url?, lastPublishedAt? } or { needsAuth: true }
  */
 export async function POST(request: Request) {
-  if (!isCloudMode()) {
-    return NextResponse.json({ error: 'Cloud mode only' }, { status: 400 });
-  }
-
   const { client, project, accessToken } = await request.json();
   if (!client || !project || !accessToken) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  }
+
+  // Local dev — proxy to the cloud so existing shares are discoverable.
+  if (!isCloudMode()) {
+    try {
+      const result = await getCloudShareStatus(accessToken, client, project);
+      if ('needsAuth' in result && result.needsAuth) {
+        return NextResponse.json({ needsAuth: true }, { status: 401 });
+      }
+      return NextResponse.json(result);
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Cloud unreachable' },
+        { status: 502 },
+      );
+    }
   }
 
   const supabase = getSupabaseAdmin();

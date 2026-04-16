@@ -173,3 +173,27 @@ export async function createCloudShare(
 
   return res.json();
 }
+
+/**
+ * Look up whether a share already exists for (user, client, project) on the cloud.
+ * Used by the local /api/cloud/share-status route to surface an existing share in
+ * the SharePanel without requiring a republish.
+ */
+export async function getCloudShareStatus(
+  accessToken: string,
+  client: string,
+  project: string,
+): Promise<
+  | { exists: true; token: string; url: string; lastPublishedAt?: string }
+  | { exists: false }
+  | { needsAuth: true }
+  | { error: string }
+> {
+  const res = await fetch(`${CLOUD_URL}/api/cloud/share-status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client, project, accessToken }),
+  });
+  if (res.status === 401) return { needsAuth: true };
+  return res.json();
+}

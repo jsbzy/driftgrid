@@ -58,6 +58,8 @@ export function AnnotationOverlay({
   const [pendingPin, setPendingPin] = useState<PendingPin | null>(null);
   const [pendingText, setPendingText] = useState('');
   const [activePin, setActivePin] = useState<string | null>(null);
+  const pinRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [popupMetrics, setPopupMetrics] = useState<{ placement: 'above' | 'below'; maxHeight: number } | null>(null);
   // Bottom-anchored growth: track textarea height delta from initial single line
   const [textareaGrowth, setTextareaGrowth] = useState(0);
   const baseTextareaHeightRef = useRef<number | null>(null);
@@ -273,10 +275,36 @@ export function AnnotationOverlay({
     []
   );
 
-  // Determine popup position (above or below pin)
-  const getPopupPosition = (y: number): 'above' | 'below' => {
-    return y > 0.7 ? 'above' : 'below';
-  };
+  // Measure the active pin's viewport position and pick the side with more room.
+  // Re-runs on window resize so the popup stays on-screen after the frame reflows.
+  useLayoutEffect(() => {
+    if (!activePin) {
+      setPopupMetrics(null);
+      return;
+    }
+    const PIN_OFFSET = 22;   // gap between pin and popup
+    const VIEWPORT_MARGIN = 16;
+    const MIN_HEIGHT = 180;
+    const MAX_HEIGHT = 560;
+    const compute = () => {
+      const pinEl = pinRefs.current.get(activePin);
+      if (!pinEl) return;
+      const rect = pinEl.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom - PIN_OFFSET - VIEWPORT_MARGIN;
+      const spaceAbove = rect.top - PIN_OFFSET - VIEWPORT_MARGIN;
+      const placement: 'above' | 'below' = spaceBelow >= spaceAbove ? 'below' : 'above';
+      const available = placement === 'below' ? spaceBelow : spaceAbove;
+      const maxHeight = Math.max(MIN_HEIGHT, Math.min(available, MAX_HEIGHT));
+      setPopupMetrics({ placement, maxHeight });
+    };
+    compute();
+    window.addEventListener('resize', compute);
+    window.addEventListener('scroll', compute, true);
+    return () => {
+      window.removeEventListener('resize', compute);
+      window.removeEventListener('scroll', compute, true);
+    };
+  }, [activePin]);
 
   return (
     <div
@@ -344,7 +372,8 @@ export function AnnotationOverlay({
         if (annotation.parentId) return null;
         if (annotation.x === null || annotation.y === null) return null;
         const isActive = activePin === annotation.id;
-        const popupPos = getPopupPosition(annotation.y);
+        const popupPos = isActive && popupMetrics ? popupMetrics.placement : (annotation.y > 0.5 ? 'above' : 'below');
+        const popupMaxHeight = isActive && popupMetrics ? popupMetrics.maxHeight : 420;
         const replies = repliesByParent[annotation.id] || [];
         const isLocked = replies.length > 0;
 
@@ -363,6 +392,10 @@ export function AnnotationOverlay({
           >
             {/* Pin circle */}
             <button
+              ref={(el) => {
+                if (el) pinRefs.current.set(annotation.id, el);
+                else pinRefs.current.delete(annotation.id);
+              }}
               onClick={(e) => handlePinClick(e, annotation.id)}
               style={{
                 width: 16,
@@ -406,7 +439,7 @@ export function AnnotationOverlay({
                     ? { top: 22 }
                     : { bottom: 22 }),
                   width: 300,
-                  maxHeight: 'min(70vh, 560px)',
+                  maxHeight: popupMaxHeight,
                   overflowY: 'auto',
                   overscrollBehavior: 'contain',
                   background: 'rgba(20, 20, 20, 0.95)',

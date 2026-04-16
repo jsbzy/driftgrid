@@ -7,6 +7,34 @@ import { toast } from './Toast';
 const CLOUD_URL = process.env.NEXT_PUBLIC_DRIFTGRID_CLOUD_URL || 'https://driftgrid.ai';
 const STORAGE_KEY = 'driftgrid-cloud-auth';
 const INCLUDE_MEDIA_KEY = (client: string, project: string) => `driftgrid-share-${client}-${project}-include-media`;
+// Cached share URL + last-published time, keyed per project. Written after a successful
+// publish; read on panel open so "Publish updates" appears immediately even when the
+// local /api/cloud/share-status endpoint can't reach the cloud (dev mode returns 400).
+const LAST_SHARE_KEY = (client: string, project: string) => `driftgrid-share-${client}-${project}-last`;
+
+type CachedShare = { url: string; lastPublishedAt: string };
+
+function readCachedShare(client: string, project: string): CachedShare | null {
+  try {
+    const raw = localStorage.getItem(LAST_SHARE_KEY(client, project));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.url !== 'string') return null;
+    return { url: parsed.url, lastPublishedAt: parsed.lastPublishedAt || '' };
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedShare(client: string, project: string, url: string, lastPublishedAt: string) {
+  try {
+    localStorage.setItem(LAST_SHARE_KEY(client, project), JSON.stringify({ url, lastPublishedAt }));
+  } catch { /* ignore */ }
+}
+
+function clearCachedShare(client: string, project: string) {
+  try { localStorage.removeItem(LAST_SHARE_KEY(client, project)); } catch { /* ignore */ }
+}
 
 type ShareState = 'closed' | 'checking' | 'auth' | 'syncing' | 'ready' | 'ready-stale' | 'upgrade' | 'error';
 
@@ -90,18 +118,52 @@ function emailFromJwt(token: string | undefined | null): string {
   }
 }
 
+type SyncPhase = 'verifying' | 'scanning' | 'pushing' | 'sharing';
+
+const SYNC_MESSAGES: Record<SyncPhase, string[]> = {
+  verifying: [
+    'Knocking on the cloud',
+    'Checking your badge',
+  ],
+  scanning: [
+    'Taking stock of the project',
+    'Counting concepts',
+    'Gathering your canvases',
+  ],
+  pushing: [
+    'Packing up concepts',
+    'Drifting to the cloud',
+    'Folding the canvas',
+    'Sending your designs',
+    'Tucking in the pixels',
+    'Rounding up versions',
+    'Crossing the wire',
+  ],
+  sharing: [
+    'Polishing your link',
+    'Almost there',
+  ],
+};
+
 export function SharePanel({ open, onClose, client, project, roundId }: SharePanelProps) {
   const [state, setState] = useState<ShareState>('closed');
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [progress, setProgress] = useState('');
-  const [phaseLabel, setPhaseLabel] = useState('');
-  const [detailLabel, setDetailLabel] = useState('');
+  const [phase, setPhase] = useState<SyncPhase>('verifying');
+  const [messageTick, setMessageTick] = useState(0);
   const [bytesUploaded, setBytesUploaded] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
   const [filesUploaded, setFilesUploaded] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [skipped, setSkipped] = useState<SkippedSummary | null>(null);
+  // Diagnostic: captures the last cloud share-status response so the panel can
+  // tell the user WHY no share is shown (missing on cloud vs. cloud unreachable).
+  const [statusDebug, setStatusDebug] = useState<
+    | { kind: 'missing' }
+    | { kind: 'unreachable'; message: string }
+    | null
+  >(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [email, setEmail] = useState('');
   const [commentsCopied, setCommentsCopied] = useState(false);
@@ -169,6 +231,13 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
     checkCredentials();
   }, [open]);
 
+  // Rotate the playful status message every 2.2s during sync.
+  useEffect(() => {
+    if (state !== 'syncing') return;
+    const t = setInterval(() => setMessageTick((n) => n + 1), 2200);
+    return () => clearInterval(t);
+  }, [state]);
+
   async function checkCredentials() {
     setState('checking');
     const creds = getStoredCredentials();
@@ -184,6 +253,18 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
     if (!creds.email && resolvedEmail) {
       storeCredentials({ ...creds, email: resolvedEmail });
     }
+
+    // Hydrate from cache first so "Publish updates" appears immediately. The cloud
+    // status check below is authoritative and will correct the view if the share
+    // was deleted — but if the status endpoint is unreachable (local dev returns
+    // 400 without DRIFT_CLOUD=1), the cache keeps the panel useful.
+    const cached = readCachedShare(client, project);
+    if (cached) {
+      setShareUrl(cached.url);
+      setLastPublishedAt(cached.lastPublishedAt || null);
+      setState('ready-stale');
+    }
+    setStatusDebug(null);
 
     // Lightweight lookup: does a share already exist for this project?
     //   • yes → show `ready-stale` with a "Publish updates" primary button
@@ -202,24 +283,46 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
         setState('auth');
         return;
       }
+      if (!res.ok) {
+        // Local dev (400) or other non-auth error — trust cache if we have one,
+        // otherwise fall through to the "create share" landing.
+        const bodyText = await res.text().catch(() => '');
+        console.debug('[SharePanel] share-status error', res.status, bodyText);
+        setStatusDebug({ kind: 'unreachable', message: `HTTP ${res.status}` });
+        if (!cached) {
+          setShareUrl(null);
+          setLastPublishedAt(null);
+          setState('ready-stale');
+        }
+        return;
+      }
       const data = await res.json();
+      console.debug('[SharePanel] share-status', data);
       if (data.exists) {
         setShareUrl(data.url);
         setLastPublishedAt(data.lastPublishedAt || null);
+        writeCachedShare(client, project, data.url, data.lastPublishedAt || '');
+        setStatusDebug(null);
         setState('ready-stale');
       } else {
-        // Signed in, but no share yet — reuse the `auth` layout that shows
-        // the primary "Sign in to share / Create share" button.
-        setState('ready-stale');
+        // Cloud says no share → clear any stale cache, show create-share landing.
+        clearCachedShare(client, project);
         setShareUrl(null);
         setLastPublishedAt(null);
+        setStatusDebug({ kind: 'missing' });
+        setState('ready-stale');
       }
-    } catch {
+    } catch (err) {
       // Network or cloud error — fall back to letting the user publish, which
-      // will surface any real errors itself.
-      setShareUrl(null);
-      setLastPublishedAt(null);
-      setState('ready-stale');
+      // will surface any real errors itself. Preserve cache if we have one.
+      const message = err instanceof Error ? err.message : 'network error';
+      console.debug('[SharePanel] share-status fetch threw', err);
+      setStatusDebug({ kind: 'unreachable', message });
+      if (!cached) {
+        setShareUrl(null);
+        setLastPublishedAt(null);
+        setState('ready-stale');
+      }
     }
   }
 
@@ -253,9 +356,9 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
     const includeMedia = opts?.includeMedia ?? readIncludeMedia();
 
     setState('syncing');
-    setProgress('Preparing files...');
-    setPhaseLabel('Preparing files...');
-    setDetailLabel('');
+    setProgress('');
+    setPhase('verifying');
+    setMessageTick(0);
     setBytesUploaded(0);
     setTotalBytes(0);
     setFilesUploaded(0);
@@ -312,22 +415,16 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
 
           switch (evt.type) {
             case 'phase': {
-              if (evt.phase === 'verifying') {
-                setPhaseLabel('Verifying session');
-                setDetailLabel('');
-              } else if (evt.phase === 'scanning') {
-                setPhaseLabel('Scanning project files');
-                setDetailLabel('');
+              if (evt.phase === 'verifying' || evt.phase === 'scanning' || evt.phase === 'sharing') {
+                setPhase(evt.phase);
+                setMessageTick(0);
               } else if (evt.phase === 'pushing') {
                 localTotalFiles = (evt.totalFiles as number) || 0;
                 const tb = (evt.totalBytes as number) || 0;
                 setTotalFiles(localTotalFiles);
                 setTotalBytes(tb);
-                setPhaseLabel(`Uploading 0 of ${localTotalFiles} files`);
-                setDetailLabel(`0 B of ${formatBytes(tb)}`);
-              } else if (evt.phase === 'sharing') {
-                setPhaseLabel('Creating share link');
-                setDetailLabel('');
+                setPhase('pushing');
+                setMessageTick(0);
               }
               break;
             }
@@ -350,8 +447,6 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
               setBytesUploaded(bu);
               if (tot) setTotalFiles(tot);
               if (tb) setTotalBytes(tb);
-              setPhaseLabel(tot ? `Uploading ${up} of ${tot} files` : `Uploading ${up} files`);
-              setDetailLabel(tb ? `${formatBytes(bu)} of ${formatBytes(tb)}` : formatBytes(bu));
               break;
             }
             case 'newTokens': {
@@ -387,7 +482,12 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
             }
             case 'done': {
               clearInterval(stallTimer);
-              setShareUrl(evt.shareUrl as string);
+              const url = evt.shareUrl as string;
+              setShareUrl(url);
+              const publishedAt = new Date().toISOString();
+              setLastPublishedAt(publishedAt);
+              writeCachedShare(client, project, url, publishedAt);
+              setStatusDebug(null);
               const synced = evt.filesUploaded as number;
               const skippedCount = (evt.filesSkipped as number) || 0;
               setProgress(skippedCount
@@ -542,6 +642,13 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
         @keyframes pulse-dot { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
         @keyframes indeterminate { 0% { left: -40%; } 100% { left: 100%; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fade-swap {
+          0% { opacity: 0; transform: translateY(3px); }
+          10% { opacity: 1; transform: translateY(0); }
+          90% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
 
       {/* Backdrop */}
@@ -657,15 +764,27 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
               ? Math.min(100, Math.round((bytesUploaded / totalBytes) * 100))
               : (totalFiles > 0 ? Math.min(100, Math.round((filesUploaded / totalFiles) * 100)) : 0);
             const indeterminate = totalBytes === 0 && totalFiles === 0;
+            const messages = SYNC_MESSAGES[phase];
+            const message = messages[messageTick % messages.length];
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>
-                    {phaseLabel || 'Syncing to DriftGrid Cloud'}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 20 }}>
+                  <div style={{
+                    width: 14, height: 14, flexShrink: 0,
+                    border: '1.5px solid rgba(139, 92, 246, 0.25)',
+                    borderTopColor: '#8b5cf6',
+                    borderRadius: '50%',
+                    animation: 'spin 0.9s linear infinite',
+                  }} />
+                  <div
+                    key={`${phase}-${messageTick}`}
+                    style={{
+                      fontSize: 13, fontWeight: 500, color: '#222',
+                      animation: 'fade-swap 2200ms ease-in-out',
+                    }}
+                  >
+                    {message}…
                   </div>
-                  {detailLabel && (
-                    <div style={{ fontSize: 11, color: '#888' }}>{detailLabel}</div>
-                  )}
                 </div>
 
                 {/* Progress bar */}
@@ -688,7 +807,7 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
                 </div>
 
                 {!indeterminate && (
-                  <div style={{ fontSize: 10, color: '#aaa', textAlign: 'right' }}>{pct}%</div>
+                  <div style={{ fontSize: 10, color: '#bbb', textAlign: 'right', letterSpacing: '0.02em' }}>{pct}%</div>
                 )}
 
                 {/* Skipped summary */}
@@ -732,39 +851,72 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
             );
           })()}
 
-          {/* Signed in, no share yet — show the create-share landing card */}
-          {state === 'ready-stale' && !shareUrl && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>
-                Share this project with clients. Only starred versions from the current round will be published.
-              </p>
-              <button
-                onClick={() => {
-                  const creds = getStoredCredentials();
-                  if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { intentional: true });
-                }}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  padding: '12px 0',
-                  textAlign: 'center',
-                  background: '#111',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 8,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  letterSpacing: '0.04em',
-                  cursor: 'pointer',
-                }}
-              >
-                Create share link
-              </button>
-              <p style={{ fontSize: 11, color: '#bbb', lineHeight: 1.5, margin: 0 }}>
-                Your designs stay local. Only shared projects are visible to clients.
-              </p>
-            </div>
-          )}
+          {/* First-time publish — minimal: just a status label, placeholder link,
+              and the action button. Disclaimers and helper copy show up after the
+              first successful publish. */}
+          {state === 'ready-stale' && !shareUrl && (() => {
+            const unreachable = statusDebug?.kind === 'unreachable';
+            const diagnosticLabel = unreachable
+              ? `Couldn\u2019t reach cloud: ${statusDebug?.message ?? 'unknown error'}`
+              : null;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <div style={{ fontSize: 10, color: '#aaa', letterSpacing: '0.02em' }}>
+                  Unpublished
+                </div>
+
+                <div
+                  style={{
+                    padding: '12px 14px',
+                    background: '#f5f5f5',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    color: '#aaa',
+                    lineHeight: 1.5,
+                    fontStyle: 'italic',
+                  }}
+                >
+                  Link appears here after first publish
+                </div>
+
+                <button
+                  onClick={() => {
+                    const creds = getStoredCredentials();
+                    if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { intentional: true });
+                  }}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    padding: '12px 0',
+                    textAlign: 'center',
+                    background: '#111',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Publish and Get Link
+                </button>
+
+                {diagnosticLabel && (
+                  <p style={{
+                    fontSize: 10,
+                    color: '#b45309',
+                    lineHeight: 1.5,
+                    margin: 0,
+                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+                    letterSpacing: '0.02em',
+                  }}>
+                    {diagnosticLabel}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* READY STATE — existing share (ready-stale) OR just-published (ready) */}
           {(state === 'ready' || state === 'ready-stale') && shareUrl && (
@@ -776,10 +928,7 @@ export function SharePanel({ open, onClose, client, project, roundId }: SharePan
                   </svg>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>Share link ready</span>
                 </div>
-                {state === 'ready' && progress && (
-                  <div style={{ fontSize: 10, color: '#aaa', paddingLeft: 24 }}>{progress}</div>
-                )}
-                {state === 'ready-stale' && lastPublishedAt && (
+                {lastPublishedAt && (
                   <div style={{ fontSize: 10, color: '#aaa', paddingLeft: 24 }}>
                     Last published {formatAgo(lastPublishedAt)}
                   </div>
