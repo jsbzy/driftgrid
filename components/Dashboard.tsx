@@ -44,20 +44,29 @@ function ThemeToggle() {
   );
 }
 
+type ShareRecord = {
+  token: string;
+  client: string;
+  project: string;
+  created_at: string;
+  updated_at?: string | null;
+  is_active: boolean;
+};
+
 export function Dashboard() {
   const { data: clients, isLoading } = useSWR<ClientInfo[]>('/api/clients', fetcher);
-  const { data: shares } = useSWR<{ token: string; client: string; project: string; is_active: boolean }[]>(
+  const { data: shares } = useSWR<ShareRecord[]>(
     isCloud ? '/api/share' : null,
     fetcher
   );
 
   const isEmpty = clients && clients.length === 0;
 
-  // Build a lookup: "client/project" → share token
-  const shareMap = new Map<string, string>();
+  // Build a lookup: "client/project" → share metadata (token + timestamps)
+  const shareMap = new Map<string, ShareRecord>();
   if (shares) {
     for (const s of shares) {
-      if (s.is_active) shareMap.set(`${s.client}/${s.project}`, s.token);
+      if (s.is_active) shareMap.set(`${s.client}/${s.project}`, s);
     }
   }
 
@@ -119,8 +128,9 @@ export function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {client.projects.map(project => {
               const resolved = resolveCanvas(project.canvas);
-              const shareToken = shareMap.get(`${client.slug}/${project.slug}`);
-              const shareUrl = shareToken ? `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${shareToken}` : null;
+              const share = shareMap.get(`${client.slug}/${project.slug}`);
+              const shareUrl = share ? `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${share.client}/${share.token}` : null;
+              const lastPublishedAt = share?.updated_at || share?.created_at || null;
 
               return isCloud ? (
                 <CloudProjectCard
@@ -129,6 +139,7 @@ export function Dashboard() {
                   project={project}
                   canvas={resolved.label}
                   shareUrl={shareUrl}
+                  lastPublishedAt={lastPublishedAt}
                 />
               ) : (
                 <Link
@@ -188,11 +199,26 @@ function ProjectCard({ name, concepts, versions, canvas }: { name: string; conce
   );
 }
 
-function CloudProjectCard({ client, project, canvas, shareUrl }: {
+function formatAgo(iso: string | null): string {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  const delta = Date.now() - then;
+  if (delta < 60_000) return 'Just now';
+  const minutes = Math.floor(delta / 60_000);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(delta / 3_600_000);
+  if (hours < 24) return `${hours} hr ago`;
+  const days = Math.floor(delta / 86_400_000);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt }: {
   client: string;
   project: { slug: string; name: string; conceptCount: number; versionCount: number };
   canvas: string;
   shareUrl: string | null;
+  lastPublishedAt: string | null;
 }) {
   const [copied, setCopied] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -242,9 +268,14 @@ function CloudProjectCard({ client, project, canvas, shareUrl }: {
           </span>
         )}
       </div>
-      <div style={{ fontSize: 11 }} className="text-[var(--muted)] mb-2">
+      <div style={{ fontSize: 11 }} className="text-[var(--muted)] mb-1">
         {project.conceptCount} concept{project.conceptCount !== 1 ? 's' : ''} &middot; {project.versionCount} version{project.versionCount !== 1 ? 's' : ''} &middot; {canvas}
       </div>
+      {url && lastPublishedAt && (
+        <div style={{ fontSize: 10, fontFamily: 'var(--font-mono, monospace)' }} className="text-[var(--muted)] mb-2" title={new Date(lastPublishedAt).toLocaleString()}>
+          Last published {formatAgo(lastPublishedAt)}
+        </div>
+      )}
 
       {url ? (
         <div className="flex items-center gap-2 mt-3">

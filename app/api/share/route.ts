@@ -78,7 +78,7 @@ export async function GET(request: Request) {
   const supabase = getSupabaseAdmin();
   let query = supabase
     .from('share_links')
-    .select('token, client, project, created_at, expires_at, is_active')
+    .select('token, client, project, created_at, updated_at, expires_at, is_active')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 

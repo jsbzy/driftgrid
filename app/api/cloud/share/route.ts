@@ -62,8 +62,14 @@ export async function POST(request: Request) {
         .single();
 
       if (existing) {
+        const updated = await bumpUpdatedAt(existing.token);
         const { origin } = new URL(request.url);
-        return NextResponse.json({ token: existing.token, url: `${origin}/s/${client}/${existing.token}`, created_at: existing.created_at });
+        return NextResponse.json({
+          token: existing.token,
+          url: `${origin}/s/${client}/${existing.token}`,
+          created_at: existing.created_at,
+          updated_at: updated ?? new Date().toISOString(),
+        });
       }
 
       return NextResponse.json({ error: 'free_limit', message: 'Upgrade to Pro to share unlimited projects.' }, { status: 403 });
@@ -74,11 +80,12 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('share_links')
     .insert({ user_id: userId, client, project })
-    .select('token, created_at')
+    .select('token, created_at, updated_at')
     .single();
 
   if (error) {
-    // Handle duplicate — return existing share
+    // Handle duplicate — return existing share + bump updated_at so the
+    // Dashboard card shows "Last published just now".
     if (error.code === '23505') {
       const { data: existing } = await supabase
         .from('share_links')
@@ -90,13 +97,40 @@ export async function POST(request: Request) {
         .single();
 
       if (existing) {
+        const updated = await bumpUpdatedAt(existing.token);
         const { origin } = new URL(request.url);
-        return NextResponse.json({ token: existing.token, url: `${origin}/s/${client}/${existing.token}`, created_at: existing.created_at });
+        return NextResponse.json({
+          token: existing.token,
+          url: `${origin}/s/${client}/${existing.token}`,
+          created_at: existing.created_at,
+          updated_at: updated ?? new Date().toISOString(),
+        });
       }
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   const { origin } = new URL(request.url);
-  return NextResponse.json({ token: data.token, url: `${origin}/s/${client}/${data.token}`, created_at: data.created_at });
+  return NextResponse.json({
+    token: data.token,
+    url: `${origin}/s/${client}/${data.token}`,
+    created_at: data.created_at,
+    updated_at: data.updated_at ?? data.created_at,
+  });
+}
+
+/**
+ * Stamp updated_at = now() on the given share. Swallows errors so a republish
+ * still succeeds even if the column is missing (pre-migration state).
+ */
+async function bumpUpdatedAt(token: string): Promise<string | null> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('share_links')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('token', token)
+    .select('updated_at')
+    .single();
+  if (error) return null;
+  return data?.updated_at ?? null;
 }

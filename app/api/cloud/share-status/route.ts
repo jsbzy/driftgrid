@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
   const { data } = await supabase
     .from('share_links')
-    .select('token, created_at')
+    .select('token, created_at, updated_at')
     .eq('user_id', user.id)
     .eq('client', client)
     .eq('project', project)
@@ -61,6 +61,6 @@ export async function POST(request: Request) {
     exists: true,
     token: data.token,
     url: `${origin}/s/${client}/${data.token}`,
-    lastPublishedAt: data.created_at,
+    lastPublishedAt: data.updated_at ?? data.created_at,
   });
 }
