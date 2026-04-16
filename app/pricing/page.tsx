@@ -105,12 +105,12 @@ export default function PricingPage() {
               forever
             </div>
             <ul className="space-y-2 text-xs" style={{ color: 'var(--foreground)' }}>
-              <Feature text="Local projects (no cloud)" />
-              <Feature text="1 share link, lifetime" />
-              <Feature text="All core features" />
-              <Feature text="MCP server" />
-              <Feature text="File watcher" />
-              <Feature text="BYO agent" />
+              <Feature text="Unlimited local projects" />
+              <Feature text="One shareable project — all its rounds" />
+              <Feature text="Every feature — grid, drift, compare, present" />
+              <Feature text="MCP server for agent integration" />
+              <Feature text="File watcher for live updates" />
+              <Feature text="BYO agent (Claude Code, Cursor, etc.)" />
             </ul>
           </div>
 
@@ -127,10 +127,10 @@ export default function PricingPage() {
             </div>
             <ul className="space-y-2 text-xs mb-6" style={{ color: 'var(--foreground)' }}>
               <Feature text="Everything in Free" />
-              <Feature text="Cloud sync across devices" highlight />
-              <Feature text="Unlimited share links" highlight />
-              <Feature text="Client commenting" highlight />
-              <Feature text="Priority support" />
+              <Feature text="Share every round of every project, unlimited" highlight />
+              <Feature text="Pick up projects on any machine — cloud sync" highlight />
+              <Feature text="Clients leave inline comments — no login" highlight />
+              <Feature text="Priority support from the team" />
             </ul>
             <button
               onClick={handleUpgrade}

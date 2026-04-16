@@ -9,8 +9,35 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DriftGrid",
-  description: "Design iteration & client presentation platform",
+  metadataBase: new URL('https://driftgrid.ai'),
+  title: {
+    default: 'DriftGrid — Design iteration for agents',
+    template: '%s · DriftGrid',
+  },
+  description: 'Version every AI-generated design. Compare any two. Share a single link per round with clients. Local-first and open source.',
+  applicationName: 'DriftGrid',
+  keywords: ['design iteration', 'AI design', 'Claude Code', 'Cursor', 'version control for design', 'local-first', 'design review', 'HTML design', 'agent-assisted design'],
+  authors: [{ name: 'BZY' }],
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    url: 'https://driftgrid.ai',
+    siteName: 'DriftGrid',
+    title: 'DriftGrid — Design iteration for agents',
+    description: 'Version every AI-generated design. Compare any two. Share a single link per round with clients. Local-first and open source.',
+    // Image comes from app/opengraph-image.tsx (file convention)
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'DriftGrid — Design iteration for agents',
+    description: 'Version every AI-generated design. Compare any two. Share a single link per round with clients.',
+    // Image shared with openGraph via app/opengraph-image.tsx
+  },
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

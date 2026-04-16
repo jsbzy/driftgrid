@@ -1,0 +1,32 @@
+# Files here are excluded from `vercel --prod` CLI uploads. Git-based
+# deploys use .gitignore instead, but CLI deploys dump the local working
+# tree into the build unless we filter it. Leaving this in sync prevents
+# the serverless function size error ("exceeded 250 MB unzipped").
+
+# Client design projects — large, local-only, not needed by the cloud build.
+projects/
+
+# Local dev caches.
+.next/dev/
+.next/cache/
+.turbo/
+
+# Editor + OS junk.
+.DS_Store
+.vscode/
+.idea/
+
+# Test + fixture output.
+test-results/
+playwright-report/
+coverage/
+
+# Agent worktrees.
+.claude/worktrees/
+
+# Local thumbnail cache written at request time.
+.thumbs/
+**/*.webp.cache
+
+# Node artifacts not needed for the build.
+*.log

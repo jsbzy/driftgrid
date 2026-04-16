@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 
-const DEMO_URL = '/s/amVmZi9kZW1vL3dlbGNvbWUtdG8tZHJpZnRncmlk';
-
 function QuickStart() {
   const [tab, setTab] = useState<'claude' | 'terminal'>('claude');
   const [copied, setCopied] = useState(false);
@@ -194,6 +192,32 @@ export function LandingPage() {
         </div>
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
           <a
+            href="https://docs.driftgrid.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: 10,
+              letterSpacing: '0.12em',
+              color: 'rgba(255,255,255,0.4)',
+              textDecoration: 'none',
+              textTransform: 'uppercase',
+            }}
+          >
+            Docs
+          </a>
+          <a
+            href="/pricing"
+            style={{
+              fontSize: 10,
+              letterSpacing: '0.12em',
+              color: 'rgba(255,255,255,0.4)',
+              textDecoration: 'none',
+              textTransform: 'uppercase',
+            }}
+          >
+            Pricing
+          </a>
+          <a
             href="https://github.com/jsbzy/driftgrid"
             target="_blank"
             rel="noopener noreferrer"
@@ -308,9 +332,10 @@ export function LandingPage() {
             >
               Get Started ↓
             </a>
-            {/* Demo button removed — demo links need updating
             <a
-              href={DEMO_URL}
+              href="https://docs.driftgrid.ai"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 padding: '12px 24px',
                 border: '1px solid rgba(255,255,255,0.15)',
@@ -323,8 +348,8 @@ export function LandingPage() {
                 borderRadius: 4,
               }}
             >
-              See a Demo
-            </a> */}
+              Read the Docs →
+            </a>
           </div>
         </div>
 
@@ -410,7 +435,7 @@ export function LandingPage() {
           {[
             {
               t: 'BYO Agent',
-              d: 'Works with Claude Code, Cursor, Copilot, or any tool that writes HTML. DriftGrid is the harness.',
+              d: 'Works with Claude Code, Cursor, Copilot, or any tool that writes HTML. DriftGrid organizes what they produce.',
             },
             {
               t: 'Local-first',
@@ -449,12 +474,26 @@ export function LandingPage() {
         textAlign: 'center',
       }}>
         <div style={{
+          display: 'flex',
+          gap: 24,
+          justifyContent: 'center',
+          marginBottom: 16,
+          fontSize: 10,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+        }}>
+          <a href="https://docs.driftgrid.ai" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Docs</a>
+          <a href="/pricing" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Pricing</a>
+          <a href="https://github.com/jsbzy/driftgrid" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>GitHub</a>
+          <a href="https://github.com/jsbzy/driftgrid/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Changelog</a>
+        </div>
+        <div style={{
           fontSize: 9,
           letterSpacing: '0.12em',
           color: 'rgba(255,255,255,0.2)',
           textTransform: 'uppercase',
         }}>
-          BZY Design · MIT License
+          Built by BZY · MIT License
         </div>
       </footer>
     </div>

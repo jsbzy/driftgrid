@@ -48,7 +48,14 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     : `/api/manifest/${client}/${project}`;
   const { data: manifest, isLoading, mutate } = useSWR<Manifest>(
     manifestUrl,
-    fetcher
+    fetcher,
+    {
+      // Manifests can be large (tens of KB to MB) and don't change from
+      // focus events. Let the file watcher / explicit mutate() drive updates.
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      dedupingInterval: 2000,
+    },
   );
 
   const [conceptIndex, setConceptIndex] = useState(0);
