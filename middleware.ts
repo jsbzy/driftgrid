@@ -16,6 +16,8 @@ const PUBLIC_PATHS = [
   '/_next',
   '/favicon.ico',
   '/login',
+  '/forgot-password',  // password reset — request a reset email
+  '/reset-password',   // password reset — landing from the email magic link
   '/pricing',       // pricing page — visible before sign-in
   '/api/auth',      // Supabase OAuth callback (/api/auth/callback)
   '/api/stripe',    // Stripe webhook + checkout (routes do their own auth)

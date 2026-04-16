@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 
 /**
@@ -172,6 +173,18 @@ function LoginForm() {
             {mode === 'login' ? 'create account' : 'back to login'}
           </button>
         </div>
+
+        {mode === 'login' && (
+          <div style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+            <Link
+              href="/forgot-password"
+              className="text-[10px] tracking-widest uppercase"
+              style={{ color: 'var(--muted)', opacity: 0.5 }}
+            >
+              forgot password?
+            </Link>
+          </div>
+        )}
 
         <div className="pt-4 border-t space-y-2" style={{ borderColor: 'var(--border)' }}>
           <div className="text-[10px] tracking-widest uppercase" style={{ color: 'var(--muted)', opacity: 0.5, fontFamily: 'var(--font-mono, monospace)' }}>
