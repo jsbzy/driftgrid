@@ -5,7 +5,9 @@
 alter table public.share_links
   add column if not exists updated_at timestamptz not null default now();
 
--- Backfill for any existing rows (default already applies, but be explicit).
+-- Backfill: existing rows don't have a real "last republished" time, so
+-- seed updated_at from created_at. Only touch rows where the two disagree
+-- (which they will initially, because the ALTER default stamped now()).
 update public.share_links
   set updated_at = created_at
-  where updated_at < created_at or updated_at is null;
+  where updated_at <> created_at;
