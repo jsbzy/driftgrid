@@ -192,18 +192,6 @@ export function LandingPage() {
         </div>
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
           <a
-            href="/manifesto"
-            style={{
-              fontSize: 10,
-              letterSpacing: '0.12em',
-              color: 'rgba(255,255,255,0.4)',
-              textDecoration: 'none',
-              textTransform: 'uppercase',
-            }}
-          >
-            Manifesto
-          </a>
-          <a
             href="https://docs.driftgrid.ai"
             target="_blank"
             rel="noopener noreferrer"
