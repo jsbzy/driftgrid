@@ -482,12 +482,10 @@ export function LandingPage() {
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
         }}>
-          <a href="/manifesto" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Manifesto</a>
           <a href="https://docs.driftgrid.ai" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Docs</a>
           <a href="/pricing" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Pricing</a>
           <a href="https://github.com/jsbzy/driftgrid" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>GitHub</a>
           <a href="https://github.com/jsbzy/driftgrid/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Changelog</a>
-          <a href="/llms.txt" style={{ color: 'rgba(255,255,255,0.25)', textDecoration: 'none' }} title="Agent-readable capability summary">llms.txt</a>
         </div>
         <div style={{
           fontSize: 9,

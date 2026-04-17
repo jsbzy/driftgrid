@@ -19,8 +19,6 @@ const PUBLIC_PATHS = [
   '/forgot-password',  // password reset — request a reset email
   '/reset-password',   // password reset — landing from the email magic link
   '/pricing',       // pricing page — visible before sign-in
-  '/manifesto',     // public strategy / thinking essay
-  '/llms.txt',      // agent-readable capability summary
   '/api/auth',      // Supabase OAuth callback (/api/auth/callback)
   '/api/stripe',    // Stripe webhook + checkout (routes do their own auth)
   '/api/share',     // share link creation uses its own auth
