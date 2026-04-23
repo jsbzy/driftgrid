@@ -32,7 +32,8 @@
     "export-pdf": "npx tsx scripts/export-pdf.ts",
     "export-png": "npx tsx scripts/export-png.ts",
     "build-exports": "npx tsx scripts/build-exports.ts",
-    "mcp": "npx tsx mcp/server.ts"
+    "mcp": "npx tsx mcp/server.ts",
+    "smoke": "tsx bin/smoke.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
@@ -58,6 +59,7 @@
     "eslint-config-next": "16.1.6",
     "playwright": "^1.52.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

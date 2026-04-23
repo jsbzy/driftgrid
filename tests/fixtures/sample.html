@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smoke Test Fixture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; }
+    body {
+      max-width: 1440px;
+      margin: 0 auto;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      -webkit-font-smoothing: antialiased;
+      background: #ffffff;
+      color: #111111;
+      padding: 120px 160px;
+    }
+    h1 {
+      font-size: 48px;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 400;
+      color: #666666;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 16px;
+    }
+    p {
+      font-size: 16px;
+      font-weight: 300;
+      line-height: 1.6;
+      color: #333333;
+      max-width: 640px;
+      margin-bottom: 24px;
+    }
+    .cta {
+      display: inline-block;
+      padding: 14px 28px;
+      border: 1px solid #111111;
+      font-size: 14px;
+      font-weight: 400;
+      text-decoration: none;
+      color: #111111;
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body>
+  <h2 data-drift-editable="eyebrow" data-drift-maxlen="40">Smoke Test Fixture</h2>
+  <h1 data-drift-editable="headline" data-drift-maxlen="80">Exercise every endpoint<br>before beta users do.</h1>
+  <p data-drift-editable="body" data-drift-maxlen="240">A throwaway page the smoke suite writes, reads, drifts, branches, shares, and tears down. If you are viewing this in a real project, something went wrong with cleanup.</p>
+  <a href="#" class="cta" data-drift-editable="cta" data-drift-maxlen="30">Continue</a>
+</body>
+</html>
