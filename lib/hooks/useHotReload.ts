@@ -25,18 +25,18 @@ export function useHotReload(
     let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
     function connect() {
-      es = new EventSource('/api/watch');
+      const qs = new URLSearchParams({ client, project }).toString();
+      es = new EventSource(`/api/watch?${qs}`);
       es.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'file-changed' && data.client === client && data.project === project) {
-            const cv = currentVersionRef.current;
-            if (!cv) return;
-            const changedFile = (data.file as string).replace(/\\/g, '/');
-            const versionFile = cv.file.replace(/\\/g, '/');
-            if (versionFile === changedFile || versionFile.endsWith('/' + changedFile) || changedFile.endsWith('/' + versionFile)) {
-              setFrameVersion(v => v + 1);
-            }
+          if (data.type !== 'file-changed') return;
+          const cv = currentVersionRef.current;
+          if (!cv) return;
+          const changedFile = (data.file as string).replace(/\\/g, '/');
+          const versionFile = cv.file.replace(/\\/g, '/');
+          if (versionFile === changedFile || versionFile.endsWith('/' + changedFile) || changedFile.endsWith('/' + versionFile)) {
+            setFrameVersion(v => v + 1);
           }
         } catch { /* ignore */ }
       };

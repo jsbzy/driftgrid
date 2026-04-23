@@ -1,5 +1,7 @@
 # DriftGrid — Claude Code Conventions
 
+**Architecture context, stack, and current state:** see `.claude/rules/architecture.md` — read it at session start to skip the ramp-up.
+
 ## What is DriftGrid?
 
 DriftGrid is a design iteration and client presentation platform. Every design project lives here — AI tools create the work, and clients review it in the same place. The repo contains both the Next.js app and all project files.

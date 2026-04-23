@@ -446,11 +446,12 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     let es: EventSource | null = null;
     let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
     function connect() {
-      es = new EventSource('/api/watch');
+      const qs = new URLSearchParams({ client, project }).toString();
+      es = new EventSource(`/api/watch?${qs}`);
       es.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'file-changed' && data.client === client && data.project === project) {
+          if (data.type === 'file-changed') {
             setThumbVersion(v => v + 1);
           }
         } catch { /* ignore */ }

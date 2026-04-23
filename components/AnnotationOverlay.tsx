@@ -15,6 +15,10 @@ interface AnnotationOverlayProps {
   annotationMode?: boolean;
   /** 'client' hides agent/designer actions (resolve, copy for agent, send to agent, reply) */
   viewMode?: 'designer' | 'client';
+  /** Name of the current viewer in client mode — used to show the trash icon only on the viewer's own comments */
+  currentAuthor?: string;
+  /** True when the current session is the share owner — unlocks delete on any comment in client view */
+  isAdmin?: boolean;
   onAdd: (x: number | null, y: number | null, text: string) => Promise<Annotation | null> | void;
   onResolve: (id: string) => void;
   onDelete: (id: string) => void;
@@ -43,6 +47,8 @@ export function AnnotationOverlay({
   placingPin,
   annotationMode,
   viewMode = 'designer',
+  currentAuthor,
+  isAdmin = false,
   onAdd,
   onResolve,
   onDelete,
@@ -68,6 +74,8 @@ export function AnnotationOverlay({
   // Local draft text for editing existing annotations, keyed by id
   const [editDrafts, setEditDrafts] = useState<Record<string, string>>({});
   const editInputRef = useRef<HTMLTextAreaElement>(null);
+  // Local draft text for designer reply input, keyed by annotation id
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
 
   // Replies lookup — any annotation with parentId is a reply to another annotation
   const repliesByParent = annotations.reduce<Record<string, Annotation[]>>((acc, a) => {
@@ -371,6 +379,8 @@ export function AnnotationOverlay({
       {annotations.map((annotation, index) => {
         if (annotation.parentId) return null;
         if (annotation.x === null || annotation.y === null) return null;
+        // Resolved pins are hidden until comment mode is toggled on
+        if (annotation.resolved && !annotationMode) return null;
         const isActive = activePin === annotation.id;
         const popupPos = isActive && popupMetrics ? popupMetrics.placement : (annotation.y > 0.5 ? 'above' : 'below');
         const popupMaxHeight = isActive && popupMetrics ? popupMetrics.maxHeight : 420;
@@ -616,24 +626,51 @@ export function AnnotationOverlay({
                   </div>
                 )}
 
+                {/* Designer reply input — post a follow-up, then hit Copy for the full thread */}
+                {!isClient && onReply && (
+                  <div style={{ marginTop: 10 }}>
+                    <input
+                      type="text"
+                      placeholder="Reply to agent…"
+                      value={replyDrafts[annotation.id] || ''}
+                      onChange={(e) =>
+                        setReplyDrafts(prev => ({ ...prev, [annotation.id]: e.target.value }))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          const draft = (replyDrafts[annotation.id] || '').trim();
+                          if (!draft) return;
+                          e.preventDefault();
+                          onReply(annotation.id, draft);
+                          setReplyDrafts(prev => ({ ...prev, [annotation.id]: '' }));
+                        }
+                        e.stopPropagation();
+                      }}
+                      style={{
+                        width: '100%',
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: 5,
+                        padding: '6px 8px',
+                        fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+                        fontSize: 12,
+                        color: '#fff',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                )}
+
                 {/* Actions row — client gets a minimal view, designer gets full controls */}
                 {isClient ? (
-                  <div style={{ marginTop: 8, fontFamily: 'var(--font-mono, monospace)', fontSize: 9, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.06em' }}>
-                    {new Date(annotation.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    {annotation.resolved && ' · resolved'}
-                  </div>
-                ) : (
-                  <>
-                    <div
-                      style={{
-                        marginTop: 10,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 6,
-                      }}
-                    >
-                      {/* Trash — delete (bottom-left, far from close) */}
+                  <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 9, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.06em' }}>
+                      {new Date(annotation.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      {annotation.resolved && ' · resolved'}
+                    </div>
+                    {(isAdmin ||
+                      (!!currentAuthor && !!annotation.author &&
+                       currentAuthor.trim().toLowerCase() === annotation.author.trim().toLowerCase())) && (
                       <button
                         type="button"
                         tabIndex={-1}
@@ -642,14 +679,14 @@ export function AnnotationOverlay({
                           onDelete(annotation.id);
                           setActivePin(null);
                         }}
-                        title="Delete prompt"
+                        title="Delete your comment"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          width: 28,
-                          height: 28,
-                          borderRadius: 5,
+                          width: 22,
+                          height: 22,
+                          borderRadius: 4,
                           border: '1px solid rgba(255,255,255,0.08)',
                           background: 'transparent',
                           cursor: 'pointer',
@@ -667,7 +704,7 @@ export function AnnotationOverlay({
                           (e.currentTarget as HTMLElement).style.background = 'transparent';
                         }}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="3 6 5 6 21 6" />
                           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                           <path d="M10 11v6" />
@@ -675,7 +712,64 @@ export function AnnotationOverlay({
                           <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
                         </svg>
                       </button>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        marginTop: 10,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 6,
+                      }}
+                    >
+                      {/* Left group — secondary actions (delete, resolve) */}
                       <div style={{ display: 'flex', gap: 6 }}>
+                        {/* Trash — delete */}
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(annotation.id);
+                            setActivePin(null);
+                          }}
+                          title="Delete prompt"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 28,
+                            height: 28,
+                            borderRadius: 5,
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            background: 'transparent',
+                            cursor: 'pointer',
+                            color: 'rgba(255,255,255,0.35)',
+                            transition: 'color 0.15s ease, border-color 0.15s ease, background 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLElement).style.color = '#ef4444';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.3)';
+                            (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.08)';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                            (e.currentTarget as HTMLElement).style.background = 'transparent';
+                          }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                            <path d="M10 11v6" />
+                            <path d="M14 11v6" />
+                            <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
+                        {/* Resolve — checkmark icon, same footprint as trash */}
                         <button
                           type="button"
                           tabIndex={-1}
@@ -683,25 +777,45 @@ export function AnnotationOverlay({
                             e.stopPropagation();
                             onResolve(annotation.id);
                           }}
+                          title={annotation.resolved ? 'Unresolve' : 'Resolve'}
                           style={{
-                            fontFamily: 'var(--font-mono, monospace)',
-                            fontSize: 9,
-                            letterSpacing: '0.08em',
-                            textTransform: 'uppercase',
-                            padding: '5px 9px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 28,
+                            height: 28,
                             borderRadius: 5,
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            border: annotation.resolved
+                              ? '1px solid rgba(34,197,94,0.3)'
+                              : '1px solid rgba(255,255,255,0.08)',
                             background: annotation.resolved
                               ? 'rgba(34,197,94,0.12)'
-                              : 'rgba(255,255,255,0.05)',
+                              : 'transparent',
+                            cursor: 'pointer',
                             color: annotation.resolved
                               ? 'rgba(74,222,128,0.9)'
-                              : 'rgba(255,255,255,0.6)',
-                            cursor: 'pointer',
+                              : 'rgba(255,255,255,0.35)',
+                            transition: 'color 0.15s ease, border-color 0.15s ease, background 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (annotation.resolved) return;
+                            (e.currentTarget as HTMLElement).style.color = 'rgba(74,222,128,0.9)';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(34,197,94,0.3)';
+                            (e.currentTarget as HTMLElement).style.background = 'rgba(34,197,94,0.08)';
+                          }}
+                          onMouseLeave={(e) => {
+                            if (annotation.resolved) return;
+                            (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                            (e.currentTarget as HTMLElement).style.background = 'transparent';
                           }}
                         >
-                          {annotation.resolved ? 'Resolved' : 'Resolve'}
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
                         </button>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
                         <button
                           type="button"
                           tabIndex={-1}
@@ -726,7 +840,7 @@ export function AnnotationOverlay({
                             cursor: 'pointer',
                           }}
                         >
-                          Copy
+                          Copy for Agent
                         </button>
                         <button
                           type="button"
@@ -967,7 +1081,7 @@ export function AnnotationOverlay({
                       transition: 'background 0.15s ease, color 0.15s ease',
                     }}
                   >
-                    {copyState === 'copied' ? 'Copied' : 'Copy'}
+                    {copyState === 'copied' ? 'Copied' : 'Copy for Agent'}
                   </button>
                   <button
                     type="button"
@@ -1010,6 +1124,30 @@ export function AnnotationOverlay({
           </div>
         </div>
       )}
+
+      {/* Resolved-count indicator — reminds the designer there's buried history on this slide */}
+      {(() => {
+        if (annotationMode) return null;
+        const resolvedCount = annotations.filter(a => !a.parentId && a.resolved).length;
+        if (resolvedCount === 0) return null;
+        return (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 12,
+              right: 12,
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 9,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'rgba(0,0,0,0.3)',
+              pointerEvents: 'none',
+            }}
+          >
+            {resolvedCount} resolved
+          </div>
+        );
+      })()}
     </div>
   );
 }

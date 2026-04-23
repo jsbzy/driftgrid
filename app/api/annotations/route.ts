@@ -15,6 +15,27 @@ function generateId(): string {
 }
 
 /**
+ * Locate a concept/version across the manifest. Top-level `concepts` is just an
+ * alias for the latest round and can be empty on rounds-enabled projects — so we
+ * fall back to scanning every round. Mutations on the returned objects persist
+ * through writeManifest since they share references with the manifest tree.
+ */
+function findConceptAndVersion(manifest: Manifest, conceptId: string, versionId: string) {
+  let concept = manifest.concepts?.find(c => c.id === conceptId);
+  if (concept) {
+    const version = concept.versions.find(v => v.id === versionId);
+    if (version) return { concept, version };
+  }
+  for (const round of manifest.rounds ?? []) {
+    concept = round.concepts?.find(c => c.id === conceptId);
+    if (!concept) continue;
+    const version = concept.versions.find(v => v.id === versionId);
+    if (version) return { concept, version };
+  }
+  return { concept: undefined, version: undefined };
+}
+
+/**
  * GET /api/annotations?client=x&project=y&conceptId=z&versionId=w
  * Returns annotations for a specific version
  */
@@ -33,8 +54,7 @@ export async function GET(request: Request) {
   const manifest = await getManifest(userId, client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-  const concept = manifest.concepts?.find(c => c.id === conceptId);
-  const version = concept?.versions.find(v => v.id === versionId);
+  const { version } = findConceptAndVersion(manifest, conceptId, versionId);
   if (!version) return NextResponse.json({ error: 'Version not found' }, { status: 404 });
 
   return NextResponse.json(version.annotations ?? []);
@@ -55,9 +75,8 @@ export async function POST(request: Request) {
   const manifest = await getManifest(userId, client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-  const concept = manifest.concepts?.find(c => c.id === conceptId);
-  const version = concept?.versions.find(v => v.id === versionId);
-  if (!version) return NextResponse.json({ error: 'Version not found' }, { status: 404 });
+  const { concept, version } = findConceptAndVersion(manifest, conceptId, versionId);
+  if (!concept || !version) return NextResponse.json({ error: 'Version not found' }, { status: 404 });
 
   const annotation: Annotation = {
     id: generateId(),
@@ -77,9 +96,9 @@ export async function POST(request: Request) {
   version.annotations.push(annotation);
 
   await writeManifest(userId, client, project, manifest);
-  await writeFeedbackSidecar(userId, client, project, concept!.label, version);
+  await writeFeedbackSidecar(userId, client, project, concept.label, version);
   // Re-render the drift template if this annotation changed the slot's visible state
-  await maybeRewriteDriftTemplate(userId, client, project, manifest, concept!, version);
+  await maybeRewriteDriftTemplate(userId, client, project, manifest, concept, version);
 
   return NextResponse.json(annotation);
 }
@@ -99,14 +118,13 @@ export async function DELETE(request: Request) {
   const manifest = await getManifest(userId, client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-  const concept = manifest.concepts?.find(c => c.id === conceptId);
-  const version = concept?.versions.find(v => v.id === versionId);
-  if (!version?.annotations) return NextResponse.json({ error: 'No annotations' }, { status: 404 });
+  const { concept, version } = findConceptAndVersion(manifest, conceptId, versionId);
+  if (!concept || !version?.annotations) return NextResponse.json({ error: 'No annotations' }, { status: 404 });
 
   version.annotations = version.annotations.filter(a => a.id !== annotationId);
   await writeManifest(userId, client, project, manifest);
-  await writeFeedbackSidecar(userId, client, project, concept!.label, version);
-  await maybeRewriteDriftTemplate(userId, client, project, manifest, concept!, version);
+  await writeFeedbackSidecar(userId, client, project, concept.label, version);
+  await maybeRewriteDriftTemplate(userId, client, project, manifest, concept, version);
 
   return NextResponse.json({ ok: true });
 }
@@ -127,8 +145,7 @@ export async function PATCH(request: Request) {
   const manifest = await getManifest(userId, client, project);
   if (!manifest) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-  const concept = manifest.concepts?.find(c => c.id === conceptId);
-  const version = concept?.versions.find(v => v.id === versionId);
+  const { concept, version } = findConceptAndVersion(manifest, conceptId, versionId);
   const annotation = version?.annotations?.find(a => a.id === annotationId);
   if (!annotation || !concept || !version) return NextResponse.json({ error: 'Annotation not found' }, { status: 404 });
 

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback } from 'react';
-import type { Manifest } from '@/lib/types';
+import type { Manifest, Concept } from '@/lib/types';
 
 interface DeletedItem {
   conceptId: string;
@@ -22,9 +22,33 @@ export function useUndoManager(
   setConceptIndex: (v: number) => void,
   setVersionIndex: (v: number | ((prev: number) => number)) => void,
   versionIndex: number,
+  activeRoundId: string | null,
 ) {
   const [lastDeleted, setLastDeleted] = useState<DeletedItem | null>(null);
   const [lastDrift, setLastDrift] = useState<DriftedItem | null>(null);
+
+  // Round-aware read of the active concepts (mirrors useManifestMutations)
+  const getActiveConcepts = useCallback((m: Manifest): Concept[] => {
+    if (activeRoundId && m.rounds?.length) {
+      const round = m.rounds.find(r => r.id === activeRoundId) || m.rounds[m.rounds.length - 1];
+      return round?.concepts ?? [];
+    }
+    return m.concepts ?? [];
+  }, [activeRoundId]);
+
+  // Round-aware write — applies newConcepts to the active round and keeps the top-level alias in sync
+  const withUpdatedConcepts = useCallback((m: Manifest, newConcepts: Concept[]): Manifest => {
+    if (activeRoundId && m.rounds?.length) {
+      return {
+        ...m,
+        rounds: m.rounds.map(r =>
+          r.id === activeRoundId ? { ...r, concepts: newConcepts } : r
+        ),
+        concepts: newConcepts,
+      };
+    }
+    return { ...m, concepts: newConcepts };
+  }, [activeRoundId]);
 
   const trackDelete = useCallback((item: DeletedItem) => {
     setLastDeleted(item);
@@ -40,22 +64,20 @@ export function useUndoManager(
     // Undo drift: delete the version that was just created
     if (lastDrift && manifest) {
       const { conceptId, versionId } = lastDrift;
-      const updated: Manifest = {
-        ...manifest,
-        concepts: manifest.concepts.map(c => {
-          if (c.id !== conceptId) return c;
-          return { ...c, versions: c.versions.filter(v => v.id !== versionId) };
-        }).filter(c => c.versions.length > 0),
-      };
+      const concepts = getActiveConcepts(manifest);
+      const newConcepts = concepts.map(c => {
+        if (c.id !== conceptId) return c;
+        return { ...c, versions: c.versions.filter(v => v.id !== versionId) };
+      }).filter(c => c.versions.length > 0);
+      const updated = withUpdatedConcepts(manifest, newConcepts);
       await fetch(`/api/manifest/${client}/${project}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),
       });
-      // Navigate back to the previous version
-      const ci = updated.concepts.findIndex(c => c.id === conceptId);
+      const ci = newConcepts.findIndex(c => c.id === conceptId);
       if (ci >= 0) {
-        const maxVi = updated.concepts[ci].versions.length - 1;
+        const maxVi = newConcepts[ci].versions.length - 1;
         setConceptIndex(ci);
         setVersionIndex(Math.min(versionIndex, maxVi));
       }
@@ -64,25 +86,23 @@ export function useUndoManager(
       return;
     }
 
-    // Undo delete: restore the version
+    // Undo delete: restore the version to the active round
     if (!lastDeleted || !manifest) return;
 
-    // Restore the version to the manifest — deep copy concepts to avoid mutating SWR cache
-    const updated: Manifest = {
-      ...manifest,
-      concepts: manifest.concepts.map(c => {
-        if (c.id !== lastDeleted.conceptId) return c;
-        const restoredVersions = [...c.versions, lastDeleted.version as Manifest['concepts'][0]['versions'][0]];
-        restoredVersions.sort((a, b) => a.number - b.number);
-        return { ...c, versions: restoredVersions };
-      }),
-    };
-    const concept = updated.concepts.find(c => c.id === lastDeleted.conceptId);
-    if (!concept) {
-      // Concept was removed — can't undo cleanly
+    const concepts = getActiveConcepts(manifest);
+    const target = concepts.find(c => c.id === lastDeleted.conceptId);
+    if (!target) {
+      // Concept was removed (last version deleted) — can't undo cleanly yet
       setLastDeleted(null);
       return;
     }
+    const newConcepts = concepts.map(c => {
+      if (c.id !== lastDeleted.conceptId) return c;
+      const restoredVersions = [...c.versions, lastDeleted.version as Concept['versions'][0]];
+      restoredVersions.sort((a, b) => a.number - b.number);
+      return { ...c, versions: restoredVersions };
+    });
+    const updated = withUpdatedConcepts(manifest, newConcepts);
 
     await fetch(`/api/manifest/${client}/${project}`, {
       method: 'PUT',
@@ -90,14 +110,13 @@ export function useUndoManager(
       body: JSON.stringify(updated),
     });
 
-    // Navigate to restored version
-    const ci = updated.concepts.findIndex(c => c.id === lastDeleted.conceptId);
-    const vi = updated.concepts[ci]?.versions.findIndex(v => v.id === lastDeleted.versionId) ?? 0;
+    const ci = newConcepts.findIndex(c => c.id === lastDeleted.conceptId);
+    const vi = newConcepts[ci]?.versions.findIndex(v => v.id === lastDeleted.versionId) ?? 0;
     setConceptIndex(ci >= 0 ? ci : 0);
     setVersionIndex(vi >= 0 ? vi : 0);
     mutate();
     setLastDeleted(null);
-  }, [lastDeleted, lastDrift, manifest, client, project, versionIndex, mutate, setConceptIndex, setVersionIndex]);
+  }, [lastDeleted, lastDrift, manifest, client, project, versionIndex, mutate, setConceptIndex, setVersionIndex, getActiveConcepts, withUpdatedConcepts]);
 
   return {
     lastDeleted,

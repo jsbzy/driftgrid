@@ -30,7 +30,6 @@ import { useManifestMutations } from '@/lib/hooks/useManifestMutations';
 import { AnnotationOverlay } from './AnnotationOverlay';
 import { ClientNamePrompt } from './ClientNamePrompt';
 import { SharePanel } from './SharePanel';
-import { GridPromptInput } from './GridPromptInput';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -78,10 +77,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   // Share/client views land at a closer zoom so a client immediately sees readable
   // card content — they're here to review, not to get a map of the project.
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(mode === 'client' ? 'z2' : 'overview');
-  // Grid-view prompt input — open when user presses C on an empty card, or auto-opens after drift/branch
-  const [gridPromptOpen, setGridPromptOpen] = useState(false);
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
-  const autoOpenGridPromptRef = useRef(false);
+  // After drift from frame view, auto-enable annotation mode on the new slot
+  const autoEnableAnnotationRef = useRef(false);
 
   // Demo drift state — only used in share mode (shareToken present).
   // Tracks client-side-only versions/concepts added via D/Shift+D in the demo.
@@ -126,7 +124,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const [transitionCardBounds, setTransitionCardBounds] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
   // Undo manager
-  const undo = useUndoManager(manifest, client, project, mutate, setConceptIndex, setVersionIndex, versionIndex);
+  const undo = useUndoManager(manifest, client, project, mutate, setConceptIndex, setVersionIndex, versionIndex, activeRoundId);
 
   const handleZoomToLevel = useCallback((level: ZoomLevel) => {
     setZoomLevel(level);
@@ -185,13 +183,6 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const versions = currentConcept?.versions ?? [];
   const currentVersion = versions[versionIndex];
 
-  // Auto-close grid prompt when the slot gets filled by the agent
-  useEffect(() => {
-    if (gridPromptOpen && currentVersion && !isAwaitingFirstPrompt(currentVersion.changelog)) {
-      setGridPromptOpen(false);
-    }
-  }, [gridPromptOpen, currentVersion]);
-
   // Extracted hooks
   const annotationState = useAnnotationState(client, project, currentConcept?.id, currentVersion?.id, viewMode, shareToken);
 
@@ -238,7 +229,10 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         toast('Comment added');
         return null;
       },
-      handleDeleteAnnotation: async () => {},
+      handleDeleteAnnotation: async (id: string) => {
+        const ok = await clientComments.deleteComment(id);
+        toast(ok ? 'Comment deleted' : 'Delete failed', ok ? undefined : 'error');
+      },
       handleResolveAnnotation: async (id: string) => {
         await clientComments.resolveComment(id);
       },
@@ -281,6 +275,15 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           await designerClientComments.resolveComment(id);
         } else {
           await annotationState.handleResolveAnnotation(id);
+        }
+      },
+      handleDeleteAnnotation: async (id: string) => {
+        // Admin delete: client comments (UUID) go through share endpoint; designer annotations stay on /api/annotations
+        if (id.length > 20) {
+          const ok = await designerClientComments.deleteComment(id);
+          toast(ok ? 'Comment deleted' : 'Delete failed', ok ? undefined : 'error');
+        } else {
+          await annotationState.handleDeleteAnnotation(id);
         }
       },
     };
@@ -345,15 +348,12 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         e.preventDefault();
         ui.setNavGridHidden(v => !v);
       }
-      // C (without Cmd): toggle comment/annotation mode in frame view, or open grid prompt on empty cards
+      // C (without Cmd): toggle comment/annotation mode — frame view only
       if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey) {
         if (viewMode === 'frame') {
           e.preventDefault();
           activeAnnotations.setAnnotationMode(v => !v);
           tour.trigger('comment');
-        } else if (viewMode === 'grid' && isAwaitingFirstPrompt(currentVersion?.changelog)) {
-          e.preventDefault();
-          setGridPromptOpen(true);
         }
       }
       // Cmd+C: copy frames to clipboard
@@ -544,18 +544,10 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         tour.trigger('esc');
         return 'grid';
       }
-      // Going grid → frame: if the selected card is an empty drift slot,
-      // stay on the grid and open the prompt modal instead.
-      const concept = concepts[conceptIndex];
-      const version = concept?.versions[versionIndex];
-      if (isAwaitingFirstPrompt(version?.changelog)) {
-        setGridPromptOpen(true);
-        return 'grid';
-      }
       tour.trigger('enter');
       return 'frame';
     });
-  }, [conceptIndex, versionIndex, concepts, getTransitionCardBounds, presentation.setIsPresenting, tour]);
+  }, [conceptIndex, versionIndex, getTransitionCardBounds, presentation.setIsPresenting, tour]);
 
   // Pinch zoom out from frame -> exit to grid
   useEffect(() => {
@@ -580,11 +572,6 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       if (concept && version) {
         const slug = concept.slug || conceptSlug(concept.label);
         window.history.replaceState(null, '', `#${slug}/v${version.number}`);
-      }
-      // Drift slots awaiting a first prompt: stay on the grid and open the prompt modal.
-      if (isAwaitingFirstPrompt(version?.changelog)) {
-        setGridPromptOpen(true);
-        return;
       }
       setViewMode('frame');
     },
@@ -770,33 +757,57 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     if (!currentConcept || !currentVersion) return undefined;
     if (shareToken) return handleDemoDrift;
     return async () => {
-      autoOpenGridPromptRef.current = true;
-      // Don't auto-pan to the new card — keep the viewport where the user left it.
       canvasRef.current?.suppressNextPan();
-      // Drift from frame view → drop back to grid so the prompt modal mounts & opens.
-      if (viewMode === 'frame') setViewMode('grid');
+
+      // Multi-select: drift each selected frame in its own concept, single round-trip refresh
+      if (multiSelected.size > 1) {
+        const items: { conceptId: string; versionId: string }[] = [];
+        for (const key of multiSelected) {
+          const [cid, vid] = key.split(':');
+          if (cid && vid) items.push({ conceptId: cid, versionId: vid });
+        }
+        flash.showDriftFlash('DRIFTED');
+        let ok = 0;
+        for (const { conceptId, versionId } of items) {
+          const res = await fetch('/api/iterate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client, project, conceptId, versionId }),
+          });
+          if (res.ok) ok++;
+        }
+        await mutate();
+        toast(
+          ok === items.length ? `Drifted ${ok} frames` : `Drifted ${ok}/${items.length} frames`,
+          ok === items.length ? undefined : 'error',
+        );
+        return;
+      }
+
+      // Single drift
+      if (viewMode === 'frame') autoEnableAnnotationRef.current = true;
       await mutations.handleDriftVersion(currentConcept.id, currentVersion.id);
     };
-  }, [currentConcept, currentVersion, mutations.handleDriftVersion, shareToken, handleDemoDrift, viewMode]);
+  }, [currentConcept, currentVersion, mutations.handleDriftVersion, shareToken, handleDemoDrift, viewMode, multiSelected, client, project, mutate, flash]);
 
   const handleBranch = useMemo(() => {
     if (!currentConcept || !currentVersion) return undefined;
     if (shareToken) return handleDemoBranch;
     return async () => {
-      autoOpenGridPromptRef.current = true;
       canvasRef.current?.suppressNextPan();
-      if (viewMode === 'frame') setViewMode('grid');
+      if (viewMode === 'frame') autoEnableAnnotationRef.current = true;
       await mutations.handleBranchVersion(currentConcept.id, currentVersion.id);
     };
   }, [currentConcept, currentVersion, mutations.handleBranchVersion, shareToken, handleDemoBranch, viewMode]);
 
-  // Consume the auto-open flag once the new (empty) version becomes current
+  // After drift from frame view, auto-enable annotation mode on the new slot
   useEffect(() => {
-    if (!autoOpenGridPromptRef.current) return;
-    if (viewMode !== 'grid') return;
+    if (!autoEnableAnnotationRef.current) return;
+    if (viewMode !== 'frame') return;
     if (!isAwaitingFirstPrompt(currentVersion?.changelog)) return;
-    autoOpenGridPromptRef.current = false;
-    setGridPromptOpen(true);
+    autoEnableAnnotationRef.current = false;
+    activeAnnotations.setAnnotationMode(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVersion, viewMode]);
 
   useKeyboardNav({
@@ -1368,58 +1379,6 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             showHidden={showHidden}
             initialCardBounds={transitionCardBounds}
           />
-          {gridPromptOpen && currentConcept && currentVersion && (() => {
-            // Resolve the "reference" slide this card was drifted from:
-            // - drifted version: the previous version in this concept
-            // - branched concept (v1): follow concept.branchedFrom → source concept/version
-            const currentVersionIdx = currentConcept.versions.findIndex(v => v.id === currentVersion.id);
-            let referenceLabel: string | undefined;
-            let referencePath: string | undefined;
-            if (currentVersionIdx > 0) {
-              const prev = currentConcept.versions[currentVersionIdx - 1];
-              referenceLabel = `${currentConcept.label} v${prev.number}`;
-              referencePath = `~/driftgrid/projects/${client}/${project}/${prev.file}`;
-            } else if (currentConcept.branchedFrom) {
-              const srcConcept = concepts.find(c => c.id === currentConcept.branchedFrom?.conceptId);
-              const srcVersion = srcConcept?.versions.find(v => v.id === currentConcept.branchedFrom?.versionId);
-              if (srcConcept && srcVersion) {
-                referenceLabel = `${srcConcept.label} v${srcVersion.number}`;
-                referencePath = `~/driftgrid/projects/${client}/${project}/${srcVersion.file}`;
-              }
-            }
-            const targetPath = `~/driftgrid/projects/${client}/${project}/${currentVersion.file}`;
-            // Find the whole-version prompt annotation and its replies for this card
-            const existingPrompt = annotationState.annotations.find(
-              a => a.x === null && a.y === null && a.parentId == null,
-            );
-            const promptReplies = existingPrompt
-              ? annotationState.annotations
-                  .filter(a => a.parentId === existingPrompt.id)
-                  .sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime())
-              : undefined;
-            return (
-              <GridPromptInput
-                conceptLabel={currentConcept.label}
-                versionNumber={currentVersion.number}
-                targetPath={targetPath}
-                referenceLabel={referenceLabel}
-                referencePath={referencePath}
-                client={client}
-                project={project}
-                conceptId={currentConcept.id}
-                versionId={currentVersion.id}
-                cardSelector={`[data-card-id="${currentConcept.id}:${currentVersion.id}"]`}
-                existingPrompt={existingPrompt}
-                replies={promptReplies}
-                onCancel={() => setGridPromptOpen(false)}
-                onSave={(text) => annotationState.handleAddAnnotation(null, null, text)}
-                onEdit={annotationState.handleEditAnnotation}
-                onReply={annotationState.handleReplyAnnotation}
-                onResolve={annotationState.handleResolveAnnotation}
-                onSetStatus={annotationState.handleSetAnnotationStatus}
-              />
-            );
-          })()}
         </div>
         {mode === 'client' ? (
           !ui.navGridHidden && (
@@ -1546,6 +1505,8 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             annotations={activeAnnotations.annotations}
             annotationMode={activeAnnotations.annotationMode}
             viewMode={mode === 'client' ? 'client' : 'designer'}
+            currentAuthor={mode === 'client' ? clientComments.authorName : undefined}
+            isAdmin={mode === 'client' ? clientComments.isAdmin : false}
             onAdd={activeAnnotations.handleAddAnnotation}
             onDelete={activeAnnotations.handleDeleteAnnotation}
             onResolve={activeAnnotations.handleResolveAnnotation}

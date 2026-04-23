@@ -15,7 +15,9 @@ export function useClientComments(shareToken: string | undefined) {
   const [comments, setComments] = useState<ClientComment[]>([]);
   const [authorName, setAuthorNameState] = useState<string>('');
   const [needsName, setNeedsName] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const fetchedRef = useRef(false);
+  const adminCheckedRef = useRef(false);
 
   // Load author name from localStorage
   useEffect(() => {
@@ -44,6 +46,16 @@ export function useClientComments(shareToken: string | undefined) {
     fetch(`/api/s/${shareToken}/comments`)
       .then(r => r.ok ? r.json() : [])
       .then((data: ClientComment[]) => setComments(data))
+      .catch(() => {});
+  }, [shareToken]);
+
+  // Check if the current session is the share owner (admin override for deletes)
+  useEffect(() => {
+    if (!shareToken || adminCheckedRef.current) return;
+    adminCheckedRef.current = true;
+    fetch(`/api/s/${shareToken}/comments?admin=check`)
+      .then(r => r.ok ? r.json() : { isAdmin: false })
+      .then((data: { isAdmin: boolean }) => setIsAdmin(!!data.isAdmin))
       .catch(() => {});
   }, [shareToken]);
 
@@ -134,15 +146,32 @@ export function useClientComments(shareToken: string | undefined) {
     [shareToken, comments]
   );
 
+  const deleteComment = useCallback(
+    async (commentId: string): Promise<boolean> => {
+      if (!shareToken) return false;
+      const res = await fetch(`/api/s/${shareToken}/comments`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment_id: commentId, author_name: authorName || undefined }),
+      });
+      if (!res.ok) return false;
+      setComments(prev => prev.filter(c => c.id !== commentId && c.parent_comment_id !== commentId));
+      return true;
+    },
+    [shareToken, authorName]
+  );
+
   return {
     comments,
     authorName,
     needsName,
+    isAdmin,
     setAuthorName,
     getCommentsForVersion,
     getCommentCount,
     getConceptCommentCount,
     addComment,
     resolveComment,
+    deleteComment,
   };
 }

@@ -47,8 +47,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: `
+      <head suppressHydrationWarning>
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: `
           try {
             if (localStorage.getItem('driftgrid-theme') === 'dark') {
               document.documentElement.classList.add('dark');
@@ -56,7 +56,7 @@ export default function RootLayout({
           } catch {}
         `}} />
       </head>
-      <body className={`${jetbrainsMono.variable} antialiased`}>
+      <body suppressHydrationWarning className={`${jetbrainsMono.variable} antialiased`}>
         <div className="hidden max-md:flex fixed inset-0 z-[9999] items-center justify-center p-8" style={{ background: 'var(--background)' }}>
           <div style={{ textAlign: 'center', fontFamily: 'var(--font-mono, monospace)', maxWidth: 320 }}>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--foreground)' }}>DriftGrid</div>

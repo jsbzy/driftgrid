@@ -35,12 +35,18 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
     const editSrc = needsEditScript ? `${src}${src.includes('?') ? '&' : '?'}mode=edit` : src;
 
     // Don't reset iframeReady on src change — keep old content visible
-    // while new content loads to prevent white flash
-
+    // while new content loads to prevent white flash.
+    //
+    // Imperatively set iframe.src on change. React attribute updates sometimes
+    // don't re-navigate the iframe when the previous src already loaded; assigning
+    // iframe.src directly always triggers navigation.
     useEffect(() => {
-      if (iframeRef.current) {
-        iframeRef.current.scrollTop = 0;
+      const el = iframeRef.current;
+      if (!el) return;
+      if (el.getAttribute('src') !== editSrc) {
+        el.src = editSrc;
       }
+      el.scrollTop = 0;
     }, [editSrc]);
 
     // Handle iframe load
