@@ -791,7 +791,7 @@ async function phase12() {
   if (!S.conceptId || !S.versionId) return skip('no project');
 
   // Single HTML export
-  const htmlRes = await req<ArrayBuffer>(
+  const htmlRes = await req(
     'POST',
     '/api/export',
     { client: SMOKE_CLIENT, project: SMOKE_PROJECT, format: 'html', versionId: S.versionId },
@@ -802,7 +802,7 @@ async function phase12() {
   assert(htmlText.includes('<!DOCTYPE html>'), 'HTML export starts with <!DOCTYPE html>');
 
   // Single PDF — may require playwright chromium; tolerate failure gracefully
-  const pdfRes = await req<ArrayBuffer>(
+  const pdfRes = await req(
     'POST',
     '/api/export',
     { client: SMOKE_CLIENT, project: SMOKE_PROJECT, format: 'pdf', versionId: S.versionId },
@@ -829,7 +829,7 @@ async function phase12() {
   activeConcepts(mres);
   await req('PUT', `/api/manifest/${SMOKE_CLIENT}/${SMOKE_PROJECT}`, mres);
 
-  const wsPdf = await req<ArrayBuffer>(
+  const wsPdf = await req(
     'POST',
     '/api/export',
     { client: SMOKE_CLIENT, project: SMOKE_PROJECT, format: 'pdf', workingSetId: wsId },

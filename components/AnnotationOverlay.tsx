@@ -113,9 +113,11 @@ export function AnnotationOverlay({
     onEdit?.(id, trimmed);
   }, [editDrafts, annotations, onEdit]);
 
-  // Build the agent-ready message for an existing annotation — includes slide context,
-  // pin location, thread history, and reply-back instructions so the agent can POST
-  // a threaded reply after applying the change (Option A: pre-MCP).
+  // Build the agent-ready message for an existing annotation. When the thread has a
+  // trailing non-agent reply (designer followed up on the agent's response), lead with
+  // that reply as the CURRENT REQUEST and push everything else — including the agent's
+  // prior "done" message — into a PRIOR THREAD context block. This stops the agent from
+  // re-acting on the original prompt and focuses it on the latest turn.
   const buildAnnotationAgentMessage = useCallback((annotation: Annotation) => {
     const lines: string[] = [];
     if (frameContext) {
@@ -128,18 +130,34 @@ export function AnnotationOverlay({
     }
     lines.push(`Annotation ID: ${annotation.id}`);
     lines.push('');
-    lines.push(`> ${annotation.text.split('\n').join('\n> ')}`);
 
     const replies = repliesByParent[annotation.id] || [];
-    if (replies.length > 0) {
+    const lastReply = replies[replies.length - 1];
+    const hasNewRequest = lastReply && !lastReply.isAgent;
+
+    if (hasNewRequest) {
+      // Latest designer turn = the ask. Lead with it.
+      lines.push('=== CURRENT REQUEST (act on this) ===');
+      lines.push(lastReply.text);
       lines.push('');
-      for (const r of replies) {
-        const who = r.isAgent ? 'Agent' : (r.author || 'Reply');
-        lines.push(`↳ ${who}: ${r.text}`);
+      lines.push('=== PRIOR THREAD (context only — already addressed, do not redo) ===');
+      lines.push(`designer (original): ${annotation.text}`);
+      for (const r of replies.slice(0, -1)) {
+        const who = r.isAgent ? 'agent' : (r.author || 'reply');
+        lines.push(`${who}: ${r.text}`);
+      }
+    } else {
+      // No replies, or the agent had the last word — show original as the focus.
+      lines.push(`> ${annotation.text.split('\n').join('\n> ')}`);
+      if (replies.length > 0) {
+        lines.push('');
+        for (const r of replies) {
+          const who = r.isAgent ? 'Agent' : (r.author || 'Reply');
+          lines.push(`↳ ${who}: ${r.text}`);
+        }
       }
     }
 
-    // Reply-back instructions — so the agent can close the loop with a threaded reply.
     if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
       lines.push('');
       lines.push('---');
