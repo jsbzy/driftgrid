@@ -7,6 +7,15 @@ import { getUserId } from '@/lib/auth';
 import { getEditScript } from '@/lib/editScript';
 import { areValidSlugs } from '@/lib/slug';
 
+function resolveWithinProject(client: string, project: string, filePath: string): string | null {
+  const projectRoot = path.resolve(path.join(process.cwd(), 'projects', client, project));
+  const fullPath = path.resolve(path.join(projectRoot, filePath));
+  if (fullPath !== projectRoot && !fullPath.startsWith(projectRoot + path.sep)) {
+    return null;
+  }
+  return fullPath;
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ client: string; project: string; path: string[] }> }
@@ -16,7 +25,10 @@ export async function PUT(
     return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
   const filePath = pathParts.join('/');
-  const fullPath = path.join(process.cwd(), 'projects', client, project, filePath);
+  const fullPath = resolveWithinProject(client, project, filePath);
+  if (!fullPath) {
+    return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
+  }
   await fs.mkdir(path.dirname(fullPath), { recursive: true });
   const html = await request.text();
   await fs.writeFile(fullPath, html, 'utf-8');
@@ -48,6 +60,9 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
   const filePath = pathParts.join('/');
+  if (!resolveWithinProject(client, project, filePath)) {
+    return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
+  }
   const ext = path.extname(filePath).toLowerCase();
 
   const userId = isCloudMode() ? await getUserId() : null;

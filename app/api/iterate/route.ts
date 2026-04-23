@@ -9,7 +9,7 @@ import { invalidateManifestCache } from '@/lib/manifest-cache';
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
 export async function POST(request: Request) {
-  const { client, project, conceptId, versionId } = await request.json();
+  const { client, project, conceptId, versionId, roundId } = await request.json();
 
   if (!client || !project || !conceptId || !versionId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -25,7 +25,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Manifest not found' }, { status: 404 });
   }
 
-  const concept = manifest.concepts.find(c => c.id === conceptId);
+  // Resolve concepts from the target round. `manifest.concepts` is aliased to
+  // the latest round, so drift from a non-latest round must pass roundId.
+  let concepts = manifest.concepts;
+  if (roundId) {
+    const round = manifest.rounds?.find(r => r.id === roundId);
+    if (round) concepts = round.concepts;
+  }
+
+  const concept = concepts.find(c => c.id === conceptId);
   if (!concept) {
     return NextResponse.json({ error: 'Concept not found' }, { status: 404 });
   }

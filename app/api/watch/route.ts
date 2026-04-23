@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
   let release: (() => void) | null = null;
   let keepalive: ReturnType<typeof setInterval> | null = null;
+  let cancelled = false;
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -101,13 +102,22 @@ export async function GET(request: NextRequest) {
         }
       };
 
+      let acquired: (() => void) | null = null;
       try {
-        release = await acquireWatcher(client, project, subscriber);
+        acquired = await acquireWatcher(client, project, subscriber);
       } catch {
         controller.enqueue(encoder.encode(`event: error\ndata: {"message":"project not found"}\n\n`));
         controller.close();
         return;
       }
+
+      // If cancel() fired during the await above, release immediately — otherwise
+      // the subscriber stays in the watcher's Set forever and pins the fs.watch handle.
+      if (cancelled) {
+        acquired();
+        return;
+      }
+      release = acquired;
 
       keepalive = setInterval(() => {
         try {
@@ -119,6 +129,7 @@ export async function GET(request: NextRequest) {
     },
 
     cancel() {
+      cancelled = true;
       if (keepalive) { clearInterval(keepalive); keepalive = null; }
       if (release) { release(); release = null; }
     },

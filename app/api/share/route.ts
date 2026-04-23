@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getUserId, getProfile, countUserShares } from '@/lib/auth';
+import { getUserId, getProfile } from '@/lib/auth';
 import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
 
 /**
@@ -22,29 +22,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing client or project' }, { status: 400 });
   }
 
-  // Check free tier share limit (1 project lifetime)
+  const supabase = getSupabaseAdmin();
+
+  // Free-tier: allow one distinct (client, project) with active shares.
+  // Any number of rounds within that project is fine — dedupe so a
+  // multi-round project doesn't read as "over the limit."
   const profile = await getProfile();
   if (profile && profile.tier === 'free') {
-    const existingCount = await countUserShares(userId);
-    if (existingCount > 0) {
-      // Check if the existing share is for THIS project (that's ok — return it)
-      const supabaseCheck = getSupabaseAdmin();
-      const { data: existing } = await supabaseCheck
-        .from('share_links')
-        .select('token')
-        .eq('user_id', userId)
-        .eq('client', client)
-        .eq('project', project)
-        .eq('is_active', true)
-        .single();
+    const { data: distinctShares } = await supabase
+      .from('share_links')
+      .select('client, project')
+      .eq('user_id', userId)
+      .eq('is_active', true);
 
-      if (!existing) {
-        return NextResponse.json({ error: 'free_limit', message: 'Upgrade to Pro to share unlimited projects.' }, { status: 403 });
-      }
+    const distinctKeys = new Set<string>();
+    for (const s of distinctShares ?? []) distinctKeys.add(`${s.client}/${s.project}`);
+    const requestedKey = `${client}/${project}`;
+
+    if (distinctKeys.size > 0 && !distinctKeys.has(requestedKey)) {
+      return NextResponse.json({ error: 'free_limit', message: 'Upgrade to Pro to share unlimited projects.' }, { status: 403 });
     }
   }
-
-  const supabase = getSupabaseAdmin();
 
   // Reuse existing non-round share if one is already active for this project
   // (the unique index on (user, client, project, coalesce(round_number, -1))
@@ -76,6 +74,28 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
+    // Race: another request inserted the same (user, client, project, null round)
+    // between our lookup and insert. Fall back to the row that won.
+    if (error.code === '23505') {
+      const { data: raced } = await supabase
+        .from('share_links')
+        .select('token, created_at, updated_at')
+        .eq('user_id', userId)
+        .eq('client', client)
+        .eq('project', project)
+        .is('round_number', null)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (raced) {
+        const { origin } = new URL(request.url);
+        return NextResponse.json({
+          token: raced.token,
+          url: `${origin}/s/${client}/${raced.token}`,
+          created_at: raced.created_at,
+          updated_at: raced.updated_at,
+        });
+      }
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

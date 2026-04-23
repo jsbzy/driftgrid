@@ -268,7 +268,7 @@ export function useManifestMutations({
       const resPromise = fetch('/api/iterate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client, project, conceptId, versionId }),
+        body: JSON.stringify({ client, project, conceptId, versionId, roundId: activeRoundId }),
       });
 
       flash.showDriftFlash('DRIFTED');
@@ -294,7 +294,7 @@ export function useManifestMutations({
         }
       }
     } catch { flash.hideDriftFlash(); toast('Drift failed', 'error'); }
-  }, [client, project, mutate, undo, flash, setConceptIndex, setVersionIndex]);
+  }, [client, project, mutate, undo, flash, setConceptIndex, setVersionIndex, activeRoundId]);
 
   const handleBranchVersion = useCallback(async (conceptId: string, versionId: string) => {
     try {

@@ -772,7 +772,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           const res = await fetch('/api/iterate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ client, project, conceptId, versionId }),
+            body: JSON.stringify({ client, project, conceptId, versionId, roundId: activeRoundId }),
           });
           if (res.ok) ok++;
         }
@@ -788,7 +788,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       if (viewMode === 'frame') autoEnableAnnotationRef.current = true;
       await mutations.handleDriftVersion(currentConcept.id, currentVersion.id);
     };
-  }, [currentConcept, currentVersion, mutations.handleDriftVersion, shareToken, handleDemoDrift, viewMode, multiSelected, client, project, mutate, flash]);
+  }, [currentConcept, currentVersion, mutations.handleDriftVersion, shareToken, handleDemoDrift, viewMode, multiSelected, client, project, mutate, flash, activeRoundId]);
 
   const handleBranch = useMemo(() => {
     if (!currentConcept || !currentVersion) return undefined;
