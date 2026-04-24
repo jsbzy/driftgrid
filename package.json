@@ -22,7 +22,8 @@
     "local-first"
   ],
   "scripts": {
-    "dev": "next dev",
+    "dev": "node bin/driftgrid-dev.js",
+    "dev:raw": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
