@@ -183,7 +183,7 @@ export function driftPromptBoilerplate(
     <div class="drift-prompt">
       <div class="eyebrow">${eyebrow}</div>
       <h1 class="title">New version</h1>
-      <div class="hint">press <kbd>C</kbd> to prompt · or leave feedback to start</div>
+      <div class="hint">Press <kbd>C</kbd> to prompt agent with a comment</div>
     </div>`;
   return wrapDocument(canvas, title, content);
 }
