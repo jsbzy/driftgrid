@@ -15,6 +15,8 @@ interface HtmlFrameProps {
   placeholder?: string | null;
   onReady?: () => void;
   borderless?: boolean;
+  /** Called with the iframe element on mount and again on null when unmounted. Lets the AnnotationOverlay observe scroll position for scrollable canvases. */
+  onIframeRef?: (el: HTMLIFrameElement | null) => void;
 }
 
 export interface HtmlFrameHandle {
@@ -24,9 +26,14 @@ export interface HtmlFrameHandle {
 }
 
 export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
-  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, placeholder, onReady, borderless }, ref) {
+  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, placeholder, onReady, borderless, onIframeRef }, ref) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    const setIframeRef = useCallback((el: HTMLIFrameElement | null) => {
+      iframeRef.current = el;
+      onIframeRef?.(el);
+    }, [onIframeRef]);
     const [scale, setScale] = useState(0);
     const [iframeReady, setIframeReady] = useState(false);
 
@@ -329,7 +336,7 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
               />
             )}
             <iframe
-              ref={iframeRef}
+              ref={setIframeRef}
               src={editSrc}
               sandbox="allow-same-origin allow-scripts allow-modals allow-forms allow-popups allow-fullscreen allow-pointer-lock allow-downloads" allow="autoplay"
               title="Design preview"
@@ -366,7 +373,7 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
           />
         )}
         <iframe
-          ref={iframeRef}
+          ref={setIframeRef}
           src={editSrc}
           className="w-full h-full relative"
           style={{

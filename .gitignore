@@ -53,8 +53,9 @@ _archive/
 # Video / Remotion working files
 /video/
 
-# Internal archive
+# Internal archive (Tailwind v4 won't scan dot-prefixed dirs — see CONTRIBUTING.md)
 /_archive/
+/.archive/
 
 # Claude worktrees
 .claude/worktrees/

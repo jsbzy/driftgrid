@@ -53,6 +53,16 @@ projects/      Design project files (gitignored — create your own)
 - **Manifest is the source of truth.** Every project has a `manifest.json` that tracks concepts, versions, and metadata.
 - **Local-first.** Everything runs from the filesystem. No database, no cloud dependency.
 
+## Common gotchas
+
+A few traps that have bitten this codebase. Heads up so you don't repeat them.
+
+- **Don't create top-level `_underscore/` dirs.** Tailwind v4 scans the whole project for utility-class candidates and reads binary files as text. `_archive/` (containing PNG thumbnails) once produced broken CSS rules that crashed PostCSS. Use `.dotted/` dirs instead — Tailwind skips them by default.
+- **Don't commit `.env.local`.** It's gitignored, but doublecheck before pushing — the file holds Supabase keys, Stripe secrets, and the `OPENAI_API_KEY` used by `bin/gen-image.js`.
+- **Stale `.next` caches mess with Tailwind too.** If you see `globals.css` parse errors after a botched dev restart, look for `.next.broken.*` or `.next.stale.*` directories sitting in the project root and move them out (the literal `.next` exclusion doesn't match those variants).
+- **Designs in `projects/` are user content, not app code.** Don't import from them, don't reference them in components.
+- **Rounds-aware reads.** When iterating `manifest.concepts` directly, you'll get an empty array on rounds-enabled projects. Use `findConceptAndVersion()` (in `app/api/annotations/route.ts`) or the round-aware helpers in `lib/hooks/useManifestMutations.ts`.
+
 ## Reporting issues
 
 Open an issue on GitHub with:

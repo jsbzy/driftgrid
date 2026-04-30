@@ -57,10 +57,14 @@ export const CanvasCard = memo(function CanvasCard({
 }: CanvasCardProps) {
   const [imgError, setImgError] = useState(false);
   const [thumbSrc, setThumbSrc] = useState(thumbnail);
+  // Track whether the <img> has actually finished decoding/painting. While false (and a URL is set)
+  // the card looks blank — keep the shimmer skeleton visible underneath until onLoad fires.
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   useEffect(() => {
     setThumbSrc(thumbnail);
     setImgError(false);
+    setImgLoaded(false);
   }, [thumbnail]);
 
   return (
@@ -204,18 +208,44 @@ export const CanvasCard = memo(function CanvasCard({
               </div>
             </div>
           ) : thumbSrc && !imgError ? (
-            <img
-              key={thumbSrc}
-              src={thumbSrc}
-              alt={`${conceptLabel} v${versionNumber}`}
-              className="w-full h-full object-cover object-top"
-              draggable={false}
-              decoding="async"
-              onError={() => {
-                setImgError(true);
-                setTimeout(() => setImgError(false), 3000);
-              }}
-            />
+            <div className="w-full h-full" style={{ position: 'relative', overflow: 'hidden', background: '#f5f5f5' }}>
+              {/* Skeleton stays behind the img and is uncovered until decoding finishes. */}
+              {!imgLoaded && (
+                <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+                  <style>{`
+                    @keyframes shimmer {
+                      0% { transform: translateX(-100%); }
+                      100% { transform: translateX(100%); }
+                    }
+                  `}</style>
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)',
+                    animation: 'shimmer 1.4s ease-in-out infinite',
+                  }} />
+                </div>
+              )}
+              <img
+                key={thumbSrc}
+                src={thumbSrc}
+                alt={`${conceptLabel} v${versionNumber}`}
+                className="w-full h-full object-cover object-top"
+                draggable={false}
+                decoding="async"
+                style={{
+                  position: 'relative',
+                  opacity: imgLoaded ? 1 : 0,
+                  transition: 'opacity 0.18s ease',
+                }}
+                onLoad={() => setImgLoaded(true)}
+                onError={() => {
+                  setImgError(true);
+                  setImgLoaded(false);
+                  setTimeout(() => setImgError(false), 3000);
+                }}
+              />
+            </div>
           ) : (
             <div className="w-full h-full" style={{ background: '#f5f5f5', position: 'relative', overflow: 'hidden' }}>
               <style>{`

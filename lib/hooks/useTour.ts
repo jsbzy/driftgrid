@@ -50,7 +50,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     eyebrow: 'Drift right — new concept',
     hint: 'Press Shift+D to drift a new concept column — a whole new direction to explore.',
-    keys: ['⇧', 'D'],
+    keys: ['Shift', 'D'],
     advanceOn: 'branch',
   },
   {
@@ -103,7 +103,7 @@ export const WALKTHROUGH_STEPS: TourStep[] = [
   {
     eyebrow: '8 · Drift Right',
     hint: 'Press Shift+D to drift a new concept column — a new direction to explore.',
-    keys: ['⇧', 'D'],
+    keys: ['Shift', 'D'],
   },
   {
     eyebrow: '9 · Drift Right Roundtrip',

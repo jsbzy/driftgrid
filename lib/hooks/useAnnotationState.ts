@@ -86,7 +86,7 @@ export function useAnnotationState(
     if (viewMode !== 'frame') setAnnotationMode(false);
   }, [viewMode]);
 
-  const handleAddAnnotation = useCallback(async (x: number | null, y: number | null, text: string): Promise<Annotation | null> => {
+  const handleAddAnnotation = useCallback(async (x: number | null, y: number | null, text: string, provider?: string): Promise<Annotation | null> => {
     if (!conceptId || !versionId) return null;
 
     if (shareToken) {
@@ -102,6 +102,7 @@ export function useAnnotationState(
         created: new Date().toISOString(),
         resolved: false,
         parentId: null,
+        ...(provider ? { provider } : {}),
       };
       const key = `${conceptId}:${versionId}`;
       setDemoAnnotations(prev => ({
@@ -124,6 +125,7 @@ export function useAnnotationState(
         x, y, text,
         author: 'designer',
         isClient: false,
+        ...(provider ? { provider } : {}),
       }),
     });
     if (res.ok) {

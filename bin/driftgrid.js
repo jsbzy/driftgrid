@@ -9,6 +9,29 @@ const command = args[0];
 
 const driftgridDir = path.resolve(__dirname, '..');
 
+if (command === '--help' || command === '-h' || command === 'help') {
+  console.log(`
+  DriftGrid CLI
+
+  Usage:
+    driftgrid                         Start the dev server (default)
+    driftgrid init [client] [project] [--canvas <preset>]
+                                      Scaffold a new project
+    driftgrid doctor                  Check the local install for problems
+    driftgrid generate-thumbs [...]   Regenerate project thumbnails
+    driftgrid --help, -h              Show this help
+
+  Canvas presets:
+    desktop, mobile, tablet, landscape-16-9, a4-portrait, freeform
+
+  Examples:
+    driftgrid                         # start dev server on :3000
+    driftgrid init Acme "Landing Page"
+    driftgrid init Acme "Pitch Deck" --canvas landscape-16-9
+  `);
+  process.exit(0);
+}
+
 if (command === 'init') {
   // Forward to the init script
   const initArgs = args.slice(1).join(' ');

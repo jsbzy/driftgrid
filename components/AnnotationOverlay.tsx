@@ -19,7 +19,7 @@ interface AnnotationOverlayProps {
   currentAuthor?: string;
   /** True when the current session is the share owner — unlocks delete on any comment in client view */
   isAdmin?: boolean;
-  onAdd: (x: number | null, y: number | null, text: string) => Promise<Annotation | null> | void;
+  onAdd: (x: number | null, y: number | null, text: string, provider?: string) => Promise<Annotation | null> | void;
   onResolve: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit?: (id: string, text: string) => void;
@@ -34,6 +34,10 @@ interface AnnotationOverlayProps {
     versionNumber: number;
     filePath: string;
   };
+  /** When true, x/y are interpreted as fractions of the iframe document's scroll dimensions, not the overlay viewport. Pins translate with iframe scroll so they stick to content. */
+  scrollable?: boolean;
+  /** Iframe element whose document scroll drives pin translation when scrollable=true. */
+  iframeEl?: HTMLIFrameElement | null;
 }
 
 interface PendingPin {
@@ -55,6 +59,8 @@ export function AnnotationOverlay({
   onEdit,
   onReply,
   frameContext,
+  scrollable = false,
+  iframeEl,
 }: AnnotationOverlayProps) {
   const isClient = viewMode === 'client';
   // Unified: overlay captures clicks when in legacy annotationMode OR when placing a pin in edit mode
@@ -66,6 +72,9 @@ export function AnnotationOverlay({
   const [activePin, setActivePin] = useState<string | null>(null);
   const pinRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [popupMetrics, setPopupMetrics] = useState<{ placement: 'above' | 'below'; maxHeight: number } | null>(null);
+  // Iframe scroll geometry — used in scrollable mode to stick pins to document content.
+  // x/y are fractions of scrollWidth/scrollHeight; pins render at (frac * size - scroll) px.
+  const [iframeGeom, setIframeGeom] = useState<{ scrollX: number; scrollY: number; scrollWidth: number; scrollHeight: number } | null>(null);
   // Bottom-anchored growth: track textarea height delta from initial single line
   const [textareaGrowth, setTextareaGrowth] = useState(0);
   const baseTextareaHeightRef = useRef<number | null>(null);
@@ -76,6 +85,30 @@ export function AnnotationOverlay({
   const editInputRef = useRef<HTMLTextAreaElement>(null);
   // Local draft text for designer reply input, keyed by annotation id
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  // Provider tag for the next prompt — picked in the pending-pin popup, persisted across the session
+  // so the designer's last choice sticks. Undefined = "any agent".
+  const [pendingProvider, setPendingProvider] = useState<string | undefined>(() => {
+    if (typeof window === 'undefined') return undefined;
+    const v = window.sessionStorage.getItem('driftgrid:pendingProvider');
+    return v && ['claude', 'codex', 'gemini'].includes(v) ? v : undefined;
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (pendingProvider) window.sessionStorage.setItem('driftgrid:pendingProvider', pendingProvider);
+    else window.sessionStorage.removeItem('driftgrid:pendingProvider');
+  }, [pendingProvider]);
+  // Plan-mode toggle — when on, the saved annotation text is prefixed with `[plan] ` and the
+  // copy payload includes a `Mode: plan` directive. Agent reads either signal and discusses
+  // first instead of drifting immediately.
+  const [pendingPlanMode, setPendingPlanMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.sessionStorage.getItem('driftgrid:pendingPlanMode') === '1';
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (pendingPlanMode) window.sessionStorage.setItem('driftgrid:pendingPlanMode', '1');
+    else window.sessionStorage.removeItem('driftgrid:pendingPlanMode');
+  }, [pendingPlanMode]);
 
   // Replies lookup — any annotation with parentId is a reply to another annotation
   const repliesByParent = annotations.reduce<Record<string, Annotation[]>>((acc, a) => {
@@ -118,8 +151,18 @@ export function AnnotationOverlay({
   // that reply as the CURRENT REQUEST and push everything else — including the agent's
   // prior "done" message — into a PRIOR THREAD context block. This stops the agent from
   // re-acting on the original prompt and focuses it on the latest turn.
-  const buildAnnotationAgentMessage = useCallback((annotation: Annotation) => {
+  const buildAnnotationAgentMessage = useCallback((annotation: Annotation, pendingReply?: string) => {
     const lines: string[] = [];
+    // Strip `[plan] ` prefix from displayed body — the directive is hoisted into the header.
+    const isPlan = /^\s*\[plan\]\s*/i.test(annotation.text);
+    const cleanText = isPlan ? annotation.text.replace(/^\s*\[plan\]\s*/i, '') : annotation.text;
+    const trimmedPending = pendingReply?.trim() || '';
+    if (annotation.provider) {
+      lines.push(`Routed to: ${annotation.provider}`);
+    }
+    if (isPlan) {
+      lines.push(`Mode: plan (discuss in chat first; do NOT edit files yet)`);
+    }
     if (frameContext) {
       lines.push(`Slide: ${frameContext.conceptLabel} v${frameContext.versionNumber} — ${frameContext.filePath}`);
     }
@@ -133,22 +176,27 @@ export function AnnotationOverlay({
 
     const replies = repliesByParent[annotation.id] || [];
     const lastReply = replies[replies.length - 1];
-    const hasNewRequest = lastReply && !lastReply.isAgent;
+    // "Current request" = either an unsaved pending reply (just typed in the box) or the last saved
+    // designer reply (if the agent hasn't responded to it yet). Pending takes priority.
+    const hasNewRequest = !!trimmedPending || (lastReply && !lastReply.isAgent);
 
     if (hasNewRequest) {
       // Latest designer turn = the ask. Lead with it.
       lines.push('=== CURRENT REQUEST (act on this) ===');
-      lines.push(lastReply.text);
+      lines.push(trimmedPending || lastReply.text);
       lines.push('');
       lines.push('=== PRIOR THREAD (context only — already addressed, do not redo) ===');
-      lines.push(`designer (original): ${annotation.text}`);
-      for (const r of replies.slice(0, -1)) {
+      lines.push(`designer (original): ${cleanText}`);
+      // If there's a pending reply, ALL saved replies are prior context. Otherwise, drop the last
+      // (it's the one we just promoted to CURRENT REQUEST).
+      const priorReplies = trimmedPending ? replies : replies.slice(0, -1);
+      for (const r of priorReplies) {
         const who = r.isAgent ? 'agent' : (r.author || 'reply');
         lines.push(`${who}: ${r.text}`);
       }
     } else {
       // No replies, or the agent had the last word — show original as the focus.
-      lines.push(`> ${annotation.text.split('\n').join('\n> ')}`);
+      lines.push(`> ${cleanText.split('\n').join('\n> ')}`);
       if (replies.length > 0) {
         lines.push('');
         for (const r of replies) {
@@ -161,8 +209,10 @@ export function AnnotationOverlay({
     if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
       lines.push('');
       lines.push('---');
+      lines.push(`Frame URL: http://localhost:3000/admin/${frameContext.client}/${frameContext.project}#${frameContext.conceptId}/v${frameContext.versionNumber}`);
+      lines.push('');
       lines.push('After applying the change, reply to this prompt by POSTing to');
-      lines.push(`http://localhost:3000/api/annotations with:`);
+      lines.push('http://localhost:3000/api/annotations with:');
       lines.push('  {');
       lines.push(`    "client": "${frameContext.client}",`);
       lines.push(`    "project": "${frameContext.project}",`);
@@ -170,8 +220,13 @@ export function AnnotationOverlay({
       lines.push(`    "versionId": "${frameContext.versionId}",`);
       lines.push(`    "parentId": "${annotation.id}",`);
       lines.push(`    "text": "<brief summary of what you changed>",`);
+      if (annotation.provider) {
+        lines.push(`    "author": "${annotation.provider}",`);
+      }
       lines.push(`    "isAgent": true`);
       lines.push('  }');
+      lines.push('');
+      lines.push('When done, echo BOTH the absolute filepath and http://localhost:3000/admin/... URL back to the designer in your chat reply (per AGENTS.md "Always Echo the Version Reference").');
     }
     return lines.join('\n');
   }, [frameContext, repliesByParent]);
@@ -245,6 +300,92 @@ export function AnnotationOverlay({
     }
   }, [isCapturing]);
 
+  // Track iframe scroll + content size when in scrollable mode so pins stick to document content.
+  // Re-attaches whenever the iframe document is replaced (src change → new contentDocument).
+  useEffect(() => {
+    if (!scrollable || !iframeEl) {
+      setIframeGeom(null);
+      return;
+    }
+
+    let attachedDoc: Document | null = null;
+    let attachedWin: Window | null = null;
+    let resizeObs: ResizeObserver | null = null;
+    let rafId = 0;
+
+    const sample = () => {
+      const win = iframeEl.contentWindow;
+      const doc = iframeEl.contentDocument;
+      if (!win || !doc) return;
+      const root = doc.documentElement;
+      const body = doc.body;
+      // Use the larger of documentElement/body — varies across pages depending on which scrolls.
+      const scrollWidth = Math.max(root?.scrollWidth ?? 0, body?.scrollWidth ?? 0, iframeEl.clientWidth);
+      const scrollHeight = Math.max(root?.scrollHeight ?? 0, body?.scrollHeight ?? 0, iframeEl.clientHeight);
+      setIframeGeom({
+        scrollX: win.scrollX || 0,
+        scrollY: win.scrollY || 0,
+        scrollWidth,
+        scrollHeight,
+      });
+    };
+
+    const onScroll = () => {
+      // Coalesce to next frame so we don't thrash React on every scroll tick.
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        sample();
+      });
+    };
+
+    const detach = () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+      if (attachedWin) attachedWin.removeEventListener('scroll', onScroll);
+      if (resizeObs) resizeObs.disconnect();
+      attachedWin = null;
+      attachedDoc = null;
+      resizeObs = null;
+    };
+
+    const attach = () => {
+      detach();
+      try {
+        const win = iframeEl.contentWindow;
+        const doc = iframeEl.contentDocument;
+        if (!win || !doc) return;
+        attachedWin = win;
+        attachedDoc = doc;
+        win.addEventListener('scroll', onScroll, { passive: true });
+        // Track content size changes (responsive reflow, font load, image load) so pins stay aligned.
+        if (typeof ResizeObserver !== 'undefined' && doc.documentElement) {
+          resizeObs = new ResizeObserver(() => sample());
+          resizeObs.observe(doc.documentElement);
+          if (doc.body) resizeObs.observe(doc.body);
+        }
+        sample();
+      } catch {
+        // cross-origin — give up, pins fall back to viewport-relative behavior
+      }
+    };
+
+    attach();
+    // Re-attach when iframe loads new content (src change / SPA navigation inside the iframe).
+    iframeEl.addEventListener('load', attach);
+    // Also re-sample when the iframe element itself resizes (parent layout change).
+    const elObs = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => sample()) : null;
+    if (elObs) elObs.observe(iframeEl);
+
+    return () => {
+      iframeEl.removeEventListener('load', attach);
+      if (elObs) elObs.disconnect();
+      detach();
+    };
+  }, [scrollable, iframeEl]);
+
   const handleOverlayClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (!isCapturing) return;
@@ -256,26 +397,54 @@ export function AnnotationOverlay({
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
 
-      const relativeX = (e.clientX - rect.left) / rect.width;
-      const relativeY = (e.clientY - rect.top) / rect.height;
+      // Click position relative to overlay (== iframe rect for both locked and responsive canvases).
+      const localX = e.clientX - rect.left;
+      const localY = e.clientY - rect.top;
+
+      let relativeX: number;
+      let relativeY: number;
+      if (scrollable && iframeGeom && iframeGeom.scrollWidth > 0 && iframeGeom.scrollHeight > 0) {
+        // Store as fraction of the document's full scroll dimensions, including current scroll offset,
+        // so the pin sticks to document content rather than the viewport.
+        relativeX = (localX + iframeGeom.scrollX) / iframeGeom.scrollWidth;
+        relativeY = (localY + iframeGeom.scrollY) / iframeGeom.scrollHeight;
+      } else {
+        relativeX = localX / rect.width;
+        relativeY = localY / rect.height;
+      }
 
       setPendingPin({ x: relativeX, y: relativeY });
       setPendingText('');
       setActivePin(null);
     },
-    [isCapturing]
+    [isCapturing, scrollable, iframeGeom]
   );
 
+  // Re-entry guard — prevents rapid clicks (or held Enter) from POSTing the same prompt N times.
+  const inFlightRef = useRef(false);
+
   // Save pending prompt. Returns the saved annotation (so Copy can grab its ID).
+  // Does NOT close the popup — the caller controls when to close so success feedback ("Copied")
+  // has a chance to render before the popup unmounts.
+  // If `pendingPlanMode` is on, the saved text is prefixed with `[plan] ` so any agent reading
+  // it (via clipboard, manifest, or future MCP) sees the plan-first directive baked in.
   const handleSubmitPending = useCallback(async (): Promise<Annotation | null> => {
+    if (inFlightRef.current) return null;
     if (!pendingPin || !pendingText.trim()) return null;
-    const result = await Promise.resolve(onAdd(pendingPin.x, pendingPin.y, pendingText.trim()));
-    setPendingPin(null);
-    setPendingText('');
-    return (result as Annotation | null | undefined) ?? null;
-  }, [pendingPin, pendingText, onAdd]);
+    inFlightRef.current = true;
+    try {
+      const trimmed = pendingText.trim();
+      const text = pendingPlanMode && !trimmed.startsWith('[plan]') ? `[plan] ${trimmed}` : trimmed;
+      const result = await Promise.resolve(onAdd(pendingPin.x, pendingPin.y, text, pendingProvider));
+      return (result as Annotation | null | undefined) ?? null;
+    } finally {
+      inFlightRef.current = false;
+    }
+  }, [pendingPin, pendingText, onAdd, pendingProvider, pendingPlanMode]);
 
   // Copy = save + copy the full payload (slide context, pin, annotation ID, reply-back instructions).
+  // Order matters: clipboard.writeText needs document focus, so it has to run BEFORE we close
+  // the popup. The popup close is delayed so the user actually sees the "Copied" label.
   const handleCopyForAgent = useCallback(async () => {
     if (!pendingText.trim()) return;
     const saved = await handleSubmitPending();
@@ -287,8 +456,13 @@ export function AnnotationOverlay({
       // clipboard may fail silently
     }
     setCopyState('copied');
-    window.setTimeout(() => setCopyState('idle'), 1500);
     toast('Copied — paste into your agent');
+    // Hold the popup open briefly so the success state is visible, then close it cleanly.
+    window.setTimeout(() => {
+      setPendingPin(null);
+      setPendingText('');
+      setCopyState('idle');
+    }, 600);
   }, [pendingText, handleSubmitPending, buildAnnotationAgentMessage]);
 
   const handlePinClick = useCallback(
@@ -330,7 +504,21 @@ export function AnnotationOverlay({
       window.removeEventListener('resize', compute);
       window.removeEventListener('scroll', compute, true);
     };
-  }, [activePin]);
+    // iframeGeom is included so the popup re-anchors when the iframe scrolls (scroll events on the iframe's
+    // contentWindow don't bubble out to the parent window, so the listener above can't catch them).
+  }, [activePin, iframeGeom]);
+
+  // Translate stored x/y fractions to absolute CSS positioning for a pin.
+  // Locked canvases: percentage of the overlay (== canvas) — unchanged.
+  // Scrollable canvases: pixel offset within the document, translated by current scroll so pins move with content.
+  const pinPosition = useCallback((x: number, y: number): { left: string; top: string } => {
+    if (scrollable && iframeGeom && iframeGeom.scrollWidth > 0 && iframeGeom.scrollHeight > 0) {
+      const left = x * iframeGeom.scrollWidth - iframeGeom.scrollX;
+      const top = y * iframeGeom.scrollHeight - iframeGeom.scrollY;
+      return { left: `${left}px`, top: `${top}px` };
+    }
+    return { left: `${x * 100}%`, top: `${y * 100}%` };
+  }, [scrollable, iframeGeom]);
 
   return (
     <div
@@ -342,6 +530,8 @@ export function AnnotationOverlay({
         zIndex: 10,
         pointerEvents: isCapturing ? 'auto' : 'none',
         cursor: isCapturing ? 'crosshair' : 'default',
+        // Clip pins that have scrolled outside the visible iframe viewport.
+        overflow: 'hidden',
       }}
     >
       {/* Pin placement indicator — shown during legacy annotation mode or unified edit pin placement */}
@@ -405,14 +595,15 @@ export function AnnotationOverlay({
         const replies = repliesByParent[annotation.id] || [];
         const isLocked = replies.length > 0;
 
+        const pinPos = pinPosition(annotation.x, annotation.y);
         return (
           <div
             key={annotation.id}
             data-annotation-pin
             style={{
               position: 'absolute',
-              left: `${annotation.x * 100}%`,
-              top: `${annotation.y * 100}%`,
+              left: pinPos.left,
+              top: pinPos.top,
               transform: 'translate(-50%, -50%)',
               pointerEvents: 'auto',
               zIndex: isActive ? 15 : 12,
@@ -451,8 +642,12 @@ export function AnnotationOverlay({
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
               }}
+              title={annotation.provider ? `Routed to ${annotation.provider}` : undefined}
             >
-              {index + 1}
+              {annotation.provider === 'claude' ? 'C'
+                : annotation.provider === 'codex' ? 'X'
+                : annotation.provider === 'gemini' ? 'G'
+                : index + 1}
             </button>
 
             {/* Pin popup — matches pending input style */}
@@ -480,13 +675,20 @@ export function AnnotationOverlay({
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Eyebrow — COMMENT · author */}
+                {/* Eyebrow — COMMENT · author. Sticky to the popup top so the close (×) is always reachable while scrolling long threads. */}
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    marginBottom: 8,
+                    position: 'sticky',
+                    top: -14,
+                    margin: '-14px -14px 8px -14px',
+                    padding: '14px 14px 8px 14px',
+                    background: 'rgba(20, 20, 20, 0.95)',
+                    backdropFilter: 'blur(12px)',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    zIndex: 2,
                   }}
                 >
                   <span
@@ -839,8 +1041,16 @@ export function AnnotationOverlay({
                           tabIndex={-1}
                           onClick={(e) => {
                             e.stopPropagation();
-                            const message = buildAnnotationAgentMessage(annotation);
+                            // Pick up an unsaved draft from the "Reply to agent…" input — include it
+                            // as the CURRENT REQUEST in the copied message AND persist it as a real
+                            // reply so the thread reflects what was sent to the agent.
+                            const draft = (replyDrafts[annotation.id] || '').trim();
+                            const message = buildAnnotationAgentMessage(annotation, draft);
                             navigator.clipboard?.writeText(message).catch(() => {});
+                            if (draft && onReply) {
+                              onReply(annotation.id, draft);
+                              setReplyDrafts(prev => ({ ...prev, [annotation.id]: '' }));
+                            }
                             toast('Copied — paste into your agent');
                             setActivePin(null);
                           }}
@@ -904,13 +1114,15 @@ export function AnnotationOverlay({
       })}
 
       {/* Pending pin (new annotation input) */}
-      {pendingPin && (
+      {pendingPin && (() => {
+        const pendingPos = pinPosition(pendingPin.x, pendingPin.y);
+        return (
         <div
           data-annotation-popup
           style={{
             position: 'absolute',
-            left: `${pendingPin.x * 100}%`,
-            top: `${pendingPin.y * 100}%`,
+            left: pendingPos.left,
+            top: pendingPos.top,
             width: 0,
             height: 0,
             zIndex: 20,
@@ -1035,6 +1247,112 @@ export function AnnotationOverlay({
                 display: 'block',
               }}
             />
+            {/* Provider routing pills — designer mode only. Click active pill to clear (= "any agent"). */}
+            {!isClient && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  marginTop: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: 8,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(255,255,255,0.3)',
+                    marginRight: 4,
+                  }}
+                >
+                  For
+                </span>
+                {(['claude', 'codex', 'gemini'] as const).map((p) => {
+                  const active = pendingProvider === p;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      tabIndex={-1}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPendingProvider(active ? undefined : p);
+                        inputRef.current?.focus();
+                      }}
+                      style={{
+                        fontFamily: 'var(--font-mono, monospace)',
+                        fontSize: 9,
+                        letterSpacing: '0.06em',
+                        textTransform: 'capitalize',
+                        padding: '3px 8px',
+                        borderRadius: 4,
+                        border: '1px solid ' + (active ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.08)'),
+                        background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
+                        color: active ? '#fff' : 'rgba(255,255,255,0.45)',
+                        cursor: 'pointer',
+                        transition: 'background 0.12s ease, color 0.12s ease, border-color 0.12s ease',
+                      }}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {/* Plan-first toggle — designer mode only. When on, the saved text is prefixed with
+                `[plan] ` and the copy payload tells the agent to discuss before drifting. */}
+            {!isClient && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  marginTop: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: 8,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(255,255,255,0.3)',
+                    marginRight: 4,
+                  }}
+                >
+                  Mode
+                </span>
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPendingPlanMode(v => !v);
+                    inputRef.current?.focus();
+                  }}
+                  title="When on, the agent discusses options in chat before drifting"
+                  style={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: 9,
+                    letterSpacing: '0.06em',
+                    textTransform: 'capitalize',
+                    padding: '3px 8px',
+                    borderRadius: 4,
+                    border: '1px solid ' + (pendingPlanMode ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.08)'),
+                    background: pendingPlanMode ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    color: pendingPlanMode ? '#fff' : 'rgba(255,255,255,0.45)',
+                    cursor: 'pointer',
+                    transition: 'background 0.12s ease, color 0.12s ease, border-color 0.12s ease',
+                  }}
+                >
+                  Plan first
+                </button>
+              </div>
+            )}
             <div
               style={{
                 marginTop: 10,
@@ -1047,9 +1365,12 @@ export function AnnotationOverlay({
                 <button
                   type="button"
                   tabIndex={-1}
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation();
-                    handleSubmitPending();
+                    await handleSubmitPending();
+                    // Client mode has no copy step — close the popup directly.
+                    setPendingPin(null);
+                    setPendingText('');
                   }}
                   disabled={!pendingText.trim()}
                   style={{
@@ -1141,7 +1462,8 @@ export function AnnotationOverlay({
             )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Resolved-count indicator — reminds the designer there's buried history on this slide */}
       {(() => {

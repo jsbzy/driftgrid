@@ -220,7 +220,8 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       annotations: clientAnnotations,
       annotationMode: annotationState.annotationMode,
       setAnnotationMode: annotationState.setAnnotationMode,
-      handleAddAnnotation: async (x: number | null, y: number | null, text: string) => {
+      handleAddAnnotation: async (x: number | null, y: number | null, text: string, _provider?: string) => {
+        // Provider tag is ignored in share/client mode — clients aren't agents and don't route prompts.
         if (!currentConcept || !currentVersion || !clientComments.authorName) return null;
         await clientComments.addComment(
           currentConcept.id, currentVersion.id, text, x, y,
@@ -679,6 +680,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     enabled: isClientMode,
   });
   const htmlFrameRef = useRef<HtmlFrameHandle>(null);
+  const [frameIframeEl, setFrameIframeEl] = useState<HTMLIFrameElement | null>(null);
   const showEdits = clientEdits.viewEdited && clientEdits.hasEdits && !clientEdits.editMode;
 
   const selectsConceptIndices = useMemo(() => {
@@ -1461,7 +1463,31 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         />
       )}
       <div ref={frameWrapperRef} className="flex-1 min-h-0 relative">
-        <div className="h-full p-4 relative" style={{ background: mode === 'client' ? '#fff' : 'var(--canvas)' }}>
+        {/* Canvas context label — designer mode only, responsive + locked canvases both show it. */}
+        {mode !== 'client' && currentConcept && currentVersion && (
+          <div
+            className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1 rounded-full pointer-events-none"
+            style={{
+              background: 'rgba(0,0,0,0.55)',
+              backdropFilter: 'blur(8px)',
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 10,
+              letterSpacing: '0.08em',
+              color: 'rgba(255,255,255,0.55)',
+              textTransform: 'uppercase',
+            }}
+          >
+            <span>{resolved.label}</span>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span style={{ color: 'rgba(255,255,255,0.75)' }}>{currentConcept.label}</span>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span>v{currentVersion.number}</span>
+          </div>
+        )}
+        <div
+          className={`h-full relative ${resolved.height === 'auto' ? '' : 'p-4'}`}
+          style={{ background: mode === 'client' ? '#fff' : (resolved.height === 'auto' ? 'transparent' : 'var(--canvas)') }}
+        >
           {!currentVersion.file ? (
             <div
               className="h-full flex flex-col items-center justify-center gap-4"
@@ -1499,6 +1525,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               hasEdits={clientEdits.hasEdits}
               savedEdits={clientEdits.edits}
               onEditsChange={clientEdits.handleEditsChange}
+              onIframeRef={setFrameIframeEl}
             />
           )}
           <AnnotationOverlay
@@ -1521,6 +1548,8 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               versionNumber: currentVersion.number,
               filePath: `~/driftgrid/projects/${client}/${project}/${currentVersion.file}`,
             } : undefined}
+            scrollable={resolved.height === 'auto'}
+            iframeEl={frameIframeEl}
           />
         </div>
         {/* Branding */}

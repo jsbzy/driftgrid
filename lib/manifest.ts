@@ -5,6 +5,33 @@ import { conceptSlug } from './letters';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
+/**
+ * Compute "last edited" for a project: the latest ISO timestamp across all
+ * versions and annotations in the manifest. Returns null if neither exists.
+ * Cheap — no extra IO beyond what's already loaded.
+ */
+export function computeLastEditedAt(manifest: Manifest): string | null {
+  let max = 0;
+  const concepts = manifest.rounds?.length
+    ? manifest.rounds.flatMap(r => r.concepts || [])
+    : manifest.concepts || [];
+  for (const c of concepts) {
+    for (const v of c.versions || []) {
+      if (v.created) {
+        const t = new Date(v.created).getTime();
+        if (t > max) max = t;
+      }
+      for (const a of v.annotations || []) {
+        if (a.created) {
+          const t = new Date(a.created).getTime();
+          if (t > max) max = t;
+        }
+      }
+    }
+  }
+  return max > 0 ? new Date(max).toISOString() : null;
+}
+
 export async function getManifest(client: string, project: string): Promise<Manifest | null> {
   try {
     const manifestPath = path.join(PROJECTS_DIR, client, project, 'manifest.json');
@@ -136,6 +163,7 @@ export async function getClients(): Promise<ClientInfo[]> {
             canvas: manifest.project.canvas,
             conceptCount: allConcepts.length,
             versionCount,
+            lastEditedAt: computeLastEditedAt(manifest),
           });
         } catch {
           continue;

@@ -67,7 +67,7 @@ export function Dashboard() {
   // We want the round that was *most recently published*, so compare by
   // updated_at (falling back to created_at for legacy rows).
   const shareMap = new Map<string, ShareRecord>();
-  if (shares) {
+  if (Array.isArray(shares)) {
     for (const s of shares) {
       if (!s.is_active) continue;
       const key = `${s.client}/${s.project}`;
@@ -156,7 +156,7 @@ export function Dashboard() {
                   href={`/admin/${client.slug}/${project.slug}`}
                   className="block group"
                 >
-                  <ProjectCard name={project.name} concepts={project.conceptCount} versions={project.versionCount} canvas={resolved.label} />
+                  <ProjectCard name={project.name} concepts={project.conceptCount} versions={project.versionCount} canvas={resolved.label} lastEditedAt={project.lastEditedAt} />
                 </Link>
               );
             })}
@@ -176,7 +176,7 @@ export function Dashboard() {
   );
 }
 
-function ProjectCard({ name, concepts, versions, canvas }: { name: string; concepts: number; versions: number; canvas: string }) {
+function ProjectCard({ name, concepts, versions, canvas, lastEditedAt }: { name: string; concepts: number; versions: number; canvas: string; lastEditedAt: string | null }) {
   return (
     <div
       className="relative"
@@ -201,8 +201,20 @@ function ProjectCard({ name, concepts, versions, canvas }: { name: string; conce
       <div style={{ fontSize: 11 }} className="text-[var(--muted)]">
         {concepts} concept{concepts !== 1 ? 's' : ''} &middot; {versions} version{versions !== 1 ? 's' : ''}
       </div>
-      <div className="mt-2">
+      <div className="mt-2 flex items-center gap-2">
         <span className="text-[var(--muted)]" style={{ fontSize: 10 }}>{canvas}</span>
+        {lastEditedAt && (
+          <>
+            <span className="text-[var(--muted)]" style={{ fontSize: 10, opacity: 0.5 }}>·</span>
+            <span
+              className="text-[var(--muted)]"
+              style={{ fontSize: 10, fontFamily: 'var(--font-mono, monospace)' }}
+              title={new Date(lastEditedAt).toLocaleString()}
+            >
+              Edited {formatAgo(lastEditedAt)}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -224,7 +236,7 @@ function formatAgo(iso: string | null): string {
 
 function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt, roundNumber }: {
   client: string;
-  project: { slug: string; name: string; conceptCount: number; versionCount: number };
+  project: { slug: string; name: string; conceptCount: number; versionCount: number; lastEditedAt: string | null };
   canvas: string;
   shareUrl: string | null;
   lastPublishedAt: string | null;
@@ -269,9 +281,14 @@ function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt, 
       }}
     >
       <div className="flex items-start justify-between mb-1.5">
-        <div style={{ fontSize: 14, fontWeight: 500 }} className="text-[var(--foreground)]">
+        <Link
+          href={`/admin/${client}/${project.slug}`}
+          style={{ fontSize: 14, fontWeight: 500, textDecoration: 'none' }}
+          className="text-[var(--foreground)] hover:underline"
+          title="Open in admin view"
+        >
           {project.name}
-        </div>
+        </Link>
         {url && (
           <span style={{ fontSize: 9, letterSpacing: '0.08em', color: '#22c55e', fontFamily: 'var(--font-mono, monospace)' }}>
             LIVE
@@ -281,6 +298,15 @@ function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt, 
       <div style={{ fontSize: 11 }} className="text-[var(--muted)] mb-1">
         {project.conceptCount} concept{project.conceptCount !== 1 ? 's' : ''} &middot; {project.versionCount} version{project.versionCount !== 1 ? 's' : ''} &middot; {canvas}
       </div>
+      {project.lastEditedAt && (
+        <div
+          style={{ fontSize: 10, fontFamily: 'var(--font-mono, monospace)' }}
+          className="text-[var(--muted)] mb-1"
+          title={new Date(project.lastEditedAt).toLocaleString()}
+        >
+          Edited {formatAgo(project.lastEditedAt)}
+        </div>
+      )}
       {url && lastPublishedAt && (
         <div style={{ fontSize: 10, fontFamily: 'var(--font-mono, monospace)', display: 'flex', gap: 8 }} className="text-[var(--muted)] mb-2" title={new Date(lastPublishedAt).toLocaleString()}>
           {roundNumber !== null && (

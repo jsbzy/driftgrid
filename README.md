@@ -4,7 +4,15 @@
 
 Your AI agent creates HTML designs. DriftGrid versions them on an infinite canvas, lets you browse and compare, then share a link with your client. Concepts across, versions down — drift around the grid until you reach your selects.
 
-<!-- TODO: hero GIF here -->
+[See it live →](https://driftgrid.ai)
+
+<!--
+  TODO before HN/Twitter launch: replace the link above with a 5-10s GIF (or short MP4) showing:
+    1. Agent writing 3 design directions in parallel (cards filling in left-to-right)
+    2. User pressing D to drift up a new version (card stacking up)
+    3. User pressing S to star, then Share button → URL copied
+  Recording target: 1280x720, 8-12 fps, ~2MB. Save as docs/hero.gif or docs/hero.mp4 and reference here.
+-->
 
 ## Why DriftGrid
 

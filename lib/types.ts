@@ -64,6 +64,11 @@ export interface Annotation {
    * Set by the MCP server when it picks up a prompt, or manually via the dev button.
    */
   status?: 'running';
+  /**
+   * Optional target provider for routing. Values: 'claude' | 'codex' | 'gemini'.
+   * Undefined = any agent may pick it up. Set by the designer in the comment input.
+   */
+  provider?: string;
 }
 
 export interface Round {
@@ -160,5 +165,7 @@ export interface ProjectInfo {
   canvas: string;
   conceptCount: number;
   versionCount: number;
+  /** ISO timestamp of the most recent version or annotation in the manifest. Null if neither exists. */
+  lastEditedAt: string | null;
 }
 

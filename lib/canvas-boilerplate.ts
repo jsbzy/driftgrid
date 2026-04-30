@@ -3,9 +3,8 @@ import { CANVAS_PRESETS } from './constants';
 /**
  * Drift-slot template boilerplates.
  *
- * A drift slot moves through four visible states (see `components/GridPromptInput.tsx` for
- * the state machine). Each state renders a different template HTML file so the card
- * thumbnail always reflects the slot's current phase:
+ * A drift slot moves through four visible states. Each state renders a different template
+ * HTML file so the card thumbnail always reflects the slot's current phase:
  *
  *   empty     → driftPromptBoilerplate     — "awaiting prompt", kbd chip
  *   awaiting  → awaitingAgentBoilerplate   — "awaiting agent", prompt preview

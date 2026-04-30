@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* Tailwind v4 content scanner gotcha — IMPORTANT for contributors:
+   Tailwind walks the project tree looking for utility-class candidates. It scans
+   text-AND-binary files indiscriminately. If you add a top-level dir like `_drafts/`
+   or `_scratch/` containing PNGs, woffs, or other binaries, Tailwind will read their
+   bytes as text and emit broken CSS rules (e.g. `.bg-[var(--SA)]`) that crash PostCSS.
+
+   Workarounds (any one is sufficient):
+   1. Prefix the dir with a dot — `.archive/` instead of `_archive/`. Tailwind's
+      defaults skip dotfiles.
+   2. Keep generated/binary stuff under `node_modules/`, `.next/`, or `projects/`
+      (which is gitignored).
+   3. Add `@source not "../your-dir";` here. Note: PostCSS may strip directives it
+      doesn't understand; verify with `npm run dev` after.
+*/
+
 :root {
   --background: #f5f5f4;
   --foreground: #1c1c1c;

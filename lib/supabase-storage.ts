@@ -7,6 +7,7 @@
 import { getSupabaseAdmin } from './supabase';
 import type { Manifest, ClientInfo, ProjectInfo } from './types';
 import { conceptSlug } from './letters';
+import { computeLastEditedAt } from './manifest';
 
 const BUCKET = 'projects';
 
@@ -107,6 +108,7 @@ export async function getClientsCloud(userId: string): Promise<ClientInfo[]> {
         canvas: manifest.project.canvas,
         conceptCount: allConcepts.length,
         versionCount,
+        lastEditedAt: computeLastEditedAt(manifest),
       });
     }
 

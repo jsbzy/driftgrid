@@ -3,6 +3,7 @@
 // v2: status-first (no auto-upload on open) — 2026-04-15
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from './Toast';
+import { copyTextSafely } from '@/lib/clipboard';
 
 const CLOUD_URL = process.env.NEXT_PUBLIC_DRIFTGRID_CLOUD_URL || 'https://driftgrid.ai';
 const STORAGE_KEY = 'driftgrid-cloud-auth';
@@ -530,7 +531,11 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
 
   async function handleCopy() {
     if (!shareUrl) return;
-    await navigator.clipboard.writeText(shareUrl);
+    const ok = await copyTextSafely(shareUrl);
+    if (!ok) {
+      toast('Couldn’t copy automatically — select the URL above to copy manually.', 'error');
+      return;
+    }
     setCopied(true);
     toast('Share link copied');
     setTimeout(() => setCopied(false), 2000);
@@ -558,7 +563,11 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
         return;
       }
 
-      await navigator.clipboard.writeText(data.text);
+      const ok = await copyTextSafely(data.text);
+      if (!ok) {
+        toast('Couldn’t copy comments to clipboard.', 'error');
+        return;
+      }
       setCommentsCopied(true);
       toast(`${data.count} comment${data.count === 1 ? '' : 's'} copied`);
       setTimeout(() => setCommentsCopied(false), 2000);

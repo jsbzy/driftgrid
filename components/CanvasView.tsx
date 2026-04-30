@@ -462,10 +462,23 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
     return () => { es?.close(); if (reconnectTimeout) clearTimeout(reconnectTimeout); };
   }, [client, project]);
 
+  // Pending single-click action — cancelled if a double-click arrives within the browser's
+  // dblclick threshold. Without this, a double-click cascades: click1 highlights, click2 zooms
+  // to z4, then dblclick enters frame view — three transitions for one gesture, which the user
+  // perceives as "bouncing in and back out."
+  const pendingClickRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelPendingClick = useCallback(() => {
+    if (pendingClickRef.current !== null) {
+      clearTimeout(pendingClickRef.current);
+      pendingClickRef.current = null;
+    }
+  }, []);
+
   const handleThumbnailClick = useCallback((ci: number, vi: number, shiftKey?: boolean, metaKey?: boolean) => {
     if (isPanning || spaceHeld || recentlyPanned.current) return;
     if (shiftKey || metaKey) {
-      // Shift/Cmd+click: toggle multi-select
+      // Shift/Cmd+click: toggle multi-select. Modifier clicks never participate in dblclick,
+      // so fire immediately — no defer.
       const concept = concepts[ci];
       const version = concept?.versions[vi];
       if (concept && version) {
@@ -473,27 +486,37 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
       }
       return;
     }
-    // Clear multi-select on regular click
-    if (multiSelected.size > 0) onMultiSelectClear();
-    // Single-click on an empty drift slot jumps straight to the prompt panel
-    // via onSelect, which Viewer intercepts for empty slots.
-    const concept = concepts[ci];
-    const version = concept?.versions[vi];
-    if (isAwaitingFirstPrompt(version?.changelog)) {
-      onSelect(ci, vi);
-      return;
-    }
-    if (ci === conceptIndex && vi === versionIndex) {
-      onZoomLevelChange('z4');
-    } else {
-      onHighlight(ci, vi);
-    }
-  }, [isPanning, spaceHeld, conceptIndex, versionIndex, onHighlight, onZoomLevelChange, concepts, multiSelected, onMultiSelectToggle, onMultiSelectClear, onSelect, recentlyPanned]);
+    // Defer the single-click action so a follow-up dblclick can cancel it.
+    cancelPendingClick();
+    pendingClickRef.current = setTimeout(() => {
+      pendingClickRef.current = null;
+      // Clear multi-select on regular click
+      if (multiSelected.size > 0) onMultiSelectClear();
+      // Single-click on an empty drift slot jumps straight to the prompt panel
+      // via onSelect, which Viewer intercepts for empty slots.
+      const concept = concepts[ci];
+      const version = concept?.versions[vi];
+      if (isAwaitingFirstPrompt(version?.changelog)) {
+        onSelect(ci, vi);
+        return;
+      }
+      if (ci === conceptIndex && vi === versionIndex) {
+        onZoomLevelChange('z4');
+      } else {
+        onHighlight(ci, vi);
+      }
+    }, 220);
+  }, [isPanning, spaceHeld, conceptIndex, versionIndex, onHighlight, onZoomLevelChange, concepts, multiSelected, onMultiSelectToggle, onMultiSelectClear, onSelect, recentlyPanned, cancelPendingClick]);
 
   const handleThumbnailDoubleClick = useCallback((ci: number, vi: number) => {
+    // Cancel any pending single-click work so we don't get the highlight/z4 cascade.
+    cancelPendingClick();
     if (isPanning || spaceHeld || recentlyPanned.current) return;
     onSelect(ci, vi);
-  }, [isPanning, spaceHeld, onSelect]);
+  }, [isPanning, spaceHeld, onSelect, cancelPendingClick]);
+
+  // Clear any pending click on unmount to avoid stale setState calls.
+  useEffect(() => () => cancelPendingClick(), [cancelPendingClick]);
 
   const handleCardContextMenu = useCallback((ci: number, vi: number, e: React.MouseEvent) => {
     e.preventDefault();

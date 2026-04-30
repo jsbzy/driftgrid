@@ -65,7 +65,7 @@ export async function GET(request: Request) {
  * Create a new annotation
  */
 export async function POST(request: Request) {
-  const { client, project, conceptId, versionId, x, y, element, text, author, isClient, isAgent, parentId } = await request.json();
+  const { client, project, conceptId, versionId, x, y, element, text, author, isClient, isAgent, parentId, provider } = await request.json();
 
   if (!client || !project || !conceptId || !versionId || !text) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -90,6 +90,7 @@ export async function POST(request: Request) {
     created: new Date().toISOString(),
     resolved: false,
     parentId: parentId ?? null,
+    ...(provider ? { provider } : {}),
   };
 
   if (!version.annotations) version.annotations = [];
