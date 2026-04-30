@@ -121,6 +121,45 @@ Always:
 - Keep manifest.json in sync
 - Follow the naming conventions below
 
+## Visual Verification (Before "Done")
+
+**Before posting your Done reply, look at the rendered version.** Text-only reasoning misses layout bugs (overflow, misalignment, broken images, unintended spacing) that any human spots instantly. Don't ship without seeing it.
+
+### How to verify
+
+Pick whichever path your agent runtime supports — both end with you `Read`ing a real image of the file you just wrote.
+
+1. **Fetch the live DriftGrid thumbnail** (lightest):
+   ```
+   GET http://localhost:3000/api/thumbs/{client}/{project}/{thumb-filename}.webp
+   ```
+   The filename pattern varies by rounds; the canonical path is in `version.thumbnail` inside `manifest.json` for the version you just wrote. The thumb regenerates from the current HTML on demand, so it always reflects the file you just saved.
+
+2. **Headless Chrome screenshot** (highest fidelity, heavier):
+   ```bash
+   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+     --headless --disable-gpu --hide-scrollbars \
+     --window-size=1440,900 \
+     --screenshot=/tmp/dg-verify.png \
+     "http://localhost:3000/admin/{client}/{project}#{concept-slug}/v{N}"
+   ```
+   Then `Read` the saved PNG.
+
+### What to check (≤30 seconds, not a full design review)
+
+- Does the layout match the intent of the prompt?
+- Any visible bugs: overflow, missing images, misaligned elements, contrast failures, text cut off at edges?
+- For locked formats (1920×1080, A4): does content fit inside the canvas without scrollbars?
+
+If you spot a bug, **drift to v(N+1) with the fix BEFORE writing your Done reply.** The designer's audit trail should never have to surface a broken version.
+
+### When to skip
+
+- Pure copy edits with no layout impact (changing a single word, swapping a CTA label).
+- Color-only swaps where you've already verified the new palette renders well in a prior version of the same concept.
+
+Even then, a quick verification rarely hurts. **Default is: look first.** This is a 1-2 second tool call per drift — not a full re-review.
+
 ## Always Echo the Version Reference (When Done)
 
 **Every time you finish a unit of work** — drift to a new version, edit a version in place, create a new concept, apply a designer prompt, or post a thread reply — your final chat message to the designer MUST include both:

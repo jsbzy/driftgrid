@@ -1,4 +1,22 @@
-@import "tailwindcss";
+/* Disable Tailwind v4 automatic source detection entirely; opt back in with
+   explicit @source directives below. Default detection treats some binaries
+   in projects/ as text and emits broken classes that crash PostCSS at parse
+   time. Note: don't put literal Tailwind class examples in comments here —
+   Tailwind would scan this file and pick them up as candidates.
+
+   PRE-LAUNCH TODO (revisit):
+   This setup excludes ALL of projects/ from Tailwind scanning, which is fine
+   today because user designs are self-contained HTML files that compile their
+   own CSS. But it means that if we ever want to support Tailwind utility
+   classes INSIDE user designs (e.g. for a richer template system, or if MP4
+   thumbnails get .webp companions Tailwind needs to know about), we'll need
+   a more nuanced setup — per-extension exclusions, or a separate Tailwind
+   instance for projects/. Decision needed: do we ship user-design Tailwind
+   support post-v1? If yes, file an issue to redesign this. */
+@import "tailwindcss" source(none);
+@source "../app";
+@source "../components";
+@source "../lib";
 
 /* Tailwind v4 content scanner gotcha — IMPORTANT for contributors:
    Tailwind walks the project tree looking for utility-class candidates. It scans
