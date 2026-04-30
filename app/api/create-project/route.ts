@@ -23,6 +23,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing client or project' }, { status: 400 });
   }
 
+  // Canvas is required — no default. Picking the wrong format causes designs
+  // to be the wrong dimensions, which is hard to fix retroactively. Force the
+  // caller to make this choice up front.
+  if (!canvas || typeof canvas !== 'string') {
+    return NextResponse.json(
+      {
+        error: 'canvas is required. Choose the format that matches your output.',
+        valid: Object.keys(CANVAS_PRESETS),
+        examples: {
+          desktop: '1440px wide, scrollable — websites, dashboards',
+          mobile: '375px wide, scrollable — app screens',
+          'landscape-16-9': '1920×1080 — presentations, slides',
+          'a4-portrait': '794×1123 — documents, one-pagers',
+        },
+      },
+      { status: 400 },
+    );
+  }
+
   const client = slugify(clientRaw);
   const project = slugify(projectRaw);
 
@@ -30,7 +49,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
-  const canvasPreset = canvas || 'desktop';
+  const canvasPreset = canvas;
 
   if (!CANVAS_PRESETS[canvasPreset]) {
     return NextResponse.json(

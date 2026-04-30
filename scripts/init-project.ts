@@ -72,7 +72,7 @@ async function main() {
 
   let clientRaw: string;
   let projectRaw: string;
-  let canvasPreset = 'desktop';
+  let canvasPreset: string | null = null;
 
   if (args.length >= 2 && !args[0].startsWith('--')) {
     // Non-interactive: args provided
@@ -83,6 +83,23 @@ async function main() {
         canvasPreset = args[i + 1];
         i++;
       }
+    }
+    if (!canvasPreset) {
+      console.error('');
+      console.error('  ERROR: --canvas is required.');
+      console.error('  Pick the format that matches your output:');
+      console.error('');
+      VALID_PRESETS.forEach((p) => {
+        const preset = CANVAS_PRESETS[p];
+        const dims = typeof preset.height === 'number'
+          ? `${preset.width}×${preset.height}`
+          : `${preset.width} × auto`;
+        console.error(`    --canvas ${p.padEnd(18)} ${dims}`);
+      });
+      console.error('');
+      console.error(`  Example: driftgrid init "${clientRaw}" "${projectRaw}" --canvas desktop`);
+      console.error('');
+      process.exit(1);
     }
   } else if (args.includes('--help') || args.includes('-h')) {
     usage();
@@ -99,25 +116,30 @@ async function main() {
     projectRaw = await ask(rl, '  Project name (e.g. Landing Page): ');
 
     console.log('');
-    console.log('  Canvas presets:');
+    console.log('  Canvas preset — REQUIRED. Pick the format that matches your output:');
     VALID_PRESETS.forEach((p, i) => {
       const preset = CANVAS_PRESETS[p];
       const dims = typeof preset.height === 'number'
         ? `${preset.width}×${preset.height}`
         : `${preset.width} × auto`;
-      const marker = p === 'desktop' ? ' (default)' : '';
-      console.log(`    ${i + 1}. ${p} — ${dims}${marker}`);
+      console.log(`    ${i + 1}. ${p} — ${dims}`);
     });
     console.log('');
 
-    const canvasInput = await ask(rl, '  Canvas preset [desktop]: ');
-    if (canvasInput.trim()) {
-      // Accept number or name
-      const num = parseInt(canvasInput.trim(), 10);
+    // Loop until they pick a valid preset — no default fallback.
+    while (!canvasPreset) {
+      const canvasInput = (await ask(rl, '  Canvas preset (number or name): ')).trim();
+      if (!canvasInput) {
+        console.log('  Required — please pick one of the presets above.');
+        continue;
+      }
+      const num = parseInt(canvasInput, 10);
       if (!isNaN(num) && num >= 1 && num <= VALID_PRESETS.length) {
         canvasPreset = VALID_PRESETS[num - 1];
+      } else if (VALID_PRESETS.includes(canvasInput)) {
+        canvasPreset = canvasInput;
       } else {
-        canvasPreset = canvasInput.trim();
+        console.log(`  "${canvasInput}" is not a valid preset. Try a number 1–${VALID_PRESETS.length} or a name from the list.`);
       }
     }
 

@@ -101,11 +101,12 @@ server.tool(
 
 server.tool(
   'create_project',
-  'Create a new DriftGrid project with a client folder, starter HTML, and manifest.',
+  'Create a new DriftGrid project with a client folder, starter HTML, and manifest. Canvas is REQUIRED — ask the user which format matches their output before calling this.',
   {
     client: z.string(),
     project: z.string(),
-    canvas: z.string().optional().describe('Canvas preset: desktop, mobile, tablet, landscape-16-9, a4-portrait, freeform'),
+    canvas: z.enum(['desktop', 'mobile', 'tablet', 'landscape-16-9', 'a4-portrait', 'freeform'])
+      .describe('Canvas preset — REQUIRED. desktop=1440 scrollable (websites), mobile=375 scrollable (app screens), tablet=768 scrollable, landscape-16-9=1920×1080 (slides/decks), a4-portrait=794×1123 (one-pagers/docs), freeform=custom. Ask the user which one before calling.'),
   },
   async (input) => {
     const data = await apiFetch('/api/create-project', {

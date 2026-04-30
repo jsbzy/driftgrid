@@ -574,13 +574,14 @@ Reproduce the bug in demo data first, fix, verify against demo, then confirm the
 
 DriftGrid is a design iteration platform for agents. When the user asks to start a new project, or when this is a fresh install with no projects yet, walk them through onboarding. Tell them upfront: "I'll ask you 3 quick questions to set up your project, then we can start designing."
 
-### Step 1 — Gather info (3 questions)
-Ask these one at a time:
+### Step 1 — Gather info (3 questions, all required)
+Ask these one at a time. **All three are required — do not assume defaults, especially canvas.**
+
 1. **Client name** — who is this for? (e.g. "Acme", "Nike", or "personal")
 2. **Project name** — what are we making? (e.g. "Landing Page", "Pitch Deck", "Brand Identity")
-3. **Canvas preset** — present as a numbered list so the user can just type a number:
+3. **Canvas preset — REQUIRED, NEVER DEFAULT.** Picking the wrong format produces designs at the wrong dimensions, which is hard to fix retroactively. Present as a numbered list so the user can just type a number:
    ```
-   What format? (enter a number, default: 1)
+   What format? (pick a number — required)
 
    1. Desktop (1440px, scrollable) — websites, dashboards
    2. Mobile (375px, scrollable) — app screens
@@ -589,6 +590,8 @@ Ask these one at a time:
    5. Tablet (768px, scrollable) — tablet layouts
    ```
    Map the number to the preset slug: 1=desktop, 2=mobile, 3=landscape-16-9, 4=a4-portrait, 5=tablet.
+
+   If the user doesn't pick clearly, ask again. The CLI / API / MCP all REJECT a missing canvas now — they won't silently default. Don't infer "they probably mean desktop" — ask.
 
 ### Step 2 — Run init
 Use the built-in init script — do NOT create files manually:
