@@ -1624,6 +1624,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
           versionIds={navGridVersionIds}
           currentVersionNumber={currentVersion?.number}
           mode={mode}
+          onNavigate={handleNavigate}
         />
       )}
       {mode !== 'client' && (

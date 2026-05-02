@@ -18,6 +18,9 @@ interface NavigationGridProps {
    *  the only two keybinds that matter to clients (`G` to toggle grid / `H` to hide),
    *  plus arrow buttons for mouse-only navigation. */
   mode?: 'designer' | 'client' | string;
+  /** Click handler — when provided, the minimap dots become clickable and jump to
+   *  the corresponding concept/version. Without this, the minimap is a pure indicator. */
+  onNavigate?: (conceptIndex: number, versionIndex: number) => void;
 }
 
 const MAX_VISIBLE_ROWS = 8;
@@ -32,6 +35,7 @@ export const NavigationGrid = memo(function NavigationGrid({
   collapsedCount = 0,
   currentVersionNumber,
   mode,
+  onNavigate,
 }: NavigationGridProps) {
   const conceptCount = versionCounts.length;
   const maxVersions = versionCounts.length > 0 ? Math.max(...versionCounts) : 0;
@@ -94,21 +98,42 @@ export const NavigationGrid = memo(function NavigationGrid({
               );
             const isCurrent = col === conceptIndex && mappedIndex === versionIndex;
             const isStarred = isSelectedVersion(col, mappedIndex);
+            const baseStyle: React.CSSProperties = {
+              width: cell,
+              height: cell,
+              borderRadius: 2,
+              background: isCurrent
+                ? 'var(--foreground)'
+                : isStarred
+                  ? '#fef3c7'
+                  : undefined,
+              border: isCurrent || isStarred
+                ? undefined
+                : '1px solid var(--border)',
+            };
+            if (!onNavigate) {
+              return <div key={`${col}-${row}`} style={baseStyle} />;
+            }
             return (
-              <div
+              <button
                 key={`${col}-${row}`}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigate(col, mappedIndex);
+                }}
+                aria-label={`Jump to concept ${col + 1}, version ${(versionCounts[col] ?? 0) - mappedIndex}`}
                 style={{
-                  width: cell,
-                  height: cell,
-                  borderRadius: 2,
-                  background: isCurrent
-                    ? 'var(--foreground)'
-                    : isStarred
-                      ? '#fef3c7'
-                      : undefined,
-                  border: isCurrent || isStarred
-                    ? undefined
-                    : '1px solid var(--border)',
+                  ...baseStyle,
+                  padding: 0,
+                  cursor: 'pointer',
+                  transition: 'transform 0.1s ease, opacity 0.1s ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isCurrent) e.currentTarget.style.transform = 'scale(1.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
                 }}
               />
             );
