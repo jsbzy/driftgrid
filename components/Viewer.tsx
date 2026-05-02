@@ -1285,7 +1285,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.4'; }}
                 title={`${totalCards} versions across ${conceptCount} concepts \u2014 close this round and start fresh?`}
               >
-                \u21b3 close round?
+                close round?
               </button>
             );
           })()}
