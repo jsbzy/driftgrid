@@ -75,7 +75,7 @@ export const WALKTHROUGH_STEPS: TourStep[] = [
   {
     eyebrow: '2 · Inside a Frame',
     hint: 'Enter or double-click any card to view the live HTML design.',
-    keys: ['↵'],
+    keys: ['Enter'],
   },
   {
     eyebrow: '3 · Leave a Prompt',
@@ -85,7 +85,7 @@ export const WALKTHROUGH_STEPS: TourStep[] = [
   {
     eyebrow: '4 · Copy to Terminal',
     hint: 'Copy the prompt and paste it into your AI agent in your terminal.',
-    keys: ['⌘⇧C'],
+    keys: ['Cmd', 'Shift', 'C'],
   },
   {
     eyebrow: '5 · Agent Reply',
