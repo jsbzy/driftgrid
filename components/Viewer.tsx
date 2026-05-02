@@ -1240,6 +1240,55 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               ))}
             </div>
           )}
+          {/* Soft "close round?" hint \u2014 appears once a round gets crowded */}
+          {(() => {
+            if (mode === 'client') return null;
+            if (!activeRound || activeRound.closedAt) return null;
+            const totalCards = activeRound.concepts.reduce((sum, c) => sum + c.versions.length, 0);
+            const conceptCount = activeRound.concepts.length;
+            const isCrowded = totalCards >= 30 || conceptCount >= 10;
+            if (!isCrowded) return null;
+            return (
+              <button
+                onClick={async () => {
+                  if (selections.size === 0) {
+                    toast('Star a few versions first \u2014 those become the round\u2019s selects', 'error');
+                    return;
+                  }
+                  const name = window.prompt('Round name (optional):');
+                  const roundSelects = Array.from(selections).map(key => { const [conceptId, versionId] = key.split(':'); return { conceptId, versionId }; });
+                  const res = await fetch('/api/rounds', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client, project, action: 'close', name: name || undefined, selects: roundSelects, roundId: activeRound?.id }),
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    toast(`Round ${data.roundNumber} closed \u00b7 ${data.selectCount} selects`);
+                    await mutate();
+                  }
+                }}
+                className="transition-all"
+                style={{
+                  fontSize: 9,
+                  letterSpacing: '0.06em',
+                  fontWeight: 400,
+                  color: 'var(--muted)',
+                  opacity: 0.4,
+                  padding: '2px 4px',
+                  textTransform: 'uppercase',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.4'; }}
+                title={`${totalCards} versions across ${conceptCount} concepts \u2014 close this round and start fresh?`}
+              >
+                \u21b3 close round?
+              </button>
+            );
+          })()}
           {/* Present button — fullscreen slideshow of starred versions */}
           {mode !== 'client' && selections.size > 0 && (
             <button
