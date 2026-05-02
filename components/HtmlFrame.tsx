@@ -52,6 +52,10 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       if (!el) return;
       if (el.getAttribute('src') !== editSrc) {
         el.src = editSrc;
+        // Pull keyboard focus back to the parent so arrow nav keeps working
+        // through the brief window where the iframe doc is mid-load and its
+        // forwarder hasn't re-attached yet.
+        window.focus();
       }
       el.scrollTop = 0;
     }, [editSrc]);

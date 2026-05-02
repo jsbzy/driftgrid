@@ -278,7 +278,11 @@ export function useKeyboardNav({
   // Sync preferred row when versionIndex changes via click or vertical nav
   // Skip when the change came from horizontal nav (clamped value)
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    // Capture phase — runs before any in-page handlers can stopPropagation,
+    // and survives the iframe-load race where HtmlFrame's forwarder is briefly
+    // detached during src change. The forwarder re-dispatches into this same
+    // window, so capture is the right phase regardless.
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [handleKeyDown]);
 }
