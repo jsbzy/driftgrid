@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpine — Editorial v2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,400;9..144,0,500;9..144,1,300;9..144,1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: #FAF7F2;
+            color: #1a1a1a;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 40px 120px;
+            border-bottom: 1px solid rgba(26,26,26,0.08);
+        }
+        .brand {
+            font-family: 'Fraunces', serif;
+            font-weight: 500;
+            font-size: 22px;
+            letter-spacing: -0.01em;
+        }
+        .nav-links {
+            display: flex;
+            gap: 44px;
+            font-size: 13px;
+            color: #5a5551;
+            letter-spacing: 0.02em;
+        }
+
+        .hero {
+            padding: 140px 120px 160px;
+            max-width: 1200px;
+            position: relative;
+        }
+        .eyebrow {
+            font-size: 11px;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: #B8532A;
+            margin-bottom: 48px;
+            font-weight: 500;
+        }
+        .headline {
+            font-family: 'Fraunces', serif;
+            font-weight: 300;
+            font-size: 116px;
+            line-height: 1.0;
+            letter-spacing: -0.035em;
+            margin-bottom: 48px;
+        }
+        .headline em { font-style: italic; font-weight: 400; }
+        .lede {
+            font-family: 'Fraunces', serif;
+            font-weight: 300;
+            font-size: 22px;
+            line-height: 1.5;
+            color: #3a3532;
+            max-width: 560px;
+            margin-bottom: 56px;
+        }
+        .cta-row { display: flex; align-items: center; gap: 36px; }
+        .cta {
+            display: inline-block;
+            background: #1a1a1a;
+            color: #FAF7F2;
+            padding: 20px 36px;
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .cta-link {
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #5a5551;
+            cursor: pointer;
+        }
+
+        .box-section {
+            padding: 140px 120px 120px;
+            border-top: 1px solid rgba(26,26,26,0.08);
+        }
+        .section-head {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 120px;
+            margin-bottom: 100px;
+            align-items: end;
+        }
+        .section-label {
+            font-size: 11px;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: #5a5551;
+            font-weight: 500;
+        }
+        .section-title {
+            font-family: 'Fraunces', serif;
+            font-weight: 300;
+            font-size: 56px;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            max-width: 680px;
+        }
+        .section-title em { font-style: italic; color: #B8532A; }
+
+        .box-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 80px;
+        }
+        .box-item {
+            padding-top: 40px;
+            border-top: 1px solid #1a1a1a;
+        }
+        .box-icon {
+            margin-bottom: 56px;
+            color: #1a1a1a;
+        }
+        .box-num {
+            font-family: 'Fraunces', serif;
+            font-weight: 400;
+            font-style: italic;
+            font-size: 15px;
+            color: #B8532A;
+            margin-bottom: 20px;
+        }
+        .box-name {
+            font-family: 'Fraunces', serif;
+            font-weight: 400;
+            font-size: 28px;
+            letter-spacing: -0.01em;
+            margin-bottom: 16px;
+        }
+        .box-desc {
+            font-size: 14px;
+            line-height: 1.65;
+            color: #5a5551;
+            max-width: 300px;
+        }
+
+        .founder {
+            padding: 140px 120px 160px;
+            border-top: 1px solid rgba(26,26,26,0.08);
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 120px;
+            align-items: center;
+        }
+        .portrait {
+            width: 240px;
+            height: 300px;
+        }
+        .quote {
+            font-family: 'Fraunces', serif;
+            font-weight: 300;
+            font-size: 40px;
+            line-height: 1.25;
+            letter-spacing: -0.015em;
+            max-width: 780px;
+        }
+        .quote em { font-style: italic; color: #B8532A; }
+        .attrib {
+            margin-top: 44px;
+            font-size: 13px;
+            letter-spacing: 0.05em;
+            color: #5a5551;
+        }
+
+        .footer {
+            padding: 64px 120px 48px;
+            border-top: 1px solid rgba(26,26,26,0.08);
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 80px;
+        }
+        .footer-col h4 {
+            font-size: 11px;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .footer-col p {
+            font-size: 13px;
+            color: #5a5551;
+            line-height: 2;
+        }
+        .footer-base {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #7a7570;
+            letter-spacing: 0.04em;
+            padding-top: 32px;
+            border-top: 1px solid rgba(26,26,26,0.08);
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="brand">Alpine</div>
+        <div class="nav-links">
+            <span>The Box</span>
+            <span>Seasons</span>
+            <span>Journal</span>
+            <span>Sign in</span>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="eyebrow" data-drift-editable="subheadline" data-drift-maxlen="40">Issue No. 01 &mdash; Spring 2026</div>
+        <h1 class="headline" data-drift-editable="headline" data-drift-maxlen="120">
+            A quiet way<br>
+            to <em>meet</em> the outdoors.
+        </h1>
+        <p class="lede" data-drift-editable="body" data-drift-maxlen="240">
+            One considered box, four times a year. Expertly curated outdoor<br>
+            gear for people who walk instead of conquer.
+        </p>
+        <div class="cta-row">
+            <span class="cta" data-drift-editable="cta" data-drift-maxlen="24">Start the season</span>
+            <span class="cta-link" data-drift-editable="cta" data-drift-maxlen="24">How it works &rarr;</span>
+        </div>
+    </section>
+
+    <section class="box-section">
+        <div class="section-head">
+            <div class="section-label" data-drift-editable="subheadline" data-drift-maxlen="30">What's inside</div>
+            <div class="section-title" data-drift-editable="headline" data-drift-maxlen="120">
+                Three or four things,<br>
+                <em>chosen</em> with care.
+            </div>
+        </div>
+        <div class="box-grid">
+            <div class="box-item">
+                <svg class="box-icon" width="72" height="72" viewBox="0 0 72 72" fill="none">
+                    <path d="M36 8 L64 62 L8 62 Z" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+                    <path d="M36 8 L36 62" stroke="#1a1a1a" stroke-width="1.5"/>
+                    <path d="M22 62 L36 40 L50 62" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+                </svg>
+                <div class="box-num">01.</div>
+                <div class="box-name" data-drift-editable="subheadline" data-drift-maxlen="30">Shelter</div>
+                <p class="box-desc" data-drift-editable="body" data-drift-maxlen="160">
+                    A tarp, a bivvy, or a hammock<br>
+                    &mdash; something to make the<br>
+                    ground feel like home.
+                </p>
+            </div>
+            <div class="box-item">
+                <svg class="box-icon" width="72" height="72" viewBox="0 0 72 72" fill="none">
+                    <circle cx="36" cy="36" r="28" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+                    <circle cx="36" cy="36" r="2" fill="#1a1a1a"/>
+                    <path d="M36 14 L40 36 L36 58 L32 36 Z" fill="#B8532A" stroke="#1a1a1a" stroke-width="1"/>
+                    <path d="M36 10 L36 14 M36 58 L36 62 M10 36 L14 36 M58 36 L62 36" stroke="#1a1a1a" stroke-width="1.5"/>
+                </svg>
+                <div class="box-num">02.</div>
+                <div class="box-name" data-drift-editable="subheadline" data-drift-maxlen="30">Direction</div>
+                <p class="box-desc" data-drift-editable="body" data-drift-maxlen="160">
+                    A proper brass compass,<br>
+                    or a season's worth of<br>
+                    topo maps, hand-folded.
+                </p>
+            </div>
+            <div class="box-item">
+                <svg class="box-icon" width="72" height="72" viewBox="0 0 72 72" fill="none">
+                    <rect x="10" y="14" width="52" height="44" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+                    <path d="M10 28 L62 28 M10 42 L62 42 M24 14 L24 58 M44 14 L44 58" stroke="#1a1a1a" stroke-width="1" opacity="0.4"/>
+                    <path d="M18 50 Q30 34, 42 44 T62 38" stroke="#B8532A" stroke-width="1.75" fill="none"/>
+                    <circle cx="42" cy="44" r="2" fill="#B8532A"/>
+                </svg>
+                <div class="box-num">03.</div>
+                <div class="box-name" data-drift-editable="subheadline" data-drift-maxlen="30">A Route</div>
+                <p class="box-desc" data-drift-editable="body" data-drift-maxlen="160">
+                    A printed guide to one<br>
+                    worthwhile trail, chosen<br>
+                    for the season at hand.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="founder">
+        <svg class="portrait" viewBox="0 0 240 300" fill="none">
+            <rect x="0" y="0" width="240" height="300" fill="#EDE6DB"/>
+            <circle cx="120" cy="110" r="48" fill="#B8532A" opacity="0.18"/>
+            <circle cx="120" cy="110" r="36" fill="#1a1a1a" opacity="0.85"/>
+            <path d="M40 300 Q40 200, 120 195 Q200 200, 200 300 Z" fill="#1a1a1a" opacity="0.85"/>
+            <path d="M0 240 L240 240" stroke="#B8532A" stroke-width="1" opacity="0.5"/>
+            <circle cx="120" cy="110" r="60" stroke="#1a1a1a" stroke-width="0.75" fill="none" opacity="0.3"/>
+        </svg>
+        <div>
+            <p class="quote" data-drift-editable="body" data-drift-maxlen="260">
+                We started Alpine for the friend who <em>loves</em><br>
+                the outdoors but hates the gear store. The box<br>
+                does the choosing. You do the walking.
+            </p>
+            <div class="attrib" data-drift-editable="footer" data-drift-maxlen="80">&mdash; Maren Hollis, Founder</div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4>Alpine</h4>
+                <p data-drift-editable="footer" data-drift-maxlen="140">
+                    A quarterly gear box<br>
+                    for thoughtful walkers.<br>
+                    Portland, Oregon.
+                </p>
+            </div>
+            <div class="footer-col">
+                <h4>The Box</h4>
+                <p>What's inside<br>Past seasons<br>Gift a box</p>
+            </div>
+            <div class="footer-col">
+                <h4>Company</h4>
+                <p>Journal<br>Stockists<br>Contact</p>
+            </div>
+            <div class="footer-col">
+                <h4>Letters</h4>
+                <p data-drift-editable="body" data-drift-maxlen="120">
+                    A short note each<br>
+                    season. No marketing,<br>
+                    just a postcard.
+                </p>
+            </div>
+        </div>
+        <div class="footer-base">
+            <span data-drift-editable="footer" data-drift-maxlen="40">Alpine Supply Co. &middot; Est. 2026</span>
+            <span data-drift-editable="footer" data-drift-maxlen="40">Made in the Pacific Northwest</span>
+        </div>
+    </footer>
+</body>
+</html>

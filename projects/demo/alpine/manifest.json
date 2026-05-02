@@ -1,0 +1,253 @@
+{
+  "project": {
+    "name": "Alpine",
+    "slug": "alpine",
+    "client": "demo",
+    "canvas": "desktop",
+    "created": "2026-04-23T20:46:03.049Z",
+    "links": {}
+  },
+  "rounds": [
+    {
+      "id": "round-1",
+      "number": 1,
+      "name": "R1 · Exploration",
+      "createdAt": "2026-04-23T20:46:03.049Z",
+      "selects": [
+        {
+          "conceptId": "concept-i5irtwdl",
+          "versionId": "version-mono-grid-v2"
+        },
+        {
+          "conceptId": "concept-lnb9huxz",
+          "versionId": "version-warm-minimal-v2"
+        }
+      ],
+      "concepts": [
+        {
+          "id": "concept-6igjp4b4",
+          "slug": "concept-1",
+          "label": "Editorial",
+          "description": "Magazine-style, restrained serif, generous whitespace",
+          "position": 0,
+          "visible": true,
+          "versions": [
+            {
+              "id": "version-dxikthaf",
+              "number": 1,
+              "file": "concept-1/v1.html",
+              "parentId": null,
+              "changelog": "Initial direction",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-23T20:46:03.049Z",
+              "thumbnail": ".thumbs/concept-6igjp4b4-version-dxikthaf.webp"
+            },
+            {
+              "id": "version-editorial-v2",
+              "number": 2,
+              "file": "concept-1/v2.html",
+              "parentId": "version-dxikthaf",
+              "changelog": "Expanded — added supporting sections and refined hero copy",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-23T20:55:58.014796Z",
+              "thumbnail": ".thumbs/concept-6igjp4b4-version-editorial-v2.webp",
+              "annotations": [
+                {
+                  "id": "a-sx3fn44z",
+                  "x": 0.28,
+                  "y": 0.58,
+                  "element": null,
+                  "text": "The founder quote really hits. This is the direction for us — feels like Alpine has had this point of view for 20 years.",
+                  "author": "Morgan (Alpine)",
+                  "isClient": true,
+                  "isAgent": false,
+                  "created": "2026-04-23T20:58:11.657Z",
+                  "resolved": false,
+                  "parentId": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "concept-i5irtwdl",
+          "slug": "concept-2",
+          "label": "Mono Grid",
+          "description": "Technical, JetBrains Mono, visible grid, spec-sheet precision",
+          "position": 1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "version-uo6ro06m",
+              "number": 1,
+              "file": "concept-2/v1.html",
+              "parentId": null,
+              "changelog": "Initial direction",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-23T20:46:03.049Z",
+              "thumbnail": ".thumbs/concept-i5irtwdl-version-uo6ro06m.webp",
+              "annotations": [
+                {
+                  "id": "a-hvxmfkqg",
+                  "x": 0.42,
+                  "y": 0.18,
+                  "element": null,
+                  "text": "The hero headline feels heavy — can we break it so `curated` lands on its own line and gets the green highlight?",
+                  "author": "Jeff",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-23T20:58:09.989Z",
+                  "resolved": true,
+                  "parentId": null
+                },
+                {
+                  "id": "a-6wglh0ai",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Done — rewrapped the headline so 'curated' sits on its own line with the #A8F500 highlight block. Also tightened the supporting paragraph from 3 lines to 2.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-04-23T20:58:10.321Z",
+                  "resolved": false,
+                  "parentId": "a-hvxmfkqg"
+                }
+              ]
+            },
+            {
+              "id": "version-mono-grid-v2",
+              "number": 2,
+              "file": "concept-2/v2.html",
+              "parentId": "version-uo6ro06m",
+              "changelog": "Expanded — added supporting sections and refined hero copy",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-23T20:55:58.014796Z",
+              "thumbnail": ".thumbs/concept-i5irtwdl-version-mono-grid-v2.webp"
+            }
+          ]
+        },
+        {
+          "id": "concept-lnb9huxz",
+          "slug": "concept-3",
+          "label": "Warm Minimal",
+          "description": "Earthy, rounded serif, forest green on cream",
+          "position": 2,
+          "visible": true,
+          "versions": [
+            {
+              "id": "version-n1vd0riw",
+              "number": 1,
+              "file": "concept-3/v1.html",
+              "parentId": null,
+              "changelog": "Initial direction",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-23T20:46:03.049Z",
+              "thumbnail": ".thumbs/concept-lnb9huxz-version-n1vd0riw.webp"
+            },
+            {
+              "id": "version-warm-minimal-v2",
+              "number": 2,
+              "file": "concept-3/v2.html",
+              "parentId": "version-n1vd0riw",
+              "changelog": "Expanded — added supporting sections and refined hero copy",
+              "visible": true,
+              "starred": true,
+              "created": "2026-04-23T20:55:58.014796Z",
+              "thumbnail": ".thumbs/concept-lnb9huxz-version-warm-minimal-v2.webp",
+              "annotations": [
+                {
+                  "id": "a-5hxoerks",
+                  "x": 0.52,
+                  "y": 0.43,
+                  "element": null,
+                  "text": "Love the four-season grid. One thing — the Spring tile feels visually heavier than the others. Can you balance the three off-seasons so they read as equal weight?",
+                  "author": "Jeff",
+                  "isClient": false,
+                  "isAgent": false,
+                  "created": "2026-04-23T20:58:10.850Z",
+                  "resolved": false,
+                  "parentId": null
+                },
+                {
+                  "id": "a-v403p5je",
+                  "x": null,
+                  "y": null,
+                  "element": null,
+                  "text": "Tried two approaches: (a) flattened the Spring tile's color contrast to match the others, (b) gave Summer/Autumn/Winter slightly warmer SVGs. Leaning A — simpler fix, less change. Open to going further if you want.",
+                  "author": "designer",
+                  "isClient": false,
+                  "isAgent": true,
+                  "created": "2026-04-23T20:58:11.421Z",
+                  "resolved": false,
+                  "parentId": "a-5hxoerks"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "closedAt": "2026-04-23T20:56:45.569Z",
+      "note": "3 directions explored. Mono Grid and Warm Minimal carry forward."
+    },
+    {
+      "id": "round-8lyof4p1",
+      "number": 2,
+      "name": "R2 · Refinement",
+      "createdAt": "2026-04-23T20:56:47.791Z",
+      "selects": [],
+      "concepts": [
+        {
+          "id": "concept-i5irtwdl-round-2",
+          "slug": "concept-2",
+          "label": "Mono Grid",
+          "description": "Technical, JetBrains Mono, visible grid, spec-sheet precision",
+          "position": 0,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-2/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from R1 · Exploration — Mono Grid v2",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-23T20:56:47.778Z",
+              "thumbnail": ".thumbs/concept-i5irtwdl-round-2-v1.webp"
+            }
+          ]
+        },
+        {
+          "id": "concept-lnb9huxz-round-2",
+          "slug": "concept-3",
+          "label": "Warm Minimal",
+          "description": "Earthy, rounded serif, forest green on cream",
+          "position": 1,
+          "visible": true,
+          "versions": [
+            {
+              "id": "v1",
+              "number": 1,
+              "file": "concept-3/round-2/v1.html",
+              "parentId": null,
+              "changelog": "Carried from R1 · Exploration — Warm Minimal v2",
+              "visible": true,
+              "starred": false,
+              "created": "2026-04-23T20:56:47.791Z",
+              "thumbnail": ".thumbs/concept-lnb9huxz-round-2-v1.webp"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workingSets": [],
+  "comments": [],
+  "clientEdits": []
+}

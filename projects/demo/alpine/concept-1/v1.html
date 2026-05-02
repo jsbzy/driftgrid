@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpine — Editorial v1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: #FAF7F2;
+            color: #1a1a1a;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .serif { font-family: 'Fraunces', serif; }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 40px 120px;
+            border-bottom: 1px solid rgba(26,26,26,0.08);
+        }
+        .brand {
+            font-family: 'Fraunces', serif;
+            font-weight: 500;
+            font-size: 22px;
+            letter-spacing: -0.01em;
+        }
+        .nav-links {
+            display: flex;
+            gap: 44px;
+            font-size: 13px;
+            color: #5a5551;
+            letter-spacing: 0.02em;
+        }
+
+        .hero {
+            padding: 160px 120px 180px;
+            max-width: 1200px;
+        }
+        .eyebrow {
+            font-size: 11px;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: #B8532A;
+            margin-bottom: 48px;
+            font-weight: 500;
+        }
+        .headline {
+            font-family: 'Fraunces', serif;
+            font-weight: 300;
+            font-size: 104px;
+            line-height: 1.02;
+            letter-spacing: -0.03em;
+            margin-bottom: 56px;
+        }
+        .headline em {
+            font-style: italic;
+            font-weight: 400;
+        }
+        .lede {
+            font-family: 'Fraunces', serif;
+            font-weight: 300;
+            font-size: 24px;
+            line-height: 1.5;
+            color: #3a3532;
+            max-width: 620px;
+            margin-bottom: 64px;
+        }
+        .cta-row {
+            display: flex;
+            align-items: center;
+            gap: 36px;
+        }
+        .cta {
+            display: inline-block;
+            background: #1a1a1a;
+            color: #FAF7F2;
+            padding: 20px 36px;
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .cta-link {
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #5a5551;
+            cursor: pointer;
+        }
+
+        .philosophy {
+            padding: 140px 120px 160px;
+            border-top: 1px solid rgba(26,26,26,0.08);
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 120px;
+        }
+        .section-label {
+            font-size: 11px;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: #5a5551;
+            font-weight: 500;
+        }
+        .pullquote {
+            font-family: 'Fraunces', serif;
+            font-weight: 300;
+            font-size: 56px;
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+            max-width: 780px;
+        }
+        .pullquote em {
+            font-style: italic;
+            color: #B8532A;
+        }
+        .attrib {
+            margin-top: 56px;
+            font-size: 13px;
+            letter-spacing: 0.05em;
+            color: #5a5551;
+        }
+
+        .footer {
+            padding: 48px 120px;
+            border-top: 1px solid rgba(26,26,26,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #7a7570;
+            letter-spacing: 0.04em;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="brand">Alpine</div>
+        <div class="nav-links">
+            <span>The Box</span>
+            <span>Seasons</span>
+            <span>Journal</span>
+            <span>Sign in</span>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="eyebrow" data-drift-editable="subheadline" data-drift-maxlen="40">Issue No. 01 &mdash; Spring 2026</div>
+        <h1 class="headline" data-drift-editable="headline" data-drift-maxlen="120">
+            A quiet way<br>
+            to <em>meet</em> the outdoors,<br>
+            four times a year.
+        </h1>
+        <p class="lede" data-drift-editable="body" data-drift-maxlen="260">
+            Alpine is a seasonal gear subscription for people who prefer long walks to<br>
+            podiums. One box each season &mdash; considered, useful, quietly made.
+        </p>
+        <div class="cta-row">
+            <span class="cta" data-drift-editable="cta" data-drift-maxlen="24">Start the season</span>
+            <span class="cta-link" data-drift-editable="cta" data-drift-maxlen="24">How it works &rarr;</span>
+        </div>
+    </section>
+
+    <section class="philosophy">
+        <div class="section-label" data-drift-editable="subheadline" data-drift-maxlen="30">Our philosophy</div>
+        <div>
+            <p class="pullquote" data-drift-editable="body" data-drift-maxlen="260">
+                We don't believe in<br>
+                more gear. We believe in<br>
+                the <em>right</em> gear, delivered<br>
+                when the season calls<br>
+                for it.
+            </p>
+            <div class="attrib" data-drift-editable="footer" data-drift-maxlen="80">&mdash; The Alpine Editors, Portland</div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <span data-drift-editable="footer" data-drift-maxlen="40">Alpine Supply Co. &middot; Est. 2026</span>
+        <span data-drift-editable="footer" data-drift-maxlen="40">Made in the Pacific Northwest</span>
+    </footer>
+</body>
+</html>

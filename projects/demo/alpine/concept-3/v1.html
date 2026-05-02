@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpine — Warm Minimal v1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: #F5F0E8;
+            color: #2D4A3E;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .serif { font-family: 'Instrument Serif', serif; }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 36px 80px;
+        }
+        .brand {
+            font-family: 'Instrument Serif', serif;
+            font-size: 30px;
+            letter-spacing: -0.01em;
+            font-weight: 400;
+        }
+        .brand::before {
+            content: "";
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #D4A574;
+            border-radius: 50%;
+            margin-right: 12px;
+            vertical-align: middle;
+            transform: translateY(-4px);
+        }
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            font-size: 14px;
+            color: #2D4A3E;
+            font-weight: 500;
+        }
+        .nav-cta {
+            background: #2D4A3E;
+            color: #F5F0E8;
+            padding: 12px 24px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .hero {
+            padding: 60px 80px 120px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+        .hero-left {
+            padding: 40px 0;
+        }
+        .eyebrow {
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #D4A574;
+            margin-bottom: 32px;
+            font-weight: 600;
+        }
+        .headline {
+            font-family: 'Instrument Serif', serif;
+            font-weight: 400;
+            font-size: 92px;
+            line-height: 1.0;
+            letter-spacing: -0.02em;
+            margin-bottom: 40px;
+        }
+        .headline em { font-style: italic; color: #D4A574; }
+        .lede {
+            font-size: 19px;
+            line-height: 1.6;
+            color: #4a5f55;
+            max-width: 480px;
+            margin-bottom: 44px;
+        }
+        .cta-row { display: flex; gap: 16px; align-items: center; }
+        .cta {
+            background: #2D4A3E;
+            color: #F5F0E8;
+            padding: 18px 32px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .cta-alt {
+            background: transparent;
+            color: #2D4A3E;
+            padding: 18px 32px;
+            border-radius: 100px;
+            border: 1.5px solid #2D4A3E;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .hero-right {
+            background: #E8DFCC;
+            border-radius: 20px;
+            aspect-ratio: 1 / 1.08;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+            overflow: hidden;
+            position: relative;
+        }
+        .mountain-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .kits {
+            padding: 80px 80px 120px;
+        }
+        .kits-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            margin-bottom: 56px;
+        }
+        .kits-label {
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #D4A574;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .kits-title {
+            font-family: 'Instrument Serif', serif;
+            font-weight: 400;
+            font-size: 56px;
+            letter-spacing: -0.015em;
+            line-height: 1.1;
+            max-width: 620px;
+        }
+        .kits-title em { font-style: italic; color: #D4A574; }
+        .kits-link {
+            font-size: 14px;
+            color: #2D4A3E;
+            font-weight: 500;
+        }
+
+        .kits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+        .kit-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 48px 44px;
+            box-shadow: 0 1px 3px rgba(45,74,62,0.04), 0 20px 40px -12px rgba(45,74,62,0.08);
+        }
+        .kit-tag {
+            display: inline-block;
+            background: #F5F0E8;
+            color: #D4A574;
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 28px;
+        }
+        .kit-title {
+            font-family: 'Instrument Serif', serif;
+            font-weight: 400;
+            font-size: 44px;
+            letter-spacing: -0.015em;
+            line-height: 1.05;
+            margin-bottom: 12px;
+        }
+        .kit-title em { font-style: italic; }
+        .kit-sub {
+            font-size: 14px;
+            color: #7a8a84;
+            margin-bottom: 32px;
+        }
+        .kit-visual {
+            background: #F5F0E8;
+            border-radius: 14px;
+            aspect-ratio: 16 / 9;
+            margin-bottom: 32px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .kit-items {
+            list-style: none;
+            padding: 0;
+        }
+        .kit-items li {
+            padding: 14px 0;
+            border-top: 1px solid #EDE6D7;
+            font-size: 14px;
+            color: #2D4A3E;
+            display: flex;
+            justify-content: space-between;
+        }
+        .kit-items li:first-child { border-top: none; padding-top: 0; }
+        .kit-items li span:last-child { color: #a3b0aa; }
+
+        .footer {
+            padding: 40px 80px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #7a8a84;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="brand">Alpine</div>
+        <div class="nav-links">
+            <span>The Box</span>
+            <span>Seasons</span>
+            <span>Journal</span>
+        </div>
+        <span class="nav-cta" data-drift-editable="cta" data-drift-maxlen="20">Sign in</span>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-left">
+            <div class="eyebrow" data-drift-editable="subheadline" data-drift-maxlen="40">A quarterly gear box</div>
+            <h1 class="headline" data-drift-editable="headline" data-drift-maxlen="80">
+                One box.<br>
+                <em>Every</em> season.<br>
+                Every trek.
+            </h1>
+            <p class="lede" data-drift-editable="body" data-drift-maxlen="220">
+                Expertly curated outdoor gear delivered four times<br>
+                a year &mdash; considered, useful, quietly made.
+            </p>
+            <div class="cta-row">
+                <span class="cta" data-drift-editable="cta" data-drift-maxlen="24">Start your season</span>
+                <span class="cta-alt" data-drift-editable="cta" data-drift-maxlen="24">See what's inside</span>
+            </div>
+        </div>
+        <div class="hero-right">
+            <svg class="mountain-svg" viewBox="0 0 500 540" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <clipPath id="rounded">
+                        <rect x="0" y="0" width="500" height="540" rx="0"/>
+                    </clipPath>
+                </defs>
+                <g clip-path="url(#rounded)">
+                    <circle cx="380" cy="120" r="44" fill="#D4A574" opacity="0.55"/>
+                    <path d="M0 440 L80 340 L150 390 L230 260 L320 340 L400 240 L500 320 L500 540 L0 540 Z" fill="#2D4A3E"/>
+                    <path d="M0 480 L120 400 L200 440 L300 360 L380 410 L500 370 L500 540 L0 540 Z" fill="#1f362c"/>
+                    <path d="M230 260 L260 290 L220 300 L210 282 Z" fill="#F5F0E8" opacity="0.9"/>
+                    <path d="M400 240 L420 270 L388 278 L378 258 Z" fill="#F5F0E8" opacity="0.9"/>
+                    <path d="M80 340 L102 368 L70 372 L62 354 Z" fill="#F5F0E8" opacity="0.5"/>
+                </g>
+            </svg>
+        </div>
+    </section>
+
+    <section class="kits">
+        <div class="kits-head">
+            <div>
+                <div class="kits-label" data-drift-editable="subheadline" data-drift-maxlen="30">Seasonal Kits</div>
+                <h2 class="kits-title" data-drift-editable="headline" data-drift-maxlen="100">
+                    Two seasons, <em>ready</em><br>
+                    for your door.
+                </h2>
+            </div>
+            <span class="kits-link" data-drift-editable="cta" data-drift-maxlen="30">See all seasons &rarr;</span>
+        </div>
+        <div class="kits-grid">
+            <article class="kit-card">
+                <span class="kit-tag" data-drift-editable="subheadline" data-drift-maxlen="20">Shipping now</span>
+                <h3 class="kit-title" data-drift-editable="headline" data-drift-maxlen="40">
+                    Spring <em>Kit</em>
+                </h3>
+                <p class="kit-sub" data-drift-editable="body" data-drift-maxlen="60">For the first long walks of the year.</p>
+                <div class="kit-visual">
+                    <svg viewBox="0 0 240 120" width="100%" height="100%">
+                        <circle cx="180" cy="30" r="14" fill="#D4A574" opacity="0.7"/>
+                        <path d="M0 100 L50 70 L80 85 L120 50 L160 78 L200 58 L240 76 L240 120 L0 120 Z" fill="#2D4A3E"/>
+                        <path d="M0 112 L60 92 L110 104 L170 88 L240 98 L240 120 L0 120 Z" fill="#1f362c"/>
+                        <path d="M120 50 L134 70 L108 72 Z" fill="#F5F0E8"/>
+                    </svg>
+                </div>
+                <ul class="kit-items">
+                    <li data-drift-editable="body" data-drift-maxlen="80"><span>Merino quarter-zip</span><span>01</span></li>
+                    <li data-drift-editable="body" data-drift-maxlen="80"><span>Brass compass</span><span>02</span></li>
+                    <li data-drift-editable="body" data-drift-maxlen="80"><span>Field journal</span><span>03</span></li>
+                    <li data-drift-editable="body" data-drift-maxlen="80"><span>Topo map, Cascades</span><span>04</span></li>
+                </ul>
+            </article>
+            <article class="kit-card">
+                <span class="kit-tag" data-drift-editable="subheadline" data-drift-maxlen="20">Preorder open</span>
+                <h3 class="kit-title" data-drift-editable="headline" data-drift-maxlen="40">
+                    Summer <em>Kit</em>
+                </h3>
+                <p class="kit-sub" data-drift-editable="body" data-drift-maxlen="60">For long light and longer trails.</p>
+                <div class="kit-visual">
+                    <svg viewBox="0 0 240 120" width="100%" height="100%">
+                        <circle cx="60" cy="30" r="18" fill="#D4A574"/>
+                        <path d="M0 92 L60 64 L110 82 L150 56 L210 78 L240 66 L240 120 L0 120 Z" fill="#2D4A3E"/>
+                        <path d="M0 108 L80 92 L150 100 L240 88 L240 120 L0 120 Z" fill="#1f362c"/>
+                        <path d="M150 56 L166 78 L138 80 Z" fill="#F5F0E8"/>
+                    </svg>
+                </div>
+                <ul class="kit-items">
+                    <li data-drift-editable="body" data-drift-maxlen="80"><span>Cotton trail shirt</span><span>01</span></li>
+                    <li data-drift-editable="body" data-drift-maxlen="80"><span>Insulated flask</span><span>02</span></li>
+                    <li data-drift-editable="body" data-drift-maxlen="80"><span>Waxed canvas pouch</span><span>03</span></li>
+                    <li data-drift-editable="body" data-drift-maxlen="80"><span>Desert route guide</span><span>04</span></li>
+                </ul>
+            </article>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <span data-drift-editable="footer" data-drift-maxlen="50">Alpine &middot; made quietly in Portland, Oregon</span>
+        <span data-drift-editable="footer" data-drift-maxlen="30">&copy; 2026</span>
+    </footer>
+</body>
+</html>

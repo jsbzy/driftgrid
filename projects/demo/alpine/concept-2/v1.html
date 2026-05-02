@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpine — Mono Grid v1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: #ffffff;
+            color: #0a0a0a;
+            font-family: 'JetBrains Mono', monospace;
+            -webkit-font-smoothing: antialiased;
+            position: relative;
+        }
+
+        /* 12-col grid overlay */
+        .grid-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            padding: 0 80px;
+            gap: 24px;
+            z-index: 0;
+        }
+        .grid-overlay > div {
+            border-left: 1px solid rgba(10,10,10,0.05);
+            border-right: 1px solid rgba(10,10,10,0.05);
+        }
+
+        .page { position: relative; z-index: 1; }
+
+        .nav {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            padding: 32px 80px;
+            border-bottom: 1px solid #0a0a0a;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            align-items: center;
+        }
+        .nav-brand {
+            grid-column: 1 / 3;
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: 0.1em;
+        }
+        .nav-tagline {
+            grid-column: 3 / 8;
+            color: #666;
+        }
+        .nav-links {
+            grid-column: 8 / 13;
+            display: flex;
+            justify-content: flex-end;
+            gap: 36px;
+            color: #0a0a0a;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            padding: 96px 80px 120px;
+            border-bottom: 1px solid #0a0a0a;
+        }
+        .hero-num {
+            grid-column: 1 / 3;
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            color: #666;
+        }
+        .hero-num strong {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #0a0a0a;
+            margin-top: 8px;
+        }
+        .hero-main {
+            grid-column: 3 / 13;
+        }
+        .hero-meta {
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            color: #666;
+            margin-bottom: 48px;
+            display: flex;
+            gap: 48px;
+        }
+        .hero-meta span::before {
+            content: "//";
+            margin-right: 10px;
+            color: #A8F500;
+        }
+        .headline {
+            font-size: 88px;
+            font-weight: 400;
+            letter-spacing: -0.04em;
+            line-height: 1.0;
+            margin-bottom: 64px;
+        }
+        .headline .mute { color: #999; }
+        .accent-block {
+            display: inline-block;
+            background: #A8F500;
+            color: #0a0a0a;
+            padding: 4px 14px;
+            font-weight: 500;
+        }
+        .hero-sub {
+            font-size: 14px;
+            line-height: 1.8;
+            max-width: 560px;
+            color: #333;
+            margin-bottom: 48px;
+        }
+        .cta-row {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+        .cta {
+            background: #0a0a0a;
+            color: #ffffff;
+            padding: 18px 28px;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .cta-alt {
+            border: 1px solid #0a0a0a;
+            padding: 18px 28px;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .spec-section {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            padding: 120px 80px;
+            border-bottom: 1px solid #0a0a0a;
+        }
+        .spec-head {
+            grid-column: 1 / 4;
+        }
+        .spec-head-num {
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            color: #666;
+            margin-bottom: 16px;
+        }
+        .spec-head-title {
+            font-size: 22px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            line-height: 1.3;
+        }
+        .spec-list {
+            grid-column: 4 / 13;
+        }
+        .spec-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr 0.5fr;
+            padding: 24px 0;
+            border-top: 1px solid rgba(10,10,10,0.12);
+            font-size: 13px;
+            align-items: baseline;
+        }
+        .spec-row:last-child { border-bottom: 1px solid rgba(10,10,10,0.12); }
+        .spec-label {
+            color: #666;
+            letter-spacing: 0.05em;
+        }
+        .spec-value {
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .spec-id {
+            text-align: right;
+            color: #999;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+        }
+
+        .pricing {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            padding: 120px 80px;
+            border-bottom: 1px solid #0a0a0a;
+        }
+        .pricing-head {
+            grid-column: 1 / 4;
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            color: #666;
+        }
+        .pricing-body {
+            grid-column: 4 / 13;
+            display: flex;
+            align-items: baseline;
+            gap: 48px;
+        }
+        .price {
+            font-size: 112px;
+            font-weight: 300;
+            letter-spacing: -0.05em;
+            line-height: 0.9;
+        }
+        .price .dollar {
+            font-size: 40px;
+            vertical-align: top;
+            color: #666;
+        }
+        .price-unit {
+            font-size: 13px;
+            color: #666;
+            letter-spacing: 0.05em;
+            line-height: 1.8;
+        }
+        .price-unit strong {
+            display: block;
+            color: #0a0a0a;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .footer {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            padding: 48px 80px;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            color: #666;
+        }
+        .footer-brand {
+            grid-column: 1 / 4;
+            color: #0a0a0a;
+            font-weight: 500;
+        }
+        .footer-center {
+            grid-column: 4 / 10;
+        }
+        .footer-right {
+            grid-column: 10 / 13;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-overlay" aria-hidden="true">
+        <div></div><div></div><div></div><div></div><div></div><div></div>
+        <div></div><div></div><div></div><div></div><div></div><div></div>
+    </div>
+
+    <div class="page">
+        <nav class="nav">
+            <div class="nav-brand">ALPINE / 01.</div>
+            <div class="nav-tagline" data-drift-editable="subheadline" data-drift-maxlen="60">Seasonal outdoor gear &mdash; quarterly drops</div>
+            <div class="nav-links">
+                <span>box</span>
+                <span>seasons</span>
+                <span>journal</span>
+                <span>[ sign in ]</span>
+            </div>
+        </nav>
+
+        <section class="hero">
+            <div class="hero-num">
+                SEC / 01
+                <strong>Overview</strong>
+            </div>
+            <div class="hero-main">
+                <div class="hero-meta">
+                    <span data-drift-editable="subheadline" data-drift-maxlen="30">Q2 2026 &mdash; Spring Drop</span>
+                    <span data-drift-editable="subheadline" data-drift-maxlen="30">Shipping in 14 days</span>
+                </div>
+                <h1 class="headline" data-drift-editable="headline" data-drift-maxlen="100">
+                    Outdoor gear,<br>
+                    <span class="accent-block">curated</span> <span class="mute">by season.</span><br>
+                    Delivered four<br>
+                    times a year.
+                </h1>
+                <p class="hero-sub" data-drift-editable="body" data-drift-maxlen="240">
+                    One box each season. No decisions,<br>
+                    no overwhelm. Just the gear you need<br>
+                    for the walk you're about to take.
+                </p>
+                <div class="cta-row">
+                    <span class="cta" data-drift-editable="cta" data-drift-maxlen="24">Subscribe &rarr;</span>
+                    <span class="cta-alt" data-drift-editable="cta" data-drift-maxlen="24">View sample box</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="spec-section">
+            <div class="spec-head">
+                <div class="spec-head-num">SEC / 02</div>
+                <div class="spec-head-title" data-drift-editable="headline" data-drift-maxlen="60">
+                    Specifications<br>
+                    of one box.
+                </div>
+            </div>
+            <div class="spec-list">
+                <div class="spec-row">
+                    <div class="spec-label">Cadence</div>
+                    <div class="spec-value" data-drift-editable="body" data-drift-maxlen="60">Four shipments per year, one per season</div>
+                    <div class="spec-id">/ 001</div>
+                </div>
+                <div class="spec-row">
+                    <div class="spec-label">Contents</div>
+                    <div class="spec-value" data-drift-editable="body" data-drift-maxlen="60">Three to four items, curated by editors</div>
+                    <div class="spec-id">/ 002</div>
+                </div>
+                <div class="spec-row">
+                    <div class="spec-label">Value</div>
+                    <div class="spec-value" data-drift-editable="body" data-drift-maxlen="60">Always $180+ retail per box, guaranteed</div>
+                    <div class="spec-id">/ 003</div>
+                </div>
+                <div class="spec-row">
+                    <div class="spec-label">Origin</div>
+                    <div class="spec-value" data-drift-editable="body" data-drift-maxlen="60">Independent makers, small-batch only</div>
+                    <div class="spec-id">/ 004</div>
+                </div>
+                <div class="spec-row">
+                    <div class="spec-label">Commitment</div>
+                    <div class="spec-value" data-drift-editable="body" data-drift-maxlen="60">Cancel anytime, no fuss, no friction</div>
+                    <div class="spec-id">/ 005</div>
+                </div>
+                <div class="spec-row">
+                    <div class="spec-label">Shipping</div>
+                    <div class="spec-value" data-drift-editable="body" data-drift-maxlen="60">Carbon-neutral across North America</div>
+                    <div class="spec-id">/ 006</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="pricing">
+            <div class="pricing-head">
+                SEC / 03<br>
+                <span style="color:#0a0a0a; font-weight:500; margin-top:16px; display:inline-block;">Price</span>
+            </div>
+            <div class="pricing-body">
+                <div class="price"><span class="dollar">$</span>89</div>
+                <div class="price-unit">
+                    <strong data-drift-editable="subheadline" data-drift-maxlen="30">per box</strong>
+                    <span data-drift-editable="body" data-drift-maxlen="80">billed quarterly &middot;<br>free shipping &middot;<br>cancel whenever</span>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="footer-brand">ALPINE &copy; 2026</div>
+            <div class="footer-center" data-drift-editable="footer" data-drift-maxlen="80">
+                A seasonal outdoor gear subscription &middot; Portland, OR
+            </div>
+            <div class="footer-right">[ top &uarr; ]</div>
+        </footer>
+    </div>
+</body>
+</html>

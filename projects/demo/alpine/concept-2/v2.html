@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpine — Mono Grid v2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; }
+        body {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: #0a0a0a;
+            color: #e8e8e8;
+            font-family: 'JetBrains Mono', monospace;
+            -webkit-font-smoothing: antialiased;
+            position: relative;
+        }
+
+        .grid-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            padding: 0 80px;
+            gap: 24px;
+            z-index: 0;
+        }
+        .grid-overlay > div {
+            border-left: 1px solid rgba(255,255,255,0.04);
+            border-right: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .page { position: relative; z-index: 1; }
+        .accent { color: #A8F500; }
+        .mute { color: #666; }
+
+        .nav {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            padding: 32px 80px;
+            border-bottom: 1px solid #2a2a2a;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            align-items: center;
+        }
+        .nav-brand { grid-column: 1 / 3; font-weight: 600; font-size: 13px; letter-spacing: 0.1em; }
+        .nav-brand .accent-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: #A8F500;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .nav-tagline { grid-column: 3 / 8; color: #888; }
+        .nav-links { grid-column: 8 / 13; display: flex; justify-content: flex-end; gap: 36px; color: #e8e8e8; }
+
+        .hero {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            padding: 96px 80px 120px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .hero-num { grid-column: 1 / 3; font-size: 11px; letter-spacing: 0.15em; color: #888; }
+        .hero-num strong {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #e8e8e8;
+            margin-top: 8px;
+        }
+        .hero-main { grid-column: 3 / 13; }
+        .hero-meta {
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            color: #888;
+            margin-bottom: 48px;
+            display: flex;
+            gap: 48px;
+        }
+        .hero-meta span::before { content: "//"; margin-right: 10px; color: #A8F500; }
+        .status-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: #A8F500;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s ease-in-out infinite;
+            vertical-align: middle;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .headline {
+            font-size: 88px;
+            font-weight: 400;
+            letter-spacing: -0.04em;
+            line-height: 1.0;
+            margin-bottom: 64px;
+        }
+        .accent-block {
+            display: inline-block;
+            background: #A8F500;
+            color: #0a0a0a;
+            padding: 4px 14px;
+            font-weight: 500;
+        }
+        .hero-sub {
+            font-size: 14px;
+            line-height: 1.8;
+            max-width: 560px;
+            color: #bbb;
+            margin-bottom: 48px;
+        }
+        .cta-row { display: flex; gap: 24px; align-items: center; }
+        .cta {
+            background: #A8F500;
+            color: #0a0a0a;
+            padding: 18px 28px;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .cta-alt {
+            border: 1px solid #3a3a3a;
+            color: #e8e8e8;
+            padding: 18px 28px;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        /* Timeline */
+        .timeline {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            padding: 120px 80px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .timeline-head { grid-column: 1 / 4; }
+        .timeline-num { font-size: 11px; letter-spacing: 0.15em; color: #888; margin-bottom: 16px; }
+        .timeline-title { font-size: 22px; font-weight: 500; letter-spacing: -0.01em; line-height: 1.3; }
+        .timeline-body { grid-column: 4 / 13; }
+        .ascii-line {
+            font-size: 13px;
+            line-height: 1.8;
+            color: #888;
+            margin-bottom: 32px;
+            letter-spacing: 0.02em;
+            white-space: pre;
+        }
+        .ascii-line .accent { color: #A8F500; }
+        .ascii-line .txt { color: #e8e8e8; }
+        .timeline-legend {
+            display: flex;
+            gap: 48px;
+            font-size: 11px;
+            color: #888;
+            letter-spacing: 0.1em;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #2a2a2a;
+        }
+        .timeline-legend span::before { content: "[ "; }
+        .timeline-legend span::after { content: " ]"; }
+
+        /* Past boxes table */
+        .past-boxes {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            padding: 120px 80px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .past-head { grid-column: 1 / 4; }
+        .past-body { grid-column: 4 / 13; }
+        .mono-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .mono-table th {
+            text-align: left;
+            padding: 16px 0;
+            border-bottom: 1px solid #2a2a2a;
+            color: #888;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+        .mono-table td {
+            padding: 22px 0;
+            border-bottom: 1px solid #1a1a1a;
+            vertical-align: top;
+        }
+        .mono-table tr:last-child td { border-bottom: none; }
+        .mono-table .td-season { color: #A8F500; font-weight: 500; letter-spacing: 0.05em; }
+        .mono-table .td-name { color: #e8e8e8; font-weight: 500; font-size: 14px; }
+        .mono-table .td-items { color: #888; }
+        .mono-table .td-price { color: #e8e8e8; text-align: right; font-weight: 500; }
+
+        /* CLI signup */
+        .cli {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            padding: 120px 80px 120px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .cli-head { grid-column: 1 / 4; }
+        .cli-box {
+            grid-column: 4 / 13;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            padding: 40px 44px;
+        }
+        .cli-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .cli-bar span {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #2a2a2a;
+        }
+        .cli-bar .cli-title {
+            margin-left: 12px;
+            width: auto;
+            height: auto;
+            border-radius: 0;
+            background: none;
+            font-size: 11px;
+            color: #666;
+            letter-spacing: 0.1em;
+        }
+        .cli-line { font-size: 14px; line-height: 2; letter-spacing: 0.01em; }
+        .cli-prompt { color: #A8F500; margin-right: 12px; }
+        .cli-cmd { color: #e8e8e8; }
+        .cli-arg { color: #A8F500; }
+        .cli-resp { color: #888; padding-left: 28px; }
+        .cli-input {
+            margin-top: 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 18px;
+            border: 1px solid #A8F500;
+            background: #0a0a0a;
+        }
+        .cli-input .cli-prompt { margin-right: 0; }
+        .cli-input-field {
+            flex: 1;
+            color: #888;
+            font-size: 13px;
+        }
+        .cli-input-cursor {
+            width: 8px;
+            height: 16px;
+            background: #A8F500;
+            animation: blink 1s steps(2) infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        .cli-send {
+            background: #A8F500;
+            color: #0a0a0a;
+            padding: 10px 18px;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .footer {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            padding: 48px 80px;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            color: #666;
+        }
+        .footer-brand { grid-column: 1 / 4; color: #e8e8e8; font-weight: 500; }
+        .footer-center { grid-column: 4 / 10; }
+        .footer-right { grid-column: 10 / 13; text-align: right; }
+    </style>
+</head>
+<body>
+    <div class="grid-overlay" aria-hidden="true">
+        <div></div><div></div><div></div><div></div><div></div><div></div>
+        <div></div><div></div><div></div><div></div><div></div><div></div>
+    </div>
+
+    <div class="page">
+        <nav class="nav">
+            <div class="nav-brand"><span class="accent-dot"></span>ALPINE / 01.</div>
+            <div class="nav-tagline" data-drift-editable="subheadline" data-drift-maxlen="60">Seasonal outdoor gear &mdash; quarterly drops</div>
+            <div class="nav-links">
+                <span>box</span>
+                <span>seasons</span>
+                <span>journal</span>
+                <span>[ sign in ]</span>
+            </div>
+        </nav>
+
+        <section class="hero">
+            <div class="hero-num">
+                SEC / 01
+                <strong>Overview</strong>
+            </div>
+            <div class="hero-main">
+                <div class="hero-meta">
+                    <span data-drift-editable="subheadline" data-drift-maxlen="30"><span class="status-dot"></span>Q2 2026 live</span>
+                    <span data-drift-editable="subheadline" data-drift-maxlen="30">Next drop 14d</span>
+                </div>
+                <h1 class="headline" data-drift-editable="headline" data-drift-maxlen="100">
+                    Outdoor gear,<br>
+                    <span class="accent-block">curated</span> <span class="mute">by season.</span><br>
+                    Delivered four<br>
+                    times a year.
+                </h1>
+                <p class="hero-sub" data-drift-editable="body" data-drift-maxlen="240">
+                    One box each season. No decisions,<br>
+                    no overwhelm. Just the gear you need<br>
+                    for the walk you're about to take.
+                </p>
+                <div class="cta-row">
+                    <span class="cta" data-drift-editable="cta" data-drift-maxlen="24">Subscribe &rarr;</span>
+                    <span class="cta-alt" data-drift-editable="cta" data-drift-maxlen="24">View sample box</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="timeline">
+            <div class="timeline-head">
+                <div class="timeline-num">SEC / 02</div>
+                <div class="timeline-title" data-drift-editable="headline" data-drift-maxlen="60">
+                    Seasonal<br>
+                    drops.
+                </div>
+            </div>
+            <div class="timeline-body">
+<div class="ascii-line"><span class="mute">JAN  FEB  MAR  </span><span class="accent">|APR  MAY  JUN|</span><span class="mute">  JUL  AUG  SEP   OCT  NOV  DEC</span>
+<span class="mute">&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span><span class="accent">&#9679;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</span><span class="mute">&#9679;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9679;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9679;</span>
+ <span class="txt">SPRING&#39;26</span>    <span class="accent">SPRING&#39;26</span>    <span class="txt">SUMMER&#39;26</span>   <span class="txt">AUTUMN&#39;26</span>
+ <span class="mute">delivered</span>    <span class="accent">shipping</span>     <span class="mute">preorder</span>    <span class="mute">planning</span></div>
+                <div class="timeline-legend">
+                    <span><span class="accent">active drop</span></span>
+                    <span>past season</span>
+                    <span>upcoming</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="past-boxes">
+            <div class="past-head">
+                <div class="timeline-num">SEC / 03</div>
+                <div class="timeline-title" data-drift-editable="headline" data-drift-maxlen="60">
+                    Previous<br>
+                    boxes.
+                </div>
+            </div>
+            <div class="past-body">
+                <table class="mono-table">
+                    <thead>
+                        <tr>
+                            <th style="width:18%;">Drop</th>
+                            <th style="width:32%;">Theme</th>
+                            <th style="width:38%;">Contents</th>
+                            <th style="width:12%; text-align:right;">Retail</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="td-season">SP&#39;26</td>
+                            <td class="td-name" data-drift-editable="body" data-drift-maxlen="40">First Light</td>
+                            <td class="td-items" data-drift-editable="body" data-drift-maxlen="80">Wool base layer &middot; brass compass &middot; trail cup</td>
+                            <td class="td-price">$214</td>
+                        </tr>
+                        <tr>
+                            <td class="td-season">WI&#39;25</td>
+                            <td class="td-name" data-drift-editable="body" data-drift-maxlen="40">Long Shadows</td>
+                            <td class="td-items" data-drift-editable="body" data-drift-maxlen="80">Merino gloves &middot; thermos &middot; hand-drawn map</td>
+                            <td class="td-price">$196</td>
+                        </tr>
+                        <tr>
+                            <td class="td-season">AU&#39;25</td>
+                            <td class="td-name" data-drift-editable="body" data-drift-maxlen="40">Low Fog</td>
+                            <td class="td-items" data-drift-editable="body" data-drift-maxlen="80">Waxed canvas pouch &middot; rain shell &middot; journal</td>
+                            <td class="td-price">$228</td>
+                        </tr>
+                        <tr>
+                            <td class="td-season">SU&#39;25</td>
+                            <td class="td-name" data-drift-editable="body" data-drift-maxlen="40">High Meadow</td>
+                            <td class="td-items" data-drift-editable="body" data-drift-maxlen="80">Alpine hat &middot; bandana &middot; field guide</td>
+                            <td class="td-price">$182</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="cli">
+            <div class="cli-head">
+                <div class="timeline-num">SEC / 04</div>
+                <div class="timeline-title" data-drift-editable="headline" data-drift-maxlen="40">
+                    Start your<br>
+                    subscription.
+                </div>
+            </div>
+            <div class="cli-box">
+                <div class="cli-bar">
+                    <span></span><span></span><span></span>
+                    <span class="cli-title">alpine &mdash; subscribe</span>
+                </div>
+                <div class="cli-line">
+                    <span class="cli-prompt">$</span><span class="cli-cmd">alpine subscribe </span><span class="cli-arg">--box=spring-26</span>
+                </div>
+                <div class="cli-line cli-resp" data-drift-editable="body" data-drift-maxlen="80">&#8594; selecting: Spring &#39;26 drop &middot; ships in 14 days</div>
+                <div class="cli-line cli-resp" data-drift-editable="body" data-drift-maxlen="80">&#8594; retail value: $214 &middot; your price: $89/box</div>
+                <div class="cli-line cli-resp">&#8594; enter email to continue</div>
+                <div class="cli-input">
+                    <span class="cli-prompt">&gt;</span>
+                    <span class="cli-input-field" data-drift-editable="body" data-drift-maxlen="40">your@email.com</span>
+                    <span class="cli-input-cursor"></span>
+                    <span class="cli-send" data-drift-editable="cta" data-drift-maxlen="20">Subscribe</span>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="footer-brand"><span class="accent">&#9679;</span> ALPINE &copy; 2026</div>
+            <div class="footer-center" data-drift-editable="footer" data-drift-maxlen="80">
+                A seasonal outdoor gear subscription &middot; Portland, OR &middot; v2.01
+            </div>
+            <div class="footer-right">[ top &uarr; ]</div>
+        </footer>
+    </div>
+</body>
+</html>
