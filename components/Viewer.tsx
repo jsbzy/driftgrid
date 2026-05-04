@@ -1250,24 +1250,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             if (!isCrowded) return null;
             return (
               <button
-                onClick={async () => {
-                  if (selections.size === 0) {
-                    toast('Star a few versions first \u2014 those become the round\u2019s selects', 'error');
-                    return;
-                  }
-                  const name = window.prompt('Round name (optional):');
-                  const roundSelects = Array.from(selections).map(key => { const [conceptId, versionId] = key.split(':'); return { conceptId, versionId }; });
-                  const res = await fetch('/api/rounds', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ client, project, action: 'close', name: name || undefined, selects: roundSelects, roundId: activeRound?.id }),
-                  });
-                  if (res.ok) {
-                    const data = await res.json();
-                    toast(`Round ${data.roundNumber} closed \u00b7 ${data.selectCount} selects`);
-                    await mutate();
-                  }
-                }}
+                onClick={handleNewRound}
                 className="transition-all"
                 style={{
                   fontSize: 9,
@@ -1283,9 +1266,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                 }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.4'; }}
-                title={`${totalCards} versions across ${conceptCount} concepts \u2014 close this round and start fresh?`}
+                title={`${totalCards} versions across ${conceptCount} concepts \u2014 start a new round seeded by your starred versions`}
               >
-                close round?
+                new round{selections.size > 0 ? ` (${selections.size})` : ''}
               </button>
             );
           })()}
