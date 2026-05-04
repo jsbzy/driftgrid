@@ -81,6 +81,10 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   // card content — they're here to review, not to get a map of the project.
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(mode === 'client' ? 'z2' : 'overview');
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    if (typeof document === 'undefined') return false;
+    return document.documentElement.classList.contains('dark');
+  });
   // After drift from frame view, auto-enable annotation mode on the new slot
   const autoEnableAnnotationRef = useRef(false);
 
@@ -1313,6 +1317,39 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               Present
             </button>
           )}
+          {/* Theme toggle — sun/moon icon */}
+          <button
+            onClick={() => {
+              const isDark = document.documentElement.classList.toggle('dark');
+              try { localStorage.setItem('driftgrid-theme', isDark ? 'dark' : 'light'); } catch {}
+              setIsDarkTheme(isDark);
+            }}
+            className="flex items-center transition-all"
+            style={{
+              color: 'var(--foreground)',
+              cursor: 'pointer',
+              background: 'none',
+              border: 'none',
+              opacity: 0.5,
+              padding: 4,
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.5'; }}
+            title={isDarkTheme ? 'Switch to light' : 'Switch to dark'}
+          >
+            {isDarkTheme ? (
+              // sun
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+              </svg>
+            ) : (
+              // moon
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
           {/* Share button — designer mode only */}
           {mode !== 'client' && !shareToken && (
             <button
