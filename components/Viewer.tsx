@@ -59,10 +59,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
 
   const [conceptIndex, setConceptIndex] = useState(0);
   const [versionIndex, setVersionIndex] = useState(0);
-  // Client/share views open directly into slide 1 (frame view). Designer starts in grid.
-  const [viewMode, setViewMode] = useState<'frame' | 'grid'>(
-    mode === 'client' ? 'frame' : 'grid'
-  );
+  // Client/share views open directly into slide 1 (frame view). Designer starts in grid,
+  // unless the URL hash carries a /f suffix (refreshed while viewing a frame).
+  const [viewMode, setViewMode] = useState<'frame' | 'grid'>(() => {
+    if (mode === 'client') return 'frame';
+    if (typeof window !== 'undefined' && window.location.hash.endsWith('/f')) return 'frame';
+    return 'grid';
+  });
   const [selections, setSelections] = useState<Set<string>>(new Set());
   const [selectionsInitialized, setSelectionsInitialized] = useState(false);
   const [activeRoundId, setActiveRoundId] = useState<string | null>(null);
@@ -462,7 +465,10 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     hashApplied.current = true;
     const hash = window.location.hash.replace('#', '');
     if (!hash) return;
-    const [slugOrId, letterOrV] = hash.split('/');
+    // Strip optional /f trailing segment (frame-view marker, handled by initial state)
+    const parts = hash.split('/');
+    if (parts[parts.length - 1] === 'f') parts.pop();
+    const [slugOrId, letterOrV] = parts;
 
     // Try new slug-based format first
     let ci = concepts.findIndex(c => c.slug === slugOrId || conceptSlug(c.label) === slugOrId);
@@ -505,10 +511,11 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       const version = concept?.versions[vi];
       if (concept && version) {
         const slug = concept.slug || conceptSlug(concept.label);
-        window.history.replaceState(null, '', `#${slug}/v${version.number}`);
+        const suffix = viewMode === 'frame' ? '/f' : '';
+        window.history.replaceState(null, '', `#${slug}/v${version.number}${suffix}`);
       }
     },
-    [concepts, multiSelected, tour]
+    [concepts, multiSelected, tour, viewMode]
   );
 
   const handleHighlight = useCallback(
@@ -519,10 +526,11 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       const version = concept?.versions[vi];
       if (concept && version) {
         const slug = concept.slug || conceptSlug(concept.label);
-        window.history.replaceState(null, '', `#${slug}/v${version.number}`);
+        const suffix = viewMode === 'frame' ? '/f' : '';
+        window.history.replaceState(null, '', `#${slug}/v${version.number}${suffix}`);
       }
     },
-    [concepts]
+    [concepts, viewMode]
   );
 
   // Compute card bounds for a given concept/version for smooth transitions
@@ -538,6 +546,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
 
   const handleToggleGridView = useCallback(() => {
     setViewMode(v => {
+      const next: 'frame' | 'grid' = v === 'frame' ? 'grid' : 'frame';
+      // Keep URL hash in sync so refresh restores the right view
+      const hash = window.location.hash.replace('#', '');
+      const parts = hash.split('/').filter(p => p !== 'f');
+      const base = parts.length ? `#${parts.join('/')}` : '';
+      const suffix = next === 'frame' ? '/f' : '';
+      if (base) window.history.replaceState(null, '', `${base}${suffix}`);
       if (v === 'frame') {
         presentation.setIsPresenting(false);
         setZoomLevel('z2');
