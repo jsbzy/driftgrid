@@ -532,9 +532,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     const ar = typeof resolved.height === 'number'
       ? `${resolved.width} / ${resolved.height}`
       : '16 / 9';
-    const layout = computeCanvasLayout(concepts, ar);
+    const layout = computeCanvasLayout(concepts, ar, showHidden);
     return getCardBounds(layout, ci, vi);
-  }, [concepts, filtered]);
+  }, [concepts, filtered, showHidden]);
 
   const handleToggleGridView = useCallback(() => {
     setViewMode(v => {

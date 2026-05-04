@@ -40,6 +40,7 @@ const LABEL_HEIGHT = 40;   // 2 cells
 export function computeCanvasLayout(
   concepts: Concept[],
   aspectRatio: string, // e.g. "16 / 9" or "794 / 1123"
+  showHidden: boolean = false,
 ): CanvasLayout {
   // Parse aspect ratio, snap card height to grid
   const parts = aspectRatio.split('/').map(s => parseFloat(s.trim()));
@@ -83,7 +84,11 @@ export function computeCanvasLayout(
     const x = CANVAS_PADDING + col * (CARD_WIDTH + COLUMN_GAP);
     let colY = versionStartY;
 
-    const versions = [...concept.versions].reverse();
+    // Reverse for latest-first; filter out hidden versions so deleted/hidden
+    // entries don't reserve empty slots in the grid (when showHidden is off).
+    const versions = [...concept.versions]
+      .reverse()
+      .filter(v => showHidden || v.visible !== false);
 
     for (const version of versions) {
       const originalIndex = concept.versions.indexOf(version);

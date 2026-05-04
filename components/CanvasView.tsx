@@ -103,8 +103,8 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
   const [thumbVersion, setThumbVersion] = useState(0);
 
   const layout = useMemo(
-    () => computeCanvasLayout(concepts, aspectRatio),
-    [concepts, aspectRatio]
+    () => computeCanvasLayout(concepts, aspectRatio, showHidden),
+    [concepts, aspectRatio, showHidden]
   );
   const {
     transform,
