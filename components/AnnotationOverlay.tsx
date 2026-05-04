@@ -157,6 +157,20 @@ export function AnnotationOverlay({
     const isPlan = /^\s*\[plan\]\s*/i.test(annotation.text);
     const cleanText = isPlan ? annotation.text.replace(/^\s*\[plan\]\s*/i, '') : annotation.text;
     const trimmedPending = pendingReply?.trim() || '';
+    // Detect follow-up turn early so the banner can lead the message — agents tend
+    // to skim and re-execute the original prompt if context lands first.
+    const repliesPreCheck = repliesByParent[annotation.id] || [];
+    const lastReplyPreCheck = repliesPreCheck[repliesPreCheck.length - 1];
+    const isFollowUp = !!trimmedPending || (lastReplyPreCheck && !lastReplyPreCheck.isAgent);
+    if (isFollowUp) {
+      const priorTurns = 1 + (trimmedPending ? repliesPreCheck.length : repliesPreCheck.length - 1);
+      lines.push('################################################################');
+      lines.push(`#  FOLLOW-UP TURN — ${priorTurns} earlier turn${priorTurns === 1 ? '' : 's'} already complete.`);
+      lines.push('#  Act ONLY on the CURRENT REQUEST below. Do NOT re-execute the');
+      lines.push('#  original prompt or any prior turn — those are context only.');
+      lines.push('################################################################');
+      lines.push('');
+    }
     if (annotation.provider) {
       lines.push(`Routed to: ${annotation.provider}`);
     }
@@ -181,19 +195,23 @@ export function AnnotationOverlay({
     const hasNewRequest = !!trimmedPending || (lastReply && !lastReply.isAgent);
 
     if (hasNewRequest) {
-      // Latest designer turn = the ask. Lead with it.
-      lines.push('=== CURRENT REQUEST (act on this) ===');
+      // Banner already pushed at the top of the message. Lead with the request itself,
+      // then push all prior context to the bottom under hard dividers.
+      const priorReplies = trimmedPending ? replies : replies.slice(0, -1);
+      lines.push('▶ CURRENT REQUEST (act on this):');
+      lines.push('');
       lines.push(trimmedPending || lastReply.text);
       lines.push('');
-      lines.push('=== PRIOR THREAD (context only — already addressed, do not redo) ===');
-      lines.push(`designer (original): ${cleanText}`);
-      // If there's a pending reply, ALL saved replies are prior context. Otherwise, drop the last
-      // (it's the one we just promoted to CURRENT REQUEST).
-      const priorReplies = trimmedPending ? replies : replies.slice(0, -1);
-      for (const r of priorReplies) {
-        const who = r.isAgent ? 'agent' : (r.author || 'reply');
-        lines.push(`${who}: ${r.text}`);
-      }
+      lines.push('────────────────────────────────────────────────────────────────');
+      lines.push('PRIOR THREAD — already addressed, DO NOT REDO:');
+      lines.push('────────────────────────────────────────────────────────────────');
+      lines.push(`[1] designer (original ask): ${cleanText}`);
+      priorReplies.forEach((r, i) => {
+        const who = r.isAgent ? 'agent (already done)' : (r.author || 'reply');
+        lines.push(`[${i + 2}] ${who}: ${r.text}`);
+      });
+      lines.push('────────────────────────────────────────────────────────────────');
+      lines.push('END PRIOR THREAD. Scroll up — the CURRENT REQUEST is the only thing to act on.');
     } else {
       // No replies, or the agent had the last word — show original as the focus.
       lines.push(`> ${cleanText.split('\n').join('\n> ')}`);
