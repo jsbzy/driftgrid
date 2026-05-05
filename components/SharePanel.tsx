@@ -1199,6 +1199,53 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
             </div>
           )}
         </div>
+        {/* Footer — driftgrid wordmark + docs link, sticks to panel bottom */}
+        <div
+          style={{
+            padding: '14px 28px',
+            borderTop: '1px solid rgba(0,0,0,0.06)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: '#fafafa',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 10,
+              letterSpacing: '0.24em',
+              color: '#999',
+              textTransform: 'lowercase',
+            }}
+          >
+            driftgrid
+          </span>
+          <a
+            href="https://docs.driftgrid.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 10,
+              color: '#666',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              transition: 'color 120ms ease',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#111'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#666'; }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            Help &amp; docs
+          </a>
+        </div>
       </div>
     </>
   );
