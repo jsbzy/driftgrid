@@ -1135,17 +1135,72 @@ export function AnnotationOverlay({
                           </svg>
                         </button>
                       </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        {/* Screenshot toggle — same opt-in as new-prompt popup, shared state */}
                         <button
                           type="button"
                           tabIndex={-1}
-                          onClick={(e) => {
+                          onClick={(e) => { e.stopPropagation(); setPendingAttachScreenshot(v => !v); }}
+                          title={pendingAttachScreenshot
+                            ? 'Screenshot will be captured and path included in the agent payload'
+                            : 'Toggle: include a screenshot of this frame in the agent payload'}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 3,
+                            padding: '4px 7px',
+                            borderRadius: 4,
+                            border: '1px solid ' + (pendingAttachScreenshot ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.08)'),
+                            background: pendingAttachScreenshot ? 'rgba(255,255,255,0.1)' : 'transparent',
+                            color: pendingAttachScreenshot ? '#fff' : 'rgba(255,255,255,0.45)',
+                            cursor: 'pointer',
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontSize: 9,
+                            letterSpacing: '0.06em',
+                          }}
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="5" width="18" height="14" rx="2" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          onClick={async (e) => {
                             e.stopPropagation();
                             // Pick up an unsaved draft from the "Reply to agent…" input — include it
                             // as the CURRENT REQUEST in the copied message AND persist it as a real
                             // reply so the thread reflects what was sent to the agent.
                             const draft = (replyDrafts[annotation.id] || '').trim();
-                            const message = buildAnnotationAgentMessage(annotation, draft);
+                            // Optionally capture a screenshot first.
+                            let screenshotPath: string | null = null;
+                            if (
+                              pendingAttachScreenshot &&
+                              frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId
+                            ) {
+                              try {
+                                const r = await fetch('/api/screenshot', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    client: frameContext.client,
+                                    project: frameContext.project,
+                                    conceptId: frameContext.conceptId,
+                                    versionId: frameContext.versionId,
+                                    annotationId: annotation.id,
+                                  }),
+                                });
+                                if (r.ok) {
+                                  const data = await r.json();
+                                  screenshotPath = data.path ?? null;
+                                }
+                              } catch { /* swallow — copy still works without */ }
+                            }
+                            let message = buildAnnotationAgentMessage(annotation, draft);
+                            if (screenshotPath) {
+                              message += `\n\nScreenshot: ${screenshotPath}\n(Open this with your file tool to see what the designer was looking at.)`;
+                            }
                             navigator.clipboard?.writeText(message).catch(() => {});
                             if (draft && onReply) {
                               onReply(annotation.id, draft);
