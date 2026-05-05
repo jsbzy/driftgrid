@@ -31,6 +31,7 @@ import { AnnotationOverlay } from './AnnotationOverlay';
 import { ClientNamePrompt } from './ClientNamePrompt';
 import { SharePanel } from './SharePanel';
 import { CommentsHub } from './CommentsHub';
+import { ClientCommentsHub } from './ClientCommentsHub';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -1272,7 +1273,27 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       <div className="h-screen flex flex-col bg-[var(--background)]">
         {namePrompt}
         <SharePanel open={sharePanelOpen} onClose={() => setSharePanelOpen(false)} client={client} project={project} roundId={activeRoundId} roundNumber={activeRound?.number ?? null} />
-        <CommentsHub open={commentsHubOpen} onClose={() => setCommentsHubOpen(false)} client={client} project={project} onJumpTo={handleHubJumpTo} />
+        {mode === 'client'
+          ? <ClientCommentsHub
+              open={commentsHubOpen}
+              onClose={() => setCommentsHubOpen(false)}
+              comments={clientComments.comments}
+              concepts={concepts}
+              authorName={clientComments.authorName}
+              isAdmin={clientComments.isAdmin}
+              onJumpTo={(conceptId, versionId) => {
+                const ci = concepts.findIndex(c => c.id === conceptId);
+                if (ci < 0) return;
+                const vi = concepts[ci].versions.findIndex(v => v.id === versionId);
+                if (vi < 0) return;
+                setConceptIndex(ci);
+                setVersionIndex(vi);
+                setViewMode('frame');
+              }}
+              onResolve={clientComments.resolveComment}
+              onDelete={clientComments.deleteComment}
+            />
+          : <CommentsHub open={commentsHubOpen} onClose={() => setCommentsHubOpen(false)} client={client} project={project} onJumpTo={handleHubJumpTo} />}
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
@@ -1387,23 +1408,24 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               Present
             </button>
           )}
-          {/* Comments hub — bubble icon with awaiting-count badge */}
-          {mode !== 'client' && (
-            <button
-              onClick={() => setCommentsHubOpen(true)}
-              className="flex items-center transition-all"
-              style={{
-                color: 'var(--foreground)',
-                cursor: 'pointer',
-                background: 'none',
-                border: 'none',
-                opacity: 0.5,
-                padding: 4,
-                position: 'relative',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.5'; }}
-              title={openCommentsCount > 0 ? `${openCommentsCount} open comment${openCommentsCount === 1 ? '' : 's'} not yet sent to an agent` : 'Comments'}
+          {/* Comments hub — bubble icon with open-count badge */}
+          <button
+            onClick={() => setCommentsHubOpen(true)}
+            className="flex items-center transition-all"
+            style={{
+              color: 'var(--foreground)',
+              cursor: 'pointer',
+              background: 'none',
+              border: 'none',
+              opacity: 0.5,
+              padding: 4,
+              position: 'relative',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.5'; }}
+            title={mode === 'client'
+              ? `${clientComments.comments.length} comment${clientComments.comments.length === 1 ? '' : 's'}`
+              : (openCommentsCount > 0 ? `${openCommentsCount} open comment${openCommentsCount === 1 ? '' : 's'} not yet sent to an agent` : 'Comments')}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -1423,8 +1445,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                   lineHeight: 1,
                 }}>{openCommentsCount}</span>
               )}
-            </button>
-          )}
+          </button>
           {/* Theme toggle — sun/moon icon */}
           <button
             onClick={() => {
@@ -1645,7 +1666,27 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
-      <CommentsHub open={commentsHubOpen} onClose={() => setCommentsHubOpen(false)} client={client} project={project} onJumpTo={handleHubJumpTo} />
+      {mode === 'client'
+        ? <ClientCommentsHub
+            open={commentsHubOpen}
+            onClose={() => setCommentsHubOpen(false)}
+            comments={clientComments.comments}
+            concepts={concepts}
+            authorName={clientComments.authorName}
+            isAdmin={clientComments.isAdmin}
+            onJumpTo={(conceptId, versionId) => {
+              const ci = concepts.findIndex(c => c.id === conceptId);
+              if (ci < 0) return;
+              const vi = concepts[ci].versions.findIndex(v => v.id === versionId);
+              if (vi < 0) return;
+              setConceptIndex(ci);
+              setVersionIndex(vi);
+              setViewMode('frame');
+            }}
+            onResolve={clientComments.resolveComment}
+            onDelete={clientComments.deleteComment}
+          />
+        : <CommentsHub open={commentsHubOpen} onClose={() => setCommentsHubOpen(false)} client={client} project={project} onJumpTo={handleHubJumpTo} />}
       {!isWalkthrough && (
         <TourOverlay
           step={tour.currentStep}
@@ -1677,36 +1718,43 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             <span>v{currentVersion.number}</span>
           </div>
         )}
-        {/* Floating comments button — designer-only, top-right of frame view */}
-        {mode !== 'client' && (
-          <button
-            onClick={() => setCommentsHubOpen(true)}
-            className="absolute top-3 right-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-all"
-            style={{
-              background: 'rgba(0,0,0,0.55)',
-              backdropFilter: 'blur(8px)',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'rgba(255,255,255,0.7)',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'; }}
-            title={openCommentsCount > 0 ? `${openCommentsCount} open comment${openCommentsCount === 1 ? '' : 's'} not yet sent to an agent` : 'Comments'}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-            {openCommentsCount > 0 && (
-              <span style={{
-                fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                fontSize: 9,
-                fontWeight: 600,
-                letterSpacing: '0.04em',
-                color: 'var(--accent-orange)',
-              }}>{openCommentsCount}</span>
-            )}
-          </button>
-        )}
+        {/* Floating comments button — top-right of frame view */}
+        {(() => {
+          const inClient = mode === 'client';
+          const count = inClient ? clientComments.comments.filter(c => !c.parent_comment_id && c.status !== 'resolved').length : openCommentsCount;
+          const titleText = inClient
+            ? `${count} comment${count === 1 ? '' : 's'}`
+            : (count > 0 ? `${count} open comment${count === 1 ? '' : 's'} not yet sent to an agent` : 'Comments');
+          return (
+            <button
+              onClick={() => setCommentsHubOpen(true)}
+              className="absolute top-3 right-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-all"
+              style={{
+                background: 'rgba(0,0,0,0.55)',
+                backdropFilter: 'blur(8px)',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.7)',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'; }}
+              title={titleText}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              {count > 0 && (
+                <span style={{
+                  fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+                  fontSize: 9,
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  color: inClient ? 'rgba(255,255,255,0.7)' : 'var(--accent-orange)',
+                }}>{count}</span>
+              )}
+            </button>
+          );
+        })()}
         <div
           className={`h-full relative ${resolved.height === 'auto' ? '' : 'p-4'}`}
           style={{ background: mode === 'client' ? '#fff' : (resolved.height === 'auto' ? 'transparent' : 'var(--canvas)') }}
