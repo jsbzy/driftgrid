@@ -1645,6 +1645,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       {driftOverlay}
       {deleteOverlay}
       {deleteDialog}
+      <CommentsHub open={commentsHubOpen} onClose={() => setCommentsHubOpen(false)} client={client} project={project} onJumpTo={handleHubJumpTo} />
       {!isWalkthrough && (
         <TourOverlay
           step={tour.currentStep}
@@ -1675,6 +1676,36 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             <span style={{ opacity: 0.4 }}>·</span>
             <span>v{currentVersion.number}</span>
           </div>
+        )}
+        {/* Floating comments button — designer-only, top-right of frame view */}
+        {mode !== 'client' && (
+          <button
+            onClick={() => setCommentsHubOpen(true)}
+            className="absolute top-3 right-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-all"
+            style={{
+              background: 'rgba(0,0,0,0.55)',
+              backdropFilter: 'blur(8px)',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'rgba(255,255,255,0.7)',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'; }}
+            title={openCommentsCount > 0 ? `${openCommentsCount} open comment${openCommentsCount === 1 ? '' : 's'} not yet sent to an agent` : 'Comments'}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            {openCommentsCount > 0 && (
+              <span style={{
+                fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+                fontSize: 9,
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+                color: 'var(--accent-orange)',
+              }}>{openCommentsCount}</span>
+            )}
+          </button>
         )}
         <div
           className={`h-full relative ${resolved.height === 'auto' ? '' : 'p-4'}`}
