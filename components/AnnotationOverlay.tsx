@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import type { Annotation } from '@/lib/types';
 import { toast } from '@/components/Toast';
+import { buildAgentMessage } from '@/lib/agent-payload';
 
 function handleSendToAgent() {
   toast('Install the DriftGrid MCP server to send prompts directly to your agent.', 'info');
@@ -182,107 +183,16 @@ export function AnnotationOverlay({
     onEdit?.(id, trimmed);
   }, [editDrafts, annotations, onEdit]);
 
-  // Build the agent-ready message for an existing annotation. When the thread has a
-  // trailing non-agent reply (designer followed up on the agent's response), lead with
-  // that reply as the CURRENT REQUEST and push everything else — including the agent's
-  // prior "done" message — into a PRIOR THREAD context block. This stops the agent from
-  // re-acting on the original prompt and focuses it on the latest turn.
+  // Thin wrapper around the shared agent-payload builder. Sources replies from
+  // the local repliesByParent map so the in-frame popup can include the live
+  // thread state without duplicating the formatting logic.
   const buildAnnotationAgentMessage = useCallback((annotation: Annotation, pendingReply?: string) => {
-    const lines: string[] = [];
-    // Strip `[plan] ` prefix from displayed body — the directive is hoisted into the header.
-    const isPlan = /^\s*\[plan\]\s*/i.test(annotation.text);
-    const cleanText = isPlan ? annotation.text.replace(/^\s*\[plan\]\s*/i, '') : annotation.text;
-    const trimmedPending = pendingReply?.trim() || '';
-    // Detect follow-up turn early so the banner can lead the message — agents tend
-    // to skim and re-execute the original prompt if context lands first.
-    const repliesPreCheck = repliesByParent[annotation.id] || [];
-    const lastReplyPreCheck = repliesPreCheck[repliesPreCheck.length - 1];
-    const isFollowUp = !!trimmedPending || (lastReplyPreCheck && !lastReplyPreCheck.isAgent);
-    if (isFollowUp) {
-      const priorTurns = 1 + (trimmedPending ? repliesPreCheck.length : repliesPreCheck.length - 1);
-      lines.push('################################################################');
-      lines.push(`#  FOLLOW-UP TURN — ${priorTurns} earlier turn${priorTurns === 1 ? '' : 's'} already complete.`);
-      lines.push('#  Act ONLY on the CURRENT REQUEST below. Do NOT re-execute the');
-      lines.push('#  original prompt or any prior turn — those are context only.');
-      lines.push('################################################################');
-      lines.push('');
-    }
-    if (annotation.provider) {
-      lines.push(`Routed to: ${annotation.provider}`);
-    }
-    if (isPlan) {
-      lines.push(`Mode: plan (discuss in chat first; do NOT edit files yet)`);
-    }
-    if (frameContext) {
-      lines.push(`Slide: ${frameContext.conceptLabel} v${frameContext.versionNumber} — ${frameContext.filePath}`);
-    }
-    if (annotation.x !== null && annotation.y !== null) {
-      const xPct = Math.round(annotation.x * 100);
-      const yPct = Math.round(annotation.y * 100);
-      lines.push(`Pin: (${xPct}%, ${yPct}%)`);
-    }
-    lines.push(`Annotation ID: ${annotation.id}`);
-    lines.push('');
-
-    const replies = repliesByParent[annotation.id] || [];
-    const lastReply = replies[replies.length - 1];
-    // "Current request" = either an unsaved pending reply (just typed in the box) or the last saved
-    // designer reply (if the agent hasn't responded to it yet). Pending takes priority.
-    const hasNewRequest = !!trimmedPending || (lastReply && !lastReply.isAgent);
-
-    if (hasNewRequest) {
-      // Banner already pushed at the top of the message. Lead with the request itself,
-      // then push all prior context to the bottom under hard dividers.
-      const priorReplies = trimmedPending ? replies : replies.slice(0, -1);
-      lines.push('▶ CURRENT REQUEST (act on this):');
-      lines.push('');
-      lines.push(trimmedPending || lastReply.text);
-      lines.push('');
-      lines.push('────────────────────────────────────────────────────────────────');
-      lines.push('PRIOR THREAD — already addressed, DO NOT REDO:');
-      lines.push('────────────────────────────────────────────────────────────────');
-      lines.push(`[1] designer (original ask): ${cleanText}`);
-      priorReplies.forEach((r, i) => {
-        const who = r.isAgent ? 'agent (already done)' : (r.author || 'reply');
-        lines.push(`[${i + 2}] ${who}: ${r.text}`);
-      });
-      lines.push('────────────────────────────────────────────────────────────────');
-      lines.push('END PRIOR THREAD. Scroll up — the CURRENT REQUEST is the only thing to act on.');
-    } else {
-      // No replies, or the agent had the last word — show original as the focus.
-      lines.push(`> ${cleanText.split('\n').join('\n> ')}`);
-      if (replies.length > 0) {
-        lines.push('');
-        for (const r of replies) {
-          const who = r.isAgent ? 'Agent' : (r.author || 'Reply');
-          lines.push(`↳ ${who}: ${r.text}`);
-        }
-      }
-    }
-
-    if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
-      lines.push('');
-      lines.push('---');
-      lines.push(`Frame URL: http://localhost:3000/admin/${frameContext.client}/${frameContext.project}#${frameContext.conceptId}/v${frameContext.versionNumber}`);
-      lines.push('');
-      lines.push('After applying the change, reply to this prompt by POSTing to');
-      lines.push('http://localhost:3000/api/annotations with:');
-      lines.push('  {');
-      lines.push(`    "client": "${frameContext.client}",`);
-      lines.push(`    "project": "${frameContext.project}",`);
-      lines.push(`    "conceptId": "${frameContext.conceptId}",`);
-      lines.push(`    "versionId": "${frameContext.versionId}",`);
-      lines.push(`    "parentId": "${annotation.id}",`);
-      lines.push(`    "text": "<brief summary of what you changed>",`);
-      if (annotation.provider) {
-        lines.push(`    "author": "${annotation.provider}",`);
-      }
-      lines.push(`    "isAgent": true`);
-      lines.push('  }');
-      lines.push('');
-      lines.push('When done, echo BOTH the absolute filepath and http://localhost:3000/admin/... URL back to the designer in your chat reply (per AGENTS.md "Always Echo the Version Reference").');
-    }
-    return lines.join('\n');
+    return buildAgentMessage({
+      annotation,
+      replies: repliesByParent[annotation.id] || [],
+      frameContext,
+      pendingReply,
+    });
   }, [frameContext, repliesByParent]);
 
   // Focus input when pending pin appears

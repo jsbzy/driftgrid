@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import type { ProjectAnnotation } from '@/app/api/annotations/all/route';
+import { buildAgentMessage } from '@/lib/agent-payload';
+import { toast } from '@/components/Toast';
 
 interface CommentsHubProps {
   open: boolean;
@@ -351,6 +353,37 @@ function Row({
     onRequestDelete(item);
   }, [onRequestDelete, item]);
 
+  const handleCopyForAgent = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const message = buildAgentMessage({
+      annotation: item.annotation,
+      replies: item.replies,
+      frameContext: {
+        client,
+        project,
+        conceptId: item.conceptId,
+        versionId: item.versionId,
+        conceptLabel: item.conceptLabel,
+        versionNumber: item.versionNumber,
+        filePath: `~/driftgrid/projects/${client}/${project}/...`,
+      },
+    });
+    try { await navigator.clipboard?.writeText(message); } catch {}
+    // Mark the thread as freshly submitted to the agent so the row moves to In progress.
+    fetch('/api/annotations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId: item.conceptId, versionId: item.versionId,
+        annotationId: item.annotation.id,
+        submittedAt: new Date().toISOString(),
+      }),
+    }).catch(() => {});
+    toast('Copied — paste into your agent');
+    onLocalRefresh();
+  }, [client, project, item, onLocalRefresh]);
+
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -412,6 +445,33 @@ function Row({
           transition: 'opacity 120ms ease',
         }}
       >
+        {/* Copy for Agent — primary action, hidden on closed rows */}
+        {item.state !== 'closed' && (
+          <button
+            onClick={handleCopyForAgent}
+            title="Copy the prompt + context to clipboard for your agent"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              padding: '3px 7px',
+              borderRadius: 3,
+              background: 'var(--foreground)',
+              border: '1px solid var(--foreground)',
+              color: 'var(--background)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontSize: 9,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              fontWeight: 600,
+            }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            Copy
+          </button>
+        )}
         {/* Mark-as-open: only on in-progress rows */}
         {item.state === 'in-progress' && (
           <button
