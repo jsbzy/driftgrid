@@ -43,6 +43,11 @@ export function useAnnotationState(
       return;
     }
 
+    // Clear immediately on navigation so pins from the previous frame don't
+    // linger while the new fetch is in flight (or never returns). Without this,
+    // a slow / failed fetch leaves the old frame's pins rendered indefinitely.
+    setAnnotations([]);
+
     let cancelled = false;
     const url = `/api/annotations?client=${client}&project=${project}&conceptId=${conceptId}&versionId=${versionId}`;
 
