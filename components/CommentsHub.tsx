@@ -134,6 +134,9 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
                 items={list}
                 onJumpTo={(c, v, a) => { onJumpTo(c, v, a); onClose(); }}
                 defaultOpen={key !== 'replied'}
+                client={client}
+                project={project}
+                onLocalRefresh={load}
               />
             );
           })}
@@ -144,7 +147,7 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
 }
 
 function Section({
-  title, hint, count, dotColor, items, onJumpTo, defaultOpen,
+  title, hint, count, dotColor, items, onJumpTo, defaultOpen, client, project, onLocalRefresh,
 }: {
   title: string;
   hint: string;
@@ -153,6 +156,9 @@ function Section({
   items: ProjectAnnotation[];
   onJumpTo: (conceptId: string, versionId: string, annotationId: string) => void;
   defaultOpen: boolean;
+  client: string;
+  project: string;
+  onLocalRefresh: () => void;
 }) {
   const [openSection, setOpenSection] = useState(defaultOpen);
   return (
@@ -179,7 +185,14 @@ function Section({
       {openSection && (
         <div style={{ paddingBottom: 8 }}>
           {items.map(item => (
-            <Row key={item.annotation.id} item={item} onJumpTo={onJumpTo} />
+            <Row
+              key={item.annotation.id}
+              item={item}
+              onJumpTo={onJumpTo}
+              client={client}
+              project={project}
+              onLocalRefresh={onLocalRefresh}
+            />
           ))}
         </div>
       )}
@@ -188,10 +201,13 @@ function Section({
 }
 
 function Row({
-  item, onJumpTo,
+  item, onJumpTo, client, project, onLocalRefresh,
 }: {
   item: ProjectAnnotation;
   onJumpTo: (conceptId: string, versionId: string, annotationId: string) => void;
+  client: string;
+  project: string;
+  onLocalRefresh: () => void;
 }) {
   const last = item.replies[item.replies.length - 1] ?? item.annotation;
   const lastWho = last.isAgent ? (last.author || 'agent') : (last.author || 'designer');
@@ -199,35 +215,83 @@ function Row({
   const truncated = item.annotation.text.length > 90;
   const ago = formatAgo(last.created);
 
+  const handleMarkOpen = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await fetch('/api/annotations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId: item.conceptId, versionId: item.versionId,
+        annotationId: item.annotation.id,
+        submittedAt: null,
+      }),
+    });
+    onLocalRefresh();
+  }, [client, project, item.conceptId, item.versionId, item.annotation.id, onLocalRefresh]);
+
   return (
-    <button
-      onClick={() => onJumpTo(item.conceptId, item.versionId, item.annotation.id)}
+    <div
       style={{
-        width: '100%', padding: '10px 28px',
-        display: 'block', textAlign: 'left',
-        background: 'none', border: 'none', borderLeft: '2px solid transparent',
-        cursor: 'pointer', color: 'var(--foreground)', fontFamily: 'inherit',
+        position: 'relative',
+        borderLeft: '2px solid transparent',
         transition: 'background 120ms ease',
       }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--column-tint)'; (e.currentTarget as HTMLElement).style.borderLeftColor = 'var(--column-accent)'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.borderLeftColor = 'transparent'; }}
-      title={item.annotation.text}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.borderLeftColor = 'transparent'; }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-        <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-          {item.roundNumber ? `R${item.roundNumber} · ` : ''}{item.conceptLabel} · v{item.versionNumber}
-        </span>
-        <span style={{ fontSize: 10, color: 'var(--muted)' }}>{ago}</span>
-      </div>
-      <div style={{ fontSize: 12, lineHeight: 1.45, marginBottom: 4 }}>
-        {preview}{truncated ? '…' : ''}
-      </div>
-      <div style={{ fontSize: 10, color: 'var(--muted)', display: 'flex', gap: 10, alignItems: 'center' }}>
-        <span>last: {lastWho}</span>
-        {item.replies.length > 0 && <span>· {item.replies.length} repl{item.replies.length === 1 ? 'y' : 'ies'}</span>}
-        {item.annotation.provider && <span>· → {item.annotation.provider}</span>}
-      </div>
-    </button>
+      <button
+        onClick={() => onJumpTo(item.conceptId, item.versionId, item.annotation.id)}
+        style={{
+          width: '100%', padding: '10px 28px',
+          display: 'block', textAlign: 'left',
+          background: 'none', border: 'none',
+          cursor: 'pointer', color: 'var(--foreground)', fontFamily: 'inherit',
+        }}
+        title={item.annotation.text}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+          <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            {item.roundNumber ? `R${item.roundNumber} · ` : ''}{item.conceptLabel} · v{item.versionNumber}
+          </span>
+          <span style={{ fontSize: 10, color: 'var(--muted)' }}>{ago}</span>
+        </div>
+        <div style={{ fontSize: 12, lineHeight: 1.45, marginBottom: 4, paddingRight: item.state === 'in-progress' ? 80 : 0 }}>
+          {preview}{truncated ? '…' : ''}
+        </div>
+        <div style={{ fontSize: 10, color: 'var(--muted)', display: 'flex', gap: 10, alignItems: 'center' }}>
+          <span>last: {lastWho}</span>
+          {item.replies.length > 0 && <span>· {item.replies.length} repl{item.replies.length === 1 ? 'y' : 'ies'}</span>}
+          {item.annotation.provider && <span>· → {item.annotation.provider}</span>}
+        </div>
+      </button>
+      {/* "Didn't actually paste it" undo — only on in-progress rows */}
+      {item.state === 'in-progress' && (
+        <button
+          onClick={handleMarkOpen}
+          title="Mark as not yet sent (in case you copied but didn't paste into the agent)"
+          style={{
+            position: 'absolute',
+            top: 8, right: 16,
+            fontSize: 9,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            padding: '3px 6px',
+            borderRadius: 3,
+            background: 'none',
+            border: '1px solid var(--border)',
+            color: 'var(--muted)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            opacity: 0.6,
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.6'; }}
+        >
+          ↺ open
+        </button>
+      )}
+    </div>
   );
 }
 
