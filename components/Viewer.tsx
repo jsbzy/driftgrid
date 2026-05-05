@@ -1087,6 +1087,52 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     />
   );
 
+  // Poll the open-comments count so the topbar badge stays accurate even when
+  // the hub is closed. Cheap: aggregates one manifest read on the server.
+  // MUST sit above the early returns below to satisfy Rules of Hooks.
+  useEffect(() => {
+    if (mode === 'client' || shareToken) return;
+    let cancelled = false;
+    const fetchCount = async () => {
+      try {
+        const res = await fetch(`/api/annotations/all?client=${encodeURIComponent(client)}&project=${encodeURIComponent(project)}`);
+        if (!res.ok) return;
+        const list: { state: string }[] = await res.json();
+        if (cancelled) return;
+        setOpenCommentsCount(list.filter(i => i.state === 'open').length);
+      } catch {}
+    };
+    fetchCount();
+    const t = setInterval(fetchCount, 60000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [client, project, mode, shareToken, commentsHubOpen]);
+
+  // Jump from the comments hub to a frame: switch round if needed, set indices, enter frame.
+  const handleHubJumpTo = useCallback((conceptId: string, versionId: string, _annotationId: string) => {
+    if (!manifest) return;
+    const allRounds = manifest.rounds ?? [];
+    let foundRoundId: string | null = null;
+    let ci = -1;
+    let vi = -1;
+    for (const r of allRounds) {
+      const conceptIdx = r.concepts.findIndex(c => c.id === conceptId);
+      if (conceptIdx < 0) continue;
+      const versionIdx = r.concepts[conceptIdx].versions.findIndex(v => v.id === versionId);
+      if (versionIdx < 0) continue;
+      foundRoundId = r.id;
+      ci = conceptIdx;
+      vi = versionIdx;
+      break;
+    }
+    if (ci < 0) return;
+    if (foundRoundId && foundRoundId !== activeRoundId) {
+      setActiveRoundId(foundRoundId);
+    }
+    setConceptIndex(ci);
+    setVersionIndex(vi);
+    setViewMode('frame');
+  }, [manifest, activeRoundId]);
+
   if (isLoading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-3" style={{ background: 'var(--background)' }}>
@@ -1199,52 +1245,6 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const namePrompt = shareToken && clientComments.needsName ? (
     <ClientNamePrompt onSubmit={clientComments.setAuthorName} />
   ) : null;
-
-  // Poll the awaiting-comments count so the topbar badge stays accurate even
-  // when the hub is closed. Cheap: aggregates one manifest read on the server.
-  useEffect(() => {
-    if (mode === 'client' || shareToken) return;
-    let cancelled = false;
-    const fetchCount = async () => {
-      try {
-        const res = await fetch(`/api/annotations/all?client=${encodeURIComponent(client)}&project=${encodeURIComponent(project)}`);
-        if (!res.ok) return;
-        const list: { state: string }[] = await res.json();
-        if (cancelled) return;
-        setOpenCommentsCount(list.filter(i => i.state === 'open').length);
-      } catch {}
-    };
-    fetchCount();
-    const t = setInterval(fetchCount, 60000);
-    return () => { cancelled = true; clearInterval(t); };
-  }, [client, project, mode, shareToken, commentsHubOpen]);
-
-  // Jump from the comments hub to a frame: switch round if needed, set indices, enter frame.
-  const handleHubJumpTo = useCallback((conceptId: string, versionId: string, _annotationId: string) => {
-    if (!manifest) return;
-    // Find which round contains this concept
-    const rounds = manifest.rounds ?? [];
-    let foundRoundId: string | null = null;
-    let ci = -1;
-    let vi = -1;
-    for (const r of rounds) {
-      const conceptIdx = r.concepts.findIndex(c => c.id === conceptId);
-      if (conceptIdx < 0) continue;
-      const versionIdx = r.concepts[conceptIdx].versions.findIndex(v => v.id === versionId);
-      if (versionIdx < 0) continue;
-      foundRoundId = r.id;
-      ci = conceptIdx;
-      vi = versionIdx;
-      break;
-    }
-    if (ci < 0) return;
-    if (foundRoundId && foundRoundId !== activeRoundId) {
-      setActiveRoundId(foundRoundId);
-    }
-    setConceptIndex(ci);
-    setVersionIndex(vi);
-    setViewMode('frame');
-  }, [manifest, activeRoundId]);
 
   // --- GRID VIEW ---
   if (viewMode === 'grid') {
