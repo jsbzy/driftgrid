@@ -54,9 +54,13 @@ function derivePinState(top: Annotation, replies: Annotation[]): 'open' | 'in-pr
 }
 
 const PIN_BG_BY_STATE: Record<'open' | 'in-progress' | 'replied' | 'closed', string> = {
+  // open        — designer needs to send → urgent orange
+  // in-progress — agent is working → working teal
+  // replied     — agent finished, designer's turn to review → positive green
+  // closed      — resolved, no action → muted gray
   'open':        'var(--accent-orange)',
   'in-progress': 'var(--accent-teal)',
-  'replied':     'var(--foreground)',
+  'replied':     'var(--accent-green)',
   'closed':      'var(--muted)',
 };
 

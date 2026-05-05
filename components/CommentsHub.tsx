@@ -27,7 +27,7 @@ const TAB_LABELS: Record<TabKey, string> = {
 const STATE_DOT: Record<StateKey, string> = {
   'open': 'var(--accent-orange)',
   'in-progress': 'var(--accent-teal)',
-  'replied': 'var(--muted)',
+  'replied': 'var(--accent-green)',
   'closed': 'var(--muted)',
 };
 
@@ -254,7 +254,7 @@ function Row({
           {workingLine && (
             <span style={{
               color: item.state === 'in-progress' ? 'var(--accent-teal)'
-                : item.state === 'replied' ? 'var(--foreground)'
+                : item.state === 'replied' ? 'var(--accent-green)'
                 : 'var(--accent-orange)',
               fontWeight: item.state === 'replied' ? 600 : 500,
             }}>
