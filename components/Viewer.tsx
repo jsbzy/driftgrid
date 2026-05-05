@@ -1107,6 +1107,26 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     return () => { cancelled = true; clearInterval(t); };
   }, [client, project, mode, shareToken, commentsHubOpen]);
 
+  // Build round-wide pin numbering: every top-level annotation in the active round
+  // gets a sequential #N based on creation time. The same annotation keeps its number
+  // regardless of which frame the user is viewing — so designers can reference
+  // "comment #12" across the whole board.
+  const pinNumberByAnnotationId = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (!activeRound) return map;
+    const all: { id: string; created: string }[] = [];
+    for (const concept of activeRound.concepts) {
+      for (const version of concept.versions) {
+        for (const a of version.annotations ?? []) {
+          if (!a.parentId) all.push({ id: a.id, created: a.created });
+        }
+      }
+    }
+    all.sort((a, b) => a.created.localeCompare(b.created));
+    all.forEach((a, i) => { map[a.id] = i + 1; });
+    return map;
+  }, [activeRound]);
+
   // Jump from the comments hub to a frame: switch round if needed, set indices, enter frame.
   const handleHubJumpTo = useCallback((conceptId: string, versionId: string, _annotationId: string) => {
     if (!manifest) return;
@@ -1722,6 +1742,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             } : undefined}
             scrollable={resolved.height === 'auto'}
             iframeEl={frameIframeEl}
+            pinNumberByAnnotationId={pinNumberByAnnotationId}
           />
         </div>
         {/* Branding */}

@@ -38,7 +38,27 @@ interface AnnotationOverlayProps {
   scrollable?: boolean;
   /** Iframe element whose document scroll drives pin translation when scrollable=true. */
   iframeEl?: HTMLIFrameElement | null;
+  /** Round-wide pin numbering (annotationId → #N). Falls back to per-frame index when missing. */
+  pinNumberByAnnotationId?: Record<string, number>;
 }
+
+// Derive the lifecycle state of a thread from the top annotation + its replies.
+// Mirrors the server-side logic in /api/annotations/all so pin colors match the hub.
+function derivePinState(top: Annotation, replies: Annotation[]): 'open' | 'in-progress' | 'replied' | 'closed' {
+  if (top.resolved) return 'closed';
+  const last = replies[replies.length - 1] ?? top;
+  if (last.isAgent) return 'replied';
+  if (top.status === 'running') return 'in-progress';
+  if (top.submittedAt && top.submittedAt >= last.created) return 'in-progress';
+  return 'open';
+}
+
+const PIN_BG_BY_STATE: Record<'open' | 'in-progress' | 'replied' | 'closed', string> = {
+  'open':        'var(--accent-orange)',
+  'in-progress': 'var(--accent-teal)',
+  'replied':     'var(--foreground)',
+  'closed':      'var(--muted)',
+};
 
 interface PendingPin {
   x: number;
@@ -61,6 +81,7 @@ export function AnnotationOverlay({
   frameContext,
   scrollable = false,
   iframeEl,
+  pinNumberByAnnotationId,
 }: AnnotationOverlayProps) {
   const isClient = viewMode === 'client';
   // Unified: overlay captures clicks when in legacy annotationMode OR when placing a pin in edit mode
@@ -627,6 +648,9 @@ export function AnnotationOverlay({
         const popupMaxHeight = isActive && popupMetrics ? popupMetrics.maxHeight : 420;
         const replies = repliesByParent[annotation.id] || [];
         const isLocked = replies.length > 0;
+        const pinState = derivePinState(annotation, replies);
+        // Round-wide number if available; fall back to per-frame index for legacy callers.
+        const pinNumber = pinNumberByAnnotationId?.[annotation.id] ?? (index + 1);
 
         const pinPos = pinPosition(annotation.x, annotation.y);
         return (
@@ -664,10 +688,10 @@ export function AnnotationOverlay({
                 color: '#fff',
                 background: annotation.isClient
                   ? (isClient ? 'var(--accent-orange)' : '#06b6d4')
-                  : 'var(--foreground)',
+                  : PIN_BG_BY_STATE[pinState],
                 opacity: annotation.resolved ? 0.3 : 1,
                 boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                transition: 'transform 0.1s ease, opacity 0.15s ease',
+                transition: 'transform 0.1s ease, opacity 0.15s ease, background 0.15s ease',
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.transform = 'scale(1.2)';
@@ -675,12 +699,15 @@ export function AnnotationOverlay({
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
               }}
-              title={annotation.provider ? `Routed to ${annotation.provider}` : undefined}
+              title={[
+                `#${pinNumber}`,
+                pinState === 'open' ? 'Open — not yet sent to agent' :
+                  pinState === 'in-progress' ? 'In progress — sent, awaiting reply' :
+                  pinState === 'replied' ? 'Replied' : 'Closed',
+                annotation.provider ? `Routed to ${annotation.provider}` : null,
+              ].filter(Boolean).join(' · ')}
             >
-              {annotation.provider === 'claude' ? 'C'
-                : annotation.provider === 'codex' ? 'X'
-                : annotation.provider === 'gemini' ? 'G'
-                : index + 1}
+              {pinNumber}
             </button>
 
             {/* Pin popup — matches pending input style */}
