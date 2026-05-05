@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
 import { getUserId } from '@/lib/auth';
+import { sendCommentEmail } from '@/lib/email';
 
 /** Resolve token to userId/client/project — tries DB first, then base64url path */
 async function resolveToken(token: string): Promise<{ userId: string; client: string; project: string } | null> {
@@ -118,7 +119,51 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Fire-and-forget email notification to the project owner.
+  // Cloud-only — local dev never has RESEND_API_KEY anyway, but skip the auth
+  // lookup entirely when not in cloud mode.
+  if (isCloudMode() && process.env.RESEND_API_KEY) {
+    notifyOwner({
+      userId: resolved.userId,
+      client: resolved.client,
+      project: resolved.project,
+      token,
+      authorName: author_name.trim(),
+      body: commentBody.trim(),
+      isReply: !!parent_comment_id,
+    }).catch(e => console.error('[comments] notify failed', e));
+  }
+
   return NextResponse.json(data, { status: 201 });
+}
+
+/** Look up the owner email and dispatch a comment-notification email. */
+async function notifyOwner(args: {
+  userId: string;
+  client: string;
+  project: string;
+  token: string;
+  authorName: string;
+  body: string;
+  isReply: boolean;
+}) {
+  const supabase = getSupabaseAdmin();
+  const { data: userData, error } = await supabase.auth.admin.getUserById(args.userId);
+  if (error || !userData?.user?.email) {
+    console.error('[comments] could not resolve owner email', error);
+    return;
+  }
+  const baseUrl = process.env.NEXT_PUBLIC_DRIFTGRID_URL || 'https://driftgrid.ai';
+  const shareUrl = `${baseUrl}/s/${args.client}/${args.token}`;
+  await sendCommentEmail({
+    to: userData.user.email,
+    authorName: args.authorName,
+    body: args.body,
+    isReply: args.isReply,
+    shareUrl,
+    client: args.client,
+    project: args.project,
+  });
 }
 
 /**

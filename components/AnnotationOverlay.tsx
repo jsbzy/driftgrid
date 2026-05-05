@@ -860,12 +860,13 @@ export function AnnotationOverlay({
                   </div>
                 )}
 
-                {/* Designer reply input — post a follow-up, then hit Copy for the full thread */}
-                {!isClient && onReply && (
+                {/* Reply input — designers post follow-ups for the agent; clients
+                    reply in the thread. Both go through the same onReply callback. */}
+                {onReply && (
                   <div style={{ marginTop: 10 }}>
                     <input
                       type="text"
-                      placeholder="Reply to agent…"
+                      placeholder={isClient ? 'Reply…' : 'Reply to agent…'}
                       value={replyDrafts[annotation.id] || ''}
                       onChange={(e) =>
                         setReplyDrafts(prev => ({ ...prev, [annotation.id]: e.target.value }))
