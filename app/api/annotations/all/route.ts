@@ -13,13 +13,13 @@ export interface ProjectAnnotation {
   roundId: string | undefined;
   roundNumber: number | undefined;
   /**
-   * Three-state model:
+   * Four-state model (UI tabs collapse open + in-progress into a single Open tab):
    * - 'open'        — last message is from designer AND not yet copied to agent
-   *                   (no submittedAt OR submittedAt is older than the latest designer message)
    * - 'in-progress' — submitted to agent, awaiting reply (or status='running')
    * - 'replied'     — last message is from agent
+   * - 'closed'      — annotation.resolved is true
    */
-  state: 'open' | 'in-progress' | 'replied';
+  state: 'open' | 'in-progress' | 'replied' | 'closed';
 }
 
 /**
@@ -114,11 +114,12 @@ function collectFromVersion(
   }
 
   for (const top of tops) {
-    if (top.resolved) continue; // resolved threads stay out of the to-do list
     const replies = repliesByParent.get(top.id) ?? [];
     const last = replies[replies.length - 1] ?? top;
-    let state: 'open' | 'in-progress' | 'replied';
-    if (last.isAgent) {
+    let state: 'open' | 'in-progress' | 'replied' | 'closed';
+    if (top.resolved) {
+      state = 'closed';
+    } else if (last.isAgent) {
       state = 'replied';
     } else if (top.status === 'running') {
       state = 'in-progress';

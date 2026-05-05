@@ -14,30 +14,36 @@ interface CommentsHubProps {
   refreshKey?: number;
 }
 
-type StateKey = 'open' | 'in-progress' | 'replied';
+type StateKey = 'open' | 'in-progress' | 'replied' | 'closed';
+type TabKey = 'open' | 'replied' | 'closed';
 
-const STATE_LABELS: Record<StateKey, string> = {
+const TAB_ORDER: TabKey[] = ['open', 'replied', 'closed'];
+const TAB_LABELS: Record<TabKey, string> = {
   'open': 'Open',
-  'in-progress': 'In progress',
   'replied': 'Replied',
-};
-
-// Hint shown under the section header on first render
-const STATE_HINTS: Record<StateKey, string> = {
-  'open': 'Written but not yet copied to the agent',
-  'in-progress': 'Sent to the agent, awaiting reply',
-  'replied': 'Agent has responded',
+  'closed': 'Closed',
 };
 
 const STATE_DOT: Record<StateKey, string> = {
   'open': 'var(--accent-orange)',
   'in-progress': 'var(--accent-teal)',
   'replied': 'var(--muted)',
+  'closed': 'var(--muted)',
 };
+
+// Map a row's true state to the tab it belongs to. In-progress rows live in the
+// Open tab (they're still pending the agent's reply) but keep their teal dot
+// inside the row to preserve the distinction.
+function tabForState(state: StateKey): TabKey {
+  if (state === 'in-progress' || state === 'open') return 'open';
+  if (state === 'replied') return 'replied';
+  return 'closed';
+}
 
 export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshKey }: CommentsHubProps) {
   const [items, setItems] = useState<ProjectAnnotation[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>('open');
 
   const load = useCallback(async () => {
     if (!open) return;
@@ -56,14 +62,15 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
 
   if (!open) return null;
 
-  const counts: Record<StateKey, number> = { 'open': 0, 'in-progress': 0, 'replied': 0 };
-  const grouped: Record<StateKey, ProjectAnnotation[]> = { 'open': [], 'in-progress': [], 'replied': [] };
+  const counts: Record<TabKey, number> = { 'open': 0, 'replied': 0, 'closed': 0 };
+  const grouped: Record<TabKey, ProjectAnnotation[]> = { 'open': [], 'replied': [], 'closed': [] };
   for (const it of items ?? []) {
-    counts[it.state]++;
-    grouped[it.state].push(it);
+    const tab = tabForState(it.state);
+    counts[tab]++;
+    grouped[tab].push(it);
   }
 
-  const ORDER: StateKey[] = ['open', 'in-progress', 'replied'];
+  const visible = grouped[activeTab];
 
   return (
     <>
@@ -90,23 +97,50 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
         }}
       >
         <div style={{
-          padding: '24px 28px 16px',
+          padding: '20px 28px 0',
           borderBottom: '1px solid var(--border)',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
-          <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.02em' }}>
-            Comments
-            {counts.open > 0 && (
-              <span style={{ marginLeft: 10, fontSize: 11, fontWeight: 400, color: 'var(--muted)' }}>
-                {counts.open} open
-              </span>
-            )}
-          </span>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, padding: 4 }}
-            title="Close"
-          >×</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.02em' }}>Comments</span>
+            <button
+              onClick={onClose}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, padding: 4 }}
+              title="Close"
+            >×</button>
+          </div>
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: 0, marginLeft: -4 }}>
+            {TAB_ORDER.map(key => {
+              const isActive = key === activeTab;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '8px 14px',
+                    fontSize: 11,
+                    fontWeight: isActive ? 600 : 400,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color: isActive ? 'var(--foreground)' : 'var(--muted)',
+                    borderBottom: `2px solid ${isActive ? 'var(--foreground)' : 'transparent'}`,
+                    marginBottom: -1,
+                    fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  {TAB_LABELS[key]}
+                  <span style={{
+                    fontSize: 10,
+                    color: isActive ? 'var(--muted)' : 'var(--muted)',
+                    opacity: isActive ? 0.7 : 0.5,
+                    fontWeight: 400,
+                  }}>{counts[key]}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div style={{ flex: 1, overflow: 'auto', padding: '8px 0 28px' }}>
@@ -115,95 +149,35 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
               Loading…
             </div>
           )}
-          {!loading && items && items.length === 0 && (
+          {!loading && items && visible.length === 0 && (
             <div style={{ padding: '40px 28px', fontSize: 11, color: 'var(--muted)', textAlign: 'center' }}>
-              No comments yet.
+              {activeTab === 'open' && 'No open comments. You’re caught up.'}
+              {activeTab === 'replied' && 'No replies yet.'}
+              {activeTab === 'closed' && 'No closed comments.'}
             </div>
           )}
-
-          {ORDER.map(key => {
-            const list = grouped[key];
-            if (list.length === 0) return null;
-            return (
-              <Section
-                key={key}
-                title={STATE_LABELS[key]}
-                hint={STATE_HINTS[key]}
-                count={list.length}
-                dotColor={STATE_DOT[key]}
-                items={list}
-                onJumpTo={(c, v, a) => { onJumpTo(c, v, a); onClose(); }}
-                defaultOpen={key !== 'replied'}
-                client={client}
-                project={project}
-                onLocalRefresh={load}
-              />
-            );
-          })}
+          {visible.map(item => (
+            <Row
+              key={item.annotation.id}
+              item={item}
+              dotColor={STATE_DOT[item.state]}
+              onJumpTo={(c, v, a) => { onJumpTo(c, v, a); onClose(); }}
+              client={client}
+              project={project}
+              onLocalRefresh={load}
+            />
+          ))}
         </div>
       </div>
     </>
   );
 }
 
-function Section({
-  title, hint, count, dotColor, items, onJumpTo, defaultOpen, client, project, onLocalRefresh,
-}: {
-  title: string;
-  hint: string;
-  count: number;
-  dotColor: string;
-  items: ProjectAnnotation[];
-  onJumpTo: (conceptId: string, versionId: string, annotationId: string) => void;
-  defaultOpen: boolean;
-  client: string;
-  project: string;
-  onLocalRefresh: () => void;
-}) {
-  const [openSection, setOpenSection] = useState(defaultOpen);
-  return (
-    <div style={{ borderBottom: '1px solid var(--border)' }}>
-      <button
-        onClick={() => setOpenSection(o => !o)}
-        style={{
-          width: '100%', padding: '14px 28px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: 'var(--foreground)', fontFamily: 'inherit',
-        }}
-        title={hint}
-      >
-        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor, display: 'inline-block' }} />
-          <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            {title}
-          </span>
-          <span style={{ fontSize: 11, color: 'var(--muted)' }}>{count}</span>
-        </span>
-        <span style={{ fontSize: 10, color: 'var(--muted)' }}>{openSection ? '−' : '+'}</span>
-      </button>
-      {openSection && (
-        <div style={{ paddingBottom: 8 }}>
-          {items.map(item => (
-            <Row
-              key={item.annotation.id}
-              item={item}
-              onJumpTo={onJumpTo}
-              client={client}
-              project={project}
-              onLocalRefresh={onLocalRefresh}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function Row({
-  item, onJumpTo, client, project, onLocalRefresh,
+  item, dotColor, onJumpTo, client, project, onLocalRefresh,
 }: {
   item: ProjectAnnotation;
+  dotColor: string;
   onJumpTo: (conceptId: string, versionId: string, annotationId: string) => void;
   client: string;
   project: string;
@@ -251,7 +225,8 @@ function Row({
         title={item.annotation.text}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-          <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
             {item.roundNumber ? `R${item.roundNumber} · ` : ''}{item.conceptLabel} · v{item.versionNumber}
           </span>
           <span style={{ fontSize: 10, color: 'var(--muted)' }}>{ago}</span>
