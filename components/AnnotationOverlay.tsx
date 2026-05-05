@@ -130,6 +130,17 @@ export function AnnotationOverlay({
     if (pendingPlanMode) window.sessionStorage.setItem('driftgrid:pendingPlanMode', '1');
     else window.sessionStorage.removeItem('driftgrid:pendingPlanMode');
   }, [pendingPlanMode]);
+  // Attach-screenshot toggle — off by default, persisted to localStorage so opt-in
+  // sticks across sessions for users who want it on by default.
+  const [pendingAttachScreenshot, setPendingAttachScreenshot] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('driftgrid:attachScreenshot') === '1';
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (pendingAttachScreenshot) window.localStorage.setItem('driftgrid:attachScreenshot', '1');
+    else window.localStorage.removeItem('driftgrid:attachScreenshot');
+  }, [pendingAttachScreenshot]);
 
   // Replies lookup — any annotation with parentId is a reply to another annotation
   const repliesByParent = annotations.reduce<Record<string, Annotation[]>>((acc, a) => {
@@ -488,7 +499,36 @@ export function AnnotationOverlay({
     if (!pendingText.trim()) return;
     const saved = await handleSubmitPending();
     if (!saved) return;
-    const message = buildAnnotationAgentMessage(saved);
+    // Optionally capture a screenshot of the current frame and stash the path on
+    // the annotation. Done before building the message so the path can be
+    // appended to the agent payload.
+    let screenshotPath: string | null = null;
+    if (
+      pendingAttachScreenshot &&
+      frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId
+    ) {
+      try {
+        const r = await fetch('/api/screenshot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client: frameContext.client,
+            project: frameContext.project,
+            conceptId: frameContext.conceptId,
+            versionId: frameContext.versionId,
+            annotationId: saved.id,
+          }),
+        });
+        if (r.ok) {
+          const data = await r.json();
+          screenshotPath = data.path ?? null;
+        }
+      } catch { /* swallow — copy still works without the screenshot */ }
+    }
+    let message = buildAnnotationAgentMessage(saved);
+    if (screenshotPath) {
+      message += `\n\nScreenshot: ${screenshotPath}\n(Open this with your file tool to see what the designer was looking at.)`;
+    }
     try {
       await navigator.clipboard?.writeText(message);
     } catch {
@@ -517,7 +557,7 @@ export function AnnotationOverlay({
       setPendingText('');
       setCopyState('idle');
     }, 600);
-  }, [pendingText, handleSubmitPending, buildAnnotationAgentMessage]);
+  }, [pendingText, handleSubmitPending, buildAnnotationAgentMessage, pendingAttachScreenshot, frameContext]);
 
   const handlePinClick = useCallback(
     (e: React.MouseEvent, id: string) => {
@@ -1425,6 +1465,38 @@ export function AnnotationOverlay({
                   }}
                 >
                   Plan first
+                </button>
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPendingAttachScreenshot(v => !v);
+                    inputRef.current?.focus();
+                  }}
+                  title="When on, capture a PNG of this frame and include the path in the agent payload"
+                  style={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: 9,
+                    letterSpacing: '0.06em',
+                    textTransform: 'capitalize',
+                    padding: '3px 8px',
+                    borderRadius: 4,
+                    border: '1px solid ' + (pendingAttachScreenshot ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.08)'),
+                    background: pendingAttachScreenshot ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    color: pendingAttachScreenshot ? '#fff' : 'rgba(255,255,255,0.45)',
+                    cursor: 'pointer',
+                    transition: 'background 0.12s ease, color 0.12s ease, border-color 0.12s ease',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  Screenshot
                 </button>
               </div>
             )}

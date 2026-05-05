@@ -72,6 +72,12 @@ export interface Annotation {
    */
   submittedAt?: string;
   /**
+   * Optional file paths attached to the annotation (e.g. screenshots saved at
+   * Copy-for-Agent time). Stored as absolute paths so the Copy-for-Agent payload
+   * can reference them and the agent can read them with its file tool.
+   */
+  attachments?: string[];
+  /**
    * Optional target provider for routing. Values: 'claude' | 'codex' | 'gemini'.
    * Undefined = any agent may pick it up. Set by the designer in the comment input.
    */
