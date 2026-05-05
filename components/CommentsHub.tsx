@@ -40,10 +40,14 @@ function tabForState(state: StateKey): TabKey {
   return 'closed';
 }
 
+const DELETE_CONFIRM_SKIP_KEY = 'driftgrid:skipCommentDeleteConfirm';
+
 export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshKey }: CommentsHubProps) {
   const [items, setItems] = useState<ProjectAnnotation[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('open');
+  const [pendingDelete, setPendingDelete] = useState<ProjectAnnotation | null>(null);
+  const [skipNextTime, setSkipNextTime] = useState(false);
 
   const load = useCallback(async () => {
     if (!open) return;
@@ -59,6 +63,40 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
   useEffect(() => {
     if (open) load();
   }, [open, load, refreshKey]);
+
+  // Performs the delete network call (used by both the dialog and the skip-path).
+  const performDelete = useCallback(async (it: ProjectAnnotation) => {
+    await fetch('/api/annotations', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId: it.conceptId, versionId: it.versionId,
+        annotationId: it.annotation.id,
+      }),
+    });
+    load();
+  }, [client, project, load]);
+
+  // Row entrypoint — checks the skip-confirm preference, otherwise opens the dialog.
+  const requestDelete = useCallback((it: ProjectAnnotation) => {
+    const skip = typeof window !== 'undefined' && localStorage.getItem(DELETE_CONFIRM_SKIP_KEY) === '1';
+    if (skip) {
+      performDelete(it);
+    } else {
+      setPendingDelete(it);
+      setSkipNextTime(false);
+    }
+  }, [performDelete]);
+
+  const confirmDeletion = useCallback(() => {
+    if (!pendingDelete) return;
+    if (skipNextTime) {
+      try { localStorage.setItem(DELETE_CONFIRM_SKIP_KEY, '1'); } catch {}
+    }
+    performDelete(pendingDelete);
+    setPendingDelete(null);
+  }, [pendingDelete, skipNextTime, performDelete]);
 
   if (!open) return null;
 
@@ -165,16 +203,90 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
               client={client}
               project={project}
               onLocalRefresh={load}
+              onRequestDelete={requestDelete}
             />
           ))}
         </div>
       </div>
+
+      {/* Delete confirmation dialog — z-index above the panel */}
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }}
+          onClick={() => setPendingDelete(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--background)',
+              color: 'var(--foreground)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: 24,
+              maxWidth: 380,
+              width: '100%',
+              margin: '0 16px',
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Delete comment?</div>
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 18, lineHeight: 1.5 }}>
+              {pendingDelete.conceptLabel} · v{pendingDelete.versionNumber}
+              <br />
+              “{pendingDelete.annotation.text.slice(0, 80)}{pendingDelete.annotation.text.length > 80 ? '…' : ''}”
+              <br /><br />
+              This can’t be undone.
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: 'var(--muted)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={skipNextTime}
+                  onChange={(e) => setSkipNextTime(e.target.checked)}
+                />
+                Don’t ask again
+              </label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  onClick={() => setPendingDelete(null)}
+                  style={{
+                    fontSize: 11, padding: '6px 12px', borderRadius: 5,
+                    border: '1px solid var(--border)',
+                    background: 'none',
+                    color: 'var(--muted)',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeletion}
+                  style={{
+                    fontSize: 11, padding: '6px 12px', borderRadius: 5,
+                    border: 'none',
+                    background: 'var(--accent-orange)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontWeight: 600,
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
 function Row({
-  item, dotColor, onJumpTo, client, project, onLocalRefresh,
+  item, dotColor, onJumpTo, client, project, onLocalRefresh, onRequestDelete,
 }: {
   item: ProjectAnnotation;
   dotColor: string;
@@ -182,6 +294,7 @@ function Row({
   client: string;
   project: string;
   onLocalRefresh: () => void;
+  onRequestDelete: (item: ProjectAnnotation) => void;
 }) {
   const last = item.replies[item.replies.length - 1] ?? item.annotation;
   const lastWho = last.isAgent ? (last.author || 'agent') : (last.author || 'designer');
@@ -233,20 +346,10 @@ function Row({
     onLocalRefresh();
   }, [client, project, item.conceptId, item.versionId, item.annotation.id, item.annotation.resolved, onLocalRefresh]);
 
-  const handleDelete = useCallback(async (e: React.MouseEvent) => {
+  const handleDelete = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('Delete this comment? This can’t be undone.')) return;
-    await fetch('/api/annotations', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client, project,
-        conceptId: item.conceptId, versionId: item.versionId,
-        annotationId: item.annotation.id,
-      }),
-    });
-    onLocalRefresh();
-  }, [client, project, item.conceptId, item.versionId, item.annotation.id, onLocalRefresh]);
+    onRequestDelete(item);
+  }, [onRequestDelete, item]);
 
   const [hovered, setHovered] = useState(false);
 
