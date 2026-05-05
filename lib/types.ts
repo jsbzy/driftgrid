@@ -65,6 +65,13 @@ export interface Annotation {
    */
   status?: 'running';
   /**
+   * ISO timestamp of the last time the designer pressed "Copy for Agent" on this
+   * thread. Only meaningful on top-level annotations. Used by the comments hub to
+   * distinguish "open" (designer wrote a message but hasn't copied it to the
+   * agent yet) from "awaiting reply" (copied, waiting on the agent).
+   */
+  submittedAt?: string;
+  /**
    * Optional target provider for routing. Values: 'claude' | 'codex' | 'gemini'.
    * Undefined = any agent may pick it up. Set by the designer in the comment input.
    */

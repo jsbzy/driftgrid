@@ -473,6 +473,21 @@ export function AnnotationOverlay({
     } catch {
       // clipboard may fail silently
     }
+    // Mark the thread as submitted so the comments hub knows the agent has it.
+    if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
+      fetch('/api/annotations', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client: frameContext.client,
+          project: frameContext.project,
+          conceptId: frameContext.conceptId,
+          versionId: frameContext.versionId,
+          annotationId: saved.id,
+          submittedAt: new Date().toISOString(),
+        }),
+      }).catch(() => {});
+    }
     setCopyState('copied');
     toast('Copied — paste into your agent');
     // Hold the popup open briefly so the success state is visible, then close it cleanly.
@@ -1068,6 +1083,21 @@ export function AnnotationOverlay({
                             if (draft && onReply) {
                               onReply(annotation.id, draft);
                               setReplyDrafts(prev => ({ ...prev, [annotation.id]: '' }));
+                            }
+                            // Mark the thread as freshly submitted to the agent.
+                            if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
+                              fetch('/api/annotations', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  client: frameContext.client,
+                                  project: frameContext.project,
+                                  conceptId: frameContext.conceptId,
+                                  versionId: frameContext.versionId,
+                                  annotationId: annotation.id,
+                                  submittedAt: new Date().toISOString(),
+                                }),
+                              }).catch(() => {});
                             }
                             toast('Copied — paste into your agent');
                             setActivePin(null);

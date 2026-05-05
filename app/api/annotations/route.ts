@@ -136,7 +136,7 @@ export async function DELETE(request: Request) {
  * If none of these are supplied, toggles `resolved` for backwards compat.
  */
 export async function PATCH(request: Request) {
-  const { client, project, conceptId, versionId, annotationId, resolved, text, status } = await request.json();
+  const { client, project, conceptId, versionId, annotationId, resolved, text, status, submittedAt } = await request.json();
 
   if (!client || !project || !conceptId || !versionId || !annotationId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -164,6 +164,13 @@ export async function PATCH(request: Request) {
     touched = true;
   } else if (status === null) {
     delete annotation.status;
+    touched = true;
+  }
+  if (typeof submittedAt === 'string') {
+    annotation.submittedAt = submittedAt;
+    touched = true;
+  } else if (submittedAt === null) {
+    delete annotation.submittedAt;
     touched = true;
   }
   if (!touched) {

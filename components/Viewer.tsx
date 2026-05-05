@@ -30,6 +30,7 @@ import { useManifestMutations } from '@/lib/hooks/useManifestMutations';
 import { AnnotationOverlay } from './AnnotationOverlay';
 import { ClientNamePrompt } from './ClientNamePrompt';
 import { SharePanel } from './SharePanel';
+import { CommentsHub } from './CommentsHub';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -81,6 +82,8 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   // card content — they're here to review, not to get a map of the project.
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(mode === 'client' ? 'z2' : 'overview');
   const [sharePanelOpen, setSharePanelOpen] = useState(false);
+  const [commentsHubOpen, setCommentsHubOpen] = useState(false);
+  const [openCommentsCount, setOpenCommentsCount] = useState<number>(0);
   const [isDarkTheme, setIsDarkTheme] = useState(() => {
     if (typeof document === 'undefined') return false;
     return document.documentElement.classList.contains('dark');
@@ -1197,12 +1200,59 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     <ClientNamePrompt onSubmit={clientComments.setAuthorName} />
   ) : null;
 
+  // Poll the awaiting-comments count so the topbar badge stays accurate even
+  // when the hub is closed. Cheap: aggregates one manifest read on the server.
+  useEffect(() => {
+    if (mode === 'client' || shareToken) return;
+    let cancelled = false;
+    const fetchCount = async () => {
+      try {
+        const res = await fetch(`/api/annotations/all?client=${encodeURIComponent(client)}&project=${encodeURIComponent(project)}`);
+        if (!res.ok) return;
+        const list: { state: string }[] = await res.json();
+        if (cancelled) return;
+        setOpenCommentsCount(list.filter(i => i.state === 'open').length);
+      } catch {}
+    };
+    fetchCount();
+    const t = setInterval(fetchCount, 60000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [client, project, mode, shareToken, commentsHubOpen]);
+
+  // Jump from the comments hub to a frame: switch round if needed, set indices, enter frame.
+  const handleHubJumpTo = useCallback((conceptId: string, versionId: string, _annotationId: string) => {
+    if (!manifest) return;
+    // Find which round contains this concept
+    const rounds = manifest.rounds ?? [];
+    let foundRoundId: string | null = null;
+    let ci = -1;
+    let vi = -1;
+    for (const r of rounds) {
+      const conceptIdx = r.concepts.findIndex(c => c.id === conceptId);
+      if (conceptIdx < 0) continue;
+      const versionIdx = r.concepts[conceptIdx].versions.findIndex(v => v.id === versionId);
+      if (versionIdx < 0) continue;
+      foundRoundId = r.id;
+      ci = conceptIdx;
+      vi = versionIdx;
+      break;
+    }
+    if (ci < 0) return;
+    if (foundRoundId && foundRoundId !== activeRoundId) {
+      setActiveRoundId(foundRoundId);
+    }
+    setConceptIndex(ci);
+    setVersionIndex(vi);
+    setViewMode('frame');
+  }, [manifest, activeRoundId]);
+
   // --- GRID VIEW ---
   if (viewMode === 'grid') {
     return (
       <div className="h-screen flex flex-col bg-[var(--background)]">
         {namePrompt}
         <SharePanel open={sharePanelOpen} onClose={() => setSharePanelOpen(false)} client={client} project={project} roundId={activeRoundId} roundNumber={activeRound?.number ?? null} />
+        <CommentsHub open={commentsHubOpen} onClose={() => setCommentsHubOpen(false)} client={client} project={project} onJumpTo={handleHubJumpTo} />
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
@@ -1315,6 +1365,44 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                 <polygon points="6 4 20 12 6 20 6 4" />
               </svg>
               Present
+            </button>
+          )}
+          {/* Comments hub — bubble icon with awaiting-count badge */}
+          {mode !== 'client' && (
+            <button
+              onClick={() => setCommentsHubOpen(true)}
+              className="flex items-center transition-all"
+              style={{
+                color: 'var(--foreground)',
+                cursor: 'pointer',
+                background: 'none',
+                border: 'none',
+                opacity: 0.5,
+                padding: 4,
+                position: 'relative',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.5'; }}
+              title={openCommentsCount > 0 ? `${openCommentsCount} open comment${openCommentsCount === 1 ? '' : 's'} not yet sent to an agent` : 'Comments'}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              {openCommentsCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: -2, right: -4,
+                  minWidth: 14, height: 14,
+                  padding: '0 4px',
+                  borderRadius: 7,
+                  background: 'var(--accent-orange)',
+                  color: '#fff',
+                  fontSize: 9,
+                  fontWeight: 600,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  lineHeight: 1,
+                }}>{openCommentsCount}</span>
+              )}
             </button>
           )}
           {/* Theme toggle — sun/moon icon */}
