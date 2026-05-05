@@ -218,6 +218,38 @@ function Row({
     onLocalRefresh();
   }, [client, project, item.conceptId, item.versionId, item.annotation.id, onLocalRefresh]);
 
+  const handleToggleResolve = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await fetch('/api/annotations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId: item.conceptId, versionId: item.versionId,
+        annotationId: item.annotation.id,
+        resolved: !item.annotation.resolved,
+      }),
+    });
+    onLocalRefresh();
+  }, [client, project, item.conceptId, item.versionId, item.annotation.id, item.annotation.resolved, onLocalRefresh]);
+
+  const handleDelete = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this comment? This can’t be undone.')) return;
+    await fetch('/api/annotations', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, project,
+        conceptId: item.conceptId, versionId: item.versionId,
+        annotationId: item.annotation.id,
+      }),
+    });
+    onLocalRefresh();
+  }, [client, project, item.conceptId, item.versionId, item.annotation.id, onLocalRefresh]);
+
+  const [hovered, setHovered] = useState(false);
+
   return (
     <div
       style={{
@@ -225,8 +257,8 @@ function Row({
         borderLeft: '2px solid transparent',
         transition: 'background 120ms ease',
       }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--column-tint)'; (e.currentTarget as HTMLElement).style.borderLeftColor = 'var(--column-accent)'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.borderLeftColor = 'transparent'; }}
+      onMouseEnter={(e) => { setHovered(true); (e.currentTarget as HTMLElement).style.background = 'var(--column-tint)'; (e.currentTarget as HTMLElement).style.borderLeftColor = 'var(--column-accent)'; }}
+      onMouseLeave={(e) => { setHovered(false); (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.borderLeftColor = 'transparent'; }}
     >
       <button
         onClick={() => onJumpTo(item.conceptId, item.versionId, item.annotation.id)}
@@ -245,7 +277,7 @@ function Row({
               {item.roundNumber ? `R${item.roundNumber} · ` : ''}{item.conceptLabel} · v{item.versionNumber}
             </span>
           </span>
-          <span style={{ fontSize: 10, color: 'var(--muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{when}</span>
+          <span style={{ fontSize: 10, color: 'var(--muted)', whiteSpace: 'nowrap', flexShrink: 0, opacity: hovered ? 0 : 1, transition: 'opacity 120ms ease' }}>{when}</span>
         </div>
         <div style={{ fontSize: 12, lineHeight: 1.45, marginBottom: 4, paddingRight: item.state === 'in-progress' ? 80 : 0 }}>
           {preview}{truncated ? '…' : ''}
@@ -265,32 +297,93 @@ function Row({
           {item.replies.length > 0 && <span>· {item.replies.length} repl{item.replies.length === 1 ? 'y' : 'ies'}</span>}
         </div>
       </button>
-      {/* "Didn't actually paste it" undo — only on in-progress rows */}
-      {item.state === 'in-progress' && (
+      {/* Hover actions — sit where the timestamp was, replacing it on hover */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 8, right: 16,
+          display: 'flex',
+          gap: 4,
+          opacity: hovered ? 1 : 0,
+          pointerEvents: hovered ? 'auto' : 'none',
+          transition: 'opacity 120ms ease',
+        }}
+      >
+        {/* Mark-as-open: only on in-progress rows */}
+        {item.state === 'in-progress' && (
+          <button
+            onClick={handleMarkOpen}
+            title="Mark as not yet sent (you copied but didn't paste into the agent)"
+            style={{
+              fontSize: 9,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              padding: '3px 6px',
+              borderRadius: 3,
+              background: 'none',
+              border: '1px solid var(--border)',
+              color: 'var(--muted)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            ↺ open
+          </button>
+        )}
+        {/* Resolve / Unresolve */}
         <button
-          onClick={handleMarkOpen}
-          title="Mark as not yet sent (in case you copied but didn't paste into the agent)"
+          onClick={handleToggleResolve}
+          title={item.annotation.resolved ? 'Reopen this comment' : 'Resolve this comment'}
           style={{
-            position: 'absolute',
-            top: 8, right: 16,
-            fontSize: 9,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            padding: '3px 6px',
-            borderRadius: 3,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 22, height: 22, borderRadius: 3,
+            background: 'none',
+            border: '1px solid var(--border)',
+            color: item.annotation.resolved ? 'var(--accent-green)' : 'var(--muted)',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.color = 'var(--accent-green)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent-green)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.color = item.annotation.resolved ? 'var(--accent-green)' : 'var(--muted)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+        {/* Delete */}
+        <button
+          onClick={handleDelete}
+          title="Delete this comment"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 22, height: 22, borderRadius: 3,
             background: 'none',
             border: '1px solid var(--border)',
             color: 'var(--muted)',
             cursor: 'pointer',
-            fontFamily: 'inherit',
-            opacity: 0.6,
           }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.6'; }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.color = 'var(--accent-orange)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent-orange)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.color = 'var(--muted)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+          }}
         >
-          ↺ open
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+          </svg>
         </button>
-      )}
+      </div>
     </div>
   );
 }
