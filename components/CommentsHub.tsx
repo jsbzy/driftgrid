@@ -187,7 +187,21 @@ function Row({
   const lastWho = last.isAgent ? (last.author || 'agent') : (last.author || 'designer');
   const preview = item.annotation.text.replace(/\s+/g, ' ').slice(0, 90);
   const truncated = item.annotation.text.length > 90;
-  const ago = formatAgo(last.created);
+  const when = formatDateTime(last.created);
+  // Who's the responsible party for the next move
+  // - in-progress: the routed agent (or "an agent" if untargeted)
+  // - replied:     designer is up — "your turn"
+  // - open:        you wrote it, agent doesn't have it yet
+  // - closed:      done
+  let workingLine: string | null = null;
+  if (item.state === 'in-progress') {
+    const who = item.annotation.provider || 'an agent';
+    workingLine = `${who} working on it`;
+  } else if (item.state === 'replied') {
+    workingLine = 'your turn';
+  } else if (item.state === 'open') {
+    workingLine = 'not sent yet';
+  }
 
   const handleMarkOpen = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -224,20 +238,31 @@ function Row({
         }}
         title={item.annotation.text}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-          <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, gap: 8 }}>
+          <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
-            {item.roundNumber ? `R${item.roundNumber} · ` : ''}{item.conceptLabel} · v{item.versionNumber}
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {item.roundNumber ? `R${item.roundNumber} · ` : ''}{item.conceptLabel} · v{item.versionNumber}
+            </span>
           </span>
-          <span style={{ fontSize: 10, color: 'var(--muted)' }}>{ago}</span>
+          <span style={{ fontSize: 10, color: 'var(--muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{when}</span>
         </div>
         <div style={{ fontSize: 12, lineHeight: 1.45, marginBottom: 4, paddingRight: item.state === 'in-progress' ? 80 : 0 }}>
           {preview}{truncated ? '…' : ''}
         </div>
-        <div style={{ fontSize: 10, color: 'var(--muted)', display: 'flex', gap: 10, alignItems: 'center' }}>
-          <span>last: {lastWho}</span>
+        <div style={{ fontSize: 10, color: 'var(--muted)', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          {workingLine && (
+            <span style={{
+              color: item.state === 'in-progress' ? 'var(--accent-teal)'
+                : item.state === 'replied' ? 'var(--foreground)'
+                : 'var(--accent-orange)',
+              fontWeight: item.state === 'replied' ? 600 : 500,
+            }}>
+              {workingLine}
+            </span>
+          )}
+          <span>· last by {lastWho}</span>
           {item.replies.length > 0 && <span>· {item.replies.length} repl{item.replies.length === 1 ? 'y' : 'ies'}</span>}
-          {item.annotation.provider && <span>· → {item.annotation.provider}</span>}
         </div>
       </button>
       {/* "Didn't actually paste it" undo — only on in-progress rows */}
@@ -270,16 +295,28 @@ function Row({
   );
 }
 
-function formatAgo(iso: string): string {
+function formatDateTime(iso: string): string {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return '';
-  const diff = Date.now() - t;
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d`;
-  return new Date(iso).toLocaleDateString();
+  const now = new Date();
+  const then = new Date(iso);
+  // Calendar-day boundaries (not 24-hour rolling) — "yesterday at 11pm" should
+  // read as Yesterday even if it's only an hour ago.
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfYesterday = startOfToday - 86_400_000;
+  const startOfWeekAgo = startOfToday - 6 * 86_400_000;
+  const time = then.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase().replace(' ', '');
+  if (Date.now() - t < 60_000) return 'just now';
+  if (then.getTime() >= startOfToday) return `Today ${time}`;
+  if (then.getTime() >= startOfYesterday) return `Yesterday ${time}`;
+  if (then.getTime() >= startOfWeekAgo) {
+    const weekday = then.toLocaleDateString([], { weekday: 'short' });
+    return `${weekday} ${time}`;
+  }
+  // Older — include month/day; year only if not the current year.
+  const sameYear = then.getFullYear() === now.getFullYear();
+  const date = then.toLocaleDateString([], sameYear
+    ? { month: 'short', day: 'numeric' }
+    : { month: 'short', day: 'numeric', year: 'numeric' });
+  return `${date} ${time}`;
 }
