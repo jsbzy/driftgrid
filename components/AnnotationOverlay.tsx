@@ -59,7 +59,7 @@ const PIN_BG_BY_STATE: Record<'open' | 'in-progress' | 'replied' | 'closed', str
   // replied     — agent finished, designer's turn to review → positive green
   // closed      — resolved, no action → muted gray
   'open':        'var(--accent-orange)',
-  'in-progress': 'var(--accent-teal)',
+  'in-progress': 'var(--accent-purple)',
   'replied':     'var(--accent-green)',
   'closed':      'var(--muted)',
 };
