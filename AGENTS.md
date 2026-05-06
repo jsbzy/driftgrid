@@ -274,6 +274,27 @@ Pure raster output. Each version is a fresh image-gen sample.
 - The manifest's `version.file` field carries the .png path. The DriftGrid viewer renders it via `<img>` (or an iframe loading the image directly — both work).
 - **This is the right choice for**: moodboards, photographic treatments, brand exploration, illustration studies, abstract texture / pattern work — anything where the *image itself* is the deliverable.
 
+#### How to iterate on an image project (READ THIS — common failure mode)
+
+If you find yourself editing an `.html` file in an `output: "image"` project, **you are in the wrong workflow**. Stop. The viewer is showing a PNG; HTML edits do nothing visible. Switch tactics:
+
+1. **Read the existing version's prompt context** — it should be in the version's `changelog` or in a `.prompt.txt` sidecar next to the PNG. If neither exists, ask the user what prompt produced the current image.
+2. **Construct a new prompt** that incorporates the user's feedback ("warmer palette", "no text in the image", "more abstract").
+3. **Generate a new image** via the available image-gen tool:
+   - **Codex / OpenAI**: run `node bin/gen-image.js --prompt "<new prompt>" --out projects/{client}/{project}/concept-{N}/v{next}.png --size {width}x{height}` (matching the canvas dimensions).
+   - **Gemini**: equivalent CLI or API call producing a PNG at the same path.
+   - **Claude**: cannot generate images. If routed a prompt on an `image` project, reply with a one-line message asking the designer to re-route to OpenAI or Gemini. Do not produce a vector "approximation."
+4. **Save the prompt** alongside the new PNG as `concept-N/v{next}.prompt.txt` (one file per version) so the next iteration has context.
+5. **Update `manifest.json`** — append a new version entry with `file: "concept-N/v{next}.png"` and a `changelog` summarizing the change ("warmer palette, removed text").
+6. **Regenerate the thumbnail** if the system has thumbnail generation enabled.
+7. **Reply to the designer** with the new file path and DriftGrid URL (per the Echo rule).
+
+**Do NOT**:
+- Edit the previous version's `.html` file (there isn't one — and if there is, it's a leftover from project init that should have been replaced by the first PNG).
+- Produce HTML that *looks like* what was asked (ascii art, CSS-drawn shapes, base64 placeholder PNGs). That's not iteration; it's a fake.
+- Reuse the previous PNG and pretend it was regenerated.
+- Fall back silently when no image-gen tool is available. Say so out loud: "I can't generate images in this environment — please retry with OpenAI/Gemini routing, or rerun the project with `--output vector` if HTML is acceptable."
+
 ### `output: "hybrid"`
 HTML canvas with one or more regenerable image regions. Image-gen for the visual blocks, HTML for everything else (layout, typography, structural composition).
 - File extension: `.html`. Image assets live in `concept-N/assets/`.
@@ -289,6 +310,19 @@ HTML canvas with one or more regenerable image regions. Image-gen for the visual
 - To iterate just the imagery: keep the HTML structure, regenerate one slot's image, save the new PNG over the same path (or a new path), update the manifest version.
 - All other DriftGrid HTML rules apply (Google Fonts via `<link>`, no external image URLs, self-contained markup).
 - **This is the right choice for**: rapid creative iteration where the layout is locked but the imagery is exploratory — landing-page heroes, deck cover slides, marketing visuals composed of generated art + crafted text.
+
+#### How to iterate on a hybrid project
+
+When the designer's prompt targets a region that has `data-drift-regen`, treat it as a **slot regeneration**, not an HTML edit:
+
+1. **Find the slot** — look for the `<img data-drift-regen="<name>">` in the current version's HTML whose name matches the designer's intent ("the hero", "the texture", "the icon"). If it's ambiguous, ask which slot.
+2. **Read the slot's prompt** from `data-drift-prompt`. Combine it with the designer's feedback into a new prompt.
+3. **Generate a new image** for that slot only — same tools as `image` mode.
+4. **Save the new PNG** under `concept-N/assets/<slot>.png` (overwriting if same slot, or new filename if you want the old one preserved).
+5. **Drift the HTML to v(N+1)** — duplicate the previous HTML, swap the `src` and update `data-drift-prompt` to the new prompt, leave everything else untouched. The structural HTML iteration is what produces a new "version" the designer can compare against.
+6. Update manifest + thumbnail + reply per the Echo rule.
+
+If the designer's request is *structural* (layout, typography, copy) on a hybrid project, treat it like a vector edit: drift the HTML, leave the existing PNGs alone, only swap the `src` if the new layout needs different imagery.
 
 ### Picking the right output type when none is set
 If `manifest.project.output` is missing, treat as `vector`. If you genuinely cannot produce the requested output as vector — e.g. the user asks for a photoreal product shot or a painterly illustration — flag it to the user before producing anything; suggest they recreate the project with `--output image` or `--output hybrid`. Never silently fall back to embedding base64-blob "image" content in HTML; that defeats the iteration model.
