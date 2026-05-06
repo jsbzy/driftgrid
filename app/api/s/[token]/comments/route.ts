@@ -119,19 +119,25 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Fire-and-forget email notification to the project owner.
-  // Cloud-only — local dev never has RESEND_API_KEY anyway, but skip the auth
-  // lookup entirely when not in cloud mode.
+  // Email notification to the project owner.
+  // Awaited (not fire-and-forget) because Vercel serverless freezes function
+  // execution after the response is sent — orphaned promises don't run. ~200-
+  // 500ms added latency, which is acceptable on the comment-create path.
   if (isCloudMode() && process.env.RESEND_API_KEY) {
-    notifyOwner({
-      userId: resolved.userId,
-      client: resolved.client,
-      project: resolved.project,
-      token,
-      authorName: author_name.trim(),
-      body: commentBody.trim(),
-      isReply: !!parent_comment_id,
-    }).catch(e => console.error('[comments] notify failed', e));
+    try {
+      await notifyOwner({
+        userId: resolved.userId,
+        client: resolved.client,
+        project: resolved.project,
+        token,
+        authorName: author_name.trim(),
+        body: commentBody.trim(),
+        isReply: !!parent_comment_id,
+      });
+    } catch (e) {
+      // Don't fail the comment if email errors — log and continue.
+      console.error('[comments] notify failed', e);
+    }
   }
 
   return NextResponse.json(data, { status: 201 });
