@@ -17,6 +17,8 @@ export interface ProjectLinks {
   [key: string]: string | undefined;
 }
 
+export type ProjectOutput = 'vector' | 'image' | 'hybrid';
+
 export interface ProjectMeta {
   name: string;
   slug: string;
@@ -24,6 +26,19 @@ export interface ProjectMeta {
   canvas: string;
   created: string;
   links: ProjectLinks;
+  /**
+   * What the agent should produce on this project.
+   * - 'vector' (default): HTML/CSS/SVG. Editable, exportable. Any agent.
+   * - 'image':  raster output (PNG). Each version is a fresh image-gen sample.
+   *             Requires an image-capable model (OpenAI gpt-image, Gemini Imagen,
+   *             etc.) — Claude/Codex's text models can't produce images.
+   * - 'hybrid': HTML canvas with <img> slots. Image-gen for visual blocks,
+   *             HTML for layout/typography. Best for rapid iteration when
+   *             only some regions of a frame need regenerating.
+   *
+   * Undefined is treated as 'vector' for backward compatibility.
+   */
+  output?: ProjectOutput;
   /**
    * Supabase auth.users.id of the project owner. Present on cloud projects
    * (Pro tier), undefined on local-only projects (Free tier). Used to scope

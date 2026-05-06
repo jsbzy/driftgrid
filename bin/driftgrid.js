@@ -15,7 +15,7 @@ if (command === '--help' || command === '-h' || command === 'help') {
 
   Usage:
     driftgrid                         Start the dev server (default)
-    driftgrid init [client] [project] [--canvas <preset>]
+    driftgrid init [client] [project] [--canvas <preset>] [--output <type>]
                                       Scaffold a new project
     driftgrid doctor                  Check the local install for problems
     driftgrid generate-thumbs [...]   Regenerate project thumbnails
@@ -24,10 +24,16 @@ if (command === '--help' || command === '-h' || command === 'help') {
   Canvas presets:
     desktop, mobile, tablet, landscape-16-9, a4-portrait, freeform
 
+  Output types (--output):
+    vector  HTML/CSS/SVG (default — most projects)
+    image   raster PNG per frame (needs an image-gen model)
+    hybrid  HTML canvas with regenerable <img> slots
+
   Examples:
     driftgrid                         # start dev server on :3000
     driftgrid init Acme "Landing Page"
-    driftgrid init Acme "Pitch Deck" --canvas landscape-16-9
+    driftgrid init Acme "Pitch Deck"  --canvas landscape-16-9
+    driftgrid init Acme Moodboard     --canvas desktop --output image
   `);
   process.exit(0);
 }

@@ -73,6 +73,7 @@ async function main() {
   let clientRaw: string;
   let projectRaw: string;
   let canvasPreset: string | null = null;
+  let outputType: 'vector' | 'image' | 'hybrid' = 'vector';
 
   if (args.length >= 2 && !args[0].startsWith('--')) {
     // Non-interactive: args provided
@@ -81,6 +82,15 @@ async function main() {
     for (let i = 2; i < args.length; i++) {
       if (args[i] === '--canvas' && args[i + 1]) {
         canvasPreset = args[i + 1];
+        i++;
+      } else if (args[i] === '--output' && args[i + 1]) {
+        const v = args[i + 1];
+        if (v === 'vector' || v === 'image' || v === 'hybrid') {
+          outputType = v;
+        } else {
+          console.error(`  ERROR: --output must be one of: vector, image, hybrid (got "${v}")`);
+          process.exit(1);
+        }
         i++;
       }
     }
@@ -142,6 +152,20 @@ async function main() {
         console.log(`  "${canvasInput}" is not a valid preset. Try a number 1–${VALID_PRESETS.length} or a name from the list.`);
       }
     }
+
+    // Output type — what the agent will produce
+    console.log('');
+    console.log('  Output type — what is the agent producing?');
+    console.log('    1. vector  — HTML/CSS/SVG. Editable, exportable, any agent. (default — pick this for most things)');
+    console.log('    2. image   — raster (PNG) per frame. Needs an image-gen model (OpenAI gpt-image / Gemini Imagen).');
+    console.log('                 Best for: moodboards, photo treatments, brand exploration.');
+    console.log('    3. hybrid  — HTML canvas with regenerable <img> slots. Image-gen the visuals, HTML the layout.');
+    console.log('                 Best for: rapid iteration where only the imagery changes.');
+    console.log('');
+    const outputInput = (await ask(rl, '  Output type (number or name, default vector): ')).trim().toLowerCase();
+    if (outputInput === '2' || outputInput === 'image') outputType = 'image';
+    else if (outputInput === '3' || outputInput === 'hybrid') outputType = 'hybrid';
+    else outputType = 'vector';
 
     rl.close();
     console.log('');
@@ -256,6 +280,7 @@ async function main() {
       canvas: canvasPreset,
       created: now,
       links: {},
+      output: outputType,
     },
     concepts,
     rounds: [],

@@ -253,6 +253,50 @@ Rounds work like **Figma pages** — each round is its own board with its own co
 
 # WHEN CREATING DESIGNS
 
+## Output Type — Decide First
+
+Before generating anything, **read `manifest.project.output`** and follow the matching workflow. This field is set at project creation and tells you whether the agent should produce vector code, raster images, or a hybrid composition. Missing field = treat as `vector` (legacy projects).
+
+### `output: "vector"` (default)
+Pure HTML/CSS/SVG. The standard DriftGrid flow.
+- File extension: `.html`. One file per version: `concept-N/v{N}.html`.
+- Any agent works (Claude, Codex, Gemini text models).
+- Drift = duplicate the file, edit the copy. Iterate freely on layout, typography, color, copy.
+- Follow all the conventions below (canvas boilerplate, editable text attributes, fonts via Google Fonts `<link>`, etc.).
+- **This is the right choice for**: websites, app screens, dashboards, presentation slides, one-pagers, almost everything text-and-layout driven.
+
+### `output: "image"`
+Pure raster output. Each version is a fresh image-gen sample.
+- File extension: `.png`. One file per version: `concept-N/v{N}.png`.
+- Requires an **image-capable model** — Claude/Codex's text models cannot produce images. Use OpenAI gpt-image (via `bin/gen-image.js`), Gemini Imagen, etc.
+- Drift = generate again with new instructions. You can't "edit" a PNG; each iteration is a re-roll.
+- Always save the image to disk before adding the manifest entry. Reference it via `version.file = "concept-N/v{N}.png"`.
+- The manifest's `version.file` field carries the .png path. The DriftGrid viewer renders it via `<img>` (or an iframe loading the image directly — both work).
+- **This is the right choice for**: moodboards, photographic treatments, brand exploration, illustration studies, abstract texture / pattern work — anything where the *image itself* is the deliverable.
+
+### `output: "hybrid"`
+HTML canvas with one or more regenerable image regions. Image-gen for the visual blocks, HTML for everything else (layout, typography, structural composition).
+- File extension: `.html`. Image assets live in `concept-N/assets/`.
+- Use a `<img>` element per regenerable region with `data-drift-regen="<slot-name>"` and `data-drift-prompt="<the prompt that produced it>"` so future iterations know the slot context:
+  ```html
+  <img
+    src="assets/hero.png"
+    data-drift-regen="hero"
+    data-drift-prompt="minimalist abstract wave, monochrome, 3:2"
+    alt="hero"
+  />
+  ```
+- To iterate just the imagery: keep the HTML structure, regenerate one slot's image, save the new PNG over the same path (or a new path), update the manifest version.
+- All other DriftGrid HTML rules apply (Google Fonts via `<link>`, no external image URLs, self-contained markup).
+- **This is the right choice for**: rapid creative iteration where the layout is locked but the imagery is exploratory — landing-page heroes, deck cover slides, marketing visuals composed of generated art + crafted text.
+
+### Picking the right output type when none is set
+If `manifest.project.output` is missing, treat as `vector`. If you genuinely cannot produce the requested output as vector — e.g. the user asks for a photoreal product shot or a painterly illustration — flag it to the user before producing anything; suggest they recreate the project with `--output image` or `--output hybrid`. Never silently fall back to embedding base64-blob "image" content in HTML; that defeats the iteration model.
+
+### Provider routing by output type
+- `vector` → any provider. Claude/Codex are usually fastest for code.
+- `image` / `hybrid` → must route to OpenAI or Gemini (Claude doesn't generate images). When you see the manifest output is `image` or `hybrid`, prefer those providers for the image-generation step. The HTML composition step in `hybrid` mode can still go to Claude/Codex.
+
 ## Naming Conventions
 
 ### Concepts (columns)
