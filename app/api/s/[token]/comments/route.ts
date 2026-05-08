@@ -123,7 +123,11 @@ export async function POST(
   // Awaited (not fire-and-forget) because Vercel serverless freezes function
   // execution after the response is sent — orphaned promises don't run. ~200-
   // 500ms added latency, which is acceptable on the comment-create path.
-  if (isCloudMode() && process.env.RESEND_API_KEY) {
+  // Skip if the poster IS the share owner — they don't need to email themselves
+  // when they reply to their own clients from the same share URL.
+  const posterUserId = await getUserId().catch(() => null);
+  const isOwnerPost = !!posterUserId && posterUserId === resolved.userId;
+  if (isCloudMode() && process.env.RESEND_API_KEY && !isOwnerPost) {
     try {
       await notifyOwner({
         userId: resolved.userId,

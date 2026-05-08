@@ -66,6 +66,15 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
     if (open) load();
   }, [open, load, refreshKey]);
 
+  // Refresh on the global submit/mutate event so the hub stays in sync when the
+  // designer presses Copy-for-Agent on a frame popup, deletes via the trash, etc.
+  useEffect(() => {
+    if (!open) return;
+    const onMutate = () => load();
+    window.addEventListener('driftgrid:annotation-submitted', onMutate);
+    return () => window.removeEventListener('driftgrid:annotation-submitted', onMutate);
+  }, [open, load]);
+
   // Performs the delete network call (used by both the dialog and the skip-path).
   const performDelete = useCallback(async (it: ProjectAnnotation) => {
     await fetch('/api/annotations', {
@@ -78,6 +87,7 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
       }),
     });
     load();
+    window.dispatchEvent(new CustomEvent('driftgrid:annotation-submitted'));
   }, [client, project, load]);
 
   // Row entrypoint — checks the skip-confirm preference, otherwise opens the dialog.
@@ -331,6 +341,7 @@ function Row({
       }),
     });
     onLocalRefresh();
+    window.dispatchEvent(new CustomEvent('driftgrid:annotation-submitted'));
   }, [client, project, item.conceptId, item.versionId, item.annotation.id, onLocalRefresh]);
 
   const handleToggleResolve = useCallback(async (e: React.MouseEvent) => {
@@ -346,6 +357,7 @@ function Row({
       }),
     });
     onLocalRefresh();
+    window.dispatchEvent(new CustomEvent('driftgrid:annotation-submitted'));
   }, [client, project, item.conceptId, item.versionId, item.annotation.id, item.annotation.resolved, onLocalRefresh]);
 
   const handleDelete = useCallback((e: React.MouseEvent) => {
@@ -379,6 +391,8 @@ function Row({
         annotationId: item.annotation.id,
         submittedAt: new Date().toISOString(),
       }),
+    }).then(() => {
+      window.dispatchEvent(new CustomEvent('driftgrid:annotation-submitted'));
     }).catch(() => {});
     toast('Copied — paste into your agent');
     onLocalRefresh();

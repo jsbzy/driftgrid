@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import type { ClientComment, Concept } from '@/lib/types';
+import { buildAgentMessage } from '@/lib/agent-payload';
+import { toast } from '@/components/Toast';
 
 interface ClientCommentsHubProps {
   open: boolean;
@@ -9,6 +11,9 @@ interface ClientCommentsHubProps {
   comments: ClientComment[];
   /** All concepts in the active round — used to resolve concept_id → label/version_number. */
   concepts: Concept[];
+  /** Project's client + project slugs — needed for the agent payload's frame URL. */
+  client: string;
+  project: string;
   authorName: string;
   isAdmin: boolean;
   onJumpTo: (conceptId: string, versionId: string) => void;
@@ -44,6 +49,8 @@ export function ClientCommentsHub({
   onClose,
   comments,
   concepts,
+  client,
+  project,
   authorName,
   isAdmin,
   onJumpTo,
@@ -80,8 +87,13 @@ export function ClientCommentsHub({
       } else {
         const last = replies[replies.length - 1] ?? top;
         // "Replied" if anyone other than the original author has chimed in.
-        const repliedByOther = replies.some(r => r.author_name !== top.author_name);
-        if (repliedByOther && last.author_name !== top.author_name) {
+        // Normalize names so trailing whitespace / capitalization differences
+        // (a returning client typing "Marcia" then "marcia ") don't trick the
+        // hub into thinking it's a different person.
+        const norm = (s: string) => s.trim().toLowerCase();
+        const topAuthor = norm(top.author_name);
+        const repliedByOther = replies.some(r => norm(r.author_name) !== topAuthor);
+        if (repliedByOther && norm(last.author_name) !== topAuthor) {
           state = 'replied';
         } else {
           state = 'open';
@@ -193,6 +205,8 @@ export function ClientCommentsHub({
               dotColor={STATE_DOT[thread.state]}
               authorName={authorName}
               isAdmin={isAdmin}
+              client={client}
+              project={project}
               onJumpTo={(c, v) => { onJumpTo(c, v); onClose(); }}
               onResolve={onResolve}
               onRequestDelete={() => setPendingDelete(thread)}
@@ -263,12 +277,14 @@ export function ClientCommentsHub({
 }
 
 function Row({
-  thread, dotColor, authorName, isAdmin, onJumpTo, onResolve, onRequestDelete,
+  thread, dotColor, authorName, isAdmin, client, project, onJumpTo, onResolve, onRequestDelete,
 }: {
   thread: Thread;
   dotColor: string;
   authorName: string;
   isAdmin: boolean;
+  client: string;
+  project: string;
   onJumpTo: (conceptId: string, versionId: string) => void;
   onResolve: (commentId: string) => Promise<void> | void;
   onRequestDelete: () => void;
@@ -332,6 +348,66 @@ function Row({
           transition: 'opacity 120ms ease',
         }}
       >
+        {/* Copy for Agent — admin only (share-owner forwards a client comment to their agent) */}
+        {isAdmin && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const message = buildAgentMessage({
+                annotation: {
+                  id: thread.top.id,
+                  x: thread.top.x_rel,
+                  y: thread.top.y_rel,
+                  element: thread.top.element_selector,
+                  text: thread.top.body,
+                  author: thread.top.author_name,
+                  isClient: true,
+                  isAgent: false,
+                  created: thread.top.created_at,
+                  resolved: thread.top.status === 'resolved',
+                  parentId: null,
+                },
+                replies: thread.replies.map(r => ({
+                  id: r.id,
+                  x: null, y: null, element: null,
+                  text: r.body,
+                  author: r.author_name,
+                  isClient: r.author_name.trim().toLowerCase() === thread.top.author_name.trim().toLowerCase(),
+                  isAgent: false,
+                  created: r.created_at,
+                  resolved: false,
+                  parentId: thread.top.id,
+                })),
+                frameContext: {
+                  client, project,
+                  conceptId: thread.top.concept_id,
+                  versionId: thread.top.version_id,
+                  conceptLabel: thread.conceptLabel,
+                  versionNumber: thread.versionNumber,
+                  filePath: `~/driftgrid/projects/${client}/${project}/${thread.conceptLabel}-v${thread.versionNumber}.html`,
+                },
+              });
+              navigator.clipboard?.writeText(message).catch(() => {});
+              toast('Copied — paste into your agent');
+            }}
+            title="Copy this comment + context for your agent"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '0 8px', height: 22, borderRadius: 3,
+              background: 'var(--foreground)',
+              border: '1px solid var(--foreground)',
+              color: 'var(--background)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontSize: 9,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              fontWeight: 600,
+            }}
+          >
+            Copy
+          </button>
+        )}
         {/* Resolve / unresolve — admin only (clients shouldn't lock threads) */}
         {isAdmin && (
           <button

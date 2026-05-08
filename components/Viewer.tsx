@@ -1105,28 +1105,46 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     };
     fetchCount();
     const t = setInterval(fetchCount, 60000);
-    return () => { cancelled = true; clearInterval(t); };
+    // Also refresh on the same event the hub listens for, so the badge updates
+    // instantly after a popup Copy / hub action.
+    const onMutate = () => fetchCount();
+    window.addEventListener('driftgrid:annotation-submitted', onMutate);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+      window.removeEventListener('driftgrid:annotation-submitted', onMutate);
+    };
   }, [client, project, mode, shareToken, commentsHubOpen]);
 
   // Build round-wide pin numbering: every top-level annotation in the active round
   // gets a sequential #N based on creation time. The same annotation keeps its number
   // regardless of which frame the user is viewing — so designers can reference
-  // "comment #12" across the whole board.
+  // "comment #12" across the whole board. Includes client comments (cyan pins) so
+  // the numbering is consistent across all visible pins regardless of source.
   const pinNumberByAnnotationId = useMemo(() => {
     const map: Record<string, number> = {};
     if (!activeRound) return map;
     const all: { id: string; created: string }[] = [];
+    const conceptIds = new Set<string>();
     for (const concept of activeRound.concepts) {
+      conceptIds.add(concept.id);
       for (const version of concept.versions) {
         for (const a of version.annotations ?? []) {
           if (!a.parentId) all.push({ id: a.id, created: a.created });
         }
       }
     }
+    // Client comments (Supabase) on frames in the active round.
+    const clientCommentSource = shareToken ? clientComments.comments : designerClientComments.comments;
+    for (const c of clientCommentSource) {
+      if (c.parent_comment_id) continue;
+      if (!conceptIds.has(c.concept_id)) continue;
+      all.push({ id: c.id, created: c.created_at });
+    }
     all.sort((a, b) => a.created.localeCompare(b.created));
     all.forEach((a, i) => { map[a.id] = i + 1; });
     return map;
-  }, [activeRound]);
+  }, [activeRound, shareToken, clientComments.comments, designerClientComments.comments]);
 
   // Jump from the comments hub to a frame: switch round if needed, set indices, enter frame.
   const handleHubJumpTo = useCallback((conceptId: string, versionId: string, _annotationId: string) => {
@@ -1279,6 +1297,8 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               onClose={() => setCommentsHubOpen(false)}
               comments={clientComments.comments}
               concepts={concepts}
+              client={client}
+              project={project}
               authorName={clientComments.authorName}
               isAdmin={clientComments.isAdmin}
               onJumpTo={(conceptId, versionId) => {
@@ -1672,6 +1692,8 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             onClose={() => setCommentsHubOpen(false)}
             comments={clientComments.comments}
             concepts={concepts}
+            client={client}
+            project={project}
             authorName={clientComments.authorName}
             isAdmin={clientComments.isAdmin}
             onJumpTo={(conceptId, versionId) => {

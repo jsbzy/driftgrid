@@ -406,24 +406,49 @@ export function AnnotationOverlay({
     }
   }, [pendingPin, pendingText, onAdd, pendingProvider, pendingPlanMode]);
 
-  // Copy = save + copy the full payload (slide context, pin, annotation ID, reply-back instructions).
-  // Order matters: clipboard.writeText needs document focus, so it has to run BEFORE we close
-  // the popup. The popup close is delayed so the user actually sees the "Copied" label.
-  const handleCopyForAgent = useCallback(async () => {
+  // Copy = save + copy the full payload. Uses the ClipboardItem-with-Promise pattern
+  // so the synchronous clipboard.write() call preserves the user-gesture context;
+  // the browser holds the clipboard "pending" until the inner promise resolves with
+  // the final text. This is the only reliable way to do an async (save + screenshot
+  // fetch) before the clipboard write.
+  const handleCopyForAgent = useCallback(() => {
     if (!pendingText.trim()) return;
-    const saved = await handleSubmitPending();
-    if (!saved) return;
-    // Optionally capture a screenshot of the current frame and stash the path on
-    // the annotation. Done before building the message so the path can be
-    // appended to the agent payload.
-    let screenshotPath: string | null = null;
-    if (
-      pendingAttachScreenshot &&
-      frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId
-    ) {
-      try {
-        const r = await fetch('/api/screenshot', {
-          method: 'POST',
+
+    const blobPromise = (async (): Promise<Blob> => {
+      const saved = await handleSubmitPending();
+      if (!saved) return new Blob([''], { type: 'text/plain' });
+
+      let screenshotPath: string | null = null;
+      if (
+        pendingAttachScreenshot &&
+        frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId
+      ) {
+        try {
+          const r = await fetch('/api/screenshot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              client: frameContext.client,
+              project: frameContext.project,
+              conceptId: frameContext.conceptId,
+              versionId: frameContext.versionId,
+              annotationId: saved.id,
+            }),
+          });
+          if (r.ok) {
+            const data = await r.json();
+            screenshotPath = data.path ?? null;
+          }
+        } catch { /* swallow — copy still works without the screenshot */ }
+      }
+      let message = buildAnnotationAgentMessage(saved);
+      if (screenshotPath) {
+        message += `\n\nScreenshot: ${screenshotPath}\n(Open this with your file tool to see what the designer was looking at.)`;
+      }
+      // Mark the thread as submitted so the comments hub knows the agent has it.
+      if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
+        fetch('/api/annotations', {
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             client: frameContext.client,
@@ -431,40 +456,25 @@ export function AnnotationOverlay({
             conceptId: frameContext.conceptId,
             versionId: frameContext.versionId,
             annotationId: saved.id,
+            submittedAt: new Date().toISOString(),
           }),
-        });
-        if (r.ok) {
-          const data = await r.json();
-          screenshotPath = data.path ?? null;
-        }
-      } catch { /* swallow — copy still works without the screenshot */ }
-    }
-    let message = buildAnnotationAgentMessage(saved);
-    if (screenshotPath) {
-      message += `\n\nScreenshot: ${screenshotPath}\n(Open this with your file tool to see what the designer was looking at.)`;
-    }
+        }).then(() => {
+          window.dispatchEvent(new CustomEvent('driftgrid:annotation-submitted'));
+        }).catch(() => {});
+      }
+      return new Blob([message], { type: 'text/plain' });
+    })();
+
     try {
-      await navigator.clipboard?.writeText(message);
+      navigator.clipboard.write([new ClipboardItem({ 'text/plain': blobPromise })])
+        .catch(err => console.error('[copy] write failed', err));
     } catch {
-      // clipboard may fail silently
+      // ClipboardItem unsupported (very old browsers) — fall back to text-only after the work resolves.
+      blobPromise.then(blob => blob.text()).then(t => navigator.clipboard?.writeText(t)).catch(() => {});
     }
-    // Mark the thread as submitted so the comments hub knows the agent has it.
-    if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
-      fetch('/api/annotations', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client: frameContext.client,
-          project: frameContext.project,
-          conceptId: frameContext.conceptId,
-          versionId: frameContext.versionId,
-          annotationId: saved.id,
-          submittedAt: new Date().toISOString(),
-        }),
-      }).catch(() => {});
-    }
+
     setCopyState('copied');
-    toast('Copied — paste into your agent');
+    toast(pendingAttachScreenshot ? 'Copied (screenshot included) — paste into your agent' : 'Copied — paste into your agent');
     // Hold the popup open briefly so the success state is visible, then close it cleanly.
     window.setTimeout(() => {
       setPendingPin(null);
@@ -1090,45 +1100,16 @@ export function AnnotationOverlay({
                           onClick={(e) => {
                             e.stopPropagation();
                             const draft = (replyDrafts[annotation.id] || '').trim();
-                            // Build & write the message SYNCHRONOUSLY first — browsers
-                            // detach the user-gesture context across any await, which
-                            // makes a later writeText silently fail. Screenshot path
-                            // (if any) is appended via a second writeText after the
-                            // fetch; if the second write is rejected, the basic copy
-                            // still works.
-                            const baseMessage = buildAnnotationAgentMessage(annotation, draft);
-                            navigator.clipboard?.writeText(baseMessage).catch(err => console.error('[copy] writeText failed', err));
-                            toast(pendingAttachScreenshot ? 'Copied — capturing screenshot…' : 'Copied — paste into your agent');
-                            setActivePin(null);
 
-                            // Persist the draft as a real reply if present.
-                            if (draft && onReply) {
-                              onReply(annotation.id, draft);
-                              setReplyDrafts(prev => ({ ...prev, [annotation.id]: '' }));
-                            }
-                            // Mark the thread as freshly submitted (fire-and-forget).
-                            if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
-                              fetch('/api/annotations', {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  client: frameContext.client,
-                                  project: frameContext.project,
-                                  conceptId: frameContext.conceptId,
-                                  versionId: frameContext.versionId,
-                                  annotationId: annotation.id,
-                                  submittedAt: new Date().toISOString(),
-                                }),
-                              }).catch(() => {});
-                            }
-                            // Async upgrade: capture screenshot and re-copy with path appended.
-                            // If the second writeText is rejected (lost user gesture), the user
-                            // already has the base copy, and we toast a hint to re-copy.
-                            if (
-                              pendingAttachScreenshot &&
-                              frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId
-                            ) {
-                              (async () => {
+                            // ClipboardItem-with-Promise: synchronous clipboard.write() preserves
+                            // the user-gesture context; browser holds the clipboard pending until
+                            // the promise resolves with the final text (with optional screenshot).
+                            const blobPromise = (async (): Promise<Blob> => {
+                              let screenshotPath: string | null = null;
+                              if (
+                                pendingAttachScreenshot &&
+                                frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId
+                              ) {
                                 try {
                                   const r = await fetch('/api/screenshot', {
                                     method: 'POST',
@@ -1141,16 +1122,49 @@ export function AnnotationOverlay({
                                       annotationId: annotation.id,
                                     }),
                                   });
-                                  if (!r.ok) return;
-                                  const { path } = await r.json();
-                                  if (!path) return;
-                                  const upgraded = baseMessage + `\n\nScreenshot: ${path}\n(Open this with your file tool to see what the designer was looking at.)`;
-                                  await navigator.clipboard?.writeText(upgraded);
-                                  toast('Screenshot ready — clipboard updated');
-                                } catch {
-                                  toast('Screenshot ready — click Copy again to include it', 'error');
-                                }
-                              })();
+                                  if (r.ok) {
+                                    const data = await r.json();
+                                    screenshotPath = data.path ?? null;
+                                  }
+                                } catch { /* copy still works without the screenshot */ }
+                              }
+                              let message = buildAnnotationAgentMessage(annotation, draft);
+                              if (screenshotPath) {
+                                message += `\n\nScreenshot: ${screenshotPath}\n(Open this with your file tool to see what the designer was looking at.)`;
+                              }
+                              return new Blob([message], { type: 'text/plain' });
+                            })();
+
+                            try {
+                              navigator.clipboard.write([new ClipboardItem({ 'text/plain': blobPromise })])
+                                .catch(err => console.error('[copy] write failed', err));
+                            } catch {
+                              blobPromise.then(b => b.text()).then(t => navigator.clipboard?.writeText(t)).catch(() => {});
+                            }
+                            toast(pendingAttachScreenshot ? 'Copied (screenshot included) — paste into your agent' : 'Copied — paste into your agent');
+                            setActivePin(null);
+
+                            // Persist the draft as a real reply if present.
+                            if (draft && onReply) {
+                              onReply(annotation.id, draft);
+                              setReplyDrafts(prev => ({ ...prev, [annotation.id]: '' }));
+                            }
+                            // Mark the thread as freshly submitted; nudge the hub to refresh.
+                            if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
+                              fetch('/api/annotations', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  client: frameContext.client,
+                                  project: frameContext.project,
+                                  conceptId: frameContext.conceptId,
+                                  versionId: frameContext.versionId,
+                                  annotationId: annotation.id,
+                                  submittedAt: new Date().toISOString(),
+                                }),
+                              }).then(() => {
+                                window.dispatchEvent(new CustomEvent('driftgrid:annotation-submitted'));
+                              }).catch(() => {});
                             }
                           }}
                           title="Copy prompt + context + reply-back instructions for the agent"
