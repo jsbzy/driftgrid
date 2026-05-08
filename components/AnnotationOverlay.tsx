@@ -661,7 +661,12 @@ export function AnnotationOverlay({
                 annotation.provider ? `Routed to ${annotation.provider}` : null,
               ].filter(Boolean).join(' · ')}
             >
-              {pinNumber}
+              {/* Routed pins show the provider letter on the face (faster scan); */}
+              {/* unrouted pins show the round-wide number. Number is always in the tooltip. */}
+              {annotation.provider === 'claude' ? 'C'
+                : annotation.provider === 'codex' ? 'X'
+                : annotation.provider === 'gemini' ? 'G'
+                : pinNumber}
             </button>
 
             {/* Pin popup — matches pending input style */}
@@ -1082,46 +1087,26 @@ export function AnnotationOverlay({
                         <button
                           type="button"
                           tabIndex={-1}
-                          onClick={async (e) => {
+                          onClick={(e) => {
                             e.stopPropagation();
-                            // Pick up an unsaved draft from the "Reply to agent…" input — include it
-                            // as the CURRENT REQUEST in the copied message AND persist it as a real
-                            // reply so the thread reflects what was sent to the agent.
                             const draft = (replyDrafts[annotation.id] || '').trim();
-                            // Optionally capture a screenshot first.
-                            let screenshotPath: string | null = null;
-                            if (
-                              pendingAttachScreenshot &&
-                              frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId
-                            ) {
-                              try {
-                                const r = await fetch('/api/screenshot', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({
-                                    client: frameContext.client,
-                                    project: frameContext.project,
-                                    conceptId: frameContext.conceptId,
-                                    versionId: frameContext.versionId,
-                                    annotationId: annotation.id,
-                                  }),
-                                });
-                                if (r.ok) {
-                                  const data = await r.json();
-                                  screenshotPath = data.path ?? null;
-                                }
-                              } catch { /* swallow — copy still works without */ }
-                            }
-                            let message = buildAnnotationAgentMessage(annotation, draft);
-                            if (screenshotPath) {
-                              message += `\n\nScreenshot: ${screenshotPath}\n(Open this with your file tool to see what the designer was looking at.)`;
-                            }
-                            navigator.clipboard?.writeText(message).catch(() => {});
+                            // Build & write the message SYNCHRONOUSLY first — browsers
+                            // detach the user-gesture context across any await, which
+                            // makes a later writeText silently fail. Screenshot path
+                            // (if any) is appended via a second writeText after the
+                            // fetch; if the second write is rejected, the basic copy
+                            // still works.
+                            const baseMessage = buildAnnotationAgentMessage(annotation, draft);
+                            navigator.clipboard?.writeText(baseMessage).catch(err => console.error('[copy] writeText failed', err));
+                            toast(pendingAttachScreenshot ? 'Copied — capturing screenshot…' : 'Copied — paste into your agent');
+                            setActivePin(null);
+
+                            // Persist the draft as a real reply if present.
                             if (draft && onReply) {
                               onReply(annotation.id, draft);
                               setReplyDrafts(prev => ({ ...prev, [annotation.id]: '' }));
                             }
-                            // Mark the thread as freshly submitted to the agent.
+                            // Mark the thread as freshly submitted (fire-and-forget).
                             if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
                               fetch('/api/annotations', {
                                 method: 'PATCH',
@@ -1136,8 +1121,37 @@ export function AnnotationOverlay({
                                 }),
                               }).catch(() => {});
                             }
-                            toast('Copied — paste into your agent');
-                            setActivePin(null);
+                            // Async upgrade: capture screenshot and re-copy with path appended.
+                            // If the second writeText is rejected (lost user gesture), the user
+                            // already has the base copy, and we toast a hint to re-copy.
+                            if (
+                              pendingAttachScreenshot &&
+                              frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId
+                            ) {
+                              (async () => {
+                                try {
+                                  const r = await fetch('/api/screenshot', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      client: frameContext.client,
+                                      project: frameContext.project,
+                                      conceptId: frameContext.conceptId,
+                                      versionId: frameContext.versionId,
+                                      annotationId: annotation.id,
+                                    }),
+                                  });
+                                  if (!r.ok) return;
+                                  const { path } = await r.json();
+                                  if (!path) return;
+                                  const upgraded = baseMessage + `\n\nScreenshot: ${path}\n(Open this with your file tool to see what the designer was looking at.)`;
+                                  await navigator.clipboard?.writeText(upgraded);
+                                  toast('Screenshot ready — clipboard updated');
+                                } catch {
+                                  toast('Screenshot ready — click Copy again to include it', 'error');
+                                }
+                              })();
+                            }
                           }}
                           title="Copy prompt + context + reply-back instructions for the agent"
                           style={{
