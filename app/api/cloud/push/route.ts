@@ -64,8 +64,11 @@ export async function POST(request: Request) {
       ? `${userId}/${client}/${filePath}`
       : `${userId}/${client}/${project}/${filePath}`;
 
-    // Determine if content is base64-encoded (binary) or plain text
-    const isText = ['text/html', 'application/json', 'image/svg+xml', 'text/markdown', 'text/css', 'text/plain']
+    // Determine if content is base64-encoded (binary) or plain text. Must mirror
+    // the TEXT_TYPES set in app/api/cloud/push-and-share/route.ts; if the client
+    // sends a JS/CSS/etc file as utf-8 and the server treats it as binary, the
+    // base64-decode produces garbage and the served file is unusable.
+    const isText = ['text/html', 'application/json', 'image/svg+xml', 'text/markdown', 'text/css', 'text/plain', 'application/javascript']
       .includes(contentType || '');
 
     let data: Buffer | string;
