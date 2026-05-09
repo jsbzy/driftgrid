@@ -105,7 +105,7 @@ export function AnnotationOverlay({
   const [textareaGrowth, setTextareaGrowth] = useState(0);
   const baseTextareaHeightRef = useRef<number | null>(null);
   // Copy-for-agent button state (transient "Copied" label)
-  const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle');
+  const [copyState, setCopyState] = useState<'idle' | 'saving' | 'copied'>('idle');
   // Local draft text for editing existing annotations, keyed by id
   const [editDrafts, setEditDrafts] = useState<Record<string, string>>({});
   const editInputRef = useRef<HTMLTextAreaElement>(null);
@@ -406,17 +406,24 @@ export function AnnotationOverlay({
     }
   }, [pendingPin, pendingText, onAdd, pendingProvider, pendingPlanMode]);
 
-  // Copy = save + copy the full payload. Uses the ClipboardItem-with-Promise pattern
-  // so the synchronous clipboard.write() call preserves the user-gesture context;
-  // the browser holds the clipboard "pending" until the inner promise resolves with
-  // the final text. This is the only reliable way to do an async (save + screenshot
-  // fetch) before the clipboard write.
-  const handleCopyForAgent = useCallback(() => {
+  // Copy = save + copy the full payload. Honest-feedback flow:
+  //   1. Save the annotation (await — required, the message references its ID).
+  //   2. Try ClipboardItem-with-Promise (preserves user gesture); fall back to
+  //      writeText if unsupported.
+  //   3. Only show "Copied" + close the popup AFTER both succeed.
+  //   4. If save fails, report it instead of pretending it worked.
+  const handleCopyForAgent = useCallback(async () => {
     if (!pendingText.trim()) return;
+    setCopyState('saving');
 
-    const blobPromise = (async (): Promise<Blob> => {
-      const saved = await handleSubmitPending();
-      if (!saved) return new Blob([''], { type: 'text/plain' });
+    // Kick off the save first — this is the work that MUST succeed, regardless
+    // of what the clipboard does.
+    const savePromise = handleSubmitPending();
+
+    // Build the message (and screenshot path, if requested) once the save resolves.
+    const messagePromise = (async (): Promise<string | null> => {
+      const saved = await savePromise;
+      if (!saved) return null;
 
       let screenshotPath: string | null = null;
       if (
@@ -439,13 +446,13 @@ export function AnnotationOverlay({
             const data = await r.json();
             screenshotPath = data.path ?? null;
           }
-        } catch { /* swallow — copy still works without the screenshot */ }
+        } catch { /* copy still works without the screenshot */ }
       }
       let message = buildAnnotationAgentMessage(saved);
       if (screenshotPath) {
         message += `\n\nScreenshot: ${screenshotPath}\n(Open this with your file tool to see what the designer was looking at.)`;
       }
-      // Mark the thread as submitted so the comments hub knows the agent has it.
+      // Mark the thread as submitted (independent of clipboard outcome).
       if (frameContext?.client && frameContext.project && frameContext.conceptId && frameContext.versionId) {
         fetch('/api/annotations', {
           method: 'PATCH',
@@ -462,25 +469,62 @@ export function AnnotationOverlay({
           window.dispatchEvent(new CustomEvent('driftgrid:annotation-submitted'));
         }).catch(() => {});
       }
-      return new Blob([message], { type: 'text/plain' });
+      return message;
     })();
 
-    try {
-      navigator.clipboard.write([new ClipboardItem({ 'text/plain': blobPromise })])
-        .catch(err => console.error('[copy] write failed', err));
-    } catch {
-      // ClipboardItem unsupported (very old browsers) — fall back to text-only after the work resolves.
-      blobPromise.then(blob => blob.text()).then(t => navigator.clipboard?.writeText(t)).catch(() => {});
+    // Try ClipboardItem-with-Promise FIRST — this is the only path that
+    // preserves the user-gesture context across the async save. If the
+    // browser doesn't support it (or rejects the Promise), we fall back
+    // to a plain writeText after the save resolves; that may itself be
+    // rejected in strict gesture-tracking browsers, in which case we
+    // surface the failure so the user can retry.
+    let clipboardOk = false;
+    if (typeof ClipboardItem !== 'undefined') {
+      try {
+        const blobPromise = messagePromise.then(m =>
+          new Blob([m ?? ''], { type: 'text/plain' })
+        );
+        await navigator.clipboard.write([new ClipboardItem({ 'text/plain': blobPromise })]);
+        clipboardOk = true;
+      } catch (err) {
+        console.warn('[copy] ClipboardItem write failed, falling back', err);
+      }
     }
 
-    setCopyState('copied');
-    toast(pendingAttachScreenshot ? 'Copied (screenshot included) — paste into your agent' : 'Copied — paste into your agent');
-    // Hold the popup open briefly so the success state is visible, then close it cleanly.
-    window.setTimeout(() => {
-      setPendingPin(null);
-      setPendingText('');
+    // Wait for the save to resolve so we know whether to celebrate or apologize.
+    const message = await messagePromise;
+
+    if (!message) {
+      // Save failed — be honest.
       setCopyState('idle');
-    }, 600);
+      toast('Could not save the comment — try again', 'error');
+      return;
+    }
+
+    if (!clipboardOk) {
+      try {
+        await navigator.clipboard.writeText(message);
+        clipboardOk = true;
+      } catch (err) {
+        console.warn('[copy] writeText fallback failed', err);
+      }
+    }
+
+    if (clipboardOk) {
+      setCopyState('copied');
+      toast(pendingAttachScreenshot ? 'Copied (screenshot included) — paste into your agent' : 'Copied — paste into your agent');
+      window.setTimeout(() => {
+        setPendingPin(null);
+        setPendingText('');
+        setCopyState('idle');
+      }, 600);
+    } else {
+      // Saved but clipboard blocked. Tell the user explicitly and keep the popup
+      // open so they can click Copy again — the second click is a fresh user
+      // gesture and usually succeeds.
+      setCopyState('idle');
+      toast('Saved, but clipboard was blocked. Click Copy again.', 'error');
+    }
   }, [pendingText, handleSubmitPending, buildAnnotationAgentMessage, pendingAttachScreenshot, frameContext]);
 
   const handlePinClick = useCallback(
@@ -1565,7 +1609,7 @@ export function AnnotationOverlay({
                       transition: 'background 0.15s ease, color 0.15s ease',
                     }}
                   >
-                    {copyState === 'copied' ? 'Copied' : 'Copy for Agent'}
+                    {copyState === 'copied' ? 'Copied' : copyState === 'saving' ? 'Saving…' : 'Copy for Agent'}
                   </button>
                   <button
                     type="button"
