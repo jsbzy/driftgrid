@@ -116,7 +116,7 @@ export async function POST(request: Request) {
         // Curated-share filter: if any versions are starred in the active round,
         // upload only those versions' files (plus manifest and thumbs).
         // If nothing is starred, fall back to uploading everything (backward compat).
-        const allowList = await computeStarredAllowList(projectDir, roundId);
+        const allowList = await computeStarredAllowList(projectDir, roundId, !!includeMedia);
         // Resolve round_number for the share row so republishing within the same
         // round reuses the same token.
         const roundNumber = await resolveRoundNumber(projectDir, roundId);
@@ -319,7 +319,8 @@ async function collectFiles(
  */
 async function computeStarredAllowList(
   projectDir: string,
-  roundId?: string | null,
+  roundId: string | null | undefined,
+  includeMedia: boolean,
 ): Promise<Set<string> | null> {
   try {
     const manifestRaw = await fs.readFile(path.join(projectDir, 'manifest.json'), 'utf-8');
@@ -362,9 +363,51 @@ async function computeStarredAllowList(
         allowed.add(v.thumbnail);
       }
     }
+
+    // When the designer has opted into shipping media, also include any shared
+    // media-like asset files the starred versions reference but that don't live
+    // inside their per-version folders (e.g. project-wide audio/round-N/*.mp3,
+    // assets/*.png). Without this, the allowList hides them from collectFiles
+    // and they never reach Supabase, so <audio src="..."> 404s on the share.
+    if (includeMedia) {
+      await addSharedMediaPaths(projectDir, allowed);
+    }
     return allowed;
   } catch {
     return null; // Manifest unreadable → fall back to pushing everything
+  }
+}
+
+/**
+ * Walk well-known shared-asset directories (audio/, assets/, media/) and add
+ * every file under them to the allowList. These directories aren't versioned
+ * per-concept; they hold round-wide or project-wide assets that the HTML
+ * references via relative paths. Recursive so subfolders like audio/round-6
+ * are included.
+ */
+async function addSharedMediaPaths(projectDir: string, allowed: Set<string>): Promise<void> {
+  const SHARED_DIRS = ['audio', 'assets', 'media'];
+  for (const subdir of SHARED_DIRS) {
+    const root = path.join(projectDir, subdir);
+    try {
+      await fs.stat(root);
+    } catch {
+      continue; // dir doesn't exist
+    }
+    await walkAndAdd(root, subdir, allowed);
+  }
+}
+
+async function walkAndAdd(dir: string, relPrefix: string, allowed: Set<string>): Promise<void> {
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    const rel = `${relPrefix}/${entry.name}`;
+    if (entry.isDirectory()) {
+      await walkAndAdd(full, rel, allowed);
+    } else if (entry.isFile()) {
+      allowed.add(rel);
+    }
   }
 }
 
