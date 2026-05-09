@@ -10,6 +10,11 @@ interface CommentsHubProps {
   onClose: () => void;
   client: string;
   project: string;
+  /** Round currently being viewed in the grid/frame. The hub filters by this
+   *  unless the user explicitly toggles "all rounds." */
+  activeRoundId?: string | null;
+  /** Friendly label for the active round, e.g. "R6". */
+  activeRoundLabel?: string | null;
   /** Jump to a frame (concept + version) and pin the annotation. */
   onJumpTo: (conceptId: string, versionId: string, annotationId: string) => void;
   /** Refresh signal — bumped by the parent when annotations change locally. */
@@ -44,12 +49,15 @@ function tabForState(state: StateKey): TabKey {
 
 const DELETE_CONFIRM_SKIP_KEY = 'driftgrid:skipCommentDeleteConfirm';
 
-export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshKey }: CommentsHubProps) {
+export function CommentsHub({ open, onClose, client, project, activeRoundId, activeRoundLabel, onJumpTo, refreshKey }: CommentsHubProps) {
   const [items, setItems] = useState<ProjectAnnotation[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('open');
   const [pendingDelete, setPendingDelete] = useState<ProjectAnnotation | null>(null);
   const [skipNextTime, setSkipNextTime] = useState(false);
+  // Default: only show comments in the round the designer is currently viewing.
+  // Toggle to see comments from every round.
+  const [showAllRounds, setShowAllRounds] = useState(false);
 
   const load = useCallback(async () => {
     if (!open) return;
@@ -112,15 +120,90 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
 
   if (!open) return null;
 
+  // Filter to active round unless the user opted into "all rounds." If we have
+  // no roundId at all (legacy / non-rounds project), the filter is a no-op.
+  const roundFilteredItems = (items ?? []).filter(it => {
+    if (showAllRounds || !activeRoundId) return true;
+    return it.roundId === activeRoundId;
+  });
+
   const counts: Record<TabKey, number> = { 'open': 0, 'replied': 0, 'closed': 0 };
   const grouped: Record<TabKey, ProjectAnnotation[]> = { 'open': [], 'replied': [], 'closed': [] };
-  for (const it of items ?? []) {
+  for (const it of roundFilteredItems) {
     const tab = tabForState(it.state);
     counts[tab]++;
     grouped[tab].push(it);
   }
 
   const visible = grouped[activeTab];
+
+  // Build a multi-comment agent payload for the current tab.
+  // mode 'auto' = let the agent apply directly. mode 'interview' = walk through
+  // each comment with the designer first, no edits until confirmed.
+  const buildBatchPayload = (mode: 'auto' | 'interview'): string => {
+    const batchTitle = showAllRounds
+      ? `${visible.length} ${activeTab} comments across all rounds`
+      : `${visible.length} ${activeTab} comments in ${activeRoundLabel || 'the active round'}`;
+    const lines: string[] = [];
+    lines.push('################################################################');
+    lines.push(`#  BATCH HANDOFF — ${batchTitle}`);
+    lines.push(`#  Project: ${client}/${project}`);
+    lines.push(`#  Mode: ${mode === 'auto' ? 'AUTO-APPLY' : 'INTERVIEW FIRST'}`);
+    lines.push('################################################################');
+    lines.push('');
+    if (mode === 'auto') {
+      lines.push('Apply each comment as a drift on its own frame. For unambiguous changes,');
+      lines.push('edit and reply in-thread with a one-line summary. For comments where the');
+      lines.push('intent is unclear, ASK FIRST in the thread before editing — do not guess.');
+    } else {
+      lines.push('Do NOT edit any files yet. Walk through these comments with the designer:');
+      lines.push('');
+      lines.push('  1. Read every comment below before responding.');
+      lines.push('  2. Group related comments and surface conflicts.');
+      lines.push('  3. For each comment, ask one clarifying question if needed, then');
+      lines.push('     confirm the proposed change with the designer.');
+      lines.push('  4. After all are confirmed, apply them — drift each frame, reply');
+      lines.push('     in-thread with a summary. Echo file path + URL per AGENTS.md.');
+    }
+    lines.push('');
+    lines.push('────────────────────────────────────────────────────────────────');
+    lines.push('COMMENTS');
+    lines.push('────────────────────────────────────────────────────────────────');
+    visible.forEach((item, i) => {
+      const slide = `${item.roundNumber ? `R${item.roundNumber} · ` : ''}${item.conceptLabel} · v${item.versionNumber}`;
+      const url = `http://localhost:3000/admin/${client}/${project}#${item.conceptId}/v${item.versionNumber}`;
+      const pin = item.annotation.x !== null && item.annotation.y !== null
+        ? ` (pin ${Math.round(item.annotation.x * 100)}%, ${Math.round(item.annotation.y * 100)}%)`
+        : '';
+      const provider = item.annotation.provider ? ` [routed: ${item.annotation.provider}]` : '';
+      lines.push('');
+      lines.push(`[${i + 1}] ${slide}${pin}${provider}`);
+      lines.push(`    ID: ${item.annotation.id}`);
+      lines.push(`    URL: ${url}`);
+      lines.push(`    Designer: ${item.annotation.text}`);
+      // Include the latest reply so the agent has context for follow-ups.
+      const lastReply = item.replies[item.replies.length - 1];
+      if (lastReply) {
+        const who = lastReply.isAgent ? 'Agent (already done)' : (lastReply.author || 'Reply');
+        lines.push(`    ${who}: ${lastReply.text}`);
+      }
+    });
+    lines.push('');
+    lines.push('────────────────────────────────────────────────────────────────');
+    lines.push('When you reply to each comment via /api/annotations, set parentId to the');
+    lines.push('annotation ID and include a brief summary of the change. Use isAgent=true.');
+    return lines.join('\n');
+  };
+
+  const handleCopyAll = (mode: 'auto' | 'interview') => {
+    if (visible.length === 0) {
+      toast(`No ${activeTab} comments to copy`, 'error');
+      return;
+    }
+    const message = buildBatchPayload(mode);
+    navigator.clipboard?.writeText(message).catch(() => {});
+    toast(`Copied ${visible.length} comments — paste into your agent`);
+  };
 
   return (
     <>
@@ -151,7 +234,31 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
           borderBottom: '1px solid var(--border)',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.02em' }}>Comments</span>
+            <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: 10 }}>
+              Comments
+              {/* Round filter toggle — only meaningful when the project has rounds */}
+              {activeRoundId && (
+                <button
+                  onClick={() => setShowAllRounds(v => !v)}
+                  title={showAllRounds ? 'Showing all rounds — click to filter to active round' : 'Showing active round only — click to show all rounds'}
+                  style={{
+                    background: showAllRounds ? 'transparent' : 'var(--column-tint)',
+                    border: '1px solid var(--border)',
+                    color: showAllRounds ? 'var(--muted)' : 'var(--foreground)',
+                    padding: '2px 8px',
+                    borderRadius: 4,
+                    fontSize: 9,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                    fontWeight: 400,
+                  }}
+                >
+                  {showAllRounds ? 'All rounds' : (activeRoundLabel || 'Active round')}
+                </button>
+              )}
+            </span>
             <button
               onClick={onClose}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, padding: 4 }}
@@ -192,6 +299,56 @@ export function CommentsHub({ open, onClose, client, project, onJumpTo, refreshK
             })}
           </div>
         </div>
+
+        {/* Batch-copy bar — only meaningful when there are items in the current tab */}
+        {visible.length > 0 && activeTab === 'open' && (
+          <div style={{
+            padding: '10px 28px',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 10,
+            background: 'var(--column-tint)',
+          }}>
+            <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              Copy all {visible.length}
+            </span>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                onClick={() => handleCopyAll('interview')}
+                title="Copy all open comments + a directive: walk through with the designer first, no edits until confirmed"
+                style={{
+                  fontSize: 9, padding: '4px 10px', borderRadius: 4,
+                  border: '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--foreground)',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Interview first
+              </button>
+              <button
+                onClick={() => handleCopyAll('auto')}
+                title="Copy all open comments + a directive: apply each as a drift, ask only when intent is unclear"
+                style={{
+                  fontSize: 9, padding: '4px 10px', borderRadius: 4,
+                  border: '1px solid var(--foreground)',
+                  background: 'var(--foreground)',
+                  color: 'var(--background)',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                }}
+              >
+                Auto-apply
+              </button>
+            </div>
+          </div>
+        )}
 
         <div style={{ flex: 1, overflow: 'auto', padding: '8px 0 28px' }}>
           {loading && !items && (

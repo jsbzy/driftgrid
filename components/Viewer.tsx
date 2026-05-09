@@ -1313,7 +1313,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               onResolve={clientComments.resolveComment}
               onDelete={clientComments.deleteComment}
             />
-          : <CommentsHub open={commentsHubOpen} onClose={() => setCommentsHubOpen(false)} client={client} project={project} onJumpTo={handleHubJumpTo} />}
+          : <CommentsHub open={commentsHubOpen} onClose={() => setCommentsHubOpen(false)} client={client} project={project} activeRoundId={activeRoundId} activeRoundLabel={activeRound ? `R${activeRound.number}` : null} onJumpTo={handleHubJumpTo} />}
         {driftOverlay}
         {deleteOverlay}
         {deleteDialog}
@@ -1708,7 +1708,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             onResolve={clientComments.resolveComment}
             onDelete={clientComments.deleteComment}
           />
-        : <CommentsHub open={commentsHubOpen} onClose={() => setCommentsHubOpen(false)} client={client} project={project} onJumpTo={handleHubJumpTo} />}
+        : <CommentsHub open={commentsHubOpen} onClose={() => setCommentsHubOpen(false)} client={client} project={project} activeRoundId={activeRoundId} activeRoundLabel={activeRound ? `R${activeRound.number}` : null} onJumpTo={handleHubJumpTo} />}
       {!isWalkthrough && (
         <TourOverlay
           step={tour.currentStep}
