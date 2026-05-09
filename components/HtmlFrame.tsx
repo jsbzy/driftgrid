@@ -66,6 +66,57 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       onReady?.();
     }, [onReady]);
 
+    // Autoplay-policy bridge: browsers block <audio>.play() until the user has
+    // interacted with the page. live-vo.js (and any similarly-shaped slide
+    // script) arms a one-shot pointerdown listener INSIDE the iframe to recover
+    // from this — but parent-page clicks (nav, chrome, comments hub) never
+    // reach that listener, so audio stays silent unless the user happens to
+    // click the slide canvas itself.
+    //
+    // Forward the first parent-page user gesture into the iframe document by
+    // also calling .play() directly on any <audio>/<video> elements found
+    // there. Belt-and-suspenders so this works regardless of how the slide
+    // wires up its playback.
+    useEffect(() => {
+      if (!iframeReady) return;
+      let used = false;
+      const onGesture = () => {
+        if (used) return;
+        const doc = iframeRef.current?.contentDocument;
+        if (!doc) return;
+        used = true;
+        try {
+          // Direct play on any media elements (catches the live-vo.js #vo case
+          // and any future slide that just has an <audio>).
+          const media = doc.querySelectorAll('audio, video');
+          media.forEach(el => {
+            const m = el as HTMLMediaElement;
+            // Only kick playback if the slide intends it — preload="auto"
+            // signals "start me when allowed."
+            if (m.preload === 'auto' || m.autoplay) {
+              const p = m.play();
+              if (p && typeof p.catch === 'function') p.catch(() => {});
+            }
+          });
+          // Synthetic pointerdown into iframe doc so any gesture-armed
+          // fallback inside the slide script also fires.
+          doc.dispatchEvent(new (doc.defaultView?.PointerEvent ?? PointerEvent)('pointerdown', { bubbles: true }));
+        } catch {
+          // Cross-origin iframe — skip silently. (Not the case for our share
+          // route, but defensive.)
+        }
+      };
+      const opts = { once: true, capture: true } as AddEventListenerOptions;
+      window.addEventListener('pointerdown', onGesture, opts);
+      window.addEventListener('keydown', onGesture, opts);
+      window.addEventListener('touchstart', onGesture, opts);
+      return () => {
+        window.removeEventListener('pointerdown', onGesture, opts);
+        window.removeEventListener('keydown', onGesture, opts);
+        window.removeEventListener('touchstart', onGesture, opts);
+      };
+    }, [iframeReady, src]);
+
     // Ref for savedEdits to avoid re-triggering the effect on every keystroke
     const savedEditsRef = useRef(savedEdits);
     savedEditsRef.current = savedEdits;
