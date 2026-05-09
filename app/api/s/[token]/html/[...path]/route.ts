@@ -13,6 +13,12 @@ const MIME_TYPES: Record<string, string> = {
   '.webp': 'image/webp',
   '.css': 'text/css',
   '.js': 'application/javascript',
+  '.mp3': 'audio/mpeg',
+  '.mp4': 'video/mp4',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.webm': 'video/webm',
+  '.json': 'application/json',
 };
 
 /** Resolve token to userId/client/project */
@@ -68,8 +74,19 @@ export async function GET(
   const ext = '.' + (filePath.split('.').pop()?.toLowerCase() || '');
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
-  const buffer = Buffer.from(await data.arrayBuffer());
-  return new NextResponse(buffer, {
+  const raw = Buffer.from(await data.arrayBuffer());
+
+  // For HTML files, rewrite admin asset paths to share-safe paths so
+  // audio/image/JS references like `/api/html/{client}/{project}/...`
+  // route through the share endpoint instead of the auth-gated admin one.
+  const body = ext === '.html'
+    ? raw.toString('utf-8').replace(
+        new RegExp(`/api/html/${resolved.client}/${resolved.project}/`, 'g'),
+        `/api/s/${token}/html/`,
+      )
+    : raw;
+
+  return new NextResponse(body, {
     headers: {
       'Content-Type': contentType,
       'Cache-Control': 'public, max-age=300',
