@@ -14,6 +14,8 @@ const MIME_TYPES: Record<string, string> = {
   '.md': 'text/markdown',
   '.css': 'text/css',
   '.txt': 'text/plain',
+  '.js': 'application/javascript',
+  '.mjs': 'application/javascript',
   '.webp': 'image/webp',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -26,13 +28,14 @@ const MIME_TYPES: Record<string, string> = {
 
 const TEXT_TYPES = new Set([
   'text/html', 'application/json', 'image/svg+xml', 'text/markdown',
-  'text/css', 'text/plain',
+  'text/css', 'text/plain', 'application/javascript',
 ]);
 
-// Always upload regardless of size — images + docs + fonts
+// Always upload regardless of size — images + docs + fonts + scripts
 const ALWAYS_INCLUDE_EXTS = new Set([
   '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.avif', '.ico', '.bmp', '.tiff', '.heic',
   '.html', '.json', '.md', '.css', '.txt', '.woff', '.woff2',
+  '.js', '.mjs',
 ]);
 
 // Always skip unless includeMedia — video, audio, archives, design sources
@@ -386,7 +389,11 @@ async function computeStarredAllowList(
  * are included.
  */
 async function addSharedMediaPaths(projectDir: string, allowed: Set<string>): Promise<void> {
-  const SHARED_DIRS = ['audio', 'assets', 'media'];
+  // Project-wide asset folders. Includes 'tools' because runtime helper scripts
+  // (e.g. live-vo.js for audio narration) live there and the HTML references
+  // them via relative paths — without them, <audio> tags load but nothing
+  // ever calls .play().
+  const SHARED_DIRS = ['audio', 'assets', 'media', 'tools'];
   for (const subdir of SHARED_DIRS) {
     const root = path.join(projectDir, subdir);
     try {
