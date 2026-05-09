@@ -92,7 +92,10 @@ export function useAnnotationState(
   }, [viewMode]);
 
   const handleAddAnnotation = useCallback(async (x: number | null, y: number | null, text: string, provider?: string): Promise<Annotation | null> => {
-    if (!conceptId || !versionId) return null;
+    if (!conceptId || !versionId) {
+      console.error('[annotation] save aborted — missing conceptId/versionId', { conceptId, versionId });
+      return null;
+    }
 
     if (shareToken) {
       // Client-side only — persist in demoAnnotations state
@@ -143,6 +146,11 @@ export function useAnnotationState(
       }
       return annotation;
     }
+    // Surface the server's reason — easier than guessing whether it's auth, slug,
+    // or manifest race. Caller decides how to display.
+    let reason: string | null = null;
+    try { reason = (await res.json())?.error ?? null; } catch {}
+    console.error('[annotation] save failed', res.status, reason);
     return null;
   }, [client, project, conceptId, versionId, shareToken]);
 

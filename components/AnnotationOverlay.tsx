@@ -385,25 +385,37 @@ export function AnnotationOverlay({
   );
 
   // Re-entry guard — prevents rapid clicks (or held Enter) from POSTing the same prompt N times.
-  const inFlightRef = useRef(false);
+  // Shared in-flight promise so concurrent click + Enter calls deduplicate to a
+  // single POST instead of the second silently returning null. Returns the same
+  // promise to every caller until it resolves.
+  const inFlightPromiseRef = useRef<Promise<Annotation | null> | null>(null);
 
   // Save pending prompt. Returns the saved annotation (so Copy can grab its ID).
   // Does NOT close the popup — the caller controls when to close so success feedback ("Copied")
   // has a chance to render before the popup unmounts.
   // If `pendingPlanMode` is on, the saved text is prefixed with `[plan] ` so any agent reading
   // it (via clipboard, manifest, or future MCP) sees the plan-first directive baked in.
-  const handleSubmitPending = useCallback(async (): Promise<Annotation | null> => {
-    if (inFlightRef.current) return null;
-    if (!pendingPin || !pendingText.trim()) return null;
-    inFlightRef.current = true;
-    try {
-      const trimmed = pendingText.trim();
-      const text = pendingPlanMode && !trimmed.startsWith('[plan]') ? `[plan] ${trimmed}` : trimmed;
-      const result = await Promise.resolve(onAdd(pendingPin.x, pendingPin.y, text, pendingProvider));
-      return (result as Annotation | null | undefined) ?? null;
-    } finally {
-      inFlightRef.current = false;
-    }
+  const handleSubmitPending = useCallback((): Promise<Annotation | null> => {
+    // Concurrent callers (e.g. Enter key + button click on same gesture) all
+    // share the in-flight promise rather than getting null back.
+    if (inFlightPromiseRef.current) return inFlightPromiseRef.current;
+    if (!pendingPin || !pendingText.trim()) return Promise.resolve(null);
+
+    const promise = (async (): Promise<Annotation | null> => {
+      try {
+        const trimmed = pendingText.trim();
+        const text = pendingPlanMode && !trimmed.startsWith('[plan]') ? `[plan] ${trimmed}` : trimmed;
+        const result = await Promise.resolve(onAdd(pendingPin.x, pendingPin.y, text, pendingProvider));
+        return (result as Annotation | null | undefined) ?? null;
+      } catch (e) {
+        console.error('[annotation] save threw', e);
+        return null;
+      } finally {
+        inFlightPromiseRef.current = null;
+      }
+    })();
+    inFlightPromiseRef.current = promise;
+    return promise;
   }, [pendingPin, pendingText, onAdd, pendingProvider, pendingPlanMode]);
 
   // Copy = save + copy the full payload. Honest-feedback flow:
