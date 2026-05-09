@@ -106,6 +106,85 @@ function clearCredentials() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
+type RoundPrepMode = 'raw' | 'auto' | 'interview';
+
+type ClientCommentsPayload = {
+  text: string;
+  count: number;
+};
+
+function extractShareToken(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    const shareIndex = parts.indexOf('s');
+    if (shareIndex === -1) return null;
+    // Supports both /s/:token and /s/:client/:token.
+    return parts[shareIndex + 2] || parts[shareIndex + 1] || null;
+  } catch {
+    return null;
+  }
+}
+
+function buildRoundPrepPrompt(args: {
+  client: string;
+  project: string;
+  shareUrl: string;
+  roundNumber?: number | null;
+  mode: Exclude<RoundPrepMode, 'raw'>;
+  commentsText: string;
+  commentCount: number;
+}) {
+  const sourceRound = args.roundNumber ? `Round ${args.roundNumber}` : 'the latest shared round';
+  const targetRound = args.roundNumber ? `Round ${args.roundNumber + 1}` : 'the next round';
+  const localUrl = `http://localhost:3000/admin/${args.client}/${args.project}`;
+
+  const lines: string[] = [];
+  lines.push('################################################################');
+  lines.push('# DRIFTGRID NEXT ROUND HANDOFF');
+  lines.push('################################################################');
+  lines.push('');
+  lines.push(`Project: ${args.client}/${args.project}`);
+  lines.push(`Source: ${sourceRound}`);
+  lines.push(`Target: ${targetRound}`);
+  lines.push(`Share link: ${args.shareUrl}`);
+  lines.push(`Local admin: ${localUrl}`);
+  lines.push(`Comment count: ${args.commentCount}`);
+  lines.push('');
+
+  if (args.mode === 'auto') {
+    lines.push('MODE: AUTO-APPLY');
+    lines.push('');
+    lines.push('Create the target round from the source round, then apply the latest shared client comments below.');
+    lines.push('');
+    lines.push('Workflow:');
+    lines.push('1. Inspect the local manifest and identify the source round baseline. Prefer selected/starred versions when present; otherwise carry forward the latest visible version for each visible concept.');
+    lines.push('2. Create the target round before editing, so every change lands in the new round.');
+    lines.push('3. Read all comments first, group duplicates, and flag conflicts instead of guessing.');
+    lines.push('4. Apply clear, actionable comments directly. Keep each edit scoped to the relevant slide/version.');
+    lines.push('5. Verify animations/captions where the comment touches timing or layout.');
+    lines.push('6. Return a concise report: applied, skipped/needs decision, and the target round references.');
+  } else {
+    lines.push('MODE: INTERVIEW');
+    lines.push('');
+    lines.push('Do not edit files or create the target round yet.');
+    lines.push('');
+    lines.push('Workflow:');
+    lines.push('1. Read all comments first and summarize the main themes, duplicates, and conflicts.');
+    lines.push('2. Then walk through the comments one by one with the designer.');
+    lines.push('3. For each comment, ask for a decision only when needed: apply, revise, ignore, or combine with another edit.');
+    lines.push('4. Keep a running decision log in the conversation.');
+    lines.push('5. After the designer confirms the plan, create the target round and apply only the approved edits.');
+  }
+
+  lines.push('');
+  lines.push('## Latest Shared Comments');
+  lines.push('');
+  lines.push(args.commentsText);
+
+  return lines.join('\n');
+}
+
 /** Decode the email claim out of a Supabase JWT access token. Returns '' on failure. */
 function emailFromJwt(token: string | undefined | null): string {
   if (!token) return '';
@@ -172,7 +251,9 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
   const [errorMsg, setErrorMsg] = useState('');
   const [email, setEmail] = useState('');
   const [commentsCopied, setCommentsCopied] = useState(false);
+  const [roundPrepCopied, setRoundPrepCopied] = useState<RoundPrepMode | null>(null);
   const [lastPublishedAt, setLastPublishedAt] = useState<string | null>(null);
+  const [mediaChecked, setMediaChecked] = useState(() => readIncludeMedia());
   // When the user clicks "sign out", the popup may accidentally find a live cloud
   // session and postMessage tokens back — which would immediately re-auth us into
   // the account we're trying to leave. This ref blocks those messages briefly.
@@ -541,24 +622,27 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function fetchClientComments(): Promise<ClientCommentsPayload | null> {
+    if (!shareUrl) return null;
+    const token = extractShareToken(shareUrl);
+    if (!token) return null;
+
+    const creds = getStoredCredentials();
+    const res = await fetch(`${CLOUD_URL}/api/cloud/comments?token=${encodeURIComponent(token)}`, {
+      headers: creds?.accessToken ? { 'Authorization': `Bearer ${creds.accessToken}` } : {},
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data.text || data.count === 0) return null;
+    return { text: data.text, count: data.count };
+  }
+
   async function handleCopyComments() {
-    if (!shareUrl) return;
     try {
-      const token = shareUrl.split('/s/')[1];
-      if (!token) return;
-
-      const creds = getStoredCredentials();
-      const res = await fetch(`${CLOUD_URL}/api/cloud/comments?token=${encodeURIComponent(token)}`, {
-        headers: creds?.accessToken ? { 'Authorization': `Bearer ${creds.accessToken}` } : {},
-      });
-
-      if (!res.ok) {
-        toast('No comments yet');
-        return;
-      }
-
-      const data = await res.json();
-      if (!data.text || data.count === 0) {
+      const data = await fetchClientComments();
+      if (!data) {
         toast('No comments yet');
         return;
       }
@@ -573,6 +657,37 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
       setTimeout(() => setCommentsCopied(false), 2000);
     } catch {
       toast('Failed to fetch comments');
+    }
+  }
+
+  async function handleCopyRoundPrep(mode: Exclude<RoundPrepMode, 'raw'>) {
+    if (!shareUrl) return;
+    try {
+      const data = await fetchClientComments();
+      if (!data) {
+        toast('No comments yet');
+        return;
+      }
+
+      const prompt = buildRoundPrepPrompt({
+        client,
+        project,
+        shareUrl,
+        roundNumber,
+        mode,
+        commentsText: data.text,
+        commentCount: data.count,
+      });
+      const ok = await copyTextSafely(prompt);
+      if (!ok) {
+        toast('Couldn’t copy round handoff to clipboard.', 'error');
+        return;
+      }
+      setRoundPrepCopied(mode);
+      toast(`${mode === 'auto' ? 'Auto-apply' : 'Interview'} handoff copied`);
+      setTimeout(() => setRoundPrepCopied(null), 2200);
+    } catch {
+      toast('Failed to prepare round handoff');
     }
   }
 
@@ -895,10 +1010,22 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
                   Link appears here after first publish
                 </div>
 
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+                  <input
+                    type="checkbox"
+                    checked={mediaChecked}
+                    onChange={(e) => {
+                      setMediaChecked(e.target.checked);
+                      writeIncludeMedia(e.target.checked);
+                    }}
+                    style={{ accentColor: '#111', width: 14, height: 14, cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: 11, color: '#666' }}>Include audio &amp; video</span>
+                </label>
                 <button
                   onClick={() => {
                     const creds = getStoredCredentials();
-                    if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { intentional: true });
+                    if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { includeMedia: mediaChecked, intentional: true });
                   }}
                   style={{
                     display: 'block',
@@ -1011,29 +1138,73 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
                 Clients can browse and leave comments — no account needed.
               </p>
 
-              {/* Copy Feedback section */}
-              <div style={{ paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+              {/* Next round handoff */}
+              <div style={{ paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 10, color: '#999', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Next round prep
+                  </div>
+                  <p style={{ fontSize: 10, color: '#aaa', margin: '6px 0 0', lineHeight: 1.45 }}>
+                    Turn latest shared comments into a repeatable agent handoff for {roundNumber ? `Round ${roundNumber + 1}` : 'the next round'}.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => handleCopyRoundPrep('auto')}
+                  style={{
+                    width: '100%',
+                    padding: '11px 0',
+                    textAlign: 'center',
+                    background: '#111',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontSize: 11,
+                    fontWeight: 650,
+                    cursor: 'pointer',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  {roundPrepCopied === 'auto' ? 'Auto-apply handoff copied!' : `Copy Auto-Apply ${roundNumber ? `Round ${roundNumber + 1}` : 'Next Round'} Handoff`}
+                </button>
+
+                <button
+                  onClick={() => handleCopyRoundPrep('interview')}
+                  style={{
+                    width: '100%',
+                    padding: '11px 0',
+                    textAlign: 'center',
+                    background: '#fff',
+                    color: '#333',
+                    border: '1px solid rgba(0,0,0,0.12)',
+                    borderRadius: 8,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  {roundPrepCopied === 'interview' ? 'Interview handoff copied!' : 'Copy Interview Handoff'}
+                </button>
+
                 <button
                   onClick={handleCopyComments}
                   style={{
                     width: '100%',
-                    padding: '10px 0',
+                    padding: '9px 0',
                     textAlign: 'center',
                     background: '#fff',
-                    color: '#666',
+                    color: '#777',
                     border: '1px solid rgba(0,0,0,0.08)',
                     borderRadius: 8,
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: 500,
                     cursor: 'pointer',
                     letterSpacing: '0.04em',
                   }}
                 >
-                  {commentsCopied ? 'Comments copied!' : 'Copy Client Feedback'}
+                  {commentsCopied ? 'Raw feedback copied!' : 'Copy Raw Feedback'}
                 </button>
-                <p style={{ fontSize: 10, color: '#bbb', margin: '8px 0 0', lineHeight: 1.4 }}>
-                  Copies all client comments as text. Paste into your conversation to start the next round.
-                </p>
               </div>
 
               {/* Skipped media summary + toggle */}
@@ -1076,10 +1247,22 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
               {/* Publish updates — primary when opening against an existing share,
                   secondary after a just-completed sync. */}
               <div style={{ paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+                  <input
+                    type="checkbox"
+                    checked={mediaChecked}
+                    onChange={(e) => {
+                      setMediaChecked(e.target.checked);
+                      writeIncludeMedia(e.target.checked);
+                    }}
+                    style={{ accentColor: '#111', width: 14, height: 14, cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: 11, color: '#666' }}>Include audio &amp; video</span>
+                </label>
                 <button
                   onClick={() => {
                     const creds = getStoredCredentials();
-                    if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { intentional: true });
+                    if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { includeMedia: mediaChecked, intentional: true });
                   }}
                   style={{
                     width: '100%',
