@@ -1388,7 +1388,14 @@ export function AnnotationOverlay({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  handleCopyForAgent();
+                  if (isClient) {
+                    handleSubmitPending().then(() => {
+                      setPendingPin(null);
+                      setPendingText('');
+                    });
+                  } else {
+                    handleCopyForAgent();
+                  }
                 }
                 if (e.key === 'Escape') {
                   e.preventDefault();
