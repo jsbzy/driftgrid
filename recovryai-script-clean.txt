@@ -1,0 +1,114 @@
+1. Open
+
+*(silent)*
+
+
+2. Intro
+
+Introducing RecovryAI. The first Prescribed AI for post-operative recovery, built to close the clinical supervision gap.
+
+
+3. Problem
+
+After a complex procedure, patients are discharged home with little more than a paper handout and a prescription for pain. There is no continuous clinical presence during the most fragile phase of recovery. Care shifts abruptly into the home, where adherence varies, and small complications can compound into avoidable ER visits and readmissions. The result is diminished patient outcomes, rising costs, and care teams absorbing preventable downstream burden. This is the clinical supervision gap.
+
+
+4. Solution
+
+RecovryAI closes that gap with the Virtual Care Assistant, a new class of clinical AI for post-operative recovery. Each VCA is prescribed by the surgical team, designed for a specific procedure, and brings supervised care into the patient's home. They guide patients with evidence-based protocols, monitor recovery continuously, and watch for deviation from the expected trajectory. When risk emerges, they escalate to the care team in real time, with the full clinical picture in hand. The result is continuity. A persistent clinical layer between discharge and full recovery.
+
+
+5. Two Views
+
+RecovryAI is one platform with two views linking patients and providers. The patient app delivers a continuous recovery dialogue: daily check-ins, ad-hoc conversations, evidence-based guidance, and direct access to clinical care. The Provider App gives the care team a real-time view of every patient's recovery journey: every interaction, every bit of guidance, every escalation with full transcript and AI reasoning attached. One shared conversation, two synchronized views, fully auditable end to end.
+
+
+6. Meet Marcia
+
+Let's see this in practice. Meet Marcia. Sixty-four years old, preparing for a total knee replacement. Her surgeon has prescribed RecovryAI to support her recovery at home.
+
+
+7. Pre-Surgery
+
+During pre-op, Marcia opens her RecovryAI App and meets her Virtual Care Assistant for the first time. It introduces itself, walks her through what to expect, and begins answering her early questions. This isn't a general-purpose AI chatbot. The VCA is prescribed: the first FDA-recognized clinical AI for post-operative recovery, anchored in evidence-based protocols specific to total knee replacement, and ready to support her the moment she returns home.
+
+
+8. Onboarding Tour
+
+The VCA tours Marcia through the app. Twice-daily check-ins to keep her recovery on track. Open questions answered at any hour with evidence-based guidance. A procedure-specific library to supplement her education between visits. A direct line to her care team, if needed. And a snapshot of her recovery, taking shape day by day. By the time she enters the operating room, her recovery support is already in place.
+
+
+9. Five Core Factors
+
+Every day, the VCA monitors five core recovery factors: pain, sleep, activity, diet, and medication. Two data streams: scheduled morning and evening check-ins, and ad-hoc patient conversations. Each factor does double duty: a clinical conversation starter for the VCA, and structured data supporting reimbursement and cohort analysis.
+
+
+10. Three Outcomes
+
+Every VCA interaction results in one of three outcomes: Recovery Guidance, Provider Escalation, or Emergency Escalation. Classification is automated, based on the VCA's clinical reasoning. Final clinical judgment stays with the physician. First, let's take a look at Recovery Guidance.
+
+
+11. First Check-In
+
+Returning home after discharge, Marcia opens the app for her first check-in. The VCA asks only what's clinically meaningful on Day 0: a single pain score. The full set of recovery factors phase in over the days that follow. Each input is captured as a structured report in her chat, and synchronized into the Provider App in the same moment.
+
+
+12. Recovery Guidance
+
+Within seconds, the VCA responds with clinically-validated recovery guidance. The discharge handout, that would otherwise live in a kitchen drawer, becomes a continuous, two-way clinical companion. The VCA coaches Marcia through what's working. It reminds her of what's still ahead. It affirms what she's doing right. Pain in the expected range. Medication on schedule. Rest and gentle movement. Every piece of guidance is drawn from the standard recovery protocols of the nation's leading orthopedic and surgical societies, specific to her procedure. A full clinical synthesis, delivered in seconds.
+
+
+13. Between Check-Ins
+
+Not every interaction is a scheduled check-in. For example, the two a.m. question about icing, the forgotten discharge instructions, or questions about constipation. These are the bulk of post-operative engagement, historically lost to voicemail, questionable online advice, or a patient's best guess. The VCA absorbs them, within protocol, around the clock. Fewer unnecessary calls, fewer ER visits, and the care team is freed to do work that changes patient outcomes.
+
+
+14. Divider: Provider Escalation
+
+Next, Provider Escalation. When the VCA detects a pattern that needs clinician review.
+
+
+15. Provider Escalation
+
+On day fourteen, Marcia mentions unusual swelling in her morning check-in. The VCA applies its clinical reasoning model to her answers and determines the pattern warrants clinician review, but is not an emergency. The VCA flags a Provider Escalation, notifying the care team with the full transcript. Within hours, the team replies in the clinic chat, confirms a consult with Dr. Chen, and schedules a follow-up call.
+
+
+16. Divider: Emergency Escalation
+
+Finally, Emergency Escalation. When the signal points to immediate risk.
+
+
+17. Emergency Escalation
+
+On day twenty-four, Marcia trips on the stairs and hears a loud pop. She tells the VCA what happened. The VCA runs a rapid clinical review on mobility, deformity, and swelling, and determines this is a potential emergency. The VCA directs Marcia to call 911, instructs her not to move, and pushes a real-time alert to her care team with all contextual patient data. The clinical team is informed before the ambulance arrives.
+
+
+18. Divider: Provider App
+
+Now, let's look at the Provider App in detail.
+
+
+19. Portal Tour
+
+The care team's workspace covers every patient they follow. Sort by recovery status, procedure, escalation, or attending. One click surfaces a patient's full record, plus the audit trail behind every classification. Metrics plot against the procedure cohort.
+
+
+20. Trajectory
+
+After each check-in, Marcia's inputs roll up into a single Recovery Score. Each score is a daily snapshot of her recovery, and over time they form a trajectory. Dr. Chen sees the full arc of Marcia's recovery, day by day, alongside the cohort across his practice. A continuous view of post-operative recovery that wasn't practical until now.
+
+
+21. Dashboard
+
+Marcia is one of many patients Dr. Chen's team is responsible for. The Provider App presents them all at a glance: status, recent activity, escalation priority. The VCAs handle routine recovery for every patient, in parallel. The care team's attention concentrates on the patients who need it. Comprehensive coverage without proportionate clinician load. The same view follows the team to mobile, so priority stays visible in clinic, between cases, or on call. Alerts route by clinical priority and channel preference: push, SMS, email, in-app. The right patient, the right signal, at the right moment.
+
+
+22. Recap
+
+In summary: RecovryAI is Prescribed AI that extends clinical care from the facility into the home. Patients get evidence-based guidance at any hour. Care teams get continuous visibility, and are pulled in only when their judgment is required. Routine recovery, handled. Escalations, surfaced. Emergencies, caught. The clinical supervision gap, closed.
+
+
+23. Close
+
+RecovryAI. Prescribed AI for post-operative recovery.
+

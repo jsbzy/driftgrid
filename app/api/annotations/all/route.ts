@@ -10,6 +10,7 @@ export interface ProjectAnnotation {
   conceptLabel: string;
   versionId: string;
   versionNumber: number;
+  versionFile: string;
   roundId: string | undefined;
   roundNumber: number | undefined;
   /**
@@ -54,6 +55,7 @@ export async function GET(request: Request) {
             conceptLabel: concept.label,
             versionId: version.id,
             versionNumber: version.number,
+            versionFile: version.file,
             roundId: round.id,
             roundNumber: round.number,
             out,
@@ -70,6 +72,7 @@ export async function GET(request: Request) {
           conceptLabel: concept.label,
           versionId: version.id,
           versionNumber: version.number,
+          versionFile: version.file,
           roundId: undefined,
           roundNumber: undefined,
           out,
@@ -95,6 +98,7 @@ function collectFromVersion(
     conceptLabel: string;
     versionId: string;
     versionNumber: number;
+    versionFile: string;
     roundId: string | undefined;
     roundNumber: number | undefined;
     out: ProjectAnnotation[];
@@ -137,6 +141,7 @@ function collectFromVersion(
       conceptLabel: ctx.conceptLabel,
       versionId: ctx.versionId,
       versionNumber: ctx.versionNumber,
+      versionFile: ctx.versionFile,
       roundId: ctx.roundId,
       roundNumber: ctx.roundNumber,
       state,

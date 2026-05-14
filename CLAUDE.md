@@ -10,3 +10,19 @@ When following the routing rules in `AGENTS.md`:
 - Replies appear in DriftGrid threads as `claude: <message>`.
 
 If `.mcp.json` is configured at the repo root, the DriftGrid MCP server is also available — its tools (`get_feedback`, `add_feedback`, `create_version`, `branch_concept`, `close_round`, etc.) are the preferred path over hand-rolled API calls.
+
+
+## DriftGrid Conventions
+
+This project uses DriftGrid for design iteration. Key rules:
+
+- **Never overwrite versions.** Copy to the next version number (v2, v3, etc.) and edit the copy.
+- **Update manifest.json** when adding versions or concepts.
+- **HTML files must be self-contained** — inline CSS/JS, Google Fonts via `<link>` tags, no external URLs.
+- **Canvas preset:** `desktop` (1440 x auto)
+
+### API Endpoints (localhost:3000)
+- `GET /api/current` — what the user is currently viewing
+- `POST /api/iterate` — create a new version (drift)
+- `POST /api/branch` — fork into a new concept
+- `POST /api/create-project` — create a new project

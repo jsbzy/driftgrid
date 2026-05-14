@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 
 interface CanvasCardProps {
   thumbnail: string | null;
@@ -66,6 +66,12 @@ export const CanvasCard = memo(function CanvasCard({
     setImgError(false);
     setImgLoaded(false);
   }, [thumbnail]);
+
+  const handleImgRef = useCallback((img: HTMLImageElement | null) => {
+    if (img && img.complete && img.naturalWidth > 0) {
+      setImgLoaded(true);
+    }
+  }, []);
 
   return (
     <div
@@ -228,6 +234,7 @@ export const CanvasCard = memo(function CanvasCard({
               )}
               <img
                 key={thumbSrc}
+                ref={handleImgRef}
                 src={thumbSrc}
                 alt={`${conceptLabel} v${versionNumber}`}
                 className="w-full h-full object-cover object-top"

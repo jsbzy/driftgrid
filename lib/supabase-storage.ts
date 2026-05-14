@@ -25,6 +25,7 @@ export async function getManifestCloud(userId: string, client: string, project: 
 
     // Same normalization as filesystem manifest.ts
     if (!manifest.rounds) manifest.rounds = [];
+    if (!manifest.documents) manifest.documents = [];
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const topConcepts = (manifest as any).concepts as Manifest['concepts'] | undefined;

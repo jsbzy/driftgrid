@@ -40,6 +40,7 @@ export async function getManifest(client: string, project: string): Promise<Mani
 
     // Backward compat: ensure rounds array exists
     if (!manifest.rounds) manifest.rounds = [];
+    if (!manifest.documents) manifest.documents = [];
 
     // --- Legacy migration: move top-level concepts into rounds ---
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
-import { getManifest, writeManifest, copyFile } from '@/lib/storage';
+import { getManifest, writeManifest, copyFile, getHtmlFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import { conceptSlug } from '@/lib/letters';
 import { DRIFT_COPY_CHANGELOG } from '@/lib/constants';
@@ -9,6 +9,80 @@ import { invalidateManifestCache } from '@/lib/manifest-cache';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
+}
+
+function isCopyableLocalAsset(ref: string): boolean {
+  const trimmed = ref.trim();
+  if (
+    !trimmed ||
+    trimmed.startsWith('#') ||
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('//') ||
+    trimmed.startsWith('../') ||
+    /^[a-z][a-z0-9+.-]*:/i.test(trimmed)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function normalizeAssetRef(ref: string): string | null {
+  const cleanRef = ref.trim().replace(/^['"]|['"]$/g, '');
+  if (!isCopyableLocalAsset(cleanRef)) return null;
+  try {
+    const parsed = new URL(cleanRef, 'http://driftgrid.local/');
+    if (parsed.origin !== 'http://driftgrid.local') return null;
+    const relativePath = decodeURIComponent(parsed.pathname.replace(/^\/+/, ''));
+    return isCopyableLocalAsset(relativePath) ? relativePath : null;
+  } catch {
+    const withoutHash = cleanRef.split('#')[0];
+    const withoutQuery = withoutHash.split('?')[0];
+    return isCopyableLocalAsset(withoutQuery) ? withoutQuery : null;
+  }
+}
+
+function extractLocalAssetRefs(html: string): string[] {
+  const refs = new Set<string>();
+  const attrPattern = /\b(?:src|href|poster)\s*=\s*(["'])(.*?)\1/gi;
+  const urlPattern = /url\(\s*(["']?)(.*?)\1\s*\)/gi;
+  const srcsetPattern = /\bsrcset\s*=\s*(["'])(.*?)\1/gi;
+
+  for (const pattern of [attrPattern, urlPattern]) {
+    for (const match of html.matchAll(pattern)) {
+      const ref = normalizeAssetRef(match[2]);
+      if (ref) refs.add(ref);
+    }
+  }
+
+  for (const match of html.matchAll(srcsetPattern)) {
+    for (const candidate of match[2].split(',')) {
+      const ref = normalizeAssetRef(candidate.trim().split(/\s+/)[0] || '');
+      if (ref) refs.add(ref);
+    }
+  }
+
+  return [...refs];
+}
+
+async function copyReferencedAssets(
+  userId: string | null,
+  client: string,
+  project: string,
+  sourceFile: string,
+  destFile: string,
+) {
+  const html = await getHtmlFile(userId, client, project, sourceFile);
+  if (!html) return;
+
+  const sourceDir = path.posix.dirname(sourceFile);
+  const destDir = path.posix.dirname(destFile);
+
+  await Promise.all(extractLocalAssetRefs(html).map(async assetRef => {
+    const sourceAsset = path.posix.normalize(path.posix.join(sourceDir, assetRef));
+    const destAsset = path.posix.normalize(path.posix.join(destDir, assetRef));
+    if (sourceAsset.startsWith('..') || destAsset.startsWith('..')) return;
+    await copyFile(userId, client, project, sourceAsset, destAsset);
+  }));
 }
 
 export async function POST(request: Request) {
@@ -60,6 +134,7 @@ export async function POST(request: Request) {
   const newLabel = label || `Concept ${nextN}`;
 
   await copyFile(userId, client, project, sourceVersion.file, newFile);
+  await copyReferencedAssets(userId, client, project, sourceVersion.file, newFile);
 
   // Create new concept and version IDs
   const newConceptId = `concept-${generateId()}`;

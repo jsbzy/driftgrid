@@ -30,6 +30,7 @@ The repo holds two things side by side: **the app** (Next.js) and **the content*
 │       │   └── assets/
 │       └── {project-slug}/
 │           ├── manifest.json       # Project structure, concepts, versions
+│           ├── documents/           # Project docs: round summaries, transcripts, source decks
 │           ├── .thumbs/
 │           ├── concept-1/
 │           │   ├── v1.html
@@ -120,6 +121,24 @@ Three modes, in order of frequency:
 Always:
 - Keep manifest.json in sync
 - Follow the naming conventions below
+
+## Round Documents
+
+Projects may include a `documents/` folder for source material that applies across the project: meeting transcripts, source decks, comment exports, and round summary briefs. These are project-level documents, but `manifest.json` can assign them to one or more rounds through `documents[].roundIds`. A round can also point to its main summary document with `round.summaryDocumentId`.
+
+When creating a consolidated review round from comments or meeting notes, create one summary document for that round, usually:
+
+```
+projects/{client}/{project}/documents/round-{N}-summary.md
+```
+
+The summary should include:
+- Source documents and comment sources used.
+- Confirmed story/copy/design decisions.
+- Slide-level implementation notes.
+- Deferred or unresolved items.
+
+Do not copy old comments into the new round unless the designer explicitly asks. Treat prior-round comments as source context and keep the new round clean.
 
 ## Visual Verification (Before "Done")
 

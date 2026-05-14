@@ -106,6 +106,12 @@ export interface Round {
   createdAt: string;
   closedAt?: string;
   note?: string;
+  /**
+   * Project documents are shared assets, but a round can opt into the subset
+   * that should guide or summarize that round.
+   */
+  documentIds?: string[];
+  summaryDocumentId?: string;
   selects: { conceptId: string; versionId: string }[];
   concepts: Concept[];
 }
@@ -172,11 +178,22 @@ export interface ClientEdit {
   status: 'pending' | 'accepted' | 'rejected';
 }
 
+export interface ProjectDocument {
+  id: string;
+  title: string;
+  path: string;
+  kind: 'round-summary' | 'source-deck' | 'transcript' | 'comments-export' | 'brief' | 'other';
+  createdAt: string;
+  roundIds?: string[];
+  source?: string;
+}
+
 export interface Manifest {
   project: ProjectMeta;
   concepts: Concept[];  // convenience alias — always points to the active round's concepts
   rounds: Round[];
   workingSets: WorkingSet[];
+  documents?: ProjectDocument[];
   comments: Comment[];
   clientEdits: ClientEdit[];
 }
@@ -196,4 +213,3 @@ export interface ProjectInfo {
   /** ISO timestamp of the most recent version or annotation in the manifest. Null if neither exists. */
   lastEditedAt: string | null;
 }
-
