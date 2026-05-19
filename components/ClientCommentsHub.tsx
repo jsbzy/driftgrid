@@ -61,6 +61,7 @@ export function ClientCommentsHub({
   const [activeTab, setActiveTab] = useState<TabKey>('open');
   const [pendingDelete, setPendingDelete] = useState<Thread | null>(null);
   const [allCopied, setAllCopied] = useState(false);
+  const [agentCopied, setAgentCopied] = useState(false);
 
   // Build threads from flat comments — group replies under their parent.
   const threads = useMemo<Thread[]>(() => {
@@ -122,7 +123,7 @@ export function ClientCommentsHub({
   for (const t of threads) counts[t.state]++;
   const visible = threads.filter(t => t.state === activeTab);
 
-  const handleCopyAll = useCallback(async () => {
+  const formatAllComments = useCallback(() => {
     const lines: string[] = [];
     lines.push(`## Comments — ${client}/${project}`);
     lines.push('');
@@ -147,7 +148,11 @@ export function ClientCommentsHub({
       }
       lines.push('');
     }
-    const text = lines.join('\n').trim();
+    return lines.join('\n').trim();
+  }, [threads, client, project]);
+
+  const handleCopyAll = useCallback(async () => {
+    const text = formatAllComments();
     if (!text || threads.length === 0) {
       toast('No comments to copy');
       return;
@@ -160,7 +165,38 @@ export function ClientCommentsHub({
     } else {
       toast('Clipboard blocked — try again', 'error');
     }
-  }, [threads, client, project]);
+  }, [threads, formatAllComments]);
+
+  const handleCopyForAgent = useCallback(async () => {
+    const commentsBlock = formatAllComments();
+    if (!commentsBlock || threads.length === 0) {
+      toast('No comments to copy');
+      return;
+    }
+    const lines: string[] = [];
+    lines.push('################################################################');
+    lines.push('# DRIFTGRID CLIENT FEEDBACK — AGENT REVIEW');
+    lines.push('################################################################');
+    lines.push('');
+    lines.push(`Project: ${client}/${project}`);
+    lines.push('');
+    lines.push('Interview me about all these edits before we drift them to the next round.');
+    lines.push('Go one comment or concept at a time. For each, ask what I want to do:');
+    lines.push('apply as-is, revise, ignore, or combine with another edit.');
+    lines.push('Keep a running decision log. Once we agree on the plan, create a new');
+    lines.push('round and apply only the approved changes.');
+    lines.push('');
+    lines.push(commentsBlock);
+    const text = lines.join('\n');
+    const ok = await copyTextSafely(text);
+    if (ok) {
+      setAgentCopied(true);
+      toast('Agent review prompt copied');
+      setTimeout(() => setAgentCopied(false), 2200);
+    } else {
+      toast('Clipboard blocked — try again', 'error');
+    }
+  }, [threads, client, project, formatAllComments]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!pendingDelete) return;
@@ -195,22 +231,11 @@ export function ClientCommentsHub({
         <div style={{ padding: '20px 28px 0', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.02em' }}>Comments</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <button
-                onClick={handleCopyAll}
-                style={{
-                  background: 'none', border: '1px solid var(--border)', borderRadius: 4,
-                  cursor: 'pointer', color: 'var(--muted)', fontSize: 10, padding: '3px 8px',
-                  fontFamily: 'inherit', letterSpacing: '0.04em', fontWeight: 500,
-                }}
-                title="Copy all comments to clipboard"
-              >{allCopied ? 'Copied!' : 'Copy All'}</button>
-              <button
-                onClick={onClose}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, padding: 4 }}
-                title="Close"
-              >×</button>
-            </div>
+            <button
+              onClick={onClose}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, padding: 4 }}
+              title="Close"
+            >×</button>
           </div>
           <div style={{ display: 'flex', gap: 0, marginLeft: -4 }}>
             {TAB_ORDER.map(key => {
@@ -266,6 +291,31 @@ export function ClientCommentsHub({
             />
           ))}
         </div>
+
+        {threads.length > 0 && (
+          <div style={{ padding: '12px 28px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
+            <button
+              onClick={handleCopyForAgent}
+              style={{
+                flex: 1, padding: '10px 0', textAlign: 'center',
+                background: 'var(--foreground)', color: 'var(--background)',
+                border: 'none', borderRadius: 5, cursor: 'pointer',
+                fontSize: 10, fontWeight: 600, fontFamily: 'inherit',
+                letterSpacing: '0.04em', textTransform: 'uppercase',
+              }}
+            >{agentCopied ? 'Copied!' : 'Copy for Agent Review'}</button>
+            <button
+              onClick={handleCopyAll}
+              style={{
+                flex: 1, padding: '10px 0', textAlign: 'center',
+                background: 'none', color: 'var(--foreground)',
+                border: '1px solid var(--border)', borderRadius: 5, cursor: 'pointer',
+                fontSize: 10, fontWeight: 600, fontFamily: 'inherit',
+                letterSpacing: '0.04em', textTransform: 'uppercase',
+              }}
+            >{allCopied ? 'Copied!' : 'Copy All'}</button>
+          </div>
+        )}
       </div>
 
       {pendingDelete && (
