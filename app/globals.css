@@ -162,3 +162,14 @@ body {
   0%, 100% { outline-color: rgba(250, 204, 21, 0.2); }
   50% { outline-color: rgba(250, 204, 21, 0.5); }
 }
+
+/* Used by SharePanel + Viewer "SAVING…" indicator + CanvasCard awaiting-state */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Used by SharePanel sync spinner + HtmlFrame "LOADING AUDIO…" pill */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

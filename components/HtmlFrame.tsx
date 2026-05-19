@@ -36,6 +36,9 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
     }, [onIframeRef]);
     const [scale, setScale] = useState(0);
     const [iframeReady, setIframeReady] = useState(false);
+    // 'loading' = audio still buffering, 'ready' = can play through, 'error' = failed,
+    // null = no audio element on this slide. Drives the "Loading audio…" overlay.
+    const [audioState, setAudioState] = useState<'loading' | 'ready' | 'error' | null>(null);
 
     // Keep edit script loaded whenever editing or edits exist (avoids iframe reloads on toggle)
     const needsEditScript = editMode || hasEdits;
@@ -63,8 +66,48 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
     // Handle iframe load
     const handleLoad = useCallback(() => {
       setIframeReady(true);
+      setAudioState(null); // reset for new slide; effect below re-evaluates
       onReady?.();
     }, [onReady]);
+
+    // Surface audio loading state to the user. Iframe onLoad fires when the HTML
+    // is parsed, but audio files (often multi-MB MP3s) keep downloading in the
+    // background. Without this, the slide looks rendered while audio is silently
+    // buffering and the user thinks it's broken.
+    //
+    // Same-origin iframe (share route serves from driftgrid.ai), so we can peek
+    // into contentDocument and listen for readyState transitions.
+    useEffect(() => {
+      if (!iframeReady) return;
+      const doc = iframeRef.current?.contentDocument;
+      if (!doc) return;
+      const audios = Array.from(doc.querySelectorAll('audio')) as HTMLAudioElement[];
+      if (audios.length === 0) {
+        setAudioState(null);
+        return;
+      }
+
+      // Initial pass — if anything's already at HAVE_ENOUGH_DATA, we're good.
+      // readyState 4 = HAVE_ENOUGH_DATA, the threshold for canplaythrough.
+      const allReady = () => audios.every(a => a.readyState >= 4);
+      const anyError = () => audios.some(a => a.error != null);
+      const update = () => {
+        if (anyError()) setAudioState('error');
+        else if (allReady()) setAudioState('ready');
+        else setAudioState('loading');
+      };
+      update();
+
+      const events = ['loadstart', 'progress', 'loadeddata', 'canplay', 'canplaythrough', 'waiting', 'playing', 'error', 'stalled'] as const;
+      for (const a of audios) {
+        for (const ev of events) a.addEventListener(ev, update);
+      }
+      return () => {
+        for (const a of audios) {
+          for (const ev of events) a.removeEventListener(ev, update);
+        }
+      };
+    }, [iframeReady, src]);
 
     // Autoplay-policy bridge: browsers block <audio>.play() until the user has
     // interacted with the page. live-vo.js (and any similarly-shaped slide
@@ -411,6 +454,7 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
                 ),
               }}
             />
+            <AudioStatusPill state={audioState} />
           </div>
         </div>
       );
@@ -442,7 +486,59 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
           title="Design preview"
         onLoad={handleLoad}
       />
+        <AudioStatusPill state={audioState} />
       </div>
     );
   }
 );
+
+/**
+ * Small pill in the top-right of the iframe container showing audio buffering
+ * state. Renders nothing when the slide has no audio (state === null) or once
+ * audio is fully buffered (state === 'ready'). Stays for the "loading" /
+ * "error" cases so users can see what's happening on slides with VO.
+ */
+function AudioStatusPill({ state }: { state: 'loading' | 'ready' | 'error' | null }) {
+  if (state == null || state === 'ready') return null;
+  const isError = state === 'error';
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        zIndex: 3,
+        background: 'rgba(0,0,0,0.72)',
+        color: '#fff',
+        fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+        fontSize: 10,
+        letterSpacing: '0.08em',
+        padding: '6px 10px 6px 8px',
+        borderRadius: 999,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 8,
+        backdropFilter: 'blur(8px)',
+        pointerEvents: 'none',
+      }}
+      role="status"
+      aria-live="polite"
+    >
+      {isError ? (
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444' }} />
+      ) : (
+        <span
+          style={{
+            width: 10,
+            height: 10,
+            border: '1.5px solid rgba(255,255,255,0.3)',
+            borderTopColor: '#fff',
+            borderRadius: '50%',
+            animation: 'spin 0.9s linear infinite',
+          }}
+        />
+      )}
+      {isError ? 'AUDIO FAILED' : 'LOADING AUDIO…'}
+    </div>
+  );
+}

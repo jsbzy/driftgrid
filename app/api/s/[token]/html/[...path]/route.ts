@@ -21,6 +21,16 @@ const MIME_TYPES: Record<string, string> = {
   '.json': 'application/json',
 };
 
+// Extensions we redirect to a Supabase signed URL instead of buffering through
+// this route. Supabase Storage natively supports HTTP Range requests on its
+// public/signed URLs — the browser can progressively stream the file instead
+// of waiting for the full download. Critical for audio/video, where the
+// download-then-serve model meant slides with VO appeared silent for ~minute.
+const STREAMABLE_EXTS = new Set(['.mp3', '.mp4', '.wav', '.ogg', '.webm', '.m4a', '.aac']);
+// 1 hour: long enough that the audio element won't re-request mid-playback and
+// short enough that the signed URL can't be cached/scraped indefinitely.
+const SIGNED_URL_TTL_SECONDS = 3600;
+
 /** Resolve token to userId/client/project */
 async function resolveToken(token: string): Promise<{ userId: string; client: string; project: string } | null> {
   const supabase = getSupabaseAdmin();
@@ -64,14 +74,27 @@ export async function GET(
 
   const filePath = pathParts.join('/');
   const storagePath = `${resolved.userId}/${resolved.client}/${resolved.project}/${filePath}`;
-
+  const ext = '.' + (filePath.split('.').pop()?.toLowerCase() || '');
   const supabase = getSupabaseAdmin();
+
+  // Audio/video: 302 to a signed Supabase URL. Supabase Storage supports
+  // Range requests on signed URLs, so the browser streams progressively. Going
+  // through this route instead would download the full file before responding —
+  // which is why slides with voiceover used to appear silent for ~a minute.
+  if (STREAMABLE_EXTS.has(ext)) {
+    const { data: signed, error: signErr } = await supabase
+      .storage.from(BUCKET).createSignedUrl(storagePath, SIGNED_URL_TTL_SECONDS);
+    if (signErr || !signed?.signedUrl) {
+      return new NextResponse('Not found', { status: 404 });
+    }
+    return NextResponse.redirect(signed.signedUrl, { status: 302 });
+  }
+
   const { data, error } = await supabase.storage.from(BUCKET).download(storagePath);
   if (error || !data) {
     return new NextResponse('Not found', { status: 404 });
   }
 
-  const ext = '.' + (filePath.split('.').pop()?.toLowerCase() || '');
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
   const raw = Buffer.from(await data.arrayBuffer());
