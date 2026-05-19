@@ -655,7 +655,7 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
     } catch {
       return null;
     }
-    if (!data.text || data.count === 0) return null;
+    if (!data.text || !data.count) return null;
     return { text: data.text, count: data.count };
   }
 
