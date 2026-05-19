@@ -1316,7 +1316,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     return (
       <div className="h-screen flex flex-col bg-[var(--background)]">
         {namePrompt}
-        <SharePanel open={sharePanelOpen} onClose={() => setSharePanelOpen(false)} client={client} project={project} roundId={activeRoundId} roundNumber={activeRound?.number ?? null} />
+        <SharePanel open={sharePanelOpen} onClose={() => setSharePanelOpen(false)} client={client} project={project} roundId={activeRoundId} roundNumber={activeRound?.number ?? null} rounds={rounds.map(r => ({ number: r.number, name: r.name }))} />
         {mode === 'client'
           ? <ClientCommentsHub
               open={commentsHubOpen}

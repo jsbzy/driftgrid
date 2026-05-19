@@ -87,6 +87,8 @@ interface SharePanelProps {
   roundId?: string | null;
   /** Round number — scopes the share row so each round has its own pinned URL. */
   roundNumber?: number | null;
+  /** All rounds in the project — used for the "share other rounds" toggle. */
+  rounds?: { number: number; name: string }[];
 }
 
 function getStoredCredentials(): StoredCredentials | null {
@@ -231,7 +233,7 @@ const SYNC_MESSAGES: Record<SyncPhase, string[]> = {
   ],
 };
 
-export function SharePanel({ open, onClose, client, project, roundId, roundNumber }: SharePanelProps) {
+export function SharePanel({ open, onClose, client, project, roundId, roundNumber, rounds: allRounds }: SharePanelProps) {
   // Start in 'ready' optimistically — checkCredentials runs on open and demotes
   // to 'auth' if local creds are missing. Avoids the brief dot-animation flash
   // of the old 'checking' state. Cache hydration below sets shareUrl/lastPublishedAt
@@ -264,6 +266,9 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
   const [roundPrepCopied, setRoundPrepCopied] = useState<RoundPrepMode | null>(null);
   const [lastPublishedAt, setLastPublishedAt] = useState<string | null>(null);
   const [mediaChecked, setMediaChecked] = useState(() => readIncludeMedia());
+  const [showOtherRounds, setShowOtherRounds] = useState(false);
+  const [otherRoundUrls, setOtherRoundUrls] = useState<Record<number, string>>({});
+  const [otherRoundsCopied, setOtherRoundsCopied] = useState<number | null>(null);
   // Persisted handoff-mode picker: auto-apply (default), interview, or raw.
   // Replaced three near-identical buttons with one primary + segmented picker.
   const [handoffMode, setHandoffModeState] = useState<RoundPrepMode>(() => {
@@ -709,6 +714,26 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
     } catch {
       toast('Failed to prepare round handoff');
     }
+  }
+
+  async function fetchOtherRoundUrls() {
+    const creds = getStoredCredentials();
+    if (!creds || !allRounds) return;
+    const urls: Record<number, string> = {};
+    for (const r of allRounds) {
+      if (r.number === roundNumber) continue;
+      try {
+        const res = await fetch('/api/cloud/share-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client, project, accessToken: creds.accessToken, roundNumber: r.number }),
+        });
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data.exists) urls[r.number] = data.url;
+      } catch { /* skip */ }
+    }
+    setOtherRoundUrls(urls);
   }
 
   function handleSignOut() {
@@ -1312,6 +1337,67 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
                   </a>
                 </p>
               </div>
+
+              {/* Share other rounds toggle */}
+              {allRounds && allRounds.length > 1 && (
+                <div style={{ paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                  <button
+                    onClick={() => {
+                      const next = !showOtherRounds;
+                      setShowOtherRounds(next);
+                      if (next) fetchOtherRoundUrls();
+                    }}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                      fontSize: 11, color: '#888', fontFamily: 'inherit',
+                      display: 'flex', alignItems: 'center', gap: 6,
+                    }}
+                  >
+                    <span style={{
+                      display: 'inline-block', transition: 'transform 150ms',
+                      transform: showOtherRounds ? 'rotate(90deg)' : 'rotate(0deg)',
+                      fontSize: 9,
+                    }}>▶</span>
+                    Share other rounds
+                  </button>
+                  {showOtherRounds && (
+                    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {allRounds.filter(r => r.number !== roundNumber).map(r => {
+                        const url = otherRoundUrls[r.number];
+                        return (
+                          <div key={r.number} style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '8px 12px', background: '#f5f5f5', borderRadius: 6,
+                          }}>
+                            <span style={{ fontSize: 11, color: '#555', fontWeight: 500 }}>
+                              R{r.number} — {r.name}
+                            </span>
+                            {url ? (
+                              <button
+                                onClick={async () => {
+                                  const ok = await copyTextSafely(url);
+                                  if (ok) {
+                                    setOtherRoundsCopied(r.number);
+                                    toast(`Round ${r.number} link copied`);
+                                    setTimeout(() => setOtherRoundsCopied(null), 2000);
+                                  }
+                                }}
+                                style={{
+                                  background: 'none', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 4,
+                                  padding: '3px 10px', fontSize: 10, color: '#555', cursor: 'pointer',
+                                  fontFamily: 'inherit', fontWeight: 500,
+                                }}
+                              >{otherRoundsCopied === r.number ? 'Copied!' : 'Copy Link'}</button>
+                            ) : (
+                              <span style={{ fontSize: 10, color: '#bbb' }}>Not published</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
