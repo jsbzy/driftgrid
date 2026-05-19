@@ -33,7 +33,16 @@ import { SharePanel } from './SharePanel';
 import { CommentsHub } from './CommentsHub';
 import { ClientCommentsHub } from './ClientCommentsHub';
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+import { fetchManifestForSwr, putManifest, trackedFetch } from '@/lib/manifest-client';
+import { useManifestBusy } from '@/lib/hooks/useManifestBusy';
+import { copyTextSafely } from '@/lib/clipboard';
+
+// Use the ETag-aware fetcher for the designer route so subsequent PUTs can
+// echo `If-Match` and avoid silently overwriting concurrent writes (multi-tab,
+// agent + UI in flight, etc.). Share-mode reads a different endpoint that
+// doesn't (yet) emit ETags — plain fetcher is fine there.
+const fetcher = (url: string) =>
+  url.startsWith('/api/manifest/') ? fetchManifestForSwr(url) : fetch(url).then(r => r.json());
 
 interface ViewerProps {
   client: string;
@@ -73,6 +82,10 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const [activeRoundId, setActiveRoundId] = useState<string | null>(null);
   const flash = useFlash();
   const ui = useUIVisibility();
+  // True while any manifest-writing op is in flight from this tab. Drives the
+  // "Saving…" indicator + locks destructive shortcuts so users can't pile
+  // mutations on top of an in-flight save.
+  const isBusy = useManifestBusy();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
@@ -396,7 +409,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         e.preventDefault();
         (async () => {
           for (const item of clipboard) {
-            const res = await fetch('/api/paste', {
+            const res = await trackedFetch('/api/paste', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -465,50 +478,66 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const navGridConceptIds = useMemo(() => concepts.map(c => c.id), [concepts]);
   const navGridVersionIds = useMemo(() => concepts.map(c => c.versions.map(v => v.id)), [concepts]);
 
-  // On manifest load, apply hash to jump to the right concept/version (once only)
-  // Supports new format (#slug/letter) and legacy format (#concept-id/vN)
+  // On manifest load, apply hash to jump to the right round/concept/version (once only).
+  //
+  // Supported formats, in priority order:
+  //   1. New round-scoped:   #r<N>/<slug>/v<n>[/f]
+  //   2. Legacy slug+v:      #<slug>/v<n>[/f]            → defaults to latest round
+  //   3. Legacy slug+letter: #<slug>/<a-z>[/f]           → letter → version number
+  //   4. Very legacy:        #<concept-id>/v<n>[/f]      → defaults to latest round
+  //
+  // Reads from manifest.rounds directly (not the round-scoped `concepts` slice) so
+  // a single render pass can resolve round → concept → version atomically.
   const hashApplied = useRef(false);
   useEffect(() => {
-    if (!concepts.length || hashApplied.current) return;
-    hashApplied.current = true;
+    if (!manifest || hashApplied.current) return;
     const hash = window.location.hash.replace('#', '');
-    if (!hash) return;
-    // Strip optional /f trailing segment (frame-view marker, handled by initial state)
+    if (!hash) {
+      hashApplied.current = true;
+      return;
+    }
+    hashApplied.current = true;
     const parts = hash.split('/');
     if (parts[parts.length - 1] === 'f') parts.pop();
-    const [slugOrId, letterOrV] = parts;
 
-    // Try new slug-based format first
-    let ci = concepts.findIndex(c => c.slug === slugOrId || conceptSlug(c.label) === slugOrId);
+    // Strip optional r<N> prefix to resolve which round we're targeting.
+    let roundPrefix: string | null = null;
+    if (parts[0] && /^r\d+$/i.test(parts[0])) {
+      roundPrefix = parts.shift()!;
+    }
+    const [slugOrId, vToken] = parts;
+
+    const targetRound = roundPrefix
+      ? manifest.rounds?.find(r => `r${r.number}`.toLowerCase() === roundPrefix!.toLowerCase())
+      : (manifest.rounds?.length ? manifest.rounds[manifest.rounds.length - 1] : null);
+
+    const roundConcepts = targetRound?.concepts ?? manifest.concepts ?? [];
+
+    let ci = roundConcepts.findIndex(c => c.slug === slugOrId || conceptSlug(c.label) === slugOrId);
+    if (ci < 0) ci = roundConcepts.findIndex(c => c.id === slugOrId);
+    if (ci < 0) return;
+
     let vi = 0;
-
-    if (ci >= 0 && letterOrV && letterOrV.startsWith('v')) {
-      // v{N} format: #slug/v3
-      const vNum = parseInt(letterOrV.replace('v', ''), 10);
-      const found = concepts[ci].versions.findIndex(v => v.number === vNum);
+    if (vToken) {
+      const vNum = vToken.startsWith('v')
+        ? parseInt(vToken.replace('v', ''), 10)
+        : letterToNumber(vToken);
+      const found = roundConcepts[ci].versions.findIndex(v => v.number === vNum);
       if (found >= 0) vi = found;
-    } else if (ci >= 0 && letterOrV) {
-      // Legacy letter format: #slug/c → convert letter to number
-      const vNum = letterToNumber(letterOrV);
-      const found = concepts[ci].versions.findIndex(v => v.number === vNum);
-      if (found >= 0) vi = found;
-    } else {
-      // Legacy format: #concept-id/vN
-      ci = concepts.findIndex(c => c.id === slugOrId);
-      if (ci < 0) return;
-      if (letterOrV) {
-        const vNum = parseInt(letterOrV.replace('v', ''), 10);
-        const found = concepts[ci].versions.findIndex(v => v.number === vNum);
-        if (found >= 0) vi = found;
-      }
     }
 
-    if (ci < 0) return;
+    if (targetRound && targetRound.id !== activeRoundId) {
+      setActiveRoundId(targetRound.id);
+    }
     setConceptIndex(ci);
     setVersionIndex(vi);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [concepts.length]);
+  }, [manifest]);
 
+  // New URL format includes the active round: #r<N>/<slug>/v<n>[/f]. Old
+  // links without the r-prefix still resolve via the parser (defaults to
+  // latest round). Including the round eliminates the long-running "which
+  // round am I looking at?" ambiguity when slugs repeat across rounds.
   const handleNavigate = useCallback(
     (ci: number, vi: number) => {
       if (multiSelected.size > 0) setMultiSelected(new Set());
@@ -520,10 +549,11 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       if (concept && version) {
         const slug = concept.slug || conceptSlug(concept.label);
         const suffix = viewMode === 'frame' ? '/f' : '';
-        window.history.replaceState(null, '', `#${slug}/v${version.number}${suffix}`);
+        const roundPrefix = activeRound ? `r${activeRound.number}/` : '';
+        window.history.replaceState(null, '', `#${roundPrefix}${slug}/v${version.number}${suffix}`);
       }
     },
-    [concepts, multiSelected, tour, viewMode]
+    [concepts, multiSelected, tour, viewMode, activeRound]
   );
 
   const handleHighlight = useCallback(
@@ -535,10 +565,11 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       if (concept && version) {
         const slug = concept.slug || conceptSlug(concept.label);
         const suffix = viewMode === 'frame' ? '/f' : '';
-        window.history.replaceState(null, '', `#${slug}/v${version.number}${suffix}`);
+        const roundPrefix = activeRound ? `r${activeRound.number}/` : '';
+        window.history.replaceState(null, '', `#${roundPrefix}${slug}/v${version.number}${suffix}`);
       }
     },
-    [concepts, viewMode]
+    [concepts, viewMode, activeRound]
   );
 
   // Compute card bounds for a given concept/version for smooth transitions
@@ -636,11 +667,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         ),
       }));
     }
-    fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    putManifest(client, project, updated, { mutate });
     mutate(updated, false);
   }, [currentConcept, currentVersion, manifest, selections, client, project, mutate]);
 
@@ -687,11 +714,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         ),
       }));
     }
-    fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    putManifest(client, project, updated, { mutate });
     mutate(updated, false);
   }, [manifest, selections, client, project, mutate]);
 
@@ -835,6 +858,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVersion, viewMode]);
 
+  // While a manifest write is in flight, disable destructive shortcuts so the
+  // user can't pile mutations on top of a save and trigger 412 retries.
+  // Navigation + view-toggle + zoom + present stay live (pure local state).
   useKeyboardNav({
     conceptIndex,
     versionIndex,
@@ -842,14 +868,14 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     getVersionCount,
     onNavigate: handleNavigate,
     onToggleGridView: handleToggleGridView,
-    onToggleSelect: mode !== 'client' ? handleToggleSelect : undefined,
+    onToggleSelect: !isBusy && mode !== 'client' ? handleToggleSelect : undefined,
     onZoomToLevel: handleZoomToLevel,
-    onDrift: handleDrift,
-    onBranch: handleBranch,
-    onDelete: handleDeleteCurrent,
-    onMoveConceptLeft: mutations.handleMoveConceptLeft,
-    onMoveConceptRight: mutations.handleMoveConceptRight,
-    onUndo: undo.handleUndo,
+    onDrift: isBusy ? undefined : handleDrift,
+    onBranch: isBusy ? undefined : handleBranch,
+    onDelete: isBusy ? undefined : handleDeleteCurrent,
+    onMoveConceptLeft: isBusy ? undefined : mutations.handleMoveConceptLeft,
+    onMoveConceptRight: isBusy ? undefined : mutations.handleMoveConceptRight,
+    onUndo: isBusy ? undefined : undo.handleUndo,
     onPresent: presentation.handlePresent,
     selectsConceptIndices,
     getSelectedVersionIndex,
@@ -878,7 +904,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       return;
     }
     const name = window.prompt('Round name (optional):');
-    const res = await fetch('/api/rounds', {
+    const res = await trackedFetch('/api/rounds', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1041,7 +1067,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         const name = window.prompt('New project name:');
         if (!name) return;
         const versions = Array.from(selections).map(key => { const [conceptId, versionId] = key.split(':'); return { conceptId, versionId }; });
-        const res = await fetch('/api/drift-to-project', {
+        const res = await trackedFetch('/api/drift-to-project', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ client, project, versions, newProject: name }),
@@ -1063,7 +1089,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         }
         const name = window.prompt('Round name (optional):');
         const roundSelects = Array.from(selections).map(key => { const [conceptId, versionId] = key.split(':'); return { conceptId, versionId }; });
-        const res = await fetch('/api/rounds', {
+        const res = await trackedFetch('/api/rounds', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1240,7 +1266,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             const version = concept?.versions.find(v => v.id === vid);
             return version ? `~/driftgrid/projects/${client}/${project}/${version.file}` : '';
           }).filter(Boolean);
-          navigator.clipboard.writeText(paths.join('\n'));
+          copyTextSafely(paths.join('\n'));
           toast(`${paths.length} paths copied`);
         }}
         className="px-2 py-1 rounded-lg hover:bg-white/20 transition-colors text-white"
@@ -1326,7 +1352,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             onNext={tour.next}
           />
         )}
-        {/* Top-left: home + project name */}
+        {/* Top-left: home + project name + busy indicator */}
         <div className="fixed top-4 left-4 z-30 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
           <a
             href="/"
@@ -1338,11 +1364,28 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             </svg>
             {filtered?.project.name}
           </a>
+          {isBusy && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 10,
+                letterSpacing: '0.08em',
+                color: '#8b5cf6',
+                animation: 'pulse-dot 1.4s ease-in-out infinite',
+              }}
+              title="Saving — destructive shortcuts disabled while writes are in flight"
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6' }} />
+              SAVING…
+            </span>
+          )}
         </div>
         {/* Top-right: round switcher + share */}
         <div className="fixed top-4 right-4 z-30 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
-          {/* Round switcher — hidden when only 1 round or in client mode */}
-          {rounds.length > 1 && mode !== 'client' && (
+          {/* Round switcher — hidden when only 1 round */}
+          {rounds.length > 1 && (
             <div className="flex items-center gap-1.5">
               {rounds.map(r => (
                 <button
@@ -1352,6 +1395,16 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                     setConceptIndex(0);
                     setVersionIndex(0);
                     setSelections(new Set());
+                    // Reset hash to the new round's first concept/version so a
+                    // refresh stays on the round the user just selected.
+                    const firstConcept = r.concepts[0];
+                    const firstVersion = firstConcept?.versions[0];
+                    if (firstConcept && firstVersion) {
+                      const slug = firstConcept.slug || conceptSlug(firstConcept.label);
+                      // viewMode is already narrowed to 'frame' here (the grid
+                      // branch returns earlier), so the /f suffix is always on.
+                      window.history.replaceState(null, '', `#r${r.number}/${slug}/v${firstVersion.number}/f`);
+                    }
                   }}
                   className="transition-all"
                   style={{
@@ -1555,7 +1608,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             onDriftToProject={async (conceptId: string, versionId: string) => {
               const name = window.prompt('New project name:');
               if (!name) return;
-              const res = await fetch('/api/drift-to-project', {
+              const res = await trackedFetch('/api/drift-to-project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ client, project, versions: [{ conceptId, versionId }], newProject: name }),
@@ -1578,7 +1631,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
             rounds={rounds.map(r => ({ id: r.id, name: r.name, number: r.number }))}
             activeRoundId={activeRoundId}
             onSendToRound={async (conceptId, versionId, targetRoundId) => {
-              const res = await fetch('/api/rounds', {
+              const res = await trackedFetch('/api/rounds', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ client, project, action: 'copy-to', conceptId, versionId, sourceRoundId: activeRoundId, targetRoundId }),
@@ -1592,7 +1645,7 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               }
             }}
             onSendToNewRound={async (conceptId, versionId) => {
-              const res = await fetch('/api/rounds', {
+              const res = await trackedFetch('/api/rounds', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ client, project, action: 'create', selections: [{ conceptId, versionId }], sourceRoundId: activeRoundId }),
