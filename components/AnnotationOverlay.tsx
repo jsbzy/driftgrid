@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react
 import type { Annotation } from '@/lib/types';
 import { toast } from '@/components/Toast';
 import { buildAgentMessage } from '@/lib/agent-payload';
+import { copyTextSafely } from '@/lib/clipboard';
 
 function handleSendToAgent() {
   toast('Install the DriftGrid MCP server to send prompts directly to your agent.', 'info');
@@ -514,12 +515,12 @@ export function AnnotationOverlay({
     }
 
     if (!clipboardOk) {
-      try {
-        await navigator.clipboard.writeText(message);
-        clipboardOk = true;
-      } catch (err) {
-        console.warn('[copy] writeText fallback failed', err);
-      }
+      // copyTextSafely tries navigator.clipboard.writeText first, then falls
+      // back to document.execCommand('copy') — required on insecure contexts
+      // like driftgrid.local over plain HTTP, where navigator.clipboard is
+      // undefined entirely.
+      clipboardOk = await copyTextSafely(message);
+      if (!clipboardOk) console.warn('[copy] both writeText and execCommand fallback failed');
     }
 
     if (clipboardOk) {
@@ -1153,7 +1154,7 @@ export function AnnotationOverlay({
                         <button
                           type="button"
                           tabIndex={-1}
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
                             const draft = (replyDrafts[annotation.id] || '').trim();
 
@@ -1191,13 +1192,28 @@ export function AnnotationOverlay({
                               return new Blob([message], { type: 'text/plain' });
                             })();
 
-                            try {
-                              navigator.clipboard.write([new ClipboardItem({ 'text/plain': blobPromise })])
-                                .catch(err => console.error('[copy] write failed', err));
-                            } catch {
-                              blobPromise.then(b => b.text()).then(t => navigator.clipboard?.writeText(t)).catch(() => {});
+                            // ClipboardItem-with-Promise path preserves the gesture across the
+                            // async screenshot fetch — only available in secure contexts. On
+                            // insecure origins (driftgrid.local over http), navigator.clipboard
+                            // is undefined, so fall back to copyTextSafely after the blob resolves.
+                            let copied = false;
+                            if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+                              try {
+                                await navigator.clipboard.write([new ClipboardItem({ 'text/plain': blobPromise })]);
+                                copied = true;
+                              } catch (err) {
+                                console.warn('[copy] ClipboardItem write failed, falling back', err);
+                              }
                             }
-                            toast(pendingAttachScreenshot ? 'Copied (screenshot included) — paste into your agent' : 'Copied — paste into your agent');
+                            if (!copied) {
+                              const text = await blobPromise.then(b => b.text()).catch(() => '');
+                              copied = text ? await copyTextSafely(text) : false;
+                            }
+                            if (copied) {
+                              toast(pendingAttachScreenshot ? 'Copied (screenshot included) — paste into your agent' : 'Copied — paste into your agent');
+                            } else {
+                              toast('Clipboard blocked — try again', 'error');
+                            }
                             setActivePin(null);
 
                             // Persist the draft as a real reply if present.

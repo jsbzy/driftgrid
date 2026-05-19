@@ -5,6 +5,8 @@ import type { Manifest, Concept, Version } from '@/lib/types';
 import type { ZoomLevel } from '@/lib/hooks/useKeyboardNav';
 import { toast } from '@/components/Toast';
 import type { KeyedMutator } from 'swr';
+import { putManifest, trackManifestWrite } from '@/lib/manifest-client';
+import { copyTextSafely } from '@/lib/clipboard';
 
 interface MutationDeps {
   manifest: Manifest | undefined;
@@ -75,11 +77,7 @@ export function useManifestMutations({
       return { ...c, versions: c.versions.filter(v => v.id !== versionId) };
     }).filter(c => c.versions.length > 0);
     const updated = withUpdatedConcepts(newConcepts);
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    await putManifest(client, project, updated, { mutate });
     const clampedCi = Math.min(conceptIndex, Math.max(0, newConcepts.length - 1));
     if (clampedCi !== conceptIndex) {
       setConceptIndex(clampedCi);
@@ -104,11 +102,7 @@ export function useManifestMutations({
       };
     });
     const updated = withUpdatedConcepts(newConcepts);
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    await putManifest(client, project, updated, { mutate });
     mutate(updated);
     toast('Version hidden');
   }, [manifest, client, project, mutate, getActiveConcepts, withUpdatedConcepts]);
@@ -132,11 +126,7 @@ export function useManifestMutations({
     }).filter(c => c.versions.length > 0);
     const updated = withUpdatedConcepts(newConcepts);
 
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    await putManifest(client, project, updated, { mutate });
 
     await new Promise(r => setTimeout(r, 400));
 
@@ -162,10 +152,7 @@ export function useManifestMutations({
     newConcepts[ci] = newConcepts[ci - 1];
     newConcepts[ci - 1] = temp;
     const updated = withUpdatedConcepts(newConcepts.map((c, i) => ({ ...c, position: i + 1 })));
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    await putManifest(client, project, updated, { mutate });
     setConceptIndex(ci - 1);
     mutate(updated);
   }, [manifest, conceptIndex, client, project, mutate, setConceptIndex, getActiveConcepts, withUpdatedConcepts]);
@@ -179,10 +166,7 @@ export function useManifestMutations({
     newConcepts[ci] = newConcepts[ci + 1];
     newConcepts[ci + 1] = temp;
     const updated = withUpdatedConcepts(newConcepts.map((c, i) => ({ ...c, position: i + 1 })));
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    await putManifest(client, project, updated, { mutate });
     setConceptIndex(ci + 1);
     mutate(updated);
   }, [manifest, conceptIndex, client, project, mutate, setConceptIndex, getActiveConcepts, withUpdatedConcepts]);
@@ -199,10 +183,7 @@ export function useManifestMutations({
       return { ...c, versions: reordered };
     });
     const updated = withUpdatedConcepts(newConcepts);
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    await putManifest(client, project, updated, { mutate });
     mutate(updated);
   }, [manifest, client, project, mutate, getActiveConcepts, withUpdatedConcepts]);
 
@@ -215,10 +196,7 @@ export function useManifestMutations({
       .filter((c): c is NonNullable<typeof c> => !!c)
       .map((c, i) => ({ ...c, position: i + 1 }));
     const updated = withUpdatedConcepts(reordered);
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    await putManifest(client, project, updated, { mutate });
     mutate(updated);
   }, [manifest, client, project, mutate, getActiveConcepts, withUpdatedConcepts]);
 
@@ -254,10 +232,7 @@ export function useManifestMutations({
       return c;
     });
     const updated = withUpdatedConcepts(newConcepts);
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    await putManifest(client, project, updated, { mutate });
     setConceptIndex(toConceptIndex);
     setVersionIndex(targetVi);
     mutate(updated);
@@ -265,34 +240,36 @@ export function useManifestMutations({
 
   const handleDriftVersion = useCallback(async (conceptId: string, versionId: string) => {
     try {
-      const resPromise = fetch('/api/iterate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client, project, conceptId, versionId, roundId: activeRoundId }),
-      });
+      await trackManifestWrite(async () => {
+        const resPromise = fetch('/api/iterate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client, project, conceptId, versionId, roundId: activeRoundId }),
+        });
 
-      flash.showDriftFlash('DRIFTED');
+        flash.showDriftFlash('DRIFTED');
 
-      const res = await resPromise;
-      if (!res.ok) { flash.hideDriftFlash(); toast('Drift failed', 'error'); return; }
-      const { absolutePath, versionId: newVid, versionNumber } = await res.json();
-      try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
-      toast('Drifted \u2193 \u2014 path copied');
+        const res = await resPromise;
+        if (!res.ok) { flash.hideDriftFlash(); toast('Drift failed', 'error'); return; }
+        const { absolutePath, versionId: newVid, versionNumber } = await res.json();
+        await copyTextSafely(absolutePath);
+        toast('Drifted \u2193 \u2014 path copied');
 
-      undo.trackDrift({ conceptId, versionId: newVid });
+        undo.trackDrift({ conceptId, versionId: newVid });
 
-      const updated = await mutate();
-      if (updated) {
-        const ci = updated.concepts.findIndex(c => c.id === conceptId);
-        if (ci >= 0) {
-          const vi = updated.concepts[ci].versions.findIndex(v => v.id === newVid);
-          if (vi >= 0) {
-            setConceptIndex(ci);
-            setVersionIndex(vi);
-            window.history.replaceState(null, '', `#${updated.concepts[ci].id}/v${versionNumber}`);
+        const updated = await mutate();
+        if (updated) {
+          const ci = updated.concepts.findIndex(c => c.id === conceptId);
+          if (ci >= 0) {
+            const vi = updated.concepts[ci].versions.findIndex(v => v.id === newVid);
+            if (vi >= 0) {
+              setConceptIndex(ci);
+              setVersionIndex(vi);
+              window.history.replaceState(null, '', `#${updated.concepts[ci].id}/v${versionNumber}`);
+            }
           }
         }
-      }
+      });
     } catch { flash.hideDriftFlash(); toast('Drift failed', 'error'); }
   }, [client, project, mutate, undo, flash, setConceptIndex, setVersionIndex, activeRoundId]);
 
@@ -300,29 +277,31 @@ export function useManifestMutations({
     try {
       flash.showDriftFlash('DRIFTED \u2192');
 
-      const res = await fetch('/api/branch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client, project, conceptId, versionId }),
-      });
-      if (!res.ok) { flash.hideDriftFlash(); toast('Branch failed', 'error'); return; }
-      const { conceptId: newConceptId, absolutePath } = await res.json();
-      try { await navigator.clipboard.writeText(absolutePath); } catch { /* clipboard may be unavailable */ }
-      toast('Drifted \u2192 \u2014 new concept, path copied');
+      await trackManifestWrite(async () => {
+        const res = await fetch('/api/branch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client, project, conceptId, versionId }),
+        });
+        if (!res.ok) { flash.hideDriftFlash(); toast('Branch failed', 'error'); return; }
+        const { conceptId: newConceptId, absolutePath } = await res.json();
+        await copyTextSafely(absolutePath);
+        toast('Drifted \u2192 \u2014 new concept, path copied');
 
-      await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 500));
 
-      const updated = await mutate();
-      if (updated) {
-        const ci = updated.concepts.findIndex(c => c.id === newConceptId);
-        if (ci >= 0) {
-          setConceptIndex(ci);
-          setVersionIndex(0);
-          if (viewMode === 'frame') setViewMode('grid');
-          setZoomLevel('z1');
-          window.history.replaceState(null, '', `#${newConceptId}/v1`);
+        const updated = await mutate();
+        if (updated) {
+          const ci = updated.concepts.findIndex(c => c.id === newConceptId);
+          if (ci >= 0) {
+            setConceptIndex(ci);
+            setVersionIndex(0);
+            if (viewMode === 'frame') setViewMode('grid');
+            setZoomLevel('z1');
+            window.history.replaceState(null, '', `#${newConceptId}/v1`);
+          }
         }
-      }
+      });
     } catch { flash.hideDriftFlash(); toast('Branch failed', 'error'); }
   }, [client, project, mutate, viewMode, flash, setConceptIndex, setVersionIndex, setViewMode, setZoomLevel]);
 
@@ -383,11 +362,7 @@ export function useManifestMutations({
 </html>`;
 
     await Promise.all([
-      fetch(`/api/manifest/${client}/${project}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-      }),
+      putManifest(client, project, updated, { mutate }),
       fetch(`/api/html/${client}/${project}/${slug}/v1.html`, {
         method: 'PUT',
         body: placeholderHtml,
@@ -407,11 +382,7 @@ export function useManifestMutations({
       c.id === conceptId ? { ...c, label: newLabel.trim() } : c
     );
     const updated = withUpdatedConcepts(newConcepts);
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    await putManifest(client, project, updated, { mutate });
     mutate(updated);
   }, [manifest, client, project, mutate, getActiveConcepts, withUpdatedConcepts]);
 
@@ -428,11 +399,7 @@ export function useManifestMutations({
 
     const newConcepts = concepts.filter(c => c.id !== conceptId);
     const updated = withUpdatedConcepts(newConcepts);
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    await putManifest(client, project, updated, { mutate });
     const ci = Math.min(conceptIndex, Math.max(0, newConcepts.length - 1));
     setConceptIndex(ci);
     setVersionIndex(0);

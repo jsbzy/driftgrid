@@ -4,7 +4,7 @@ import path from 'path';
 import sharp from 'sharp';
 import { getCachedManifest } from '@/lib/manifest-cache';
 import { isCloudMode } from '@/lib/supabase';
-import { getAsset } from '@/lib/storage';
+import { getAsset, writeManifest } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { generateThumbnail } from '@/lib/thumbnails';
@@ -233,29 +233,44 @@ export async function GET(
 
       await generateThumbnail(info.htmlPath, resolved, info.width, info.height);
 
-      // Update manifest with thumbnail path (search all rounds)
+      // Update manifest with thumbnail path. Two tightening rules vs. the old
+      // loop:
+      //   1) Self-heal: if version.thumbnail is set but doesn't match the
+      //      canonical `.thumbs/${concept.id}-${version.id}.webp` form, rewrite
+      //      it. This eliminates the "stuck on a wrong value" failure mode
+      //      where some upstream scrambler wrote the wrong path and the route
+      //      then refused to fix it (the old `!version.thumbnail` guard).
+      //   2) Break after the first exact match. Legacy concept IDs repeat
+      //      across rounds (23 of them in demo-v4 — pre-`-round-N` naming);
+      //      without the break, regenerating one thumb wrote the same thumb
+      //      filename into every round's matching version slot.
+      const expectedBase = thumbFilename.replace(/\.(webp|png)$/, '');
+      const canonicalThumb = `.thumbs/${thumbFilename}`;
       const manifest = await getCachedManifest(client, project);
       if (manifest) {
         let updated = false;
         const allConceptSets = manifest.rounds?.length
           ? manifest.rounds.map(r => r.concepts)
           : [manifest.concepts];
-        for (const concepts of allConceptSets) {
+        outer: for (const concepts of allConceptSets) {
           for (const concept of concepts) {
             for (const version of concept.versions) {
-              const expectedName = `${concept.id}-${version.id}`;
-              if (expectedName === thumbFilename.replace(/\.(webp|png)$/, '')) {
-                if (!version.thumbnail) {
-                  version.thumbnail = `.thumbs/${thumbFilename}`;
-                  updated = true;
-                }
+              if (`${concept.id}-${version.id}` !== expectedBase) continue;
+              if (version.thumbnail !== canonicalThumb) {
+                version.thumbnail = canonicalThumb;
+                updated = true;
               }
+              break outer; // first exact match wins
             }
           }
         }
         if (updated) {
-          const { writeManifest } = await import('@/lib/manifest');
-          await writeManifest(client, project, manifest);
+          // Route through lib/storage so this thumb-side write is serialized
+          // with all other manifest writers. Previously imported lib/manifest
+          // directly and bypassed the per-(client,project) write lock and the
+          // cache invalidation, racing against drift/branch/annotation writes.
+          const userId = isCloudMode() ? await getUserId() : null;
+          await writeManifest(userId, client, project, manifest);
         }
       }
 

@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { getManifest, writeManifest } from '@/lib/manifest';
+import { getManifest, writeManifest, isCloudMode } from '@/lib/storage';
+import { getUserId } from '@/lib/auth';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { generateThumbnail } from '@/lib/thumbnails';
 import { areValidSlugs } from '@/lib/slug';
+import { findConceptAndVersion } from '@/lib/manifest-lookup';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -24,7 +26,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
     }
 
-    const manifest = await getManifest(client, project);
+    const userId = isCloudMode() ? await getUserId() : null;
+    const manifest = await getManifest(userId, client, project);
     if (!manifest) {
       return NextResponse.json(
         { error: `Manifest not found for ${client}/${project}` },
@@ -32,17 +35,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find the concept and version
-    const concept = manifest.concepts.find(c => c.id === conceptId);
-    if (!concept) {
-      return NextResponse.json(
-        { error: `Concept ${conceptId} not found` },
-        { status: 404 }
-      );
-    }
-
-    const version = concept.versions.find(v => v.id === versionId);
-    if (!version) {
+    // Find the concept and version — searches all rounds, not just the latest
+    // (manifest.concepts is the latest-round alias and would 404 here for
+    // rounds projects requesting an older round's concept).
+    const { concept, version } = findConceptAndVersion(manifest, conceptId, versionId);
+    if (!concept || !version) {
       return NextResponse.json(
         { error: `Version ${versionId} not found in concept ${conceptId}` },
         { status: 404 }
@@ -76,9 +73,11 @@ export async function POST(request: Request) {
     // Generate the thumbnail
     await generateThumbnail(htmlPath, outputPath, width, height);
 
-    // Update manifest with thumbnail path
+    // Update manifest with thumbnail path. Routed through lib/storage so the
+    // write is serialized with all other manifest writers (drift, branch,
+    // annotation, UI mutation) — bypassing this re-creates the lost-update race.
     version.thumbnail = `.thumbs/${thumbName}.webp`;
-    await writeManifest(client, project, manifest);
+    await writeManifest(userId, client, project, manifest);
 
     // Read and return the generated thumbnail
     const thumbData = await fs.readFile(outputPath);

@@ -58,7 +58,6 @@ Setting `iframe.src` via JSX attribute does not reliably re-navigate the iframe 
 - **Frame** = conversation. Prompts and comments happen here. `D` from frame = copy + stays in frame + auto-enables pin annotation.
 - Multi-select (`Shift+Arrow`) + `D` drifts each selected frame into its own concept in one pass. Single "Drifted N frames" toast. No batch undo.
 - Resolved pins are fully invisible when comment mode is off. A muted "N RESOLVED" counter signals the history exists.
-- `components/GridPromptInput.tsx` is unreachable as of commit 26e7481 — safe to delete in a follow-up.
 
 ## Testing
 

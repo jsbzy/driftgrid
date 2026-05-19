@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import Link from 'next/link';
 import type { ClientInfo } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
+import { useCopyFeedback } from '@/lib/hooks/useCopyFeedback';
 
 const isCloud = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -242,7 +243,7 @@ function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt, 
   lastPublishedAt: string | null;
   roundNumber: number | null;
 }) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyFeedback();
   const [creating, setCreating] = useState(false);
   const [url, setUrl] = useState(shareUrl);
 
@@ -257,20 +258,16 @@ function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt, 
       if (res.ok) {
         const data = await res.json();
         setUrl(data.url);
-        await navigator.clipboard.writeText(data.url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        await copy(data.url);
       }
     } catch {}
     setCreating(false);
-  }, [client, project.slug]);
+  }, [client, project.slug, copy]);
 
   const copyLink = useCallback(async () => {
     if (!url) return;
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [url]);
+    await copy(url);
+  }, [url, copy]);
 
   return (
     <div

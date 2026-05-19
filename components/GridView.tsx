@@ -1,6 +1,7 @@
 'use client';
 
 import type { Concept, WorkingSet, ViewMode } from '@/lib/types';
+import { thumbApiUrl } from '@/lib/paths';
 import { GridCell } from './GridCell';
 import { SelectCell } from './SelectCell';
 
@@ -122,9 +123,10 @@ export function GridView({
               if (selectedVersionId) {
                 const version = concept.versions.find(v => v.id === selectedVersionId);
                 if (version) {
-                  const thumbFilename = version.thumbnail?.replace('.thumbs/', '')
-                    || `${concept.id}-${version.id}.webp`;
-                  const thumbSrc = `/api/thumbs/${client}/${project}/${thumbFilename}`;
+                  // Always derive from (concept.id, version.id). Ignore the
+                  // stored version.thumbnail field — it's prone to cross-wiring
+                  // and is going to be removed from the manifest schema.
+                  const thumbSrc = thumbApiUrl(client, project, concept.id, version.id);
                   const vi = concept.versions.indexOf(version);
                   const ci = concepts.indexOf(concept);
                   return (
@@ -171,9 +173,10 @@ export function GridView({
                 {reversed.map((version) => {
                   // Map back to the original index for navigation
                   const row = concept.versions.indexOf(version);
-                  const thumbFilename = version.thumbnail?.replace('.thumbs/', '')
-                    || `${concept.id}-${version.id}.webp`;
-                  const thumbSrc = `/api/thumbs/${client}/${project}/${thumbFilename}`;
+                  // Always derive from (concept.id, version.id). Ignore the
+                  // stored version.thumbnail field — it's prone to cross-wiring
+                  // and is going to be removed from the manifest schema.
+                  const thumbSrc = thumbApiUrl(client, project, concept.id, version.id);
                   const isStarred = selections.get(concept.id) === version.id;
                   return (
                     <GridCell

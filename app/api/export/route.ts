@@ -6,6 +6,7 @@ import { CANVAS_PRESETS } from '@/lib/constants';
 import { exportPdf, exportPdfFromHtml, exportPng, mergePdfs } from '@/lib/export-pdf';
 import { injectViewportLock } from '@/lib/viewport-lock';
 import { areValidSlugs } from '@/lib/slug';
+import { findConcept, findVersionById, getAllConcepts } from '@/lib/manifest-lookup';
 
 // Allow up to 30s for PDF generation with headless Chrome
 export const maxDuration = 30;
@@ -34,12 +35,8 @@ export async function POST(request: NextRequest) {
   // Find which concept this version belongs to (for concept-level canvas override)
   let canvas: string | { type?: string; width?: number; height?: number | 'auto' } = manifest.project.canvas;
   if (versionId) {
-    for (const concept of manifest.concepts) {
-      if (concept.versions.some(v => v.id === versionId) && concept.canvas) {
-        canvas = concept.canvas;
-        break;
-      }
-    }
+    const located = findVersionById(manifest, versionId);
+    if (located?.concept.canvas) canvas = located.concept.canvas;
   }
   let width: number;
   let height: number | 'auto';
@@ -58,7 +55,7 @@ export async function POST(request: NextRequest) {
     if (!versionId) {
       return NextResponse.json({ error: 'versionId required for HTML export' }, { status: 400 });
     }
-    const version = manifest.concepts.flatMap(c => c.versions).find(v => v.id === versionId);
+    const version = findVersionById(manifest, versionId)?.version;
     if (!version) {
       return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     }
@@ -79,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (!versionId) {
       return NextResponse.json({ error: 'versionId required for PNG export' }, { status: 400 });
     }
-    const version = manifest.concepts.flatMap(c => c.versions).find(v => v.id === versionId);
+    const version = findVersionById(manifest, versionId)?.version;
     if (!version) {
       return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     }
@@ -99,7 +96,7 @@ export async function POST(request: NextRequest) {
     if (htmlContent) {
       try {
         // Use first concept dir as source dir (relative paths like ../assets/ resolve from here)
-        const firstVersion = manifest.concepts.flatMap(c => c.versions)[0];
+        const firstVersion = getAllConcepts(manifest).flatMap(({ concept }) => concept.versions)[0];
         const sourceDir = firstVersion
           ? path.resolve(projectDir, path.dirname(firstVersion.file))
           : projectDir;
@@ -121,7 +118,7 @@ export async function POST(request: NextRequest) {
 
     // Single version
     if (versionId && !workingSetId) {
-      const version = manifest.concepts.flatMap(c => c.versions).find(v => v.id === versionId);
+      const version = findVersionById(manifest, versionId)?.version;
       if (!version) {
         return NextResponse.json({ error: 'Version not found' }, { status: 404 });
       }
@@ -166,7 +163,7 @@ export async function POST(request: NextRequest) {
         // On Vercel, merge pre-built PDFs
         const pdfBuffers: Buffer[] = [];
         for (const sel of ws.selections) {
-          const concept = manifest.concepts.find(c => c.id === sel.conceptId);
+          const concept = findConcept(manifest, sel.conceptId).concept;
           const version = concept?.versions.find(v => v.id === sel.versionId);
           if (!version) continue;
           const prebuiltPath = path.join(projectDir, '.exports', `${version.id}.pdf`);
@@ -191,7 +188,7 @@ export async function POST(request: NextRequest) {
       // Local: generate live
       const slides: string[] = [];
       for (const sel of ws.selections) {
-        const concept = manifest.concepts.find(c => c.id === sel.conceptId);
+        const concept = findConcept(manifest, sel.conceptId).concept;
         const version = concept?.versions.find(v => v.id === sel.versionId);
         if (concept && version) {
           slides.push(path.resolve(projectDir, version.file));
@@ -216,7 +213,7 @@ export async function POST(request: NextRequest) {
     if (!versionId) {
       return NextResponse.json({ error: 'versionId required for PPTX export' }, { status: 400 });
     }
-    const version = manifest.concepts.flatMap(c => c.versions).find(v => v.id === versionId);
+    const version = findVersionById(manifest, versionId)?.version;
     if (!version) {
       return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     }

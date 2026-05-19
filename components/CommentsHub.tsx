@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import type { ProjectAnnotation } from '@/app/api/annotations/all/route';
 import { buildAgentMessage } from '@/lib/agent-payload';
 import { toast } from '@/components/Toast';
+import { copyTextSafely } from '@/lib/clipboard';
 
 interface CommentsHubProps {
   open: boolean;
@@ -195,14 +196,18 @@ export function CommentsHub({ open, onClose, client, project, activeRoundId, act
     return lines.join('\n');
   };
 
-  const handleCopyAll = (mode: 'auto' | 'interview') => {
+  const handleCopyAll = async (mode: 'auto' | 'interview') => {
     if (visible.length === 0) {
       toast(`No ${activeTab} comments to copy`, 'error');
       return;
     }
     const message = buildBatchPayload(mode);
-    navigator.clipboard?.writeText(message).catch(() => {});
-    toast(`Copied ${visible.length} comments — paste into your agent`);
+    const ok = await copyTextSafely(message);
+    if (ok) {
+      toast(`Copied ${visible.length} comments — paste into your agent`);
+    } else {
+      toast('Clipboard blocked — try again', 'error');
+    }
   };
 
   return (
@@ -537,7 +542,8 @@ function Row({
         filePath: `~/driftgrid/projects/${client}/${project}/...`,
       },
     });
-    try { await navigator.clipboard?.writeText(message); } catch {}
+    const copied = await copyTextSafely(message);
+    if (!copied) toast('Clipboard blocked — try again', 'error');
     // Mark the thread as freshly submitted to the agent so the row moves to In progress.
     fetch('/api/annotations', {
       method: 'PATCH',

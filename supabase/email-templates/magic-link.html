@@ -1,0 +1,91 @@
+<!--
+  DriftGrid — Supabase email template: Magic Link
+
+  To apply:
+    1. Supabase Dashboard → Authentication → Email Templates → "Magic Link"
+    2. Set Subject: "Your DriftGrid sign-in link"
+    3. Paste this entire HTML into the Message body
+    4. Save
+
+  Note: not currently used by the app (we only use email+password auth as of
+  AGENTS.md). Kept here so the magic-link path is branded if/when we enable it.
+
+  Supabase Auth template variables used:
+    {{ .ConfirmationURL }} — click-to-sign-in link
+    {{ .Email }}           — recipient email
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <body style="margin:0;padding:0;background:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1c1c1c;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f4;padding:40px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e0e0de;border-radius:12px;">
+            <tr>
+              <td style="padding:32px 32px 0 32px;">
+                <div style="font-family:'JetBrains Mono','SF Mono',Menlo,monospace;font-size:11px;letter-spacing:0.24em;color:#999;text-transform:lowercase;">
+                  driftgrid
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:24px 32px 8px 32px;">
+                <h1 style="margin:0;font-size:20px;font-weight:600;line-height:1.4;color:#1c1c1c;">
+                  Sign in to DriftGrid
+                </h1>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:8px 32px 24px 32px;">
+                <p style="margin:0 0 16px 0;font-size:14px;line-height:1.6;color:#555;">
+                  Click below to sign in as <strong style="color:#1c1c1c;">{{ .Email }}</strong>. This link works once and expires in an hour.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding:0 32px 24px 32px;">
+                <a href="{{ .ConfirmationURL }}"
+                   style="display:inline-block;background:#1c1c1c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:13px;font-weight:600;letter-spacing:0.04em;">
+                  Sign in to DriftGrid
+                </a>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:0 32px 24px 32px;">
+                <p style="margin:0;font-size:11px;line-height:1.5;color:#999;">
+                  If the button doesn't work, paste this URL into your browser:
+                </p>
+                <p style="margin:8px 0 0 0;font-size:11px;line-height:1.5;color:#8b5cf6;word-break:break-all;">
+                  <a href="{{ .ConfirmationURL }}" style="color:#8b5cf6;text-decoration:none;">{{ .ConfirmationURL }}</a>
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:0 32px;">
+                <div style="height:1px;background:#e0e0de;"></div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:20px 32px 32px 32px;">
+                <p style="margin:0;font-size:11px;line-height:1.6;color:#999;">
+                  Didn't request this? You can safely ignore this email — no one can sign in without the link above.
+                </p>
+                <p style="margin:12px 0 0 0;font-size:11px;line-height:1.6;color:#bbb;">
+                  <a href="https://driftgrid.ai" style="color:#999;text-decoration:none;">driftgrid.ai</a>
+                  &nbsp;·&nbsp;
+                  <a href="https://docs.driftgrid.ai" style="color:#999;text-decoration:none;">docs</a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

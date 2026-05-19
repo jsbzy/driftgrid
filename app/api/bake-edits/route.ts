@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getManifest, getHtmlFile, writeHtmlFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
+import { findConceptAndVersion } from '@/lib/manifest-lookup';
 
 export async function POST(request: Request) {
   const { client, project, conceptId, versionId, edits } = await request.json();
@@ -19,14 +20,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Manifest not found' }, { status: 404 });
   }
 
-  const concept = manifest.concepts.find(c => c.id === conceptId);
-  if (!concept) {
-    return NextResponse.json({ error: 'Concept not found' }, { status: 404 });
-  }
-
-  const version = concept.versions.find(v => v.id === versionId);
-  if (!version) {
-    return NextResponse.json({ error: 'Version not found' }, { status: 404 });
+  // Walk all rounds — manifest.concepts is the latest-round alias and would
+  // 404 silently for versions in older rounds.
+  const { concept, version } = findConceptAndVersion(manifest, conceptId, versionId);
+  if (!concept || !version) {
+    return NextResponse.json({ error: 'Concept or version not found' }, { status: 404 });
   }
 
   const rawHtml = await getHtmlFile(userId, client, project, version.file);

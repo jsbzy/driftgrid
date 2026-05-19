@@ -329,8 +329,8 @@ async function computeStarredAllowList(
     const manifestRaw = await fs.readFile(path.join(projectDir, 'manifest.json'), 'utf-8');
     const manifest = JSON.parse(manifestRaw);
 
-    type VersionLike = { file?: string; thumbnail?: string; starred?: boolean };
-    type ConceptLike = { versions: VersionLike[] };
+    type VersionLike = { id: string; file?: string; thumbnail?: string; starred?: boolean };
+    type ConceptLike = { id: string; versions: VersionLike[] };
     type RoundLike = { id: string; concepts: ConceptLike[] };
     const topConcepts: ConceptLike[] = Array.isArray(manifest.concepts) ? manifest.concepts : [];
     const rounds: RoundLike[] = Array.isArray(manifest.rounds) ? manifest.rounds : [];
@@ -344,10 +344,11 @@ async function computeStarredAllowList(
       activeConcepts = topConcepts;
     }
 
-    const starred: VersionLike[] = [];
+    type StarredEntry = { concept: ConceptLike; version: VersionLike };
+    const starred: StarredEntry[] = [];
     for (const c of activeConcepts) {
       for (const v of c.versions ?? []) {
-        if (v.starred) starred.push(v);
+        if (v.starred) starred.push({ concept: c, version: v });
       }
     }
 
@@ -355,16 +356,16 @@ async function computeStarredAllowList(
 
     const allowed = new Set<string>();
     allowed.add('manifest.json'); // always push the manifest
-    for (const v of starred) {
-      if (v.file) {
-        allowed.add(v.file);
-        allowed.add(v.file.replace(/\.html$/, '.feedback.md'));
+    for (const { concept, version } of starred) {
+      if (version.file) {
+        allowed.add(version.file);
+        allowed.add(version.file.replace(/\.html$/, '.feedback.md'));
       }
-      if (v.thumbnail) {
-        // Upload only the primary thumbnail. The `-880w` low-zoom variant is
-        // regenerated on-demand by the cloud thumb endpoint — no need to ship it.
-        allowed.add(v.thumbnail);
-      }
+      // Derive thumb path from (concept.id, version.id) — same convention as
+      // the local thumb route. version.thumbnail is ignored because it may be
+      // cross-wired (legacy bug). The `-880w` low-zoom variant regenerates on
+      // demand cloud-side.
+      allowed.add(`.thumbs/${concept.id}-${version.id}.webp`);
     }
 
     // When the designer has opted into shipping media, also include any shared

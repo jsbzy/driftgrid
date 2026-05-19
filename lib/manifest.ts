@@ -121,12 +121,63 @@ export function getRoundConcepts(manifest: Manifest, roundId?: string): { round:
   return { round, concepts: round.concepts };
 }
 
+/**
+ * How many rotating manifest backups to keep on disk (manifest.json.bak-<ts>).
+ * Free local recovery if a write goes sideways. The current manifest itself is
+ * already protected by the temp-file+rename below; .baks are for "the agent
+ * mis-wrote something logically valid" cases that survive validation.
+ */
+const MANIFEST_BACKUP_KEEP = 5;
+
+async function rotateManifestBackups(projectDir: string): Promise<void> {
+  try {
+    const manifestPath = path.join(projectDir, 'manifest.json');
+    // Skip if there's no current manifest to back up (first-write case).
+    try { await fs.stat(manifestPath); } catch { return; }
+
+    const ts = Date.now();
+    const bakPath = path.join(projectDir, `manifest.json.bak-${ts}`);
+    await fs.copyFile(manifestPath, bakPath);
+
+    // Prune oldest beyond the keep limit. Auto-rotation only touches files we
+    // created (matching `manifest.json.bak-<digits>`); user-named .bak files
+    // like `manifest.json.bak-pre-r7-v4` are left untouched.
+    const entries = await fs.readdir(projectDir);
+    const ours = entries
+      .filter(name => /^manifest\.json\.bak-\d+$/.test(name))
+      .sort(); // lexicographic on `bak-<ts>` is chronological
+    const excess = ours.length - MANIFEST_BACKUP_KEEP;
+    for (let i = 0; i < excess; i++) {
+      await fs.unlink(path.join(projectDir, ours[i])).catch(() => {});
+    }
+  } catch {
+    // Backup failures should never block a write — log? noop for now.
+  }
+}
+
 export async function writeManifest(client: string, project: string, manifest: Manifest): Promise<void> {
-  const manifestPath = path.join(PROJECTS_DIR, client, project, 'manifest.json');
+  const projectDir = path.join(PROJECTS_DIR, client, project);
+  const manifestPath = path.join(projectDir, 'manifest.json');
+  const tmpPath = `${manifestPath}.tmp-${process.pid}-${Date.now()}`;
+
   // Strip top-level concepts alias before writing — rounds own the concepts
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { concepts: _alias, ...rest } = manifest;
-  await fs.writeFile(manifestPath, JSON.stringify(rest, null, 2), 'utf-8');
+  const payload = JSON.stringify(rest, null, 2);
+
+  // Snapshot the current manifest first; cheap and saves us next time we screw up.
+  await rotateManifestBackups(projectDir);
+
+  // Atomic write: temp file + rename. POSIX rename is atomic so a crash mid-write
+  // (HMR reload, Ctrl+C, SIGKILL) leaves the previous manifest intact instead of
+  // a truncated file. Cleans up the temp file on failure.
+  try {
+    await fs.writeFile(tmpPath, payload, 'utf-8');
+    await fs.rename(tmpPath, manifestPath);
+  } catch (err) {
+    await fs.unlink(tmpPath).catch(() => {});
+    throw err;
+  }
 }
 
 export async function getClients(): Promise<ClientInfo[]> {

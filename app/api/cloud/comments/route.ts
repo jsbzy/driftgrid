@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
+import { getCloudComments } from '@/lib/cloud-client';
 
 /**
  * GET /api/cloud/comments?token=X — fetch all client comments for a share link,
@@ -15,15 +16,28 @@ import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
  *   - "Comment text here" — Author Name
  */
 export async function GET(request: Request) {
-  if (!isCloudMode()) {
-    return NextResponse.json({ error: 'Cloud mode only' }, { status: 400 });
-  }
-
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
 
   if (!token) {
     return NextResponse.json({ error: 'Missing token' }, { status: 400 });
+  }
+
+  // Local dev — proxy to the cloud. The cloud endpoint doesn't set CORS
+  // headers, so calling it directly from the browser fails; go through here.
+  if (!isCloudMode()) {
+    try {
+      const result = await getCloudComments(token);
+      if ('error' in result) {
+        return NextResponse.json({ error: result.error }, { status: result.status });
+      }
+      return NextResponse.json(result);
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Cloud unreachable' },
+        { status: 502 },
+      );
+    }
   }
 
   const supabase = getSupabaseAdmin();

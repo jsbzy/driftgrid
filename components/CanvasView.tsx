@@ -6,6 +6,7 @@ import { isAwaitingFirstPrompt } from '@/lib/constants';
 import { computeCanvasLayout, getColumnBounds, getCardBounds, GRID_SIZE } from '@/lib/hooks/useCanvasLayout';
 import type { CanvasLayout } from '@/lib/hooks/useCanvasLayout';
 import { useCanvasTransform } from '@/lib/hooks/useCanvasTransform';
+import { copyTextSafely } from '@/lib/clipboard';
 import { CanvasCard } from './CanvasCard';
 import { ContextMenu } from './ContextMenu';
 import type { ZoomLevel } from '@/lib/hooks/useKeyboardNav';
@@ -770,7 +771,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             onDrift={() => { onDriftVersion(concept.id, version.id); closeContextMenu(); }}
             onBranch={() => { onBranchVersion(concept.id, version.id); closeContextMenu(); }}
             onCopyPath={() => {
-              navigator.clipboard.writeText(`~/driftgrid/projects/${client}/${project}/${version.file}`);
+              copyTextSafely(`~/driftgrid/projects/${client}/${project}/${version.file}`);
               closeContextMenu();
             }}
             onHide={() => { onHideVersion?.(concept.id, version.id); closeContextMenu(); }}
@@ -871,14 +872,14 @@ const CardLayer = memo(function CardLayer({
         const isHidden = version.visible === false;
         // Skip hidden versions unless showHidden is enabled
         if (isHidden && !showHidden) return null;
-        // Always compute a thumb URL — the API will auto-generate on first request
-        const thumbFilename = version.thumbnail?.replace('.thumbs/', '')
-          || `${concept.id}-${version.id}.webp`;
-        // Use small thumbnails at low zoom, full-res at high zoom (z3/z4)
+        // Always derive the thumb path from (concept.id, version.id). Ignore the
+        // stored version.thumbnail field — it's prone to cross-wiring and is
+        // being removed from the schema. The API auto-generates on first request.
+        const thumbName = `${concept.id}-${version.id}.webp`;
         const thumbW = transform.scale < 0.5 ? '&w=880' : '';
         const thumbSrc = shareToken
-          ? `/api/s/${shareToken}/thumbs/${thumbFilename}`
-          : `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}${thumbW}`;
+          ? `/api/s/${shareToken}/thumbs/${thumbName}`
+          : `/api/thumbs/${client}/${project}/${thumbName}?v=${thumbVersion}${thumbW}`;
         const isStarred = selections.has(`${concept.id}:${version.id}`);
         const isLatest = pos.versionIndex === concept.versions.length - 1;
 

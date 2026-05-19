@@ -55,7 +55,14 @@ function LoginForm() {
     const supabase = getSupabaseBrowser();
 
     if (mode === 'signup') {
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
+      // emailRedirectTo overrides the dashboard's Site URL for this signup —
+      // confirmation link returns to this origin. Proxy then exchanges the
+      // ?code= for a session via /api/auth/callback (see proxy.ts).
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/` },
+      });
       if (signUpError) {
         setError(signUpError.message);
         setLoading(false);

@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import { getManifest } from '@/lib/manifest';
 import { resolveCanvas } from '@/lib/constants';
 import { areValidSlugs } from '@/lib/slug';
+import { findConceptAndVersion, getAllConcepts } from '@/lib/manifest-lookup';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -42,15 +43,14 @@ export async function GET(request: Request) {
   let versionsToExport: { concept: string; version: string; file: string }[] = [];
 
   if (conceptId && versionId) {
-    // Single version
-    const concept = manifest.concepts.find(c => c.id === conceptId);
-    const version = concept?.versions.find(v => v.id === versionId);
+    // Single version — walks all rounds via findConceptAndVersion
+    const { concept, version } = findConceptAndVersion(manifest, conceptId, versionId);
     if (concept && version) {
       versionsToExport.push({ concept: concept.label, version: `v${version.number}`, file: version.file });
     }
   } else {
-    // All concepts — latest version of each
-    for (const concept of manifest.concepts) {
+    // All concepts across all rounds — latest version of each
+    for (const { concept } of getAllConcepts(manifest)) {
       if (concept.versions.length > 0) {
         const latest = concept.versions[concept.versions.length - 1];
         versionsToExport.push({ concept: concept.label, version: `v${latest.number}`, file: latest.file });

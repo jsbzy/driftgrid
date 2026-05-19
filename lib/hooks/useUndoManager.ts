@@ -1,6 +1,7 @@
 'use client';
 import { useState, useCallback } from 'react';
 import type { Manifest, Concept } from '@/lib/types';
+import { putManifest } from '@/lib/manifest-client';
 
 interface DeletedItem {
   conceptId: string;
@@ -70,11 +71,7 @@ export function useUndoManager(
         return { ...c, versions: c.versions.filter(v => v.id !== versionId) };
       }).filter(c => c.versions.length > 0);
       const updated = withUpdatedConcepts(manifest, newConcepts);
-      await fetch(`/api/manifest/${client}/${project}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-      });
+      await putManifest(client, project, updated, { mutate });
       const ci = newConcepts.findIndex(c => c.id === conceptId);
       if (ci >= 0) {
         const maxVi = newConcepts[ci].versions.length - 1;
@@ -104,11 +101,7 @@ export function useUndoManager(
     });
     const updated = withUpdatedConcepts(manifest, newConcepts);
 
-    await fetch(`/api/manifest/${client}/${project}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    });
+    await putManifest(client, project, updated, { mutate });
 
     const ci = newConcepts.findIndex(c => c.id === lastDeleted.conceptId);
     const vi = newConcepts[ci]?.versions.findIndex(v => v.id === lastDeleted.versionId) ?? 0;

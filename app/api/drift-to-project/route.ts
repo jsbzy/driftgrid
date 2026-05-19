@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getManifest, writeManifest, writeHtmlFile, getHtmlFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import type { Manifest } from '@/lib/types';
+import { findConceptAndVersion } from '@/lib/manifest-lookup';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
@@ -40,8 +41,9 @@ export async function POST(request: Request) {
 
   for (let i = 0; i < versions.length; i++) {
     const { conceptId, versionId } = versions[i];
-    const sourceConcept = sourceManifest.concepts.find(c => c.id === conceptId);
-    const sourceVersion = sourceConcept?.versions.find(v => v.id === versionId);
+    // Walk all rounds so selections from non-latest rounds aren't silently dropped.
+    const { concept: sourceConcept, version: sourceVersion } =
+      findConceptAndVersion(sourceManifest, conceptId, versionId);
     if (!sourceConcept || !sourceVersion) continue;
 
     const conceptFolder = `concept-${i + 1}`;

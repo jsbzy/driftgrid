@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useCopyFeedback } from '@/lib/hooks/useCopyFeedback';
 
 function QuickStart() {
   const [tab, setTab] = useState<'claude' | 'terminal'>('claude');
-  const [copied, setCopied] = useState(false);
+  const { copied, copy: copyToClipboard } = useCopyFeedback(1500);
 
   const terminalCommands = [
     'git clone https://github.com/jsbzy/driftgrid.git',
@@ -16,11 +17,7 @@ function QuickStart() {
 
   const copy = async () => {
     const text = tab === 'claude' ? claudePrompt : terminalCommands.join('\n');
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    await copyToClipboard(text);
   };
 
   const tabStyle = (active: boolean) => ({
@@ -47,10 +44,10 @@ function QuickStart() {
         marginBottom: 12,
         justifyContent: 'center',
       }}>
-        <button onClick={() => { setTab('claude'); setCopied(false); }} style={tabStyle(tab === 'claude')}>
+        <button onClick={() => { setTab('claude'); }} style={tabStyle(tab === 'claude')}>
           Claude Code
         </button>
-        <button onClick={() => { setTab('terminal'); setCopied(false); }} style={tabStyle(tab === 'terminal')}>
+        <button onClick={() => { setTab('terminal'); }} style={tabStyle(tab === 'terminal')}>
           Terminal
         </button>
       </div>

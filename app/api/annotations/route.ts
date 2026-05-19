@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getManifest, writeManifest, writeHtmlFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import type { Annotation, Manifest } from '@/lib/types';
+import { findConceptAndVersion } from '@/lib/manifest-lookup';
 import {
   driftPromptBoilerplate,
   awaitingAgentBoilerplate,
@@ -12,27 +13,6 @@ const EMPTY_DRIFT_CHANGELOG = 'New drift slot — empty';
 
 function generateId(): string {
   return 'a-' + Math.random().toString(36).substring(2, 10);
-}
-
-/**
- * Locate a concept/version across the manifest. Top-level `concepts` is just an
- * alias for the latest round and can be empty on rounds-enabled projects — so we
- * fall back to scanning every round. Mutations on the returned objects persist
- * through writeManifest since they share references with the manifest tree.
- */
-function findConceptAndVersion(manifest: Manifest, conceptId: string, versionId: string) {
-  let concept = manifest.concepts?.find(c => c.id === conceptId);
-  if (concept) {
-    const version = concept.versions.find(v => v.id === versionId);
-    if (version) return { concept, version };
-  }
-  for (const round of manifest.rounds ?? []) {
-    concept = round.concepts?.find(c => c.id === conceptId);
-    if (!concept) continue;
-    const version = concept.versions.find(v => v.id === versionId);
-    if (version) return { concept, version };
-  }
-  return { concept: undefined, version: undefined };
 }
 
 /**

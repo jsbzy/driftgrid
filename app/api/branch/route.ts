@@ -6,6 +6,7 @@ import { conceptSlug } from '@/lib/letters';
 import { DRIFT_COPY_CHANGELOG } from '@/lib/constants';
 import { areValidSlugs } from '@/lib/slug';
 import { invalidateManifestCache } from '@/lib/manifest-cache';
+import { findConceptAndVersion } from '@/lib/manifest-lookup';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
@@ -102,14 +103,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Manifest not found' }, { status: 404 });
   }
 
-  const sourceConcept = manifest.concepts.find(c => c.id === conceptId);
-  if (!sourceConcept) {
-    return NextResponse.json({ error: 'Concept not found' }, { status: 404 });
-  }
-
-  const sourceVersion = sourceConcept.versions.find(v => v.id === versionId);
-  if (!sourceVersion) {
-    return NextResponse.json({ error: 'Version not found' }, { status: 404 });
+  // Walk all rounds — manifest.concepts is the latest-round alias and would 404
+  // silently for older rounds. (Previously this whole endpoint was a no-op on
+  // rounds projects: it'd find the source via the alias but the splice below
+  // also targeted the alias, which writeManifest strips before serialize.)
+  const { concept: sourceConcept, version: sourceVersion, round: sourceRound } =
+    findConceptAndVersion(manifest, conceptId, versionId);
+  if (!sourceConcept || !sourceVersion || !sourceRound) {
+    return NextResponse.json({ error: 'Concept or version not found' }, { status: 404 });
   }
 
   // Determine next concept folder number from manifest (works for both local and cloud)
@@ -164,11 +165,13 @@ export async function POST(request: Request) {
     }],
   };
 
-  // Insert immediately after the source concept
-  const sourceIndex = manifest.concepts.findIndex(c => c.id === sourceConcept.id);
-  const insertAt = sourceIndex >= 0 ? sourceIndex + 1 : manifest.concepts.length;
-  manifest.concepts.splice(insertAt, 0, newConcept);
-  manifest.concepts.forEach((c, i) => { c.position = i + 1; });
+  // Insert immediately after the source concept in the SAME round it came from.
+  // Mutating sourceRound.concepts persists; mutating manifest.concepts (the
+  // latest-round alias) does not — writeManifest strips that field before write.
+  const sourceIndex = sourceRound.concepts.findIndex(c => c.id === sourceConcept.id);
+  const insertAt = sourceIndex >= 0 ? sourceIndex + 1 : sourceRound.concepts.length;
+  sourceRound.concepts.splice(insertAt, 0, newConcept);
+  sourceRound.concepts.forEach((c, i) => { c.position = i + 1; });
 
   await writeManifest(userId, client, project, manifest);
   invalidateManifestCache(client, project);

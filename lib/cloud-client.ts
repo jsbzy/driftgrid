@@ -176,6 +176,23 @@ export async function createCloudShare(
 }
 
 /**
+ * Fetch the formatted client-comments text for a share token from the cloud.
+ * Used by the local /api/cloud/comments route to proxy comment fetches so the
+ * browser doesn't have to make a cross-origin request (the cloud endpoint
+ * doesn't set CORS headers).
+ */
+export async function getCloudComments(
+  token: string,
+): Promise<{ text: string; count: number } | { error: string; status: number }> {
+  const res = await fetch(`${CLOUD_URL}/api/cloud/comments?token=${encodeURIComponent(token)}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    return { error: body?.error || `HTTP ${res.status}`, status: res.status };
+  }
+  return res.json();
+}
+
+/**
  * Look up whether a share already exists for (user, client, project) on the cloud.
  * Used by the local /api/cloud/share-status route to surface an existing share in
  * the SharePanel without requiring a republish.

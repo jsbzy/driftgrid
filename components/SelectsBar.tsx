@@ -67,8 +67,10 @@ export function SelectsBar({
       const vi = concept.versions.findIndex(v => v.id === selectedVersionId);
       if (vi < 0) return;
       const version = concept.versions[vi];
-      const thumbFilename = version.thumbnail?.replace('.thumbs/', '') || null;
-      const thumbSrc = thumbFilename ? `/api/thumbs/${client}/${project}/${thumbFilename}?v=${thumbVersion}` : null;
+      // Derive from (concept.id, version.id) — see lib/paths.ts. version.thumbnail
+      // ignored to immunize against the legacy cross-wiring bug.
+      const thumbName = `${concept.id}-${version.id}.webp`;
+      const thumbSrc = `/api/thumbs/${client}/${project}/${thumbName}?v=${thumbVersion}`;
       items.push({
         conceptId: concept.id, conceptLabel: concept.label,
         versionId: version.id, versionNumber: version.number,

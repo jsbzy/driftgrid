@@ -8,6 +8,15 @@
 
 import { isCloudMode } from './supabase';
 import type { Manifest, ClientInfo } from './types';
+import { validateManifestForWrite } from './manifest-validate';
+
+/** Thrown by writeManifest when the payload fails structural validation. */
+export class ManifestValidationError extends Error {
+  constructor(public readonly errors: string[]) {
+    super(`Manifest validation failed: ${errors.join('; ')}`);
+    this.name = 'ManifestValidationError';
+  }
+}
 
 // Lazy imports to avoid loading Supabase SDK in local mode
 async function cloud() {
@@ -27,22 +36,75 @@ export async function getManifest(userId: string | null, client: string, project
   return getManifest(client, project);
 }
 
+/**
+ * Per-(client, project) write serializer. All manifest writes through this
+ * module are queued on a single in-process Promise chain per project so that
+ * parallel route handlers (UI mutation + thumbnail regen + drift + annotation)
+ * can't interleave a read-modify-write and lose each other's updates.
+ *
+ * Caveat: this is in-process. If a second Next.js server or a CLI tool writes
+ * the same manifest concurrently, this won't protect against it. For the
+ * current single-server, MCP-not-wired-up setup, this is sufficient. Upgrade
+ * to a cross-process file lock (proper-lockfile) when MCP or multi-process
+ * writers come online.
+ */
+const writeChain = new Map<string, Promise<unknown>>();
+
+function serializeManifestWrite<T>(client: string, project: string, op: () => Promise<T>): Promise<T> {
+  const key = `${client}/${project}`;
+  const prev = writeChain.get(key) ?? Promise.resolve();
+  const next = prev.catch(() => {}).then(op);
+  writeChain.set(key, next);
+  // Clean up the map entry once this op resolves (only if it's still the tail).
+  next.finally(() => {
+    if (writeChain.get(key) === next) writeChain.delete(key);
+  });
+  return next;
+}
+
 export async function writeManifest(userId: string | null, client: string, project: string, manifest: Manifest): Promise<void> {
-  // Invalidate the in-process manifest cache on every write so thumbnail
-  // regeneration (and other readers) don't serve stale data for up to 5s.
-  const { invalidateManifestCache } = await import('./manifest-cache');
-  invalidateManifestCache(client, project);
-  try {
-    if (isCloudMode() && userId) {
-      const { writeManifestCloud } = await cloud();
-      await writeManifestCloud(userId, client, project, manifest);
-      return;
+  // Structural validation up front — refuses to write a manifest that's
+  // missing rounds/concepts entirely or has duplicated IDs. On failure we
+  // save the rejected payload to manifest.json.rejected-<ts>.json (local
+  // mode) for inspection, then throw. The route layer maps this to 422.
+  const validation = validateManifestForWrite(manifest);
+  if (!validation.ok) {
+    if (!isCloudMode()) {
+      try {
+        const { promises: fs } = await import('fs');
+        const pathMod = await import('path');
+        const rejectedPath = pathMod.join(
+          process.cwd(),
+          'projects',
+          client,
+          project,
+          `manifest.json.rejected-${Date.now()}.json`,
+        );
+        await fs.writeFile(rejectedPath, JSON.stringify(manifest, null, 2), 'utf-8');
+      } catch {
+        /* save-aside is best-effort */
+      }
     }
-    const { writeManifest } = await local();
-    await writeManifest(client, project, manifest);
-  } finally {
-    invalidateManifestCache(client, project);
+    throw new ManifestValidationError(validation.errors);
   }
+
+  return serializeManifestWrite(client, project, async () => {
+    // Invalidate the in-process manifest cache on every write so thumbnail
+    // regeneration (and other readers) don't serve stale data for up to 5s.
+    const { invalidateManifestCache } = await import('./manifest-cache');
+    invalidateManifestCache(client, project);
+    try {
+      if (isCloudMode() && userId) {
+        const { writeManifestCloud } = await cloud();
+        await writeManifestCloud(userId, client, project, manifest);
+        return;
+      }
+      const { writeManifest } = await local();
+      await writeManifest(client, project, manifest);
+    } finally {
+      invalidateManifestCache(client, project);
+    }
+  });
 }
 
 export async function getClients(userId: string | null): Promise<ClientInfo[]> {
