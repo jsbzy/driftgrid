@@ -138,7 +138,9 @@ export function ClientCommentsHub({
       lines.push(`### ${label} (${ver})`);
       for (const t of group) {
         const status = t.state === 'closed' ? ' [resolved]' : '';
-        lines.push(`- "${t.top.body}" — ${t.top.author_name}${status}`);
+        const pos = describePosition(t.top.x_rel, t.top.y_rel);
+        const posTag = pos ? ` (${pos})` : '';
+        lines.push(`- "${t.top.body}" — ${t.top.author_name}${posTag}${status}`);
         for (const r of t.replies) {
           lines.push(`  - "${r.body}" — ${r.author_name}`);
         }
@@ -527,4 +529,14 @@ function formatDateTime(iso: string): string {
     ? { month: 'short', day: 'numeric' }
     : { month: 'short', day: 'numeric', year: 'numeric' });
   return `${date} ${time}`;
+}
+
+function describePosition(x: number | null, y: number | null): string {
+  if (x == null || y == null) return '';
+  const row = y < 0.33 ? 'top' : y < 0.66 ? 'middle' : 'bottom';
+  const col = x < 0.33 ? 'left' : x < 0.66 ? 'center' : 'right';
+  if (row === 'middle' && col === 'center') return 'center';
+  if (row === 'middle') return col;
+  if (col === 'center') return row;
+  return `${row}-${col}`;
 }
