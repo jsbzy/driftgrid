@@ -8,6 +8,7 @@ import { copyTextSafely } from '@/lib/clipboard';
 const CLOUD_URL = process.env.NEXT_PUBLIC_DRIFTGRID_CLOUD_URL || 'https://driftgrid.ai';
 const STORAGE_KEY = 'driftgrid-cloud-auth';
 const INCLUDE_MEDIA_KEY = (client: string, project: string) => `driftgrid-share-${client}-${project}-include-media`;
+const HANDOFF_MODE_KEY = 'driftgrid-share-handoff-mode';
 // Cached share URL + last-published time, keyed per (project, round). Written after a
 // successful publish; read on panel open so "Publish updates" appears immediately even
 // when the local /api/cloud/share-status endpoint can't reach the cloud. Including the
@@ -39,7 +40,7 @@ function clearCachedShare(client: string, project: string, roundNumber: number |
   try { localStorage.removeItem(LAST_SHARE_KEY(client, project, roundNumber)); } catch { /* ignore */ }
 }
 
-type ShareState = 'closed' | 'checking' | 'auth' | 'syncing' | 'ready' | 'ready-stale' | 'upgrade' | 'error';
+type ShareState = 'auth' | 'syncing' | 'ready' | 'upgrade' | 'error';
 
 type SkippedSummary = {
   totalCount: number;
@@ -137,7 +138,8 @@ function buildRoundPrepPrompt(args: {
 }) {
   const sourceRound = args.roundNumber ? `Round ${args.roundNumber}` : 'the latest shared round';
   const targetRound = args.roundNumber ? `Round ${args.roundNumber + 1}` : 'the next round';
-  const localUrl = `http://localhost:3000/admin/${args.client}/${args.project}`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+  const localUrl = `${origin}/admin/${args.client}/${args.project}`;
 
   const lines: string[] = [];
   lines.push('################################################################');
@@ -230,7 +232,15 @@ const SYNC_MESSAGES: Record<SyncPhase, string[]> = {
 };
 
 export function SharePanel({ open, onClose, client, project, roundId, roundNumber }: SharePanelProps) {
-  const [state, setState] = useState<ShareState>('closed');
+  // Start in 'ready' optimistically — checkCredentials runs on open and demotes
+  // to 'auth' if local creds are missing. Avoids the brief dot-animation flash
+  // of the old 'checking' state. Cache hydration below sets shareUrl/lastPublishedAt
+  // synchronously when available, so the user sees a usable surface immediately.
+  const [state, setState] = useState<ShareState>('ready');
+  // Tracks whether the share state was reached via a just-completed publish (vs.
+  // an existing share found on open). Drives the "Publish updates" vs "Re-sync
+  // latest changes" button styling — replaces the old 'ready'/'ready-stale' split.
+  const [justPublished, setJustPublished] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [progress, setProgress] = useState('');
@@ -254,6 +264,19 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
   const [roundPrepCopied, setRoundPrepCopied] = useState<RoundPrepMode | null>(null);
   const [lastPublishedAt, setLastPublishedAt] = useState<string | null>(null);
   const [mediaChecked, setMediaChecked] = useState(() => readIncludeMedia());
+  // Persisted handoff-mode picker: auto-apply (default), interview, or raw.
+  // Replaced three near-identical buttons with one primary + segmented picker.
+  const [handoffMode, setHandoffModeState] = useState<RoundPrepMode>(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem(HANDOFF_MODE_KEY) : null;
+      if (stored === 'auto' || stored === 'interview' || stored === 'raw') return stored;
+    } catch { /* localStorage unavailable */ }
+    return 'auto';
+  });
+  const setHandoffMode = useCallback((mode: RoundPrepMode) => {
+    setHandoffModeState(mode);
+    try { localStorage.setItem(HANDOFF_MODE_KEY, mode); } catch { /* ignore */ }
+  }, []);
   // When the user clicks "sign out", the popup may accidentally find a live cloud
   // session and postMessage tokens back — which would immediately re-auth us into
   // the account we're trying to leave. This ref blocks those messages briefly.
@@ -310,10 +333,8 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
   }, [handleMessage]);
 
   useEffect(() => {
-    if (!open) {
-      setState('closed');
-      return;
-    }
+    if (!open) return; // !open early-returns the whole component; no state to reset
+    setJustPublished(false);
     checkCredentials();
   }, [open]);
 
@@ -325,7 +346,6 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
   }, [state]);
 
   async function checkCredentials() {
-    setState('checking');
     const creds = getStoredCredentials();
 
     if (!creds?.accessToken) {
@@ -340,21 +360,21 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
       storeCredentials({ ...creds, email: resolvedEmail });
     }
 
-    // Hydrate from cache first so "Publish updates" appears immediately. The cloud
+    // Hydrate from cache so "Publish updates" appears immediately. The cloud
     // status check below is authoritative and will correct the view if the share
     // was deleted — but if the status endpoint is unreachable (local dev returns
-    // 400 without DRIFT_CLOUD=1), the cache keeps the panel useful.
+    // 400 without DRIFT_CLOUD=1), the cache keeps the panel useful. State is
+    // already 'ready' (the optimistic initial state); we only flip away from it
+    // on missing creds or auth failure.
     const cached = readCachedShare(client, project, roundNumber ?? null);
     if (cached) {
       setShareUrl(cached.url);
       setLastPublishedAt(cached.lastPublishedAt || null);
-      setState('ready-stale');
     }
+    setState('ready');
     setStatusDebug(null);
 
-    // Lightweight lookup: does a share already exist for this project?
-    //   • yes → show `ready-stale` with a "Publish updates" primary button
-    //   • no  → show `auth`-style landing with a "Create share" primary button
+    // Lightweight cloud lookup: does a share already exist for this project?
     // NO upload happens here. The user decides when to publish.
     try {
       const res = await fetch('/api/cloud/share-status', {
@@ -363,22 +383,20 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
         body: JSON.stringify({ client, project, accessToken: creds.accessToken, roundNumber: roundNumber ?? null }),
       });
       if (res.status === 401) {
-        // Token rejected — try to refresh by running a full push (which handles refresh);
-        // but since this is just a status check, fall back to auth.
+        // Token rejected — fall back to auth.
         clearCredentials();
         setState('auth');
         return;
       }
       if (!res.ok) {
         // Local dev (400) or other non-auth error — trust cache if we have one,
-        // otherwise fall through to the "create share" landing.
+        // otherwise stay in 'ready' with no shareUrl (first-time-publish UI).
         const bodyText = await res.text().catch(() => '');
         console.debug('[SharePanel] share-status error', res.status, bodyText);
         setStatusDebug({ kind: 'unreachable', message: `HTTP ${res.status}` });
         if (!cached) {
           setShareUrl(null);
           setLastPublishedAt(null);
-          setState('ready-stale');
         }
         return;
       }
@@ -389,14 +407,12 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
         setLastPublishedAt(data.lastPublishedAt || null);
         writeCachedShare(client, project, roundNumber ?? null, data.url, data.lastPublishedAt || '');
         setStatusDebug(null);
-        setState('ready-stale');
       } else {
-        // Cloud says no share → clear any stale cache, show create-share landing.
+        // Cloud says no share → clear any stale cache, show first-time-publish landing.
         clearCachedShare(client, project, roundNumber ?? null);
         setShareUrl(null);
         setLastPublishedAt(null);
         setStatusDebug({ kind: 'missing' });
-        setState('ready-stale');
       }
     } catch (err) {
       // Network or cloud error — fall back to letting the user publish, which
@@ -407,7 +423,6 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
       if (!cached) {
         setShareUrl(null);
         setLastPublishedAt(null);
-        setState('ready-stale');
       }
     }
   }
@@ -580,6 +595,7 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
                 ? `${synced} files synced · ${skippedCount} skipped`
                 : `${synced} files synced`);
               setState('ready');
+              setJustPublished(true); // flips the publish button into the "re-sync" variant
               done = true;
               break;
             }
@@ -627,14 +643,18 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
     const token = extractShareToken(shareUrl);
     if (!token) return null;
 
-    const creds = getStoredCredentials();
-    const res = await fetch(`${CLOUD_URL}/api/cloud/comments?token=${encodeURIComponent(token)}`, {
-      headers: creds?.accessToken ? { 'Authorization': `Bearer ${creds.accessToken}` } : {},
-    });
+    // Use the local route — it proxies to the cloud when not in cloud mode.
+    // Calling the cloud directly from the browser fails: no CORS headers.
+    const res = await fetch(`/api/cloud/comments?token=${encodeURIComponent(token)}`);
 
     if (!res.ok) return null;
 
-    const data = await res.json();
+    let data: { text?: string; count?: number };
+    try {
+      data = await res.json();
+    } catch {
+      return null;
+    }
     if (!data.text || data.count === 0) return null;
     return { text: data.text, count: data.count };
   }
@@ -834,30 +854,21 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
                 whiteSpace: 'nowrap',
                 marginLeft: 12,
               }}
-              title="Sign out and switch accounts"
+              title="Sign out and connect with a different account"
             >
-              sign out
+              switch account
             </button>
           </div>
         )}
 
         <div style={bodyStyle}>
-          {/* CHECKING STATE */}
-          {state === 'checking' && (
-            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out infinite' }} />
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out 0.2s infinite' }} />
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#8b5cf6', animation: 'pulse-dot 1.4s ease-in-out 0.4s infinite' }} />
-              </div>
-            </div>
-          )}
 
           {/* AUTH STATE */}
           {state === 'auth' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>
-                Sign in to DriftGrid Cloud to share your project with clients.
+                Connect DriftGrid Cloud to share this project with clients.
+                If you’re already signed in to driftgrid.ai, this will just sync your session.
               </p>
 
               <button
@@ -877,7 +888,7 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
                   cursor: 'pointer',
                 }}
               >
-                Sign in to share
+                Connect DriftGrid Cloud
               </button>
 
               <p style={{ fontSize: 11, color: '#bbb', lineHeight: 1.5, margin: 0 }}>
@@ -982,7 +993,7 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
           {/* First-time publish — minimal: just a status label, placeholder link,
               and the action button. Disclaimers and helper copy show up after the
               first successful publish. */}
-          {state === 'ready-stale' && !shareUrl && (() => {
+          {state === 'ready' && !shareUrl && (() => {
             const unreachable = statusDebug?.kind === 'unreachable';
             const diagnosticLabel = unreachable
               ? `Couldn\u2019t reach cloud: ${statusDebug?.message ?? 'unknown error'}`
@@ -1061,8 +1072,8 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
             );
           })()}
 
-          {/* READY STATE — existing share (ready-stale) OR just-published (ready) */}
-          {(state === 'ready' || state === 'ready-stale') && shareUrl && (
+          {/* READY STATE — `justPublished` distinguishes "Publish updates" (existing share) from "Re-sync latest changes" (post-publish) */}
+          {state === 'ready' && shareUrl && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#22c55e' }}>
@@ -1138,74 +1149,83 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
                 Clients can browse and leave comments — no account needed.
               </p>
 
-              {/* Next round handoff */}
-              <div style={{ paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div>
-                  <div style={{ fontSize: 10, color: '#999', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>
-                    Next round prep
+              {/* Next round handoff — single primary button with a mode picker.
+                  Was three separate buttons; collapsed since they're verbosity
+                  tiers of the same "copy comments for handoff" action. */}
+              {(() => {
+                const justCopied = handoffMode === 'raw' ? commentsCopied : roundPrepCopied === handoffMode;
+                const primaryLabel = justCopied
+                  ? 'Copied!'
+                  : handoffMode === 'auto'
+                    ? `Copy ${roundNumber ? `Round ${roundNumber + 1}` : 'Next Round'} Handoff`
+                    : handoffMode === 'interview'
+                      ? 'Copy Interview Handoff'
+                      : 'Copy Raw Feedback';
+                const onClickPrimary = () => {
+                  if (handoffMode === 'raw') handleCopyComments();
+                  else handleCopyRoundPrep(handoffMode);
+                };
+                const pickerOptions: Array<{ value: RoundPrepMode; label: string; hint: string }> = [
+                  { value: 'auto', label: 'Auto-apply', hint: 'Agent applies comments directly to next round' },
+                  { value: 'interview', label: 'Interview', hint: 'Agent walks through comments with you first' },
+                  { value: 'raw', label: 'Raw', hint: 'Just the comments — no agent instructions' },
+                ];
+                return (
+                  <div style={{ paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: '#999', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>
+                        Next round prep
+                      </div>
+                      <p style={{ fontSize: 10, color: '#aaa', margin: '6px 0 0', lineHeight: 1.45 }}>
+                        {pickerOptions.find(o => o.value === handoffMode)?.hint}
+                      </p>
+                    </div>
+                    {/* Mode picker (segmented). Persisted across sessions. */}
+                    <div style={{ display: 'flex', gap: 0, border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, overflow: 'hidden' }}>
+                      {pickerOptions.map((opt, i) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setHandoffMode(opt.value)}
+                          title={opt.hint}
+                          style={{
+                            flex: 1,
+                            padding: '8px 6px',
+                            border: 'none',
+                            borderLeft: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.08)',
+                            background: handoffMode === opt.value ? '#111' : '#fff',
+                            color: handoffMode === opt.value ? '#fff' : '#666',
+                            fontSize: 10,
+                            fontWeight: handoffMode === opt.value ? 600 : 500,
+                            cursor: 'pointer',
+                            letterSpacing: '0.04em',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={onClickPrimary}
+                      style={{
+                        width: '100%',
+                        padding: '11px 0',
+                        textAlign: 'center',
+                        background: '#111',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        fontWeight: 650,
+                        cursor: 'pointer',
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      {primaryLabel}
+                    </button>
                   </div>
-                  <p style={{ fontSize: 10, color: '#aaa', margin: '6px 0 0', lineHeight: 1.45 }}>
-                    Turn latest shared comments into a repeatable agent handoff for {roundNumber ? `Round ${roundNumber + 1}` : 'the next round'}.
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => handleCopyRoundPrep('auto')}
-                  style={{
-                    width: '100%',
-                    padding: '11px 0',
-                    textAlign: 'center',
-                    background: '#111',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    fontSize: 11,
-                    fontWeight: 650,
-                    cursor: 'pointer',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {roundPrepCopied === 'auto' ? 'Auto-apply handoff copied!' : `Copy Auto-Apply ${roundNumber ? `Round ${roundNumber + 1}` : 'Next Round'} Handoff`}
-                </button>
-
-                <button
-                  onClick={() => handleCopyRoundPrep('interview')}
-                  style={{
-                    width: '100%',
-                    padding: '11px 0',
-                    textAlign: 'center',
-                    background: '#fff',
-                    color: '#333',
-                    border: '1px solid rgba(0,0,0,0.12)',
-                    borderRadius: 8,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {roundPrepCopied === 'interview' ? 'Interview handoff copied!' : 'Copy Interview Handoff'}
-                </button>
-
-                <button
-                  onClick={handleCopyComments}
-                  style={{
-                    width: '100%',
-                    padding: '9px 0',
-                    textAlign: 'center',
-                    background: '#fff',
-                    color: '#777',
-                    border: '1px solid rgba(0,0,0,0.08)',
-                    borderRadius: 8,
-                    fontSize: 10,
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {commentsCopied ? 'Raw feedback copied!' : 'Copy Raw Feedback'}
-                </button>
-              </div>
+                );
+              })()}
 
               {/* Skipped media summary + toggle */}
               {skipped && skipped.totalCount > 0 && (
@@ -1265,21 +1285,24 @@ export function SharePanel({ open, onClose, client, project, roundId, roundNumbe
                     if (creds) pushAndShare(creds.accessToken, creds.refreshToken, { includeMedia: mediaChecked, intentional: true });
                   }}
                   style={{
+                    // Primary "Publish updates" when this is an existing share
+                    // surfaced on open; secondary "Re-sync latest changes" right
+                    // after a publish just completed (justPublished === true).
                     width: '100%',
-                    padding: state === 'ready-stale' ? '12px 0' : '10px 0',
+                    padding: justPublished ? '10px 0' : '12px 0',
                     textAlign: 'center',
-                    background: state === 'ready-stale' ? '#111' : '#fff',
-                    color: state === 'ready-stale' ? '#fff' : '#666',
-                    border: state === 'ready-stale' ? 'none' : '1px solid rgba(0,0,0,0.08)',
+                    background: justPublished ? '#fff' : '#111',
+                    color: justPublished ? '#666' : '#fff',
+                    border: justPublished ? '1px solid rgba(0,0,0,0.08)' : 'none',
                     borderRadius: 8,
-                    fontSize: state === 'ready-stale' ? 12 : 11,
-                    fontWeight: state === 'ready-stale' ? 600 : 500,
+                    fontSize: justPublished ? 11 : 12,
+                    fontWeight: justPublished ? 500 : 600,
                     cursor: 'pointer',
                     letterSpacing: '0.04em',
                   }}
-                  title={state === 'ready-stale' ? 'Re-upload starred versions so clients see the latest' : 'Re-upload to update the client-facing share'}
+                  title={justPublished ? 'Re-upload to update the client-facing share' : 'Re-upload starred versions so clients see the latest'}
                 >
-                  {state === 'ready-stale' ? 'Publish updates' : 'Re-sync latest changes'}
+                  {justPublished ? 'Re-sync latest changes' : 'Publish updates'}
                 </button>
 
                 <p style={{ fontSize: 11, color: '#bbb', margin: 0 }}>
