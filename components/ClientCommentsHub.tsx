@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from 'react';
 import type { ClientComment, Concept } from '@/lib/types';
 import { buildAgentMessage } from '@/lib/agent-payload';
 import { toast } from '@/components/Toast';
+import { copyTextSafely } from '@/lib/clipboard';
 
 interface ClientCommentsHubProps {
   open: boolean;
@@ -59,6 +60,7 @@ export function ClientCommentsHub({
 }: ClientCommentsHubProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('open');
   const [pendingDelete, setPendingDelete] = useState<Thread | null>(null);
+  const [allCopied, setAllCopied] = useState(false);
 
   // Build threads from flat comments — group replies under their parent.
   const threads = useMemo<Thread[]>(() => {
@@ -120,6 +122,44 @@ export function ClientCommentsHub({
   for (const t of threads) counts[t.state]++;
   const visible = threads.filter(t => t.state === activeTab);
 
+  const handleCopyAll = useCallback(async () => {
+    const lines: string[] = [];
+    lines.push(`## Comments — ${client}/${project}`);
+    lines.push('');
+    const grouped = new Map<string, Thread[]>();
+    for (const t of threads) {
+      const key = `${t.conceptLabel}::v${t.versionNumber}`;
+      const arr = grouped.get(key) ?? [];
+      arr.push(t);
+      grouped.set(key, arr);
+    }
+    for (const [key, group] of grouped) {
+      const [label, ver] = key.split('::');
+      lines.push(`### ${label} (${ver})`);
+      for (const t of group) {
+        const status = t.state === 'closed' ? ' [resolved]' : '';
+        lines.push(`- "${t.top.body}" — ${t.top.author_name}${status}`);
+        for (const r of t.replies) {
+          lines.push(`  - "${r.body}" — ${r.author_name}`);
+        }
+      }
+      lines.push('');
+    }
+    const text = lines.join('\n').trim();
+    if (!text || threads.length === 0) {
+      toast('No comments to copy');
+      return;
+    }
+    const ok = await copyTextSafely(text);
+    if (ok) {
+      setAllCopied(true);
+      toast(`${threads.length} comment${threads.length === 1 ? '' : 's'} copied`);
+      setTimeout(() => setAllCopied(false), 2000);
+    } else {
+      toast('Clipboard blocked — try again', 'error');
+    }
+  }, [threads, client, project]);
+
   const handleConfirmDelete = useCallback(async () => {
     if (!pendingDelete) return;
     await onDelete(pendingDelete.top.id);
@@ -153,11 +193,22 @@ export function ClientCommentsHub({
         <div style={{ padding: '20px 28px 0', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.02em' }}>Comments</span>
-            <button
-              onClick={onClose}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, padding: 4 }}
-              title="Close"
-            >×</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button
+                onClick={handleCopyAll}
+                style={{
+                  background: 'none', border: '1px solid var(--border)', borderRadius: 4,
+                  cursor: 'pointer', color: 'var(--muted)', fontSize: 10, padding: '3px 8px',
+                  fontFamily: 'inherit', letterSpacing: '0.04em', fontWeight: 500,
+                }}
+                title="Copy all comments to clipboard"
+              >{allCopied ? 'Copied!' : 'Copy All'}</button>
+              <button
+                onClick={onClose}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, padding: 4 }}
+                title="Close"
+              >×</button>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 0, marginLeft: -4 }}>
             {TAB_ORDER.map(key => {
@@ -351,7 +402,7 @@ function Row({
         {/* Copy for Agent — admin only (share-owner forwards a client comment to their agent) */}
         {isAdmin && (
           <button
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
               const message = buildAgentMessage({
                 annotation: {
@@ -387,8 +438,9 @@ function Row({
                   filePath: `~/driftgrid/projects/${client}/${project}/${thread.conceptLabel}-v${thread.versionNumber}.html`,
                 },
               });
-              navigator.clipboard?.writeText(message).catch(() => {});
-              toast('Copied — paste into your agent');
+              const ok = await copyTextSafely(message);
+              if (ok) toast('Copied — paste into your agent');
+              else toast('Clipboard blocked — try again', 'error');
             }}
             title="Copy this comment + context for your agent"
             style={{
