@@ -1,7 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCopyFeedback } from '@/lib/hooks/useCopyFeedback';
+
+/** Captures the beforeinstallprompt event so we can trigger it from a button. */
+function useInstallPrompt() {
+  const [prompt, setPrompt] = useState<any>(null);
+  const [installed, setInstalled] = useState(false);
+
+  useEffect(() => {
+    // Already running as PWA
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setInstalled(true);
+      return;
+    }
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+
+    const onInstalled = () => {
+      setInstalled(true);
+      setPrompt(null);
+    };
+    window.addEventListener('appinstalled', onInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, []);
+
+  const install = async () => {
+    if (!prompt) return;
+    prompt.prompt();
+    const result = await prompt.userChoice;
+    if (result.outcome === 'accepted') {
+      setInstalled(true);
+      setPrompt(null);
+    }
+  };
+
+  return { canInstall: !!prompt && !installed, installed, install };
+}
 
 function QuickStart() {
   const [tab, setTab] = useState<'claude' | 'terminal'>('claude');
@@ -163,6 +206,8 @@ function QuickStart() {
  * Marketing landing page — shown at root URL for unauthenticated visitors.
  */
 export function LandingPage() {
+  const { canInstall, installed, install } = useInstallPrompt();
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -228,6 +273,40 @@ export function LandingPage() {
           >
             GitHub
           </a>
+          {canInstall && (
+            <button
+              onClick={install}
+              style={{
+                fontSize: 10,
+                letterSpacing: '0.12em',
+                color: '#0a0a0a',
+                textTransform: 'uppercase',
+                padding: '6px 14px',
+                background: 'rgba(255,255,255,0.9)',
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+                fontWeight: 500,
+              }}
+            >
+              Install App
+            </button>
+          )}
+          {installed && (
+            <span
+              style={{
+                fontSize: 10,
+                letterSpacing: '0.12em',
+                color: '#4ade80',
+                textTransform: 'uppercase',
+                padding: '6px 14px',
+                fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+              }}
+            >
+              ✓ Installed
+            </span>
+          )}
           <a
             href="/login"
             style={{
