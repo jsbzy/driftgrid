@@ -34,7 +34,8 @@
     "export-png": "npx tsx scripts/export-png.ts",
     "build-exports": "npx tsx scripts/build-exports.ts",
     "mcp": "npx tsx mcp/server.ts",
-    "smoke": "tsx bin/smoke.ts"
+    "smoke": "tsx bin/smoke.ts",
+    "launcher": "node bin/driftgrid-launcher.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",

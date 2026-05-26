@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { ClientInfo } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
 import { useCopyFeedback } from '@/lib/hooks/useCopyFeedback';
+import { useLocalLauncher, type LauncherStatus } from '@/lib/hooks/useLocalLauncher';
 
 const isCloud = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -61,6 +62,7 @@ export function Dashboard() {
     isCloud ? '/api/share' : null,
     fetcher
   );
+  const launcher = useLocalLauncher();
 
   const isEmpty = clients && clients.length === 0;
 
@@ -95,11 +97,14 @@ export function Dashboard() {
         </div>
       </header>
 
-      {/* Cloud mode subtitle */}
+      {/* Cloud mode subtitle + local server bar */}
       {isCloud && (
-        <p className="text-xs text-[var(--muted)] -mt-8 mb-10" style={{ opacity: 0.5 }}>
-          Share your projects with clients. All design work happens locally.
-        </p>
+        <div className="-mt-8 mb-10">
+          <p className="text-xs text-[var(--muted)] mb-3" style={{ opacity: 0.5 }}>
+            Share your projects with clients. All design work happens locally.
+          </p>
+          <LocalServerBar launcher={launcher} />
+        </div>
       )}
 
       {/* Loading state */}
@@ -150,6 +155,8 @@ export function Dashboard() {
                   shareUrl={shareUrl}
                   lastPublishedAt={lastPublishedAt}
                   roundNumber={roundNumber}
+                  localUrl={launcher.localAdminUrl(client.slug, project.slug)}
+                  serverRunning={launcher.status?.running ?? false}
                 />
               ) : (
                 <Link
@@ -235,13 +242,15 @@ function formatAgo(iso: string | null): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt, roundNumber }: {
+function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt, roundNumber, localUrl, serverRunning }: {
   client: string;
   project: { slug: string; name: string; conceptCount: number; versionCount: number; lastEditedAt: string | null };
   canvas: string;
   shareUrl: string | null;
   lastPublishedAt: string | null;
   roundNumber: number | null;
+  localUrl: string | null;
+  serverRunning: boolean;
 }) {
   const { copied, copy } = useCopyFeedback();
   const [creating, setCreating] = useState(false);
@@ -286,11 +295,44 @@ function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt, 
         >
           {project.name}
         </Link>
-        {url && (
-          <span style={{ fontSize: 9, letterSpacing: '0.08em', color: '#22c55e', fontFamily: 'var(--font-mono, monospace)' }}>
-            LIVE
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {localUrl && (
+            <a
+              href={localUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={serverRunning ? 'Open in local dev server' : 'Local server not running'}
+              style={{
+                fontSize: 9,
+                letterSpacing: '0.06em',
+                fontFamily: 'var(--font-mono, monospace)',
+                color: serverRunning ? 'var(--muted)' : 'var(--muted)',
+                opacity: serverRunning ? 0.7 : 0.3,
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 3,
+              }}
+            >
+              <span
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: '50%',
+                  background: serverRunning ? '#22c55e' : 'var(--muted)',
+                  display: 'inline-block',
+                  flexShrink: 0,
+                }}
+              />
+              LOCAL
+            </a>
+          )}
+          {url && (
+            <span style={{ fontSize: 9, letterSpacing: '0.08em', color: '#22c55e', fontFamily: 'var(--font-mono, monospace)' }}>
+              LIVE
+            </span>
+          )}
+        </div>
       </div>
       <div style={{ fontSize: 11 }} className="text-[var(--muted)] mb-1">
         {project.conceptCount} concept{project.conceptCount !== 1 ? 's' : ''} &middot; {project.versionCount} version{project.versionCount !== 1 ? 's' : ''} &middot; {canvas}
@@ -375,6 +417,212 @@ function CloudProjectCard({ client, project, canvas, shareUrl, lastPublishedAt, 
           {creating ? 'Creating...' : 'Create Share Link'}
         </button>
       )}
+    </div>
+  );
+}
+
+// ── Local server connection bar ────────────────────────────────────────
+
+type LauncherHook = ReturnType<typeof useLocalLauncher>;
+
+function LocalServerBar({ launcher }: { launcher: LauncherHook }) {
+  const { localHost, status, starting, stopping, startServer, stopServer, configure } = launcher;
+  const [editing, setEditing] = useState(!localHost);
+  const [input, setInput] = useState(localHost || '');
+
+  if (editing || !localHost) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '8px 12px',
+          border: '1px solid var(--border)',
+          borderRadius: 6,
+          fontSize: 11,
+          fontFamily: 'var(--font-mono, monospace)',
+        }}
+      >
+        <span className="text-[var(--muted)]" style={{ fontSize: 10, whiteSpace: 'nowrap' }}>
+          Local host:
+        </span>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && input.trim()) {
+              configure(input);
+              setEditing(false);
+            }
+          }}
+          placeholder="e.g. taco-bzy.local"
+          style={{
+            flex: 1,
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+            color: 'var(--foreground)',
+            fontSize: 11,
+            fontFamily: 'var(--font-mono, monospace)',
+          }}
+          autoFocus
+        />
+        <button
+          onClick={() => {
+            if (input.trim()) {
+              configure(input);
+              setEditing(false);
+            }
+          }}
+          disabled={!input.trim()}
+          style={{
+            fontSize: 10,
+            padding: '3px 8px',
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            background: 'transparent',
+            color: 'var(--foreground)',
+            cursor: input.trim() ? 'pointer' : 'default',
+            opacity: input.trim() ? 1 : 0.3,
+          }}
+        >
+          Connect
+        </button>
+      </div>
+    );
+  }
+
+  const reachable = status?.reachable ?? false;
+  const running = status?.running ?? false;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '8px 12px',
+        border: '1px solid var(--border)',
+        borderRadius: 6,
+        fontSize: 11,
+        fontFamily: 'var(--font-mono, monospace)',
+      }}
+    >
+      {/* Status dot */}
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          background: !reachable ? 'var(--muted)' : running ? '#22c55e' : '#ef4444',
+          flexShrink: 0,
+        }}
+        title={
+          !reachable
+            ? 'Launcher not reachable'
+            : running
+              ? `Dev server running on :${status?.port}`
+              : 'Dev server stopped'
+        }
+      />
+
+      {/* Host label */}
+      <span className="text-[var(--muted)]" style={{ fontSize: 10 }}>
+        {localHost}
+      </span>
+
+      {/* Status text */}
+      <span
+        style={{
+          fontSize: 10,
+          color: !reachable ? 'var(--muted)' : running ? '#22c55e' : '#ef4444',
+          opacity: 0.8,
+        }}
+      >
+        {!reachable
+          ? 'unreachable'
+          : running
+            ? `:${status?.port}`
+            : 'stopped'}
+      </span>
+
+      <div style={{ flex: 1 }} />
+
+      {/* Actions */}
+      {reachable && !running && (
+        <button
+          onClick={startServer}
+          disabled={starting}
+          style={{
+            fontSize: 10,
+            padding: '3px 10px',
+            border: 'none',
+            borderRadius: 4,
+            background: 'var(--foreground)',
+            color: 'var(--background)',
+            cursor: starting ? 'default' : 'pointer',
+            opacity: starting ? 0.5 : 1,
+            letterSpacing: '0.04em',
+          }}
+        >
+          {starting ? 'Starting...' : 'Start'}
+        </button>
+      )}
+      {reachable && running && (
+        <button
+          onClick={stopServer}
+          disabled={stopping}
+          style={{
+            fontSize: 10,
+            padding: '3px 10px',
+            border: '1px solid var(--border)',
+            borderRadius: 4,
+            background: 'transparent',
+            color: 'var(--muted)',
+            cursor: stopping ? 'default' : 'pointer',
+            opacity: stopping ? 0.5 : 0.7,
+          }}
+        >
+          {stopping ? 'Stopping...' : 'Stop'}
+        </button>
+      )}
+
+      {/* Open local dashboard */}
+      {launcher.localDashboardUrl && running && (
+        <a
+          href={launcher.localDashboardUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontSize: 10,
+            color: 'var(--muted)',
+            textDecoration: 'none',
+            opacity: 0.7,
+          }}
+          title="Open local dashboard"
+        >
+          Open
+        </a>
+      )}
+
+      {/* Edit host */}
+      <button
+        onClick={() => { setInput(localHost); setEditing(true); }}
+        style={{
+          fontSize: 10,
+          color: 'var(--muted)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          opacity: 0.4,
+          padding: 0,
+        }}
+        title="Change local host"
+      >
+        Edit
+      </button>
     </div>
   );
 }
