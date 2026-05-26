@@ -3,47 +3,145 @@
 import { useState, useEffect } from 'react';
 import { useCopyFeedback } from '@/lib/hooks/useCopyFeedback';
 
-/** Captures the beforeinstallprompt event so we can trigger it from a button. */
+/** Always-visible install button that either triggers the native prompt or shows instructions. */
 function useInstallPrompt() {
   const [prompt, setPrompt] = useState<any>(null);
-  const [installed, setInstalled] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   useEffect(() => {
-    // Already running as PWA
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      setInstalled(true);
+      setIsStandalone(true);
       return;
     }
-
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setPrompt(e);
-    };
+    const handler = (e: Event) => { e.preventDefault(); setPrompt(e); };
     window.addEventListener('beforeinstallprompt', handler);
-
-    const onInstalled = () => {
-      setInstalled(true);
-      setPrompt(null);
-    };
-    window.addEventListener('appinstalled', onInstalled);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
-      window.removeEventListener('appinstalled', onInstalled);
-    };
+    window.addEventListener('appinstalled', () => { setIsStandalone(true); setPrompt(null); });
+    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
   const install = async () => {
-    if (!prompt) return;
-    prompt.prompt();
-    const result = await prompt.userChoice;
-    if (result.outcome === 'accepted') {
-      setInstalled(true);
-      setPrompt(null);
+    if (prompt) {
+      prompt.prompt();
+      const result = await prompt.userChoice;
+      if (result.outcome === 'accepted') { setIsStandalone(true); setPrompt(null); }
+    } else {
+      setShowInstructions(true);
     }
   };
 
-  return { canInstall: !!prompt && !installed, installed, install };
+  return { isStandalone, showInstructions, setShowInstructions, install };
+}
+
+function detectBrowser(): 'chrome' | 'safari' | 'arc' | 'other' {
+  if (typeof navigator === 'undefined') return 'other';
+  const ua = navigator.userAgent;
+  // Arc identifies itself in chrome but has specific behavior
+  if ((navigator as any).userAgentData?.brands?.some((b: any) => b.brand === 'Arc')) return 'arc';
+  if (/Safari/.test(ua) && !/Chrome/.test(ua)) return 'safari';
+  if (/Chrome/.test(ua)) return 'chrome';
+  return 'other';
+}
+
+function InstallModal({ onClose }: { onClose: () => void }) {
+  const browser = detectBrowser();
+
+  const steps: Record<string, { label: string; steps: string[] }> = {
+    chrome: {
+      label: 'Chrome',
+      steps: [
+        'Click the ⋮ menu (top-right)',
+        'Click "Cast, Save, and Share"',
+        'Click "Install Page as App..."',
+      ],
+    },
+    safari: {
+      label: 'Safari',
+      steps: [
+        'Click File in the menu bar',
+        'Click "Add to Dock"',
+      ],
+    },
+    arc: {
+      label: 'Arc',
+      steps: [
+        'Click File in the menu bar',
+        'Click "Add to Dock"',
+      ],
+    },
+    other: {
+      label: 'Your browser',
+      steps: [
+        'Look for "Install" or "Add to Home Screen" in your browser menu',
+        'Or try opening this site in Chrome or Safari',
+      ],
+    },
+  };
+
+  const current = steps[browser];
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 24,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#141414', border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 12, padding: '32px 36px', maxWidth: 400, width: '100%',
+          fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+        }}
+      >
+        <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.9)', marginBottom: 6 }}>
+          Install DriftGrid
+        </div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 24, lineHeight: 1.5 }}>
+          Get DriftGrid as a desktop app — its own window, its own dock icon, no more lost tabs.
+        </div>
+
+        <div style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>
+          {current.label}
+        </div>
+
+        {current.steps.map((step, i) => (
+          <div key={i} style={{
+            display: 'flex', gap: 12, marginBottom: 14, alignItems: 'flex-start',
+          }}>
+            <div style={{
+              width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600,
+            }}>
+              {i + 1}
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, paddingTop: 2 }}>
+              {step}
+            </div>
+          </div>
+        ))}
+
+        <button
+          onClick={onClose}
+          style={{
+            marginTop: 20, width: '100%', padding: '10px 0',
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 6, color: 'rgba(255,255,255,0.5)', fontSize: 11,
+            cursor: 'pointer', fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+            letterSpacing: '0.06em',
+          }}
+        >
+          Got it
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function QuickStart() {
@@ -206,7 +304,7 @@ function QuickStart() {
  * Marketing landing page — shown at root URL for unauthenticated visitors.
  */
 export function LandingPage() {
-  const { canInstall, installed, install } = useInstallPrompt();
+  const { isStandalone, showInstructions, setShowInstructions, install } = useInstallPrompt();
 
   return (
     <div style={{
@@ -273,39 +371,24 @@ export function LandingPage() {
           >
             GitHub
           </a>
-          {canInstall && (
+          {!isStandalone && (
             <button
               onClick={install}
               style={{
                 fontSize: 10,
                 letterSpacing: '0.12em',
-                color: '#0a0a0a',
+                color: 'rgba(255,255,255,0.4)',
                 textTransform: 'uppercase',
                 padding: '6px 14px',
-                background: 'rgba(255,255,255,0.9)',
+                background: 'transparent',
                 border: 'none',
-                borderRadius: 4,
                 cursor: 'pointer',
                 fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-                fontWeight: 500,
+                textDecoration: 'none',
               }}
             >
-              Install App
+              Get the App
             </button>
-          )}
-          {installed && (
-            <span
-              style={{
-                fontSize: 10,
-                letterSpacing: '0.12em',
-                color: '#4ade80',
-                textTransform: 'uppercase',
-                padding: '6px 14px',
-                fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-              }}
-            >
-              ✓ Installed
-            </span>
           )}
           <a
             href="/login"
@@ -572,6 +655,8 @@ export function LandingPage() {
           Built by BZY · MIT License
         </div>
       </footer>
+
+      {showInstructions && <InstallModal onClose={() => setShowInstructions(false)} />}
     </div>
   );
 }
