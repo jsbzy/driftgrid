@@ -37,7 +37,9 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
+  manifest: '/manifest.webmanifest',
 };
 
 export default function RootLayout({
@@ -48,12 +50,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head suppressHydrationWarning>
+        <meta name="theme-color" content="#1c1c1c" />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: `
           try {
             if (localStorage.getItem('driftgrid-theme') === 'dark') {
               document.documentElement.classList.add('dark');
             }
           } catch {}
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(function() {});
+          }
         `}} />
       </head>
       <body suppressHydrationWarning className={`${jetbrainsMono.variable} antialiased`}>
