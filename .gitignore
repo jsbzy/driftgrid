@@ -57,6 +57,10 @@ _archive/
 /_archive/
 /.archive/
 
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/schemas/
+
 # Claude worktrees
 .claude/worktrees/
 
