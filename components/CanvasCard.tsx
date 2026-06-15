@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 
 interface CanvasCardProps {
   thumbnail: string | null;
@@ -60,12 +60,23 @@ export const CanvasCard = memo(function CanvasCard({
   // Track whether the <img> has actually finished decoding/painting. While false (and a URL is set)
   // the card looks blank — keep the shimmer skeleton visible underneath until onLoad fires.
   const [imgLoaded, setImgLoaded] = useState(false);
+  // Bounded retry state — caps how many times a failing thumbnail re-requests so a
+  // genuine error settles on the skeleton instead of looping forever.
+  const retriesRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setThumbSrc(thumbnail);
     setImgError(false);
     setImgLoaded(false);
+    retriesRef.current = 0;
+    if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null; }
   }, [thumbnail]);
+
+  // Clear any pending retry timer on unmount.
+  useEffect(() => () => {
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+  }, []);
 
   const handleImgRef = useCallback((img: HTMLImageElement | null) => {
     if (img && img.complete && img.naturalWidth > 0) {
@@ -245,11 +256,16 @@ export const CanvasCard = memo(function CanvasCard({
                   opacity: imgLoaded ? 1 : 0,
                   transition: 'opacity 0.18s ease',
                 }}
-                onLoad={() => setImgLoaded(true)}
+                onLoad={() => { retriesRef.current = 0; setImgLoaded(true); }}
                 onError={() => {
-                  setImgError(true);
                   setImgLoaded(false);
-                  setTimeout(() => setImgError(false), 3000);
+                  // Bounded exponential backoff: retry a few times for a transient
+                  // failure, then settle on the skeleton — never hammer forever.
+                  if (retriesRef.current >= 4) { setImgError(true); return; }
+                  const delay = Math.min(8000, 600 * 2 ** retriesRef.current);
+                  retriesRef.current += 1;
+                  setImgError(true);
+                  retryTimerRef.current = setTimeout(() => setImgError(false), delay);
                 }}
               />
             </div>

@@ -12,8 +12,11 @@ import { areValidSlugs } from '@/lib/slug';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
-// Track in-flight regenerations to avoid duplicate work
-const regenerating = new Set<string>();
+// Concurrent requests for the same thumbnail share ONE in-flight generation, so
+// we never launch duplicate browsers or hand back a bodyless 202 that the client
+// <img> reads as a load error. The slot clears when the promise settles (success
+// OR failure) so a failed render can be retried on the next request.
+const inflight = new Map<string, Promise<Buffer>>();
 
 // Manifest cache now lives in lib/manifest-cache.ts so iterate/branch/rounds
 // routes can invalidate it immediately after writes — stale thumbnails were
@@ -115,6 +118,65 @@ async function getResized(
   return resized;
 }
 
+/**
+ * Generate one thumbnail to disk and return its bytes, deduped by output path.
+ * Concurrent callers for the same thumbnail await the same promise (one browser
+ * render, one manifest write) instead of racing — and all receive the image.
+ */
+function generateThumbOnce(
+  resolved: string,
+  info: { htmlPath: string; width: number; height: number | 'auto' },
+  client: string,
+  project: string,
+  thumbFilename: string,
+): Promise<Buffer> {
+  const existing = inflight.get(resolved);
+  if (existing) return existing;
+
+  const p = (async () => {
+    await fs.mkdir(path.dirname(resolved), { recursive: true });
+    await generateThumbnail(info.htmlPath, resolved, info.width, info.height);
+
+    // Record the canonical thumbnail path on the manifest. Self-heal a
+    // non-canonical value, and break after the first exact match so repeated
+    // legacy concept IDs across rounds don't all get the same thumb. Routed
+    // through lib/storage.writeManifest so this write is serialized with every
+    // other manifest writer (per-(client,project) lock + cache invalidation).
+    const expectedBase = thumbFilename.replace(/\.(webp|png)$/, '');
+    const canonicalThumb = `.thumbs/${thumbFilename}`;
+    const manifest = await getCachedManifest(client, project);
+    if (manifest) {
+      let updated = false;
+      const allConceptSets = manifest.rounds?.length
+        ? manifest.rounds.map(r => r.concepts)
+        : [manifest.concepts];
+      outer: for (const concepts of allConceptSets) {
+        for (const concept of concepts) {
+          for (const version of concept.versions) {
+            if (`${concept.id}-${version.id}` !== expectedBase) continue;
+            if (version.thumbnail !== canonicalThumb) {
+              version.thumbnail = canonicalThumb;
+              updated = true;
+            }
+            break outer; // first exact match wins
+          }
+        }
+      }
+      if (updated) {
+        const userId = isCloudMode() ? await getUserId() : null;
+        await writeManifest(userId, client, project, manifest);
+      }
+    }
+
+    return await fs.readFile(resolved);
+  })();
+
+  inflight.set(resolved, p);
+  const done = () => { if (inflight.get(resolved) === p) inflight.delete(resolved); };
+  p.then(done, done);
+  return p;
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ path: string[] }> }
@@ -184,12 +246,10 @@ export async function GET(
         // HTML file missing — not stale, just orphaned
       }
 
-      // Kick off background regeneration if stale and not already in progress
-      if (isStale && !regenerating.has(resolved)) {
-        regenerating.add(resolved);
-        generateThumbnail(info.htmlPath, resolved, info.width, info.height)
-          .catch(err => console.error(`Background thumbnail regen failed for ${resolved}:`, err))
-          .finally(() => regenerating.delete(resolved));
+      // Kick off background regeneration if stale and not already generating.
+      if (isStale && !inflight.has(resolved)) {
+        generateThumbOnce(resolved, info, client, project, thumbFilename)
+          .catch(err => console.error(`Background thumbnail regen failed for ${resolved}:`, err));
       }
     }
 
@@ -209,80 +269,22 @@ export async function GET(
 
     return new NextResponse(new Uint8Array(responseData), { headers });
   } catch {
-    // Thumbnail doesn't exist yet — generate it on first view
+    // Thumbnail doesn't exist yet — generate it on first view. Concurrent requests
+    // for the same thumbnail share ONE generation (generateThumbOnce) and all
+    // receive the image, so a cold grid never produces a 202-as-error retry storm.
     const info = await findHtmlPathForThumb(client, project, thumbFilename);
     if (!info) {
       return new NextResponse('Not found', { status: 404 });
     }
 
-    // Check if already generating
-    if (regenerating.has(resolved)) {
-      // Return a transparent 1x1 PNG placeholder while generating
-      return new NextResponse(null, {
-        status: 202,
-        headers: { 'X-Thumbnail-Generating': 'true', 'Retry-After': '3' },
-      });
-    }
-
-    regenerating.add(resolved);
-
     try {
-      // Ensure .thumbs directory exists
-      const thumbsDir = path.dirname(resolved);
-      await fs.mkdir(thumbsDir, { recursive: true });
-
-      await generateThumbnail(info.htmlPath, resolved, info.width, info.height);
-
-      // Update manifest with thumbnail path. Two tightening rules vs. the old
-      // loop:
-      //   1) Self-heal: if version.thumbnail is set but doesn't match the
-      //      canonical `.thumbs/${concept.id}-${version.id}.webp` form, rewrite
-      //      it. This eliminates the "stuck on a wrong value" failure mode
-      //      where some upstream scrambler wrote the wrong path and the route
-      //      then refused to fix it (the old `!version.thumbnail` guard).
-      //   2) Break after the first exact match. Legacy concept IDs repeat
-      //      across rounds (23 of them in demo-v4 — pre-`-round-N` naming);
-      //      without the break, regenerating one thumb wrote the same thumb
-      //      filename into every round's matching version slot.
-      const expectedBase = thumbFilename.replace(/\.(webp|png)$/, '');
-      const canonicalThumb = `.thumbs/${thumbFilename}`;
-      const manifest = await getCachedManifest(client, project);
-      if (manifest) {
-        let updated = false;
-        const allConceptSets = manifest.rounds?.length
-          ? manifest.rounds.map(r => r.concepts)
-          : [manifest.concepts];
-        outer: for (const concepts of allConceptSets) {
-          for (const concept of concepts) {
-            for (const version of concept.versions) {
-              if (`${concept.id}-${version.id}` !== expectedBase) continue;
-              if (version.thumbnail !== canonicalThumb) {
-                version.thumbnail = canonicalThumb;
-                updated = true;
-              }
-              break outer; // first exact match wins
-            }
-          }
-        }
-        if (updated) {
-          // Route through lib/storage so this thumb-side write is serialized
-          // with all other manifest writers. Previously imported lib/manifest
-          // directly and bypassed the per-(client,project) write lock and the
-          // cache invalidation, racing against drift/branch/annotation writes.
-          const userId = isCloudMode() ? await getUserId() : null;
-          await writeManifest(userId, client, project, manifest);
-        }
-      }
-
-      const data = await fs.readFile(resolved);
-      return new NextResponse(data, {
+      const data = await generateThumbOnce(resolved, info, client, project, thumbFilename);
+      return new NextResponse(new Uint8Array(data), {
         headers: { 'Content-Type': contentTypeForThumb(thumbFilename), 'Cache-Control': 'public, max-age=60' },
       });
     } catch (err) {
       console.error(`Thumbnail generation failed for ${resolved}:`, err);
       return new NextResponse('Generation failed', { status: 500 });
-    } finally {
-      regenerating.delete(resolved);
     }
   }
 }

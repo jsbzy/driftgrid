@@ -123,19 +123,31 @@ export function useAnnotationState(
       return annotation;
     }
 
-    const res = await fetch('/api/annotations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client, project,
-        conceptId,
-        versionId,
-        x, y, text,
-        author: 'designer',
-        isClient: false,
-        ...(provider ? { provider } : {}),
-      }),
-    });
+    // Time-box the save so a stalled connection (the HTTP/1.1 dev pool can starve a
+    // request indefinitely) surfaces as a retryable error instead of an infinite
+    // "SAVING…". The AbortError propagates to handleSubmitPending's catch → null →
+    // "Could not save the comment — try again".
+    const ctrl = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), 15000);
+    let res: Response;
+    try {
+      res = await fetch('/api/annotations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client, project,
+          conceptId,
+          versionId,
+          x, y, text,
+          author: 'designer',
+          isClient: false,
+          ...(provider ? { provider } : {}),
+        }),
+        signal: ctrl.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
     if (res.ok) {
       const annotation = await res.json();
       setAnnotations(prev => [...prev, annotation]);

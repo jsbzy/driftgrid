@@ -101,7 +101,13 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
 }, ref) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
-  const [thumbVersion, setThumbVersion] = useState(0);
+  // Per-card thumbnail cache-busters keyed by `${conceptId}-${versionId}`. The SSE
+  // file watcher bumps only the card whose HTML changed — not all of them.
+  const [thumbBust, setThumbBust] = useState<Record<string, number>>({});
+  // Latest concepts for the SSE handler (its effect deps are [client, project], so
+  // it must not re-subscribe whenever concepts change).
+  const conceptsRef = useRef(concepts);
+  conceptsRef.current = concepts;
 
   const layout = useMemo(
     () => computeCanvasLayout(concepts, aspectRatio, showHidden),
@@ -452,9 +458,25 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
       es.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'file-changed') {
-            setThumbVersion(v => v + 1);
+          if (data.type !== 'file-changed' || !data.file) return;
+          const changed = String(data.file).replace(/\\/g, '/');
+          // Bump only the card(s) whose HTML file matches — not the whole grid.
+          const affected: string[] = [];
+          for (const c of conceptsRef.current) {
+            for (const v of c.versions) {
+              if (!v.file) continue;
+              const vf = v.file.replace(/\\/g, '/');
+              if (vf === changed || vf.endsWith('/' + changed) || changed.endsWith('/' + vf)) {
+                affected.push(`${c.id}-${v.id}`);
+              }
+            }
           }
+          if (affected.length === 0) return;
+          setThumbBust(prev => {
+            const next = { ...prev };
+            for (const k of affected) next[k] = (next[k] ?? 0) + 1;
+            return next;
+          });
         } catch { /* ignore */ }
       };
       es.onerror = () => { es?.close(); reconnectTimeout = setTimeout(connect, 5000); };
@@ -738,7 +760,7 @@ export const CanvasView = forwardRef<CanvasViewHandle, CanvasViewProps>(function
             versionIndex={versionIndex}
             client={client}
             project={project}
-            thumbVersion={thumbVersion}
+            thumbBust={thumbBust}
             selections={selections}
             showHidden={showHidden}
             transform={transform}
@@ -807,7 +829,7 @@ const CardLayer = memo(function CardLayer({
   versionIndex,
   client,
   project,
-  thumbVersion,
+  thumbBust,
   selections,
   showHidden,
   transform,
@@ -829,7 +851,7 @@ const CardLayer = memo(function CardLayer({
   versionIndex: number;
   client: string;
   project: string;
-  thumbVersion: number;
+  thumbBust: Record<string, number>;
   selections: Set<string>;
   showHidden?: boolean;
   transform: { scale: number; tx: number; ty: number };
@@ -877,9 +899,10 @@ const CardLayer = memo(function CardLayer({
         // being removed from the schema. The API auto-generates on first request.
         const thumbName = `${concept.id}-${version.id}.webp`;
         const thumbW = transform.scale < 0.5 ? '&w=880' : '';
+        const bust = thumbBust[`${concept.id}-${version.id}`] ?? 0;
         const thumbSrc = shareToken
           ? `/api/s/${shareToken}/thumbs/${thumbName}`
-          : `/api/thumbs/${client}/${project}/${thumbName}?v=${thumbVersion}${thumbW}`;
+          : `/api/thumbs/${client}/${project}/${thumbName}?v=${bust}${thumbW}`;
         const isStarred = selections.has(`${concept.id}:${version.id}`);
         const isLatest = pos.versionIndex === concept.versions.length - 1;
 
