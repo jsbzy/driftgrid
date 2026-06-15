@@ -62,7 +62,10 @@ export async function POST(request: Request) {
         viewport: { width, height: height === 'auto' ? 900 : height },
         deviceScaleFactor: 2,
       });
-      await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle' });
+      page.setDefaultTimeout(20000);
+      // 'load' + font wait instead of 'networkidle' (hangs on Google Fonts <link>).
+      await page.goto(`file://${htmlPath}`, { waitUntil: 'load' });
+      await page.evaluate(() => (document as any).fonts?.ready).catch(() => {});
       await page.screenshot({ path: outputPath, type: 'png', fullPage: height === 'auto' });
     } finally {
       await browser.close();

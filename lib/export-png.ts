@@ -6,20 +6,19 @@ export async function exportPng(
   height: number | 'auto'
 ): Promise<Buffer> {
   const browser = await chromium.launch();
-  const page = await browser.newPage({
-    viewport: { width, height: height === 'auto' ? 900 : height },
-    deviceScaleFactor: 2,
-  });
-  await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle' });
+  try {
+    const page = await browser.newPage({
+      viewport: { width, height: height === 'auto' ? 900 : height },
+      deviceScaleFactor: 2,
+    });
+    page.setDefaultTimeout(20000);
+    // 'load' + font wait instead of 'networkidle' (hangs on Google Fonts <link>).
+    await page.goto(`file://${htmlPath}`, { waitUntil: 'load' });
+    await page.evaluate(() => (document as any).fonts?.ready).catch(() => {});
 
-  let buffer: Buffer;
-  if (height === 'auto') {
-    // Full-page screenshot for scrollable content
-    buffer = await page.screenshot({ type: 'png', fullPage: true }) as Buffer;
-  } else {
-    buffer = await page.screenshot({ type: 'png' }) as Buffer;
+    // Full-page screenshot for scrollable content; clipped viewport otherwise.
+    return await page.screenshot({ type: 'png', fullPage: height === 'auto' }) as Buffer;
+  } finally {
+    await browser.close();
   }
-
-  await browser.close();
-  return buffer;
 }

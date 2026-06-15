@@ -33,44 +33,50 @@ export async function exportPdf(
 ): Promise<Buffer> {
   const { browser, type } = await launchBrowser(width, height === 'auto' ? 900 : height);
 
-  if (type === 'puppeteer') {
-    const page = await browser.newPage();
-    await page.setViewport({ width, height: height === 'auto' ? 900 : height, deviceScaleFactor: 2 });
-    await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle0' });
-    const dimensions = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-    }));
-    const pxHeight = height === 'auto' ? dimensions.height : height;
-    const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
-    const imgPage = await browser.newPage();
-    const pngBase64 = Buffer.from(pngBuffer).toString('base64');
-    await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`);
-    await imgPage.setViewport({ width, height: pxHeight as number });
-    const pdfBuffer = await imgPage.pdf({
-      width: `${width}px`,
-      height: `${pxHeight}px`,
-      printBackground: true,
-      margin: { top: 0, right: 0, bottom: 0, left: 0 },
-    });
+  // try/finally so a throw/timeout still closes the browser instead of orphaning it.
+  try {
+    if (type === 'puppeteer') {
+      const page = await browser.newPage();
+      await page.setViewport({ width, height: height === 'auto' ? 900 : height, deviceScaleFactor: 2 });
+      await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle0' });
+      const dimensions = await page.evaluate(() => ({
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+      }));
+      const pxHeight = height === 'auto' ? dimensions.height : height;
+      const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
+      const imgPage = await browser.newPage();
+      const pngBase64 = Buffer.from(pngBuffer).toString('base64');
+      await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`);
+      await imgPage.setViewport({ width, height: pxHeight as number });
+      const pdfBuffer = await imgPage.pdf({
+        width: `${width}px`,
+        height: `${pxHeight}px`,
+        printBackground: true,
+        margin: { top: 0, right: 0, bottom: 0, left: 0 },
+      });
+      return Buffer.from(pdfBuffer);
+    } else {
+      // Playwright path. 'load' + font wait instead of 'networkidle' (hangs on
+      // the Google Fonts <link> every board includes).
+      const page = await browser.newPage({ viewport: { width, height: height === 'auto' ? 900 : height }, deviceScaleFactor: 2 });
+      page.setDefaultTimeout(20000);
+      await page.goto(`file://${htmlPath}`, { waitUntil: 'load' });
+      await page.evaluate(() => (document as any).fonts?.ready).catch(() => {});
+      const dimensions = await page.evaluate(() => ({
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+      }));
+      const pxHeight = height === 'auto' ? dimensions.height : height;
+      const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
+      const imgPage = await browser.newPage();
+      const pngBase64 = Buffer.from(pngBuffer).toString('base64');
+      await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`, { waitUntil: 'load' });
+      const pdfBuffer = await imgPage.pdf({ width: `${width}px`, height: `${pxHeight}px`, printBackground: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } });
+      return Buffer.from(pdfBuffer);
+    }
+  } finally {
     await browser.close();
-    return Buffer.from(pdfBuffer);
-  } else {
-    // Playwright path
-    const page = await browser.newPage({ viewport: { width, height: height === 'auto' ? 900 : height }, deviceScaleFactor: 2 });
-    await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle' });
-    const dimensions = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-    }));
-    const pxHeight = height === 'auto' ? dimensions.height : height;
-    const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
-    const imgPage = await browser.newPage();
-    const pngBase64 = Buffer.from(pngBuffer).toString('base64');
-    await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`, { waitUntil: 'load' });
-    const pdfBuffer = await imgPage.pdf({ width: `${width}px`, height: `${pxHeight}px`, printBackground: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } });
-    await browser.close();
-    return Buffer.from(pdfBuffer);
   }
 }
 
@@ -124,43 +130,49 @@ export async function exportPdfFromHtml(
 
   const { browser, type } = await launchBrowser(width, height === 'auto' ? 900 : height);
 
-  if (type === 'puppeteer') {
-    const page = await browser.newPage();
-    await page.setViewport({ width, height: height === 'auto' ? 900 : height, deviceScaleFactor: 2 });
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const dimensions = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-    }));
-    const pxHeight = height === 'auto' ? dimensions.height : height;
-    const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
-    const imgPage = await browser.newPage();
-    const pngBase64 = Buffer.from(pngBuffer).toString('base64');
-    await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`);
-    await imgPage.setViewport({ width, height: pxHeight as number });
-    const pdfBuffer = await imgPage.pdf({
-      width: `${width}px`,
-      height: `${pxHeight}px`,
-      printBackground: true,
-      margin: { top: 0, right: 0, bottom: 0, left: 0 },
-    });
+  try {
+    if (type === 'puppeteer') {
+      const page = await browser.newPage();
+      await page.setViewport({ width, height: height === 'auto' ? 900 : height, deviceScaleFactor: 2 });
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      const dimensions = await page.evaluate(() => ({
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+      }));
+      const pxHeight = height === 'auto' ? dimensions.height : height;
+      const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
+      const imgPage = await browser.newPage();
+      const pngBase64 = Buffer.from(pngBuffer).toString('base64');
+      await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`);
+      await imgPage.setViewport({ width, height: pxHeight as number });
+      const pdfBuffer = await imgPage.pdf({
+        width: `${width}px`,
+        height: `${pxHeight}px`,
+        printBackground: true,
+        margin: { top: 0, right: 0, bottom: 0, left: 0 },
+      });
+      return Buffer.from(pdfBuffer);
+    } else {
+      // Playwright path. Images are already inlined as base64, so only the Google
+      // Fonts <link> remains — 'load' + font wait avoids the 'networkidle' hang.
+      const page = await browser.newPage({ viewport: { width, height: height === 'auto' ? 900 : height }, deviceScaleFactor: 2 });
+      page.setDefaultTimeout(20000);
+      await page.setContent(html, { waitUntil: 'load' });
+      await page.evaluate(() => (document as any).fonts?.ready).catch(() => {});
+      const dimensions = await page.evaluate(() => ({
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+      }));
+      const pxHeight = height === 'auto' ? dimensions.height : height;
+      const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
+      const imgPage = await browser.newPage();
+      const pngBase64 = Buffer.from(pngBuffer).toString('base64');
+      await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`, { waitUntil: 'load' });
+      const pdfBuffer = await imgPage.pdf({ width: `${width}px`, height: `${pxHeight}px`, printBackground: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } });
+      return Buffer.from(pdfBuffer);
+    }
+  } finally {
     await browser.close();
-    return Buffer.from(pdfBuffer);
-  } else {
-    const page = await browser.newPage({ viewport: { width, height: height === 'auto' ? 900 : height }, deviceScaleFactor: 2 });
-    await page.setContent(html, { waitUntil: 'networkidle' });
-    const dimensions = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-    }));
-    const pxHeight = height === 'auto' ? dimensions.height : height;
-    const pngBuffer = await page.screenshot({ type: 'png', fullPage: height === 'auto' });
-    const imgPage = await browser.newPage();
-    const pngBase64 = Buffer.from(pngBuffer).toString('base64');
-    await imgPage.setContent(`<html><body style="margin:0;padding:0;"><img src="data:image/png;base64,${pngBase64}" style="display:block;width:${width}px;height:${pxHeight}px;" /></body></html>`, { waitUntil: 'load' });
-    const pdfBuffer = await imgPage.pdf({ width: `${width}px`, height: `${pxHeight}px`, printBackground: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } });
-    await browser.close();
-    return Buffer.from(pdfBuffer);
   }
 }
 
@@ -175,19 +187,24 @@ export async function exportPng(
   const pxHeight = height === 'auto' ? 900 : height;
   const { browser, type } = await launchBrowser(width, pxHeight);
 
-  if (type === 'puppeteer') {
-    const page = await browser.newPage();
-    await page.setViewport({ width, height: pxHeight, deviceScaleFactor: 2 });
-    await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle0' });
-    const pngBuffer = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height: pxHeight } });
+  try {
+    if (type === 'puppeteer') {
+      const page = await browser.newPage();
+      await page.setViewport({ width, height: pxHeight, deviceScaleFactor: 2 });
+      await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle0' });
+      const pngBuffer = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height: pxHeight } });
+      return Buffer.from(pngBuffer);
+    } else {
+      // 'load' + font wait instead of 'networkidle' (hangs on Google Fonts <link>).
+      const page = await browser.newPage({ viewport: { width, height: pxHeight }, deviceScaleFactor: 2 });
+      page.setDefaultTimeout(20000);
+      await page.goto(`file://${htmlPath}`, { waitUntil: 'load' });
+      await page.evaluate(() => (document as any).fonts?.ready).catch(() => {});
+      const pngBuffer = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height: pxHeight } });
+      return Buffer.from(pngBuffer);
+    }
+  } finally {
     await browser.close();
-    return Buffer.from(pngBuffer);
-  } else {
-    const page = await browser.newPage({ viewport: { width, height: pxHeight }, deviceScaleFactor: 2 });
-    await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle' });
-    const pngBuffer = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height: pxHeight } });
-    await browser.close();
-    return Buffer.from(pngBuffer);
   }
 }
 

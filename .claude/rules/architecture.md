@@ -69,3 +69,16 @@ Setting `iframe.src` via JSX attribute does not reliably re-navigate the iframe 
   Flags: `--phase N`, `--verbose`, `--no-cleanup`. Stripe phase behind `SMOKE_INCLUDE_STRIPE=1`. Creates/tears down projects under `__smoke__/`. See `tests/SMOKE.md` for the full phase list and how to add cases.
 - **Regression guards** are flagged inline with `// REGRESSION GUARD: <bug>` comments — do not delete these without confirming the original bug stayed fixed. Currently guarded: path traversal, share dedup, rounds-alias drift/annotations, SSE watcher leak.
 - **Unit tests:** `tests/*.test.ts` (canvas-layout, filter-manifest, manifest, typecheck) — run directly via tsx.
+
+### Headless browser leak (regression guard)
+Never `chromium.launch()` / `puppeteer.launch()` without a `try/finally` that closes
+the browser — a throw or timeout otherwise orphans headless Chromium, and it
+accumulates across runs until the host thrashes (load hit 177 on 2026-06-04).
+Never use `waitUntil: 'networkidle'` on boards: every board pulls Google Fonts via
+`<link>`, and networkidle hangs on those keepalive connections. Use
+`waitUntil: 'load'` + `await page.evaluate(() => document.fonts?.ready).catch(() => {})`
+with `page.setDefaultTimeout(20000)`.
+
+- Batch rendering: launch once via `withBrowser()` + `renderThumbnail()` in `lib/thumbnails.ts`; don't relaunch per item.
+- One-shot (lazy API routes): `generateThumbnail()` wraps `withBrowser`.
+- Fixed in lib/thumbnails, scripts/generate-thumbnails, lib/export-png, lib/export-pdf (all 3 fns), app/api/screenshot (2026-06-04).
