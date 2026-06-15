@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getProfile } from '@/lib/auth';
 import { isCloudMode } from '@/lib/supabase';
 import { SignOutButton } from './sign-out-button';
+import { DesktopOnlyGate } from '@/components/DesktopOnlyGate';
 
 export const metadata = {
   title: 'Account — DriftGrid',
@@ -12,6 +13,8 @@ export default async function AccountPage() {
   // Local dev doesn't have accounts.
   if (!isCloudMode()) {
     return (
+      <>
+      <DesktopOnlyGate />
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
         <div className="max-w-sm space-y-4 text-center">
           <div className="text-xs tracking-widest uppercase" style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono, monospace)' }}>
@@ -29,6 +32,7 @@ export default async function AccountPage() {
           </Link>
         </div>
       </div>
+      </>
     );
   }
 
@@ -43,6 +47,8 @@ export default async function AccountPage() {
     : null;
 
   return (
+    <>
+    <DesktopOnlyGate />
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
       <div className="max-w-lg mx-auto px-6 py-16 space-y-12" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
         <div className="flex items-center justify-between">
@@ -107,6 +113,7 @@ export default async function AccountPage() {
         </section>
       </div>
     </div>
+    </>
   );
 }
 

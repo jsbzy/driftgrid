@@ -42,6 +42,15 @@ interface AnnotationOverlayProps {
   iframeEl?: HTMLIFrameElement | null;
   /** Round-wide pin numbering (annotationId → #N). Falls back to per-frame index when missing. */
   pinNumberByAnnotationId?: Record<string, number>;
+  /**
+   * Popup presentation. Defaults 'popup' → desktop renders byte-for-byte
+   * unchanged (pin-anchored floating popups). 'sheet' (mobile client) renders
+   * the pending-pin input and the active-pin detail as a fixed bottom sheet
+   * above the keyboard, with a ≥16px textarea (no iOS zoom-on-focus) and ≥44px
+   * pin hit areas. Pin placement, fractional coords, and the submit path are
+   * identical across both layouts.
+   */
+  layout?: 'popup' | 'sheet';
 }
 
 // Derive the lifecycle state of a thread from the top annotation + its replies.
@@ -88,8 +97,10 @@ export function AnnotationOverlay({
   scrollable = false,
   iframeEl,
   pinNumberByAnnotationId,
+  layout = 'popup',
 }: AnnotationOverlayProps) {
   const isClient = viewMode === 'client';
+  const isSheet = layout === 'sheet';
   // Unified: overlay captures clicks when in legacy annotationMode OR when placing a pin in edit mode
   const isCapturing = annotationMode || (editMode && placingPin);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -687,6 +698,30 @@ export function AnnotationOverlay({
               zIndex: isActive ? 15 : 12,
             }}
           >
+            {/* Mobile: ≥44px transparent touch target centered on the dot, so the
+                16px pin is comfortably tappable without enlarging its visual size. */}
+            {isSheet && (
+              <button
+                type="button"
+                aria-label={`Open comment #${pinNumber}`}
+                onClick={(e) => handlePinClick(e, annotation.id)}
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  border: 'none',
+                  background: 'transparent',
+                  padding: 0,
+                  margin: 0,
+                  cursor: 'pointer',
+                  zIndex: 1,
+                }}
+              />
+            )}
             {/* Pin circle */}
             <button
               ref={(el) => {
@@ -713,6 +748,8 @@ export function AnnotationOverlay({
                 opacity: annotation.resolved ? 0.3 : 1,
                 boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
                 transition: 'transform 0.1s ease, opacity 0.15s ease, background 0.15s ease',
+                // Sit the visible dot above the transparent 44px hit pad (sheet mode).
+                ...(isSheet ? { position: 'relative', zIndex: 2 } : null),
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.transform = 'scale(1.2)';
@@ -736,8 +773,10 @@ export function AnnotationOverlay({
                 : pinNumber}
             </button>
 
-            {/* Pin popup — matches pending input style */}
-            {isActive && (
+            {/* Pin popup — matches pending input style.
+                Desktop only — in sheet (mobile) layout the active-pin detail is
+                rendered as a fixed bottom sheet below, not anchored to the pin. */}
+            {isActive && !isSheet && (
               <div
                 data-annotation-popup
                 style={{
@@ -1330,7 +1369,9 @@ export function AnnotationOverlay({
             }}
           />
 
-          {/* Input popup — offset to right of pin so pin stays visible; grows upward as text wraps */}
+          {/* Input popup — offset to right of pin so pin stays visible; grows upward as text wraps.
+              Desktop only — in sheet (mobile) layout the input is a fixed bottom sheet below. */}
+          {!isSheet && (
           <div
             style={{
               position: 'absolute',
@@ -1685,7 +1726,260 @@ export function AnnotationOverlay({
               </div>
             )}
           </div>
+          )}
         </div>
+        );
+      })()}
+
+      {/* ===== Mobile sheet UI (layout='sheet') ===== */}
+      {/* Pending-comment bottom sheet — replaces the anchored input popup on mobile.
+          Client-only surface (mobile is client-only), so this mirrors the client
+          branch of the anchored popup: a ≥16px textarea + Add Comment button. */}
+      {isSheet && pendingPin && (
+        <div
+          data-annotation-popup
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 60,
+            pointerEvents: 'auto',
+            background: 'rgba(20,20,20,0.97)',
+            backdropFilter: 'blur(12px)',
+            borderTop: '1px solid rgba(255,255,255,0.1)',
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            padding: '16px 16px calc(16px + env(safe-area-inset-bottom))',
+            boxShadow: '0 -8px 32px rgba(0,0,0,0.4)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
+              Add comment
+            </span>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setPendingPin(null); setPendingText(''); }}
+              title="Cancel"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 44, height: 44, marginRight: -10, marginTop: -10,
+                border: 'none', background: 'transparent', cursor: 'pointer',
+                color: 'rgba(255,255,255,0.5)',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <textarea
+            ref={inputRef}
+            value={pendingText}
+            onChange={(e) => setPendingText(e.target.value)}
+            onKeyDown={(e) => { e.stopPropagation(); }}
+            placeholder="Leave a note…"
+            rows={3}
+            style={{
+              width: '100%',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 10,
+              outline: 'none',
+              resize: 'none',
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 16, // ≥16px — prevents iOS zoom-on-focus
+              color: '#fff',
+              lineHeight: 1.5,
+              padding: '12px 14px',
+              display: 'block',
+              boxSizing: 'border-box',
+            }}
+          />
+          <button
+            type="button"
+            onClick={async (e) => {
+              e.stopPropagation();
+              await handleSubmitPending();
+              setPendingPin(null);
+              setPendingText('');
+            }}
+            disabled={!pendingText.trim()}
+            style={{
+              marginTop: 12,
+              width: '100%',
+              minHeight: 48,
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: 13,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              borderRadius: 10,
+              border: 'none',
+              background: pendingText.trim() ? '#fff' : 'rgba(255,255,255,0.1)',
+              color: pendingText.trim() ? '#000' : 'rgba(255,255,255,0.25)',
+              cursor: pendingText.trim() ? 'pointer' : 'default',
+              fontWeight: 600,
+              transition: 'background 0.15s ease, color 0.15s ease',
+            }}
+          >
+            Add comment
+          </button>
+        </div>
+      )}
+
+      {/* Active-pin detail bottom sheet — replaces the anchored detail popup on mobile.
+          Read-only note + reply + delete (own/admin), mirroring the client popup. */}
+      {isSheet && activePin && (() => {
+        const annotation = annotations.find(a => a.id === activePin && !a.parentId);
+        if (!annotation) return null;
+        const replies = repliesByParent[annotation.id] || [];
+        const canDelete = isAdmin ||
+          (!!currentAuthor && !!annotation.author &&
+           currentAuthor.trim().toLowerCase() === annotation.author.trim().toLowerCase());
+        return (
+          <div
+            data-annotation-popup
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'fixed',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 60,
+              pointerEvents: 'auto',
+              maxHeight: '70vh',
+              overflowY: 'auto',
+              overscrollBehavior: 'contain',
+              background: 'rgba(20,20,20,0.97)',
+              backdropFilter: 'blur(12px)',
+              borderTop: '1px solid rgba(255,255,255,0.1)',
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              padding: '16px 16px calc(16px + env(safe-area-inset-bottom))',
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.4)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: annotation.resolved ? 'rgba(34,197,94,0.7)' : 'rgba(255,255,255,0.4)' }}>
+                {annotation.resolved ? 'Resolved' : 'Comment'} · {annotation.isClient ? annotation.author : 'designer'}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setActivePin(null); }}
+                title="Close"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 44, height: 44, marginRight: -10, marginTop: -10,
+                  border: 'none', background: 'transparent', cursor: 'pointer',
+                  color: 'rgba(255,255,255,0.5)',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 15,
+              lineHeight: 1.55,
+              color: annotation.resolved ? 'rgba(255,255,255,0.4)' : '#fff',
+              textDecoration: annotation.resolved ? 'line-through' : 'none',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+            }}>
+              {annotation.text}
+            </div>
+
+            {/* Replies thread */}
+            {replies.length > 0 && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {replies.map(reply => (
+                  <div key={reply.id}>
+                    <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: reply.isAgent ? 'var(--accent-gold, #d4a84a)' : 'rgba(255,255,255,0.35)', marginBottom: 4 }}>
+                      {reply.isAgent ? 'Agent' : (reply.author || 'reply').toUpperCase()}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 14, lineHeight: 1.5, color: 'rgba(255,255,255,0.92)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {reply.text}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Reply input */}
+            {onReply && (
+              <input
+                type="text"
+                placeholder="Reply…"
+                value={replyDrafts[annotation.id] || ''}
+                onChange={(e) => setReplyDrafts(prev => ({ ...prev, [annotation.id]: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const draft = (replyDrafts[annotation.id] || '').trim();
+                    if (!draft) return;
+                    e.preventDefault();
+                    onReply(annotation.id, draft);
+                    setReplyDrafts(prev => ({ ...prev, [annotation.id]: '' }));
+                  }
+                  e.stopPropagation();
+                }}
+                style={{
+                  marginTop: 14,
+                  width: '100%',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+                  fontSize: 16, // ≥16px
+                  color: '#fff',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            )}
+
+            {/* Footer — date + delete (own/admin) */}
+            <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em' }}>
+                {new Date(annotation.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                {annotation.resolved && ' · resolved'}
+              </span>
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onDelete(annotation.id); setActivePin(null); }}
+                  title="Delete your comment"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    minHeight: 44, padding: '0 16px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    color: 'rgba(255,255,255,0.6)',
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: 11,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                  </svg>
+                  Delete
+                </button>
+              )}
+            </div>
+          </div>
         );
       })()}
 

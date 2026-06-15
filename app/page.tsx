@@ -1,5 +1,6 @@
 import { Dashboard } from '@/components/Dashboard';
 import { LandingPage } from '@/components/LandingPage';
+import { DesktopOnlyGate } from '@/components/DesktopOnlyGate';
 import { getUser } from '@/lib/auth';
 import { isCloudMode } from '@/lib/supabase';
 
@@ -12,13 +13,13 @@ import { isCloudMode } from '@/lib/supabase';
  */
 export default async function Home() {
   if (!isCloudMode()) {
-    return <Dashboard />;
+    return <><DesktopOnlyGate /><Dashboard /></>;
   }
 
   const user = await getUser();
   if (!user) {
-    return <LandingPage />;
+    return <><DesktopOnlyGate /><LandingPage /></>;
   }
 
-  return <Dashboard />;
+  return <><DesktopOnlyGate /><Dashboard /></>;
 }

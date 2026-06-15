@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
+import { DesktopOnlyGate } from '@/components/DesktopOnlyGate';
 
 /**
  * DriftGrid v1 login page.
@@ -225,8 +226,11 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen" style={{ background: 'var(--background)' }} />}>
-      <LoginForm />
-    </Suspense>
+    <>
+      <DesktopOnlyGate />
+      <Suspense fallback={<div className="min-h-screen" style={{ background: 'var(--background)' }} />}>
+        <LoginForm />
+      </Suspense>
+    </>
   );
 }

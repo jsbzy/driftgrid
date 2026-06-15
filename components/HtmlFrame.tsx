@@ -17,6 +17,16 @@ interface HtmlFrameProps {
   borderless?: boolean;
   /** Called with the iframe element on mount and again on null when unmounted. Lets the AnnotationOverlay observe scroll position for scrollable canvases. */
   onIframeRef?: (el: HTMLIFrameElement | null) => void;
+  /**
+   * Mobile client viewing. Defaults false → desktop renders byte-for-byte
+   * unchanged. When true:
+   *   - locked/fixed canvas: scale by WIDTH only (not min(scaleX,scaleY)) and
+   *     let the outer container scroll vertically, so a tall fixed design
+   *     becomes a readable strip instead of being shrunk to fit the screen.
+   *   - responsive canvas: the iframe height follows its document
+   *     scrollHeight (same-origin) so the page itself scrolls in document space.
+   */
+  mobile?: boolean;
 }
 
 export interface HtmlFrameHandle {
@@ -26,7 +36,7 @@ export interface HtmlFrameHandle {
 }
 
 export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
-  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, placeholder, onReady, borderless, onIframeRef }, ref) {
+  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, placeholder, onReady, borderless, onIframeRef, mobile = false }, ref) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +49,9 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
     // 'loading' = audio still buffering, 'ready' = can play through, 'error' = failed,
     // null = no audio element on this slide. Drives the "Loading audio…" overlay.
     const [audioState, setAudioState] = useState<'loading' | 'ready' | 'error' | null>(null);
+    // Mobile responsive path only: measured document height of the iframe so the
+    // iframe element can grow to fit its content and the outer container scrolls.
+    const [mobileContentHeight, setMobileContentHeight] = useState<number | null>(null);
 
     // Keep edit script loaded whenever editing or edits exist (avoids iframe reloads on toggle)
     const needsEditScript = editMode || hasEdits;
@@ -275,8 +288,10 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
         const container = containerRef.current;
         if (!container) return;
         const scaleX = container.clientWidth / canvasWidth;
+        // Mobile: fit to WIDTH so a tall fixed design reads as a vertical strip
+        // (the outer container scrolls). Desktop: fit the whole canvas on screen.
         const scaleY = container.clientHeight / canvasHeight;
-        const s = Math.min(scaleX, scaleY);
+        const s = mobile ? scaleX : Math.min(scaleX, scaleY);
         setScale(s);
         onScaledWidth?.(canvasWidth * s);
       };
@@ -285,7 +300,58 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       const observer = new ResizeObserver(updateScale);
       observer.observe(containerRef.current);
       return () => observer.disconnect();
-    }, [canvasWidth, canvasHeight]);
+    }, [canvasWidth, canvasHeight, mobile]);
+
+    // Mobile responsive path: drive the iframe height from its document's
+    // scrollHeight so the page flows naturally and the outer container scrolls.
+    // Same-origin only (our share/html routes are same-origin); cross-origin
+    // reads throw and we silently leave the height unmanaged.
+    // Inactive on the locked path (canvasHeight set) and on desktop.
+    useEffect(() => {
+      if (!mobile || !iframeReady) return;
+      if (canvasWidth && canvasHeight) return; // locked path handles its own sizing
+      const el = iframeRef.current;
+      if (!el) return;
+
+      let rafId = 0;
+      let resizeObs: ResizeObserver | null = null;
+
+      const measure = () => {
+        try {
+          const doc = el.contentDocument;
+          const root = doc?.documentElement;
+          const body = doc?.body;
+          if (!root) return;
+          const h = Math.max(root.scrollHeight ?? 0, body?.scrollHeight ?? 0);
+          if (h > 0) setMobileContentHeight(h);
+        } catch {
+          // cross-origin — leave height unmanaged
+        }
+      };
+
+      const onScrollResize = () => {
+        if (rafId) return;
+        rafId = requestAnimationFrame(() => { rafId = 0; measure(); });
+      };
+
+      measure();
+      try {
+        const doc = el.contentDocument;
+        if (doc && typeof ResizeObserver !== 'undefined' && doc.documentElement) {
+          resizeObs = new ResizeObserver(onScrollResize);
+          resizeObs.observe(doc.documentElement);
+          if (doc.body) resizeObs.observe(doc.body);
+        }
+      } catch { /* cross-origin */ }
+      // Re-measure on a short poll for late reflow (font swap, image decode).
+      const poll = setInterval(measure, 1000);
+
+      return () => {
+        if (rafId) cancelAnimationFrame(rafId);
+        if (resizeObs) resizeObs.disconnect();
+        clearInterval(poll);
+      };
+    }, [mobile, iframeReady, canvasWidth, canvasHeight, src]);
 
     // Embed all images in HTML as base64 data URLs for self-contained export
     const embedImages = async (html: string): Promise<string> => {
@@ -407,7 +473,16 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
       const scaledHeight = canvasHeight * scale;
 
       return (
-        <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden">
+        <div
+          ref={containerRef}
+          className={
+            mobile
+              // Mobile: fit-to-width strip. Pin to top + scroll the container
+              // vertically so a tall fixed design reads top-to-bottom.
+              ? 'w-full h-full flex items-start justify-center overflow-x-hidden overflow-y-auto'
+              : 'w-full h-full flex items-center justify-center overflow-hidden'
+          }
+        >
           <div style={{
             width: scaledWidth,
             height: scaledHeight,
@@ -415,6 +490,10 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
             border: borderless ? 'none' : '1px solid rgba(0,0,0,0.08)',
             borderRadius: borderless ? 0 : 4,
             position: 'relative',
+            // Mobile only: don't let the scaled strip collapse below its height
+            // when the flex container is shorter than the content (scroll case).
+            // Omitted on desktop so the locked path is byte-for-byte unchanged.
+            ...(mobile ? { flexShrink: 0 } : null),
           }}>
             {/* Thumbnail placeholder — visible until iframe loads */}
             {placeholder && !iframeReady && (
@@ -456,6 +535,43 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
             />
             <AudioStatusPill state={audioState} />
           </div>
+        </div>
+      );
+    }
+
+    // Responsive canvas (mobile): the iframe grows to its content height and the
+    // outer container scrolls. Pins stay in document space (AnnotationOverlay
+    // tracks iframe scroll). Falls back to fill height until the doc is measured.
+    if (mobile) {
+      return (
+        <div ref={containerRef} className="w-full h-full relative overflow-x-hidden overflow-y-auto">
+          {placeholder && !iframeReady && (
+            <img
+              src={placeholder}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover object-top"
+              style={{ zIndex: 1 }}
+            />
+          )}
+          <iframe
+            ref={setIframeRef}
+            src={editSrc}
+            className="w-full relative block"
+            style={{
+              border: 'none',
+              background: 'var(--canvas)',
+              transition: 'opacity 0.15s ease',
+              zIndex: 2,
+              opacity: iframeReady ? 1 : 0,
+              // Grow to content; until measured, fill the viewport so the
+              // placeholder/blank doesn't collapse to 0.
+              height: mobileContentHeight ?? '100%',
+              minHeight: '100%',
+            }}
+            sandbox="allow-same-origin allow-scripts allow-modals allow-forms allow-popups allow-fullscreen allow-pointer-lock allow-downloads" allow="autoplay"
+            title="Design preview"
+            onLoad={handleLoad}
+          />
         </div>
       );
     }

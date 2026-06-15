@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -42,6 +42,14 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
 };
 
+// Mobile viewport. maximumScale:5 (not userScalable:no) keeps pinch-zoom for
+// fixed decks + accessibility zoom on the client/share review experience.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -63,14 +71,10 @@ export default function RootLayout({
         `}} />
       </head>
       <body suppressHydrationWarning className={`${jetbrainsMono.variable} antialiased`}>
-        <div className="hidden max-md:flex fixed inset-0 z-[9999] items-center justify-center p-8" style={{ background: 'var(--background)' }}>
-          <div style={{ textAlign: 'center', fontFamily: 'var(--font-mono, monospace)', maxWidth: 320 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--foreground)' }}>DriftGrid</div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
-              DriftGrid is designed for desktop with keyboard shortcuts. Open this on a laptop or desktop for the best experience.
-            </div>
-          </div>
-        </div>
+        {/* The desktop-only blocker was moved out of the global layout into
+            components/DesktopOnlyGate.tsx so client/share routes can render on
+            mobile. It is mounted only on desktop-bound surfaces (dashboard,
+            marketing pages, and the designer Viewer). */}
         {children}
       </body>
     </html>

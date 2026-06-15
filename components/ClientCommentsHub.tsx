@@ -20,6 +20,12 @@ interface ClientCommentsHubProps {
   onJumpTo: (conceptId: string, versionId: string) => void;
   onResolve: (commentId: string) => Promise<void> | void;
   onDelete: (commentId: string) => Promise<boolean> | boolean;
+  /**
+   * Mobile client drawer. Defaults false → desktop renders the side panel
+   * unchanged. When true, renders as a full-width bottom drawer (slides up from
+   * the bottom) instead of a right-anchored side panel.
+   */
+  mobile?: boolean;
 }
 
 type TabKey = 'open' | 'replied' | 'closed';
@@ -57,6 +63,7 @@ export function ClientCommentsHub({
   onJumpTo,
   onResolve,
   onDelete,
+  mobile = false,
 }: ClientCommentsHubProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('open');
   const [pendingDelete, setPendingDelete] = useState<Thread | null>(null);
@@ -208,14 +215,31 @@ export function ClientCommentsHub({
 
   return (
     <>
-      <style>{`@keyframes ch-slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
+      <style>{`
+        @keyframes ch-slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes ch-slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      `}</style>
       {/* Backdrop */}
       <div
         onClick={onClose}
         style={{ position: 'fixed', inset: 0, background: 'var(--overlay-bg)', zIndex: 49 }}
       />
       <div
-        style={{
+        style={mobile ? {
+          // Mobile: full-width bottom drawer, slides up.
+          position: 'fixed', left: 0, right: 0, bottom: 0, top: 'auto',
+          maxHeight: '80dvh',
+          background: 'var(--background)',
+          borderTop: '1px solid var(--border)',
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+          boxShadow: '0 -8px 32px rgba(0,0,0,0.18)',
+          zIndex: 50,
+          fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+          color: 'var(--foreground)',
+          display: 'flex', flexDirection: 'column',
+          animation: 'ch-slideUp 200ms ease-out',
+        } : {
           position: 'fixed', top: 0, right: 0, bottom: 0,
           width: 420,
           background: 'var(--background)',
@@ -228,12 +252,14 @@ export function ClientCommentsHub({
           animation: 'ch-slideIn 200ms ease-out',
         }}
       >
-        <div style={{ padding: '20px 28px 0', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div style={{ padding: mobile ? '16px 20px 0' : '20px 28px 0', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: mobile ? 8 : 14 }}>
             <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.02em' }}>Comments</span>
             <button
               onClick={onClose}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, padding: 4 }}
+              style={mobile
+                ? { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 22, width: 44, height: 44, marginRight: -10, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+                : { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, padding: 4 }}
               title="Close"
             >×</button>
           </div>
@@ -268,7 +294,7 @@ export function ClientCommentsHub({
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: 'auto', padding: '8px 0 28px' }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: mobile ? '8px 0 calc(28px + env(safe-area-inset-bottom))' : '8px 0 28px' }}>
           {visible.length === 0 && (
             <div style={{ padding: '40px 28px', fontSize: 11, color: 'var(--muted)', textAlign: 'center' }}>
               {activeTab === 'open' && 'No open comments.'}

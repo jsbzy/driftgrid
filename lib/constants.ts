@@ -51,6 +51,14 @@ export interface ResolvedCanvas {
   label: string;
   /** Display string for the canvas info badge, e.g. "16:9 · 1920×1080 · Fixed" */
   displayLabel: string;
+  /**
+   * Whether the design ships its own responsive layout / viewport (mobile,
+   * tablet, desktop presets) vs. a fixed-pixel canvas (decks, A4, freeform).
+   * Drives the mobile client viewer's frame-scaling mode: responsive designs
+   * follow content height; fixed designs scale-to-width into a scrollable strip.
+   * Freeform / unknown configs default to false (treated as fixed).
+   */
+  responsive: boolean;
 }
 
 /**
@@ -70,7 +78,8 @@ export function resolveCanvas(
       ? canvas.type.charAt(0).toUpperCase() + canvas.type.slice(1)
       : `${w}×${h}`;
     const dims = h === 'auto' ? `${w}w` : `${w}×${h}`;
-    return { width: w, height: h, label, displayLabel: `${label} · ${dims}` };
+    // Freeform / object canvas configs are fixed-pixel (no self-managed viewport).
+    return { width: w, height: h, label, displayLabel: `${label} · ${dims}`, responsive: false };
   }
 
   // Handle string preset lookup
@@ -80,11 +89,11 @@ export function resolveCanvas(
     const h = typeof preset.height === 'number' ? preset.height : 'auto';
     const dims = h === 'auto' ? `${w}w` : `${w}×${h}`;
     const mode = preset.responsive ? 'Responsive' : 'Fixed';
-    return { width: w, height: h, label: preset.label, displayLabel: `${preset.label} · ${dims} · ${mode}` };
+    return { width: w, height: h, label: preset.label, displayLabel: `${preset.label} · ${dims} · ${mode}`, responsive: preset.responsive };
   }
 
-  // Unknown string — fall back to Desktop defaults
-  return { width: 1440, height: 'auto', label: canvas || 'Desktop', displayLabel: `Desktop · 1440w · Responsive` };
+  // Unknown string — fall back to Desktop defaults (responsive, 1440w).
+  return { width: 1440, height: 'auto', label: canvas || 'Desktop', displayLabel: `Desktop · 1440w · Responsive`, responsive: true };
 }
 
 

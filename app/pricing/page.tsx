@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { DesktopOnlyGate } from '@/components/DesktopOnlyGate';
 
 /**
  * /pricing — DriftGrid Pro upgrade page.
@@ -44,6 +45,8 @@ export default function PricingPage() {
   }
 
   return (
+    <>
+    <DesktopOnlyGate />
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
       <div className="max-w-2xl mx-auto px-6 py-16" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
 
@@ -158,6 +161,7 @@ export default function PricingPage() {
         </p>
       </div>
     </div>
+    </>
   );
 }
 

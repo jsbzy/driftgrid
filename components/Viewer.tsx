@@ -32,6 +32,9 @@ import { ClientNamePrompt } from './ClientNamePrompt';
 import { SharePanel } from './SharePanel';
 import { CommentsHub } from './CommentsHub';
 import { ClientCommentsHub } from './ClientCommentsHub';
+import { DesktopOnlyGate } from './DesktopOnlyGate';
+import { MobileClientViewer } from './MobileClientViewer';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 
 import { fetchManifestForSwr, putManifest, trackedFetch } from '@/lib/manifest-client';
 import { useManifestBusy } from '@/lib/hooks/useManifestBusy';
@@ -86,6 +89,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   // "Saving…" indicator + locks destructive shortcuts so users can't pile
   // mutations on top of an in-flight save.
   const isBusy = useManifestBusy();
+  // SSR-safe viewport detection. null until mounted (see useIsMobile). Only the
+  // client/share review experience uses a mobile path; designers stay desktop.
+  const isMobile = useIsMobile();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
@@ -1211,6 +1217,24 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     );
   }
 
+  // Client/share routes: while viewport detection is unresolved (pre-mount,
+  // isMobile === null), render the neutral Loading shell rather than the desktop
+  // canvas. Avoids a desktop-canvas flash and a hydration mismatch before we
+  // know whether to hand off to the mobile path. Designer routes skip this and
+  // render the desktop tree immediately (they never go mobile).
+  if (mode === 'client' && isMobile === null) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-3" style={{ background: 'var(--background)' }}>
+        <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11, letterSpacing: '0.24em', color: 'var(--muted)', opacity: 0.4, textTransform: 'lowercase' }}>
+          driftgrid
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 12, color: 'var(--muted)', opacity: 0.3 }}>
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
   if (!filtered || !currentConcept || !currentVersion) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'var(--background)' }}>
@@ -1239,6 +1263,40 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
     : `/api/html/${client}/${project}/${currentVersion.file}${frameVersion > 0 ? `?_v=${frameVersion}` : ''}`;
   const thumbFilename = currentVersion.thumbnail?.replace('.thumbs/', '') || null;
   const thumbSrc = thumbFilename ? `/api/thumbs/${client}/${project}/${thumbFilename}` : null;
+
+  // --- MOBILE CLIENT VIEW ---
+  // The single mobile path: only the client/share review experience goes mobile.
+  // Placed after all hooks (Rules of Hooks) at guard depth. All data logic stays
+  // in Viewer above — MobileClientViewer receives already-computed values as
+  // props and never reforks the manifest / rounds / starred-filter pipeline.
+  if (isMobile && mode === 'client') {
+    return (
+      <MobileClientViewer
+        projectName={filtered.project.name}
+        concepts={concepts}
+        conceptIndex={conceptIndex}
+        versionIndex={versionIndex}
+        onNavigate={handleNavigate}
+        annotations={activeAnnotations.annotations}
+        annotationMode={activeAnnotations.annotationMode}
+        setAnnotationMode={activeAnnotations.setAnnotationMode}
+        onAddAnnotation={activeAnnotations.handleAddAnnotation}
+        onDeleteAnnotation={activeAnnotations.handleDeleteAnnotation}
+        onResolveAnnotation={activeAnnotations.handleResolveAnnotation}
+        onReplyAnnotation={activeAnnotations.handleReplyAnnotation}
+        pinNumberByAnnotationId={pinNumberByAnnotationId}
+        clientComments={clientComments}
+        client={client}
+        project={project}
+        shareToken={shareToken}
+        canvasWidth={resolved.width}
+        canvasHeight={typeof resolved.height === 'number' ? resolved.height : undefined}
+        responsive={resolved.responsive}
+        htmlSrc={htmlSrc}
+        thumbSrc={thumbSrc}
+      />
+    );
+  }
 
   // Designer floating action bar removed — ShortcutsBar covers all actions via keybindings.
   // These are still used by the client-mode review action bar below (which hosts its own
@@ -1315,6 +1373,10 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   if (viewMode === 'grid') {
     return (
       <div className="h-screen flex flex-col bg-[var(--background)]">
+        {/* Desktop-only blocker for the designer experience (grid pan/zoom +
+            keyboard shortcuts are desktop-coupled). Client routes never reach
+            here — they take the mobile path above. */}
+        {mode !== 'client' && <DesktopOnlyGate />}
         {namePrompt}
         <SharePanel open={sharePanelOpen} onClose={() => setSharePanelOpen(false)} client={client} project={project} roundId={activeRoundId} roundNumber={activeRound?.number ?? null} rounds={rounds.map(r => ({ number: r.number, name: r.name }))} />
         {mode === 'client'
@@ -1735,6 +1797,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   // --- FRAME VIEW ---
   return (
     <div className="h-screen flex flex-col" style={{ background: mode === 'client' ? '#fff' : 'var(--background)' }}>
+      {/* Desktop-only blocker for the designer frame view. Client routes never
+          reach here on mobile — they take the mobile path above. */}
+      {mode !== 'client' && <DesktopOnlyGate />}
       {namePrompt}
       {driftOverlay}
       {deleteOverlay}
