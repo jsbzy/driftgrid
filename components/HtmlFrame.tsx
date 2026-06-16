@@ -12,6 +12,13 @@ interface HtmlFrameProps {
   savedEdits?: Record<string, string>;
   onEditsChange?: (allEdits: Record<string, string>) => void;
   onScaledWidth?: (width: number) => void;
+  /**
+   * Mobile scale-to-fit-width path only. Reports the on-screen height of the
+   * scaled design (native content height × scale, ceil'd) so the parent can
+   * size a scroll wrapper and overlay around it. Fires whenever that height
+   * changes; 0 until the iframe document is measured.
+   */
+  onScaledHeight?: (height: number) => void;
   placeholder?: string | null;
   onReady?: () => void;
   borderless?: boolean;
@@ -36,7 +43,7 @@ export interface HtmlFrameHandle {
 }
 
 export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
-  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, placeholder, onReady, borderless, onIframeRef, mobile = false }, ref) {
+  function HtmlFrame({ src, canvasWidth, canvasHeight, editMode, showEdits, hasEdits, savedEdits, onEditsChange, onScaledWidth, onScaledHeight, placeholder, onReady, borderless, onIframeRef, mobile = false }, ref) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -281,17 +288,25 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
       return () => window.removeEventListener('message', handler);
     }, [onEditsChange]);
 
+    // Compute the scale factor. Runs for:
+    //   - locked/fixed canvas (canvasWidth && canvasHeight), desktop or mobile
+    //   - mobile auto-height (canvasWidth && !canvasHeight) — the scale-to-fit-width
+    //     path, where the design has no fixed height and we shrink the native
+    //     width to the phone width. scaleY is meaningless here (no canvas height)
+    //     so we always use scaleX.
     useEffect(() => {
-      if (!canvasWidth || !canvasHeight || !containerRef.current) return;
+      if (!canvasWidth || !containerRef.current) return;
+      if (!canvasHeight && !mobile) return; // desktop responsive: no scaling, fills width
 
       const updateScale = () => {
         const container = containerRef.current;
         if (!container) return;
         const scaleX = container.clientWidth / canvasWidth;
-        // Mobile: fit to WIDTH so a tall fixed design reads as a vertical strip
-        // (the outer container scrolls). Desktop: fit the whole canvas on screen.
-        const scaleY = container.clientHeight / canvasHeight;
-        const s = mobile ? scaleX : Math.min(scaleX, scaleY);
+        // Mobile: fit to WIDTH so a tall design reads as a vertical strip (the
+        // outer container scrolls). Desktop locked: fit the whole canvas on screen.
+        const s = mobile
+          ? scaleX
+          : Math.min(scaleX, container.clientHeight / canvasHeight!);
         setScale(s);
         onScaledWidth?.(canvasWidth * s);
       };
@@ -352,6 +367,20 @@ export const HtmlFrame = forwardRef<HtmlFrameHandle, HtmlFrameProps>(
         clearInterval(poll);
       };
     }, [mobile, iframeReady, canvasWidth, canvasHeight, src]);
+
+    // Scale-to-fit-width mode (mobile + canvasWidth + no canvasHeight): the
+    // design renders at native width and is uniformly scaled to the phone width,
+    // so its on-screen height is contentHeight × scale. Report it so the parent
+    // can size the scroll wrapper + annotation overlay to the full scaled design.
+    const scaleToFitWidth = mobile && !!canvasWidth && !canvasHeight;
+    const scaledStripHeight =
+      scaleToFitWidth && mobileContentHeight != null && scale > 0
+        ? Math.ceil(mobileContentHeight * scale)
+        : 0;
+    useEffect(() => {
+      if (!scaleToFitWidth) return;
+      onScaledHeight?.(scaledStripHeight);
+    }, [scaleToFitWidth, scaledStripHeight, onScaledHeight]);
 
     // Embed all images in HTML as base64 data URLs for self-contained export
     const embedImages = async (html: string): Promise<string> => {
@@ -535,6 +564,60 @@ body { margin: 0 !important; padding: 0 !important; width: ${w}px !important; he
             />
             <AudioStatusPill state={audioState} />
           </div>
+        </div>
+      );
+    }
+
+    // Scale-to-fit-width (mobile + native width + auto height): the design has
+    // no mobile layout, so we render it at its NATIVE width (canvasWidth) and
+    // uniformly scale it down to the phone width. Internal layout is preserved
+    // exactly — no reflow, no column collapse — it just appears smaller.
+    //
+    // This component does NOT scroll: the parent (MobileClientViewer) owns the
+    // scroll container + a relative wrapper sized to the scaled height (reported
+    // via onScaledHeight) and renders both this frame and the AnnotationOverlay
+    // as absolutely-positioned siblings inside it. So here we just fill that
+    // wrapper (w-full h-full) and paint the scaled iframe at the top-left. The
+    // `transform` reserves no layout space — that's fine, the wrapper already
+    // has the scaled height, and the overlay positions pins by percentage of it.
+    // containerRef stays on this element so the scale ResizeObserver measures
+    // the available phone width (the wrapper is full-bleed width).
+    if (scaleToFitWidth) {
+      return (
+        <div ref={containerRef} className="w-full h-full relative overflow-hidden">
+          {placeholder && !iframeReady && (
+            <img
+              src={placeholder}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover object-top"
+              style={{ zIndex: 1 }}
+            />
+          )}
+          <iframe
+            ref={setIframeRef}
+            src={editSrc}
+            title="Design preview"
+            onLoad={handleLoad}
+            style={{
+              // Native width + measured native height, then scale down. The
+              // 1440px columns never collapse — they're just drawn smaller.
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: canvasWidth,
+              height: mobileContentHeight ?? '100%',
+              border: 'none',
+              background: 'var(--canvas)',
+              display: 'block',
+              zIndex: 2,
+              transformOrigin: '0 0',
+              transform: scale > 0 ? `scale(${scale})` : undefined,
+              transition: 'opacity 0.15s ease',
+              opacity: iframeReady && mobileContentHeight != null ? 1 : 0,
+            }}
+            sandbox="allow-same-origin allow-scripts allow-modals allow-forms allow-popups allow-fullscreen allow-pointer-lock allow-downloads" allow="autoplay"
+          />
+          <AudioStatusPill state={audioState} />
         </div>
       );
     }

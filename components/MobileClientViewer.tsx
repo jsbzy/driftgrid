@@ -74,12 +74,52 @@ export function MobileClientViewer({
   shareToken,
   canvasWidth,
   canvasHeight,
-  responsive,
+  // `responsive` is still passed by Viewer but no longer drives layout here:
+  // the scale mode is derived purely from whether canvasHeight is a real number
+  // (deck → locked) vs absent (web/auto → scale-to-fit). Kept on the interface
+  // for callers; intentionally not destructured.
   htmlSrc,
   thumbSrc,
 }: MobileClientViewerProps) {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [frameIframeEl, setFrameIframeEl] = useState<HTMLIFrameElement | null>(null);
+  // Scale-to-fit designs (auto-height / web): the design is rendered at native
+  // width and scaled down, so it's taller than the screen. HtmlFrame measures
+  // the on-screen height of the scaled strip and reports it here; we size a
+  // scroll wrapper + the annotation overlay to it so pins anchor to the design.
+  const [scaledHeight, setScaledHeight] = useState(0);
+
+  // Web/auto-height designs (no fixed canvas height) get the scale-to-fit-width
+  // treatment: native-width render scaled down, scrolled vertically by the outer
+  // container, pins positioned by percentage of the full scaled design. Decks
+  // (fixed numeric height) keep the existing locked-canvas behavior.
+  const scaleToFit = canvasHeight == null;
+
+  // One-time "pinch to zoom" hint for scale-to-fit designs (they render small to
+  // fit the phone width; pinch-zoom lets the client read fine print). Shows once
+  // ever per device, fades on first scroll or after a few seconds. Dismissal
+  // persists in localStorage so it never nags on return visits.
+  //
+  // `hintEligible` is decided once from localStorage in a lazy initializer
+  // (client-only component, so window is available and there's no SSR mismatch);
+  // `pinchHint` is the live visibility. The effect only ever calls setState from
+  // inside a timer/handler — never synchronously in its body — so it doesn't
+  // trigger cascading renders.
+  const [hintEligible] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('driftgrid:pinchHintSeen') !== '1';
+  });
+  const [pinchHint, setPinchHint] = useState(false);
+  useEffect(() => {
+    if (!scaleToFit || !hintEligible) return;
+    const show = window.setTimeout(() => setPinchHint(true), 0); // defer out of effect body
+    const hide = window.setTimeout(() => setPinchHint(false), 4200);
+    return () => { window.clearTimeout(show); window.clearTimeout(hide); };
+  }, [scaleToFit, hintEligible]);
+  const dismissPinchHint = useCallback(() => {
+    setPinchHint(false);
+    try { window.localStorage.setItem('driftgrid:pinchHintSeen', '1'); } catch { /* private mode */ }
+  }, []);
 
   // Flatten the starred selects into a single ordered list so a prev/next pager
   // can step across concept + version boundaries. Each entry is one frame.
@@ -113,11 +153,13 @@ export function MobileClientViewer({
 
   // Scroll the frame back to the top whenever the select changes, so each design
   // starts from its header rather than wherever the previous one was scrolled to.
+  // (The stale scaled height resets itself: HtmlFrame remounts on key={htmlSrc}
+  // and re-reports onScaledHeight(0) until the new design is measured.)
   useEffect(() => {
     try {
       frameIframeEl?.contentWindow?.scrollTo(0, 0);
     } catch { /* cross-origin — ignore */ }
-    // Also reset the outer scroll container (locked/fixed strip case).
+    // Reset the outer scroll container (scale-to-fit + locked/deck both scroll here).
     const el = document.getElementById('mcv-frame-scroll');
     if (el) el.scrollTop = 0;
   }, [conceptIndex, versionIndex, frameIframeEl]);
@@ -265,8 +307,24 @@ export function MobileClientViewer({
         </div>
       )}
 
-      {/* ===== Frame area (scrolls the design) ===== */}
-      <div id="mcv-frame-scroll" style={{ flex: 1, minHeight: 0, position: 'relative', background: '#fff' }}>
+      {/* ===== Frame area (scrolls the design) =====
+          Scale-to-fit designs: this is the vertical scroll container; the design
+          is a native-width render scaled down (taller than the screen). Decks
+          (fixed height): no outer scroll — the design fits or HtmlFrame's locked
+          path scrolls itself, matching the shipped behavior. */}
+      <div
+        id="mcv-frame-scroll"
+        onScroll={pinchHint ? dismissPinchHint : undefined}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          position: 'relative',
+          background: '#fff',
+          ...(scaleToFit
+            ? { overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' as const }
+            : null),
+        }}
+      >
         {!currentVersion?.file ? (
           <div
             style={{
@@ -289,45 +347,105 @@ export function MobileClientViewer({
             </div>
           </div>
         ) : (
-          <HtmlFrame
-            key={htmlSrc}
-            src={htmlSrc}
-            placeholder={thumbSrc}
-            borderless
-            mobile
-            canvasWidth={responsive ? undefined : canvasWidth}
-            canvasHeight={responsive ? undefined : canvasHeight}
-            onIframeRef={setFrameIframeEl}
-          />
-        )}
-        {currentConcept && currentVersion && (
-          <AnnotationOverlay
-            annotations={annotations}
-            annotationMode={annotationMode}
-            viewMode="client"
-            currentAuthor={clientComments.authorName}
-            isAdmin={clientComments.isAdmin}
-            onAdd={onAddAnnotation}
-            onDelete={onDeleteAnnotation}
-            onResolve={onResolveAnnotation}
-            onReply={onReplyAnnotation}
-            frameContext={{
-              client,
-              project,
-              conceptId: currentConcept.id,
-              versionId: currentVersion.id,
-              conceptLabel: currentConcept.label,
-              versionNumber: currentVersion.number,
-              filePath: `~/driftgrid/projects/${client}/${project}/${currentVersion.file}`,
+          // One relative wrapper holds BOTH the scaled frame and the overlay so
+          // pins anchor to the design and scroll with it. Scale-to-fit: height =
+          // the reported scaled height (the scrollable content box; falls back to
+          // 100% until measured). Decks: 100% — HtmlFrame's locked path manages
+          // its own fit + scroll inside.
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              height: scaleToFit ? (scaledHeight || '100%') : '100%',
             }}
-            // Responsive designs scroll their own document → track iframe scroll
-            // (scrollable). Fixed designs scroll via the outer container with the
-            // overlay scrolling alongside them → percentage positioning.
-            scrollable={responsive}
-            iframeEl={frameIframeEl}
-            pinNumberByAnnotationId={pinNumberByAnnotationId}
-            layout="sheet"
-          />
+          >
+            <HtmlFrame
+              key={htmlSrc}
+              src={htmlSrc}
+              placeholder={thumbSrc}
+              borderless
+              mobile
+              // Always pass the NATIVE width. Height only for decks (a real
+              // number) → HtmlFrame's locked path. Auto-height → undefined →
+              // HtmlFrame's scale-to-fit-width path.
+              canvasWidth={canvasWidth}
+              canvasHeight={canvasHeight}
+              onIframeRef={setFrameIframeEl}
+              onScaledHeight={setScaledHeight}
+            />
+            {currentConcept && currentVersion && (
+              <AnnotationOverlay
+                annotations={annotations}
+                annotationMode={annotationMode}
+                viewMode="client"
+                currentAuthor={clientComments.authorName}
+                isAdmin={clientComments.isAdmin}
+                onAdd={onAddAnnotation}
+                onDelete={onDeleteAnnotation}
+                onResolve={onResolveAnnotation}
+                onReply={onReplyAnnotation}
+                frameContext={{
+                  client,
+                  project,
+                  conceptId: currentConcept.id,
+                  versionId: currentVersion.id,
+                  conceptLabel: currentConcept.label,
+                  versionNumber: currentVersion.number,
+                  filePath: `~/driftgrid/projects/${client}/${project}/${currentVersion.file}`,
+                }}
+                // Both remaining modes position pins by PERCENTAGE of this
+                // wrapper (scrollable=false): scale-to-fit pins are % of the full
+                // scaled design and scroll with the outer container natively;
+                // deck pins are % of the fitted canvas. No iframe scroll-tracking.
+                scrollable={false}
+                iframeEl={frameIframeEl}
+                pinNumberByAnnotationId={pinNumberByAnnotationId}
+                layout="sheet"
+              />
+            )}
+          </div>
+        )}
+
+        {/* One-time pinch-to-zoom hint — fixed above the bottom toolbar, fades on
+            first scroll or after a few seconds. Tap to dismiss for good. */}
+        {scaleToFit && (
+          <button
+            type="button"
+            onClick={dismissPinchHint}
+            aria-hidden={!pinchHint}
+            tabIndex={pinchHint ? 0 : -1}
+            style={{
+              position: 'fixed',
+              left: '50%',
+              transform: `translateX(-50%) translateY(${pinchHint ? 0 : 8}px)`,
+              bottom: 'calc(72px + env(safe-area-inset-bottom))',
+              zIndex: 30,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              padding: '7px 12px',
+              borderRadius: 999,
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.82)',
+              backdropFilter: 'blur(8px)',
+              color: 'rgba(255,255,255,0.82)',
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 10,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              opacity: pinchHint ? 1 : 0,
+              pointerEvents: pinchHint ? 'auto' : 'none',
+              transition: 'opacity 0.4s ease, transform 0.4s ease',
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 11V6a2 2 0 0 1 4 0v5" />
+              <path d="M13 11V8a2 2 0 0 1 4 0v3" />
+              <path d="M17 11.5V10a2 2 0 0 1 4 0v5a6 6 0 0 1-6 6h-2a7 7 0 0 1-5-2l-3-3a2 2 0 0 1 3-3l1 1" />
+            </svg>
+            Pinch to zoom
+          </button>
         )}
       </div>
 
