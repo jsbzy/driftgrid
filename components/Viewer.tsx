@@ -642,13 +642,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const handleToggleSelect = useCallback(() => {
     if (!currentConcept || !currentVersion || !manifest) return;
     const key = `${currentConcept.id}:${currentVersion.id}`;
+    const newStarred = !selections.has(key);
     setSelections(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
     // Persist starred state to manifest
-    const newStarred = !selections.has(key);
     const updated = {
       ...manifest,
       concepts: manifest.concepts.map(c =>
@@ -673,8 +673,19 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         ),
       }));
     }
-    putManifest(client, project, updated, { mutate });
     mutate(updated, false);
+    // If the save doesn't stick (e.g. a concurrent write bumped the manifest →
+    // 412), revert the optimistic star so the UI never shows a phantom star
+    // that never persisted. putManifest already refetched the manifest on 412.
+    putManifest(client, project, updated, { mutate }).then(res => {
+      if (!res.ok) {
+        setSelections(prev => {
+          const next = new Set(prev);
+          if (newStarred) next.delete(key); else next.add(key);
+          return next;
+        });
+      }
+    });
   }, [currentConcept, currentVersion, manifest, selections, client, project, mutate]);
 
   const handleDeleteCurrent = useCallback(() => {
@@ -689,13 +700,13 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   const handleStarVersion = useCallback((conceptId: string, versionId: string) => {
     if (!manifest) return;
     const key = `${conceptId}:${versionId}`;
+    const newStarred = !selections.has(key);
     setSelections(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
     // Persist starred state to manifest
-    const newStarred = !selections.has(key);
     const updated = {
       ...manifest,
       concepts: manifest.concepts.map(c =>
@@ -720,8 +731,18 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
         ),
       }));
     }
-    putManifest(client, project, updated, { mutate });
     mutate(updated, false);
+    // Revert the optimistic star if the save fails (e.g. 412 conflict from a
+    // concurrent write) so a star can't appear set in the UI while unsaved.
+    putManifest(client, project, updated, { mutate }).then(res => {
+      if (!res.ok) {
+        setSelections(prev => {
+          const next = new Set(prev);
+          if (newStarred) next.delete(key); else next.add(key);
+          return next;
+        });
+      }
+    });
   }, [manifest, selections, client, project, mutate]);
 
   const isClientMode = mode === 'client';

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { filterVisibleManifest } from '../lib/filterManifest';
+import { filterVisibleManifest, filterStarredManifest } from '../lib/filterManifest';
 import type { Manifest, Concept, Version } from '../lib/types';
 
 // ---------------------------------------------------------------------------
@@ -123,4 +123,46 @@ test('filterVisibleManifest keeps visible items intact', () => {
   // Project metadata should be preserved
   assert.strictEqual(filtered.project.name, 'Test Project');
   assert.strictEqual(filtered.project.slug, 'test-project');
+});
+
+// --- filterStarredManifest (curated share links) ---
+
+test('filterStarredManifest keeps every starred version in a concept (multiple per concept)', () => {
+  // Regression: two starred versions in the SAME concept must both appear in
+  // the curated share — not collapse to one representative per concept.
+  const manifest = makeManifest([
+    makeConcept('concept-1', true, [
+      { ...makeVersion('v12', true), starred: true },
+      makeVersion('v13', true),
+      { ...makeVersion('v14', true), starred: true },
+    ]),
+  ]);
+
+  const filtered = filterStarredManifest(manifest);
+
+  assert.strictEqual(filtered.concepts.length, 1, 'concept should remain');
+  const ids = filtered.concepts[0].versions.map(v => v.id);
+  assert.deepStrictEqual(ids, ['v12', 'v14'], 'both starred kept; unstarred dropped');
+});
+
+test('filterStarredManifest drops concepts with no starred versions', () => {
+  const manifest = makeManifest([
+    makeConcept('starred-concept', true, [{ ...makeVersion('v1', true), starred: true }]),
+    makeConcept('unstarred-concept', true, [makeVersion('v2', true)]),
+  ]);
+
+  const filtered = filterStarredManifest(manifest);
+
+  assert.strictEqual(filtered.concepts.length, 1);
+  assert.strictEqual(filtered.concepts[0].id, 'starred-concept');
+});
+
+test('filterStarredManifest returns full manifest when nothing is starred', () => {
+  const manifest = makeManifest([
+    makeConcept('concept-1', true, [makeVersion('v1', true), makeVersion('v2', true)]),
+  ]);
+
+  const filtered = filterStarredManifest(manifest);
+
+  assert.strictEqual(filtered.concepts[0].versions.length, 2, 'all versions kept (backward compat)');
 });
