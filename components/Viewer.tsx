@@ -517,7 +517,16 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
       ? manifest.rounds?.find(r => `r${r.number}`.toLowerCase() === roundPrefix!.toLowerCase())
       : (manifest.rounds?.length ? manifest.rounds[manifest.rounds.length - 1] : null);
 
-    const roundConcepts = targetRound?.concepts ?? manifest.concepts ?? [];
+    const roundConceptsRaw = targetRound?.concepts ?? manifest.concepts ?? [];
+    // The client/share view renders only VISIBLE + STARRED selects (see `filtered`
+    // above). Resolve the deep-link indices against that same curated set —
+    // otherwise the version index is computed against the FULL version list and
+    // lands out of range in the filtered view, which renders as "project not
+    // found" on frame deep-links (e.g. #r1/concept-1/v12/f where v12 is starred
+    // but the 12th version overall).
+    const roundConcepts = mode === 'client'
+      ? filterStarredManifest(filterVisibleManifest({ ...manifest, concepts: roundConceptsRaw } as Manifest)).concepts
+      : roundConceptsRaw;
 
     let ci = roundConcepts.findIndex(c => c.slug === slugOrId || conceptSlug(c.label) === slugOrId);
     if (ci < 0) ci = roundConcepts.findIndex(c => c.id === slugOrId);
