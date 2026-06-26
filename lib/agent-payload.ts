@@ -113,3 +113,36 @@ export function buildAgentMessage(opts: {
   }
   return lines.join('\n');
 }
+
+/**
+ * Build a PROJECT-level "Copy for Agent" handoff. Where buildAgentMessage hands
+ * off one annotation thread, this hands off the whole board: it points a fresh
+ * AI agent at the project's local files, manifest, and board URL, plus the drift
+ * conventions, so it can start working from a single paste with no prior context.
+ */
+export function buildProjectAgentMessage(opts: {
+  client: string;
+  project: string;
+  projectName: string;
+  /** e.g. "R3" — omitted when the project has a single round. */
+  roundLabel?: string;
+}): string {
+  const { client, project, projectName, roundLabel } = opts;
+  const dir = `~/driftgrid/projects/${client}/${project}`;
+  const lines: string[] = [];
+  lines.push(`DriftGrid project — ${client}/${project}`);
+  lines.push(`"${projectName}"${roundLabel ? ` · ${roundLabel}` : ''}`);
+  lines.push('');
+  lines.push(`Files:    ${dir}/`);
+  lines.push(`Manifest: ${dir}/manifest.json`);
+  lines.push(`Board:    http://127.0.0.1:3000/admin/${client}/${project}`);
+  lines.push('');
+  lines.push('This is a DriftGrid design-iteration project. To work on it:');
+  lines.push('- Read AGENTS.md (repo root) for the full conventions + manifest schema.');
+  lines.push('- Drift = a NEW VERSION: copy the current HTML to the next vN and edit the copy. Never overwrite an existing version.');
+  lines.push('- Branch = a NEW CONCEPT (a new column).');
+  lines.push('- HTML is self-contained: inline CSS/JS, Google Fonts via <link>, no external URLs.');
+  lines.push('- All manifest writes go through lib/storage.writeManifest. Mutate manifest.rounds[N].concepts[] (the top-level manifest.concepts alias is read-only on rounds projects).');
+  lines.push('- When done, echo back the version reference: the absolute filepath AND the board URL.');
+  return lines.join('\n');
+}

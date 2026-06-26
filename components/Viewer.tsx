@@ -39,6 +39,7 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { fetchManifestForSwr, putManifest, trackedFetch } from '@/lib/manifest-client';
 import { useManifestBusy } from '@/lib/hooks/useManifestBusy';
 import { copyTextSafely } from '@/lib/clipboard';
+import { buildProjectAgentMessage } from '@/lib/agent-payload';
 
 // Use the ETag-aware fetcher for the designer route so subsequent PUTs can
 // echo `If-Match` and avoid silently overwriting concurrent writes (multi-tab,
@@ -1644,6 +1645,41 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
               </svg>
             )}
           </button>
+          {/* Copy for Agent — designer mode only. Hands the whole board to an AI agent. */}
+          {mode !== 'client' && !shareToken && (
+            <button
+              onClick={() => {
+                const msg = buildProjectAgentMessage({
+                  client,
+                  project,
+                  projectName: filtered.project.name,
+                  roundLabel: rounds.length > 1 && activeRound ? `R${activeRound.number}` : undefined,
+                });
+                copyTextSafely(msg);
+                toast('Copied — paste into your AI agent');
+              }}
+              className="flex items-center gap-1.5 transition-all"
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '0.06em',
+                color: 'var(--foreground)',
+                cursor: 'pointer',
+                background: 'none',
+                border: 'none',
+                opacity: 0.5,
+                padding: 0,
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.5'; }}
+              title="Copy a handoff for an AI agent — project path, board URL, and drift conventions"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy for Agent
+            </button>
+          )}
           {/* Share button — designer mode only */}
           {mode !== 'client' && !shareToken && (
             <button
