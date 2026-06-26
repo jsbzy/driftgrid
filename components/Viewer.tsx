@@ -40,6 +40,7 @@ import { fetchManifestForSwr, putManifest, trackedFetch } from '@/lib/manifest-c
 import { useManifestBusy } from '@/lib/hooks/useManifestBusy';
 import { copyTextSafely } from '@/lib/clipboard';
 import { buildProjectAgentMessage } from '@/lib/agent-payload';
+import { useCloudSync } from '@/lib/hooks/useCloudSync';
 
 // Use the ETag-aware fetcher for the designer route so subsequent PUTs can
 // echo `If-Match` and avoid silently overwriting concurrent writes (multi-tab,
@@ -93,6 +94,9 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
   // SSR-safe viewport detection. null until mounted (see useIsMobile). Only the
   // client/share review experience uses a mobile path; designers stay desktop.
   const isMobile = useIsMobile();
+  // Full-project cloud Sync (designer only). Pushes the whole project up so the
+  // cloud mirror is complete — distinct from Share, which curates a client link.
+  const { syncState, syncProgress, runSync } = useCloudSync(client, project);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
@@ -1678,6 +1682,33 @@ export function Viewer({ client, project, mode = 'designer', shareToken }: Viewe
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
               </svg>
               Copy for Agent
+            </button>
+          )}
+          {/* Sync to Cloud — designer mode only. Pushes the whole project up (backup + the basis for Share). */}
+          {mode !== 'client' && !shareToken && (
+            <button
+              onClick={runSync}
+              disabled={syncState === 'syncing'}
+              className="flex items-center gap-1.5 transition-all"
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '0.06em',
+                color: 'var(--foreground)',
+                cursor: syncState === 'syncing' ? 'default' : 'pointer',
+                background: 'none',
+                border: 'none',
+                opacity: syncState === 'syncing' ? 0.9 : 0.5,
+                padding: 0,
+              }}
+              onMouseEnter={(e) => { if (syncState !== 'syncing') (e.currentTarget as HTMLElement).style.opacity = '0.9'; }}
+              onMouseLeave={(e) => { if (syncState !== 'syncing') (e.currentTarget as HTMLElement).style.opacity = '0.5'; }}
+              title="Sync the whole project to DriftGrid Cloud — backup, multi-device, and the basis for Share"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 16l-4-4-4 4M12 12v9" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+              </svg>
+              {syncState === 'syncing' ? (syncProgress || 'Syncing…') : 'Sync'}
             </button>
           )}
           {/* Share button — designer mode only */}
