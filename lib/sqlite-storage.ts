@@ -122,7 +122,11 @@ export async function writeManifestDb(client: string, project: string, manifest:
     // the concepts; the alias is stale on rounds projects).
     const keptRoundIds: string[] = [];
     for (const [roundOrd, round] of (manifest.rounds ?? []).entries()) {
-      const roundId = idFor(db, `select id from rounds where project_id = ? and manifest_id = ?`, [projectId, round.id]);
+      // Legacy manifests can have a round with no `id` (old shape). Synthesize a
+      // deterministic manifest_id so the backfill never crashes; the original
+      // legacy keys (label/created/…) are preserved verbatim in `extras`.
+      const roundMid = round.id ?? `round-${round.number ?? roundOrd + 1}`;
+      const roundId = idFor(db, `select id from rounds where project_id = ? and manifest_id = ?`, [projectId, roundMid]);
       keptRoundIds.push(roundId);
       db.prepare(
         `insert into rounds (id, project_id, manifest_id, ord, number, name, status, note, created, closed_at, selects, document_ids, summary_document_id, extras, created_at)
@@ -134,7 +138,7 @@ export async function writeManifestDb(client: string, project: string, manifest:
       ).run({
         id: roundId,
         project_id: projectId,
-        manifest_id: round.id,
+        manifest_id: roundMid,
         ord: roundOrd,
         number: round.number ?? 0,
         name: round.name ?? '',
@@ -151,7 +155,8 @@ export async function writeManifestDb(client: string, project: string, manifest:
 
       const keptConceptIds: string[] = [];
       for (const [conceptOrd, concept] of (round.concepts ?? []).entries()) {
-        const conceptId = idFor(db, `select id from concepts where round_id = ? and manifest_id = ?`, [roundId, concept.id]);
+        const conceptMid = concept.id ?? `concept-${conceptOrd}`;
+        const conceptId = idFor(db, `select id from concepts where round_id = ? and manifest_id = ?`, [roundId, conceptMid]);
         keptConceptIds.push(conceptId);
         db.prepare(
           `insert into concepts (id, round_id, manifest_id, ord, slug, label, description, position, visible, branched_from, canvas, extras, created_at)
@@ -162,7 +167,7 @@ export async function writeManifestDb(client: string, project: string, manifest:
         ).run({
           id: conceptId,
           round_id: roundId,
-          manifest_id: concept.id,
+          manifest_id: conceptMid,
           ord: conceptOrd,
           slug: concept.slug ?? null,
           label: concept.label ?? '',
@@ -177,7 +182,8 @@ export async function writeManifestDb(client: string, project: string, manifest:
 
         const keptVersionIds: string[] = [];
         for (const [versionOrd, version] of (concept.versions ?? []).entries()) {
-          const versionId = idFor(db, `select id from versions where concept_id = ? and manifest_id = ?`, [conceptId, version.id]);
+          const versionMid = version.id ?? `v-${versionOrd}`;
+          const versionId = idFor(db, `select id from versions where concept_id = ? and manifest_id = ?`, [conceptId, versionMid]);
           keptVersionIds.push(versionId);
           db.prepare(
             `insert into versions (id, concept_id, manifest_id, ord, number, file_path, parent_id, changelog, visible, starred, thumbnail, created, extras, created_at)
@@ -188,7 +194,7 @@ export async function writeManifestDb(client: string, project: string, manifest:
           ).run({
             id: versionId,
             concept_id: conceptId,
-            manifest_id: version.id,
+            manifest_id: versionMid,
             ord: versionOrd,
             number: version.number ?? 0,
             file_path: version.file ?? '',
@@ -204,7 +210,8 @@ export async function writeManifestDb(client: string, project: string, manifest:
 
           const keptAnnIds: string[] = [];
           for (const [annOrd, ann] of (version.annotations ?? []).entries()) {
-            const annId = idFor(db, `select id from annotations where version_id = ? and manifest_id = ?`, [versionId, ann.id]);
+            const annMid = ann.id ?? `a-${annOrd}`;
+            const annId = idFor(db, `select id from annotations where version_id = ? and manifest_id = ?`, [versionId, annMid]);
             keptAnnIds.push(annId);
             db.prepare(
               `insert into annotations (id, version_id, manifest_id, ord, x, y, element, body, author, is_client, is_agent, resolved, parent_id, status, submitted_at, attachments, provider, created, extras, created_at)
@@ -216,7 +223,7 @@ export async function writeManifestDb(client: string, project: string, manifest:
             ).run({
               id: annId,
               version_id: versionId,
-              manifest_id: ann.id,
+              manifest_id: annMid,
               ord: annOrd,
               x: ann.x,
               y: ann.y,

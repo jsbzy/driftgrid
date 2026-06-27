@@ -19,9 +19,11 @@ import type BetterSqlite3 from 'better-sqlite3';
 
 export type Db = BetterSqlite3.Database;
 
+// The data DB belongs to the workspace (cwd); the schema travels with the code
+// (module-relative) so the bootstrap works regardless of the working directory.
 const DB_DIR = () => path.join(process.cwd(), 'projects', '.driftgrid');
 const DB_PATH = () => path.join(DB_DIR(), 'db.sqlite');
-const SCHEMA_PATH = () => path.join(process.cwd(), 'lib', 'db', 'schema-sqlite.sql');
+const SCHEMA_PATH = () => path.join(__dirname, 'schema-sqlite.sql');
 
 // One connection per process, keyed by resolved path (future: per workspace).
 const connections = new Map<string, Db>();
