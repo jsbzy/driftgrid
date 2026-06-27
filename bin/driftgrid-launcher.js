@@ -20,6 +20,13 @@ const http = require('http');
 const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 
+// launchd starts this service with a minimal PATH that omits /usr/sbin — where
+// `lsof` lives. Without lsof, pidsOnPort() silently returns [] so the launcher
+// can't detect a running dev server, and /start mis-fires (double-binds the
+// port → health check fails → callers fall back). Guarantee the system bin dirs.
+process.env.PATH = ['/usr/bin', '/usr/sbin', '/bin', '/usr/local/bin', '/opt/homebrew/bin', process.env.PATH]
+  .filter(Boolean).join(':');
+
 const LAUNCHER_PORT = parseInt(process.env.DRIFTGRID_LAUNCHER_PORT || '3100', 10);
 const DEV_PORT = parseInt(process.env.DRIFTGRID_DEV_PORT || '3000', 10);
 const IDLE_MINUTES = parseInt(process.env.DRIFTGRID_IDLE_MINUTES || '30', 10);
