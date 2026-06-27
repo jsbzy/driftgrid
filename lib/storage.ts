@@ -27,10 +27,31 @@ async function local() {
   return await import('./manifest');
 }
 
+/**
+ * Phase 1 (DriftGrid Cloud): opt-in local SQLite backend for project structure.
+ * When DRIFTGRID_DB_BACKEND=sqlite (and not in cloud mode), manifest reads/writes
+ * and the project list are served from projects/.driftgrid/db.sqlite instead of
+ * manifest.json files. HTML files still live on disk (the file ops below are
+ * unchanged) — this only swaps the relational structure. Default (flag unset) =
+ * the file backend, untouched. The native better-sqlite3 module is lazy-imported
+ * so it never loads unless the flag is set. See CLOUD-FOUNDATION.md.
+ */
+function isDbBackend(): boolean {
+  return process.env.DRIFTGRID_DB_BACKEND === 'sqlite';
+}
+
+async function db() {
+  return await import('./sqlite-storage');
+}
+
 export async function getManifest(userId: string | null, client: string, project: string): Promise<Manifest | null> {
   if (isCloudMode() && userId) {
     const { getManifestCloud } = await cloud();
     return getManifestCloud(userId, client, project);
+  }
+  if (isDbBackend()) {
+    const { getManifestDb } = await db();
+    return getManifestDb(client, project);
   }
   const { getManifest } = await local();
   return getManifest(client, project);
@@ -99,6 +120,11 @@ export async function writeManifest(userId: string | null, client: string, proje
         await writeManifestCloud(userId, client, project, manifest);
         return;
       }
+      if (isDbBackend()) {
+        const { writeManifestDb } = await db();
+        await writeManifestDb(client, project, manifest);
+        return;
+      }
       const { writeManifest } = await local();
       await writeManifest(client, project, manifest);
     } finally {
@@ -111,6 +137,10 @@ export async function getClients(userId: string | null): Promise<ClientInfo[]> {
   if (isCloudMode() && userId) {
     const { getClientsCloud } = await cloud();
     return getClientsCloud(userId);
+  }
+  if (isDbBackend()) {
+    const { getClientsDb } = await db();
+    return getClientsDb();
   }
   const { getClients } = await local();
   return getClients();
