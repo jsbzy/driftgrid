@@ -12,10 +12,20 @@
 > - `tests/postgres-storage.test.ts` — 4 tests incl. **cross-backend parity**
 >   (Postgres output == SQLite output for the same manifest). `npm test` = 26/26.
 >
-> **Still needs a real Supabase branch DB** (owner action — not doable here): the
-> full migration's `auth.users` FK + RLS policies, and the thin supabase-js glue
-> (rpc/select calls) running against live PostgREST. The risky SQL + mapping are
-> proven; what remains is the auth/RLS hookup. The original design follows.
+> **VERIFIED END-TO-END against real Supabase (2026-06-27).** Jeff stood up a
+> free test project; `bin/cloud-verify.ts` ran the full cloud path over live
+> PostgREST and passed every check:
+> - write via the `write_manifest` RPC, with a real `auth.users` FK owner;
+> - read-back full structural parity (ISO timestamps, float coords, stars, selects);
+> - `getClientsPg` dashboard listing;
+> - atomic upsert+prune on re-write;
+> - **tenant isolation** — a second user reads NOTHING of the first user's
+>   project (the auth/permission layer PGlite couldn't exercise).
+>
+> So the cloud backend is now proven on both fronts (PGlite mechanics + real
+> Supabase auth/RLS/PostgREST). To turn it on in the app: apply the two
+> migrations to the target DB and set `DRIFTGRID_CLOUD_BACKEND=postgres`. The
+> original design follows.
 >
 > ---
 >
