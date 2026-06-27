@@ -3,54 +3,9 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { pushFilesToCloud, createCloudShare, verifyToken, refreshAccessToken } from '@/lib/cloud-client';
 import { areValidSlugs } from '@/lib/slug';
+import { collectFiles, type FileEntry, type SkippedEntry } from '@/lib/cloud-files';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
-
-// MIME types by extension
-const MIME_TYPES: Record<string, string> = {
-  '.html': 'text/html',
-  '.json': 'application/json',
-  '.svg': 'image/svg+xml',
-  '.md': 'text/markdown',
-  '.css': 'text/css',
-  '.txt': 'text/plain',
-  '.js': 'application/javascript',
-  '.mjs': 'application/javascript',
-  '.webp': 'image/webp',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.ico': 'image/x-icon',
-  '.woff': 'font/woff',
-  '.woff2': 'font/woff2',
-};
-
-const TEXT_TYPES = new Set([
-  'text/html', 'application/json', 'image/svg+xml', 'text/markdown',
-  'text/css', 'text/plain', 'application/javascript',
-]);
-
-// Always upload regardless of size — images + docs + fonts + scripts
-const ALWAYS_INCLUDE_EXTS = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.avif', '.ico', '.bmp', '.tiff', '.heic',
-  '.html', '.json', '.md', '.css', '.txt', '.woff', '.woff2',
-  '.js', '.mjs',
-]);
-
-// Always skip unless includeMedia — video, audio, archives, design sources
-const SKIP_EXTS = new Set([
-  '.mp4', '.mov', '.webm', '.avi', '.mkv', '.m4v',
-  '.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac',
-  '.zip', '.tar', '.gz', '.7z',
-  '.psd', '.sketch', '.fig', '.ai', '.xd',
-]);
-
-// Fallback for unknown extensions: skip if larger than this
-const MAX_OTHER_BINARY_BYTES = 25 * 1024 * 1024;
-
-type SkippedEntry = { path: string; bytes: number; ext: string; reason: 'ext' | 'size' };
-type FileEntry = { path: string; content: string; contentType: string };
 
 /**
  * POST /api/cloud/push-and-share — local orchestrator.
@@ -252,64 +207,6 @@ export async function POST(request: Request) {
 }
 
 /**
- * Recursively collect files from a directory, applying the skip policy and
- * (optionally) a starred-versions allowlist for curated shares.
- */
-async function collectFiles(
-  dir: string,
-  prefix: string,
-  opts: { includeMedia: boolean; allowList?: Set<string> | null },
-): Promise<{ files: FileEntry[]; skipped: SkippedEntry[] }> {
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-  const files: FileEntry[] = [];
-  const skipped: SkippedEntry[] = [];
-
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    const relPath = prefix ? `${prefix}/${entry.name}` : entry.name;
-
-    if (entry.isDirectory()) {
-      // Directory pruning: if allowList exists, skip folders entirely when no path under them is allowed.
-      if (opts.allowList && !anyAllowedUnder(relPath, opts.allowList)) continue;
-      const child = await collectFiles(fullPath, relPath, opts);
-      files.push(...child.files);
-      skipped.push(...child.skipped);
-      continue;
-    }
-
-    // Starred-allowlist check: silently drop files outside the curated set.
-    // These aren't reported as "skipped" — they're deliberately excluded.
-    if (opts.allowList && !opts.allowList.has(relPath)) continue;
-
-    const ext = path.extname(entry.name).toLowerCase();
-
-    // Skip policy — size/type filters still apply even inside the curated set.
-    if (!opts.includeMedia) {
-      if (SKIP_EXTS.has(ext)) {
-        const stat = await fs.stat(fullPath);
-        skipped.push({ path: relPath, bytes: stat.size, ext, reason: 'ext' });
-        continue;
-      }
-      if (!ALWAYS_INCLUDE_EXTS.has(ext)) {
-        const stat = await fs.stat(fullPath);
-        if (stat.size > MAX_OTHER_BINARY_BYTES) {
-          skipped.push({ path: relPath, bytes: stat.size, ext, reason: 'size' });
-          continue;
-        }
-      }
-    }
-
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    const isText = TEXT_TYPES.has(contentType);
-    const raw = await fs.readFile(fullPath);
-    const content = isText ? raw.toString('utf-8') : raw.toString('base64');
-    files.push({ path: relPath, content, contentType });
-  }
-
-  return { files, skipped };
-}
-
-/**
  * Compute the set of file paths (relative to projectDir) that should be uploaded
  * for a curated share — only files referenced by starred versions in the active
  * round, plus the manifest itself. Returns `null` if nothing is starred (fallback
@@ -417,15 +314,6 @@ async function walkAndAdd(dir: string, relPrefix: string, allowed: Set<string>):
       allowed.add(rel);
     }
   }
-}
-
-/** Returns true if any path in the allowList starts with the given directory prefix. */
-function anyAllowedUnder(dirPrefix: string, allowList: Set<string>): boolean {
-  const prefix = dirPrefix + '/';
-  for (const p of allowList) {
-    if (p === dirPrefix || p.startsWith(prefix)) return true;
-  }
-  return false;
 }
 
 /**
