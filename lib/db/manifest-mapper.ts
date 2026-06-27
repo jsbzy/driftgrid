@@ -110,8 +110,15 @@ export interface ManifestRowSet {
 // ---- helpers --------------------------------------------------------------
 
 const bool = (n: number | boolean | null | undefined): boolean => n === 1 || n === true;
-function parseJson<T>(s: string | null | undefined, fallback: T): T {
+
+/**
+ * Dual-encoding JSON read. SQLite stores JSON columns as TEXT (parse the string);
+ * Postgres jsonb columns arrive already-parsed as JS objects/arrays (pass through).
+ * Both backends feed the same rowsToManifest, so this must accept both.
+ */
+function parseJson<T>(s: unknown, fallback: T): T {
   if (s == null) return fallback;
+  if (typeof s !== 'string') return s as T;   // already-parsed jsonb (Postgres)
   try { return JSON.parse(s) as T; } catch { return fallback; }
 }
 

@@ -50,8 +50,10 @@ create table if not exists public.projects (
   canvas       text not null,
   output       text check (output is null or output in ('vector', 'image', 'hybrid')),
   links        jsonb not null default '{}'::jsonb,
-  -- manifest's own project.created (distinct from row insert time below)
-  created      timestamptz,
+  -- manifest's own project.created — stored as TEXT (verbatim ISO-8601) so it
+  -- round-trips byte-identically with the SQLite backend. Row-audit times below
+  -- stay timestamptz. (ISO-8601 'Z' strings still sort chronologically for sync.)
+  created      text,
   -- lossless parking lot for project-level collections not yet normalized:
   -- { workingSets, documents, comments, clientEdits }
   extras       jsonb not null default '{}'::jsonb,
@@ -83,8 +85,8 @@ create table if not exists public.rounds (
   name                text not null,
   status              text not null default 'open' check (status in ('open', 'closed')),
   note                text,
-  created             timestamptz,                      -- round.createdAt
-  closed_at           timestamptz,                      -- round.closedAt
+  created             text,                             -- round.createdAt (verbatim ISO-8601)
+  closed_at           text,                             -- round.closedAt
   selects             jsonb not null default '[]'::jsonb,   -- [{conceptId, versionId}]
   document_ids        jsonb,                            -- round.documentIds
   summary_document_id text,                             -- round.summaryDocumentId
@@ -156,7 +158,7 @@ create table if not exists public.versions (
   visible     boolean not null default true,
   starred     boolean not null default false,
   thumbnail   text,                                     -- '.thumbs/${concept}-${version}.webp'
-  created     timestamptz,                              -- version.created
+  created     text,                                     -- version.created (verbatim ISO-8601)
   extras      jsonb not null default '{}'::jsonb,       -- untyped manifest keys (lossless overflow)
   created_at  timestamptz not null default now(),
   unique (concept_id, manifest_id)
@@ -189,8 +191,8 @@ create table if not exists public.annotations (
   version_id   uuid not null references public.versions(id) on delete cascade,
   manifest_id  text not null,                           -- annotation.id
   ord          int  not null default 0,                 -- source array index (display fidelity)
-  x            numeric,
-  y            numeric,
+  x            double precision,
+  y            double precision,
   element      text,
   body         text not null,                           -- annotation.text
   author       text not null,
@@ -199,10 +201,10 @@ create table if not exists public.annotations (
   resolved     boolean not null default false,
   parent_id    text,                                    -- parent annotation's manifest_id
   status       text check (status is null or status in ('running')),
-  submitted_at timestamptz,
+  submitted_at text,
   attachments  jsonb,
   provider     text,
-  created      timestamptz,                             -- annotation.created
+  created      text,                                    -- annotation.created (verbatim ISO-8601)
   extras       jsonb not null default '{}'::jsonb,      -- untyped manifest keys (lossless overflow)
   created_at   timestamptz not null default now(),
   unique (version_id, manifest_id)

@@ -44,8 +44,29 @@ async function db() {
   return await import('./sqlite-storage');
 }
 
+/**
+ * Phase 4 (DriftGrid Cloud): opt-in Postgres backend for cloud structure.
+ * When DRIFTGRID_CLOUD_BACKEND=postgres (and in cloud mode), manifest structure
+ * is read/written via the Postgres tables + write_manifest() RPC instead of
+ * manifest.json blobs in Supabase Storage. HTML files still live in Storage
+ * (file ops below are unchanged). Default (unset) = the Storage backend,
+ * untouched — production is unaffected until this flag is flipped on a DB that
+ * has the cloud-schema + write_manifest migrations applied. See PHASE-4-DESIGN.md.
+ */
+function isCloudDbBackend(): boolean {
+  return process.env.DRIFTGRID_CLOUD_BACKEND === 'postgres';
+}
+
+async function pg() {
+  return await import('./postgres-storage');
+}
+
 export async function getManifest(userId: string | null, client: string, project: string): Promise<Manifest | null> {
   if (isCloudMode() && userId) {
+    if (isCloudDbBackend()) {
+      const { getManifestPg } = await pg();
+      return getManifestPg(userId, client, project);
+    }
     const { getManifestCloud } = await cloud();
     return getManifestCloud(userId, client, project);
   }
@@ -116,6 +137,11 @@ export async function writeManifest(userId: string | null, client: string, proje
     invalidateManifestCache(client, project);
     try {
       if (isCloudMode() && userId) {
+        if (isCloudDbBackend()) {
+          const { writeManifestPg } = await pg();
+          await writeManifestPg(userId, client, project, manifest);
+          return;
+        }
         const { writeManifestCloud } = await cloud();
         await writeManifestCloud(userId, client, project, manifest);
         return;
@@ -135,6 +161,10 @@ export async function writeManifest(userId: string | null, client: string, proje
 
 export async function getClients(userId: string | null): Promise<ClientInfo[]> {
   if (isCloudMode() && userId) {
+    if (isCloudDbBackend()) {
+      const { getClientsPg } = await pg();
+      return getClientsPg(userId);
+    }
     const { getClientsCloud } = await cloud();
     return getClientsCloud(userId);
   }

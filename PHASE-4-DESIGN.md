@@ -1,9 +1,25 @@
-# DriftGrid Cloud — Phase 4 design (cloud Postgres backend + sync)
+# DriftGrid Cloud — Phase 4 (cloud Postgres backend + sync)
 
-> Status: **design only, not built.** Phase 1-3 (local SQLite, behind the flag)
-> are done and verified. Phase 4 needs a cloud **Postgres write backend**, which
-> is both untestable without a non-prod Supabase branch DB (prod is live) and
-> gated on one real decision (below). This doc makes that decision fast.
+> Status update (2026-06-27): **the Postgres backend is now BUILT and verified**
+> locally via PGlite (real Postgres, in-process, no Docker, zero prod contact).
+> The atomicity decision below was made — **plpgsql RPC** — and implemented:
+> - `supabase/migrations/20260627000000_write_manifest_rpc.sql` — atomic
+>   decompose+upsert+prune in one transaction.
+> - `lib/postgres-storage.ts` — supabase-js backend, behind
+>   `DRIFTGRID_CLOUD_BACKEND=postgres` (default stays on Storage; prod untouched).
+> - `lib/db/manifest-mapper.ts` — made dual-encoding (jsonb objects + native
+>   bool/float as well as SQLite's text/0-1).
+> - `tests/postgres-storage.test.ts` — 4 tests incl. **cross-backend parity**
+>   (Postgres output == SQLite output for the same manifest). `npm test` = 26/26.
+>
+> **Still needs a real Supabase branch DB** (owner action — not doable here): the
+> full migration's `auth.users` FK + RLS policies, and the thin supabase-js glue
+> (rpc/select calls) running against live PostgREST. The risky SQL + mapping are
+> proven; what remains is the auth/RLS hookup. The original design follows.
+>
+> ---
+>
+> Original design (for reference):
 
 ## Where Phase 4 picks up
 

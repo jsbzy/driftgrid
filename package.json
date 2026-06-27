@@ -58,6 +58,7 @@
     "swr": "^2.4.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.3",
     "@tailwindcss/postcss": "^4",
     "@tauri-apps/cli": "^2.11.2",
     "@types/node": "^20",
