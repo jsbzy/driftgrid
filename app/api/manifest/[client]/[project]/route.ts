@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { getManifest as getManifestLocal } from '@/lib/manifest';
 import { getManifest, writeManifest, isCloudMode, ManifestValidationError } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import type { Manifest } from '@/lib/types';
@@ -24,13 +23,11 @@ export async function GET(
 ) {
   const { client, project } = await params;
 
-  let manifest: Manifest | null;
-  if (isCloudMode()) {
-    const userId = await getUserId();
-    manifest = await getManifest(userId, client, project);
-  } else {
-    manifest = await getManifestLocal(client, project);
-  }
+  // Route through the storage dispatch in all modes: cloud → Supabase (userId),
+  // local → file or SQLite (DRIFTGRID_DB_BACKEND). userId is null when not in
+  // cloud mode, which keeps local behavior identical to before.
+  const userId = isCloudMode() ? await getUserId() : null;
+  const manifest = await getManifest(userId, client, project);
 
   if (!manifest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -62,9 +59,7 @@ export async function PUT(
   // accepted (back-compat) so older callers keep working.
   const ifMatch = request.headers.get('if-match');
   if (ifMatch) {
-    const current = isCloudMode()
-      ? await getManifest(userId, client, project)
-      : await getManifestLocal(client, project);
+    const current = await getManifest(userId, client, project);
     if (current) {
       const currentEtag = manifestEtag(current);
       if (currentEtag !== ifMatch) {

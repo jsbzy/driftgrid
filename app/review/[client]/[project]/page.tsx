@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Viewer } from '@/components/Viewer';
-import { getManifest } from '@/lib/manifest';
+import { getManifest } from '@/lib/storage';
 
 export async function generateMetadata({
   params,
@@ -8,7 +8,7 @@ export async function generateMetadata({
   params: Promise<{ client: string; project: string }>;
 }): Promise<Metadata> {
   const { client, project } = await params;
-  const manifest = await getManifest(client, project);
+  const manifest = await getManifest(null, client, project);
   const name = manifest?.project.name ?? project;
   const clientName = client.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   return {

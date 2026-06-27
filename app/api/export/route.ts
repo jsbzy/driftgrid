@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { promises as fs } from 'fs';
-import { getManifest } from '@/lib/manifest';
+import { getManifest } from '@/lib/storage';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { exportPdf, exportPdfFromHtml, exportPng, mergePdfs } from '@/lib/export-pdf';
 import { injectViewportLock } from '@/lib/viewport-lock';
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
-  const manifest = await getManifest(client, project);
+  const manifest = await getManifest(null, client, project);
   if (!manifest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }

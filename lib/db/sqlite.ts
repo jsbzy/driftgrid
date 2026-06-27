@@ -12,18 +12,18 @@
 
 import path from 'path';
 import { promises as fs } from 'fs';
-import { readFileSync } from 'fs';
 
 // Type-only import — erased at compile time, never pulls the native module in.
 import type BetterSqlite3 from 'better-sqlite3';
+import { SQLITE_SCHEMA } from './schema-sqlite';
 
 export type Db = BetterSqlite3.Database;
 
-// The data DB belongs to the workspace (cwd); the schema travels with the code
-// (module-relative) so the bootstrap works regardless of the working directory.
+// The data DB belongs to the workspace (cwd). The schema is inlined (imported),
+// so there is no filesystem read at bootstrap — works under Next/Turbopack
+// bundling and from any cwd.
 const DB_DIR = () => path.join(process.cwd(), 'projects', '.driftgrid');
 const DB_PATH = () => path.join(DB_DIR(), 'db.sqlite');
-const SCHEMA_PATH = () => path.join(__dirname, 'schema-sqlite.sql');
 
 // One connection per process, keyed by resolved path (future: per workspace).
 const connections = new Map<string, Db>();
@@ -47,8 +47,7 @@ export async function getDb(): Promise<Db> {
   db.pragma('foreign_keys = ON');
 
   // Bootstrap the schema (CREATE TABLE IF NOT EXISTS ... — safe to re-run).
-  const schema = readFileSync(SCHEMA_PATH(), 'utf-8');
-  db.exec(schema);
+  db.exec(SQLITE_SCHEMA);
 
   connections.set(dbPath, db);
   return db;

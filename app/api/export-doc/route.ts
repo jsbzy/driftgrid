@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
 import { promises as fs } from 'fs';
-import { getManifest } from '@/lib/manifest';
+import { getManifest } from '@/lib/storage';
 import { resolveCanvas } from '@/lib/constants';
 import { areValidSlugs } from '@/lib/slug';
 import { findConceptAndVersion, getAllConcepts } from '@/lib/manifest-lookup';
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
-  const manifest = await getManifest(client, project);
+  const manifest = await getManifest(null, client, project);
   if (!manifest) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }

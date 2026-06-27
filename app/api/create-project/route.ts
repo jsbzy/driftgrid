@@ -5,6 +5,7 @@ import { CANVAS_PRESETS } from '@/lib/constants';
 import { conceptSlug } from '@/lib/letters';
 import type { Manifest } from '@/lib/types';
 import { areValidSlugs } from '@/lib/slug';
+import { writeManifest } from '@/lib/storage';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -98,6 +99,29 @@ export async function POST(request: Request) {
   const isLocked = !preset.responsive && typeof preset.height === 'number';
   const widthPx = typeof preset.width === 'number' ? preset.width : 1440;
 
+  // Build in the canonical rounds shape (concept lives in round-1). The
+  // top-level `concepts` is the derived alias (points at the latest round) and
+  // is stripped on write — so the concept MUST live under rounds[] or it is lost.
+  const concept = {
+    id: conceptId,
+    slug: conceptSlug('Concept 1'),
+    label: 'Concept 1',
+    description: '',
+    position: 0,
+    visible: true,
+    versions: [{
+      id: versionId,
+      number: 1,
+      file: 'concept-1/v1.html',
+      parentId: null,
+      changelog: 'Initial version',
+      visible: true,
+      starred: false,
+      created: now,
+      thumbnail: '',
+    }],
+  };
+
   const manifest: Manifest = {
     project: {
       name: projectName,
@@ -107,32 +131,25 @@ export async function POST(request: Request) {
       created: now,
       links: {},
     },
-    concepts: [{
-      id: conceptId,
-      slug: conceptSlug('Concept 1'),
-      label: 'Concept 1',
-      description: '',
-      position: 0,
-      visible: true,
-      versions: [{
-        id: versionId,
-        number: 1,
-        file: 'concept-1/v1.html',
-        parentId: null,
-        changelog: 'Initial version',
-        visible: true,
-        starred: false,
-        created: now,
-        thumbnail: '',
-      }],
+    concepts: [concept],  // derived alias for the latest round
+    rounds: [{
+      id: 'round-1',
+      number: 1,
+      name: 'Round 1',
+      createdAt: now,
+      selects: [],
+      concepts: [concept],
     }],
-    rounds: [],
     workingSets: [],
     comments: [],
     clientEdits: [],
   };
 
-  await fs.writeFile(path.join(projectDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf-8');
+  // Route the manifest through the storage dispatch (invariant #1: never
+  // fs.writeFile a manifest.json directly). In default/local mode this does the
+  // atomic temp+rename write to disk; with DRIFTGRID_DB_BACKEND=sqlite the
+  // structure lands in the DB instead. HTML + brand assets stay on disk below.
+  await writeManifest(null, client, project, manifest);
 
   // Create starter HTML
   const starterHtml = isLocked

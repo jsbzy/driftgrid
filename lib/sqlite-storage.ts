@@ -118,10 +118,24 @@ export async function writeManifestDb(client: string, project: string, manifest:
       updated_at: ts,
     });
 
-    // Iterate manifest.rounds[] (NEVER the manifest.concepts alias — rounds own
-    // the concepts; the alias is stale on rounds projects).
+    // Iterate the rounds (NEVER the manifest.concepts alias — rounds own the
+    // concepts). Legacy/new manifests may carry top-level concepts with empty
+    // rounds (e.g. fresh create-project); wrap those into round-1 exactly as
+    // lib/manifest.getManifest does on read, so the concept isn't dropped.
+    const roundsToWrite = (manifest.rounds && manifest.rounds.length)
+      ? manifest.rounds
+      : (manifest.concepts && manifest.concepts.length)
+        ? [{
+            id: 'round-1',
+            number: 1,
+            name: 'Round 1',
+            createdAt: manifest.project.created || nowIso(),
+            selects: [],
+            concepts: manifest.concepts,
+          }]
+        : [];
     const keptRoundIds: string[] = [];
-    for (const [roundOrd, round] of (manifest.rounds ?? []).entries()) {
+    for (const [roundOrd, round] of roundsToWrite.entries()) {
       // Legacy manifests can have a round with no `id` (old shape). Synthesize a
       // deterministic manifest_id so the backfill never crashes; the original
       // legacy keys (label/created/…) are preserved verbatim in `extras`.
