@@ -40,6 +40,12 @@ export async function POST(request: Request) {
 
   const supabase = getSupabaseAdmin();
 
+  // Track retryable DB failures. A transient Supabase error must NOT return 200,
+  // or Stripe drops the event and subscription state diverges permanently. A
+  // "matched no rows" outcome is NOT retryable (the row genuinely isn't there),
+  // so it doesn't set this.
+  let dbFailed = false;
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object;
@@ -54,7 +60,10 @@ export async function POST(request: Request) {
         stripe_subscription_id: session.subscription as string,
         subscription_status: 'active',
       }).eq('id', userId);
-      if (error) console.error('[stripe webhook] checkout update failed', { userId, message: error.message });
+      if (error) {
+        console.error('[stripe webhook] checkout update failed', { userId, message: error.message });
+        dbFailed = true;
+      }
       break;
     }
 
@@ -79,6 +88,7 @@ export async function POST(request: Request) {
       const { data, error } = await q.select('id');
       if (error) {
         console.error('[stripe webhook] subscription.updated failed', { subId: subscription.id, message: error.message });
+        dbFailed = true;
       } else if (!data || data.length === 0) {
         console.warn('[stripe webhook] subscription.updated matched no rows', { subId: subscription.id });
       }
@@ -98,11 +108,17 @@ export async function POST(request: Request) {
       const { data, error } = await q.select('id');
       if (error) {
         console.error('[stripe webhook] subscription.deleted failed', { subId: subscription.id, message: error.message });
+        dbFailed = true;
       } else if (!data || data.length === 0) {
         console.warn('[stripe webhook] subscription.deleted matched no rows', { subId: subscription.id });
       }
       break;
     }
+  }
+
+  // 500 on a DB write failure so Stripe redelivers; otherwise ack.
+  if (dbFailed) {
+    return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });
