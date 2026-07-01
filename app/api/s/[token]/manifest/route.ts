@@ -1,47 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { resolveShareToken } from '@/lib/share-token';
 
 const BUCKET = 'projects';
-
-/** Resolve token to userId/client/project — tries DB first, then base64url path */
-async function resolveToken(token: string): Promise<{ userId: string; client: string; project: string; roundNumber: number | null } | null> {
-  const supabase = getSupabaseAdmin();
-
-  // Try database
-  try {
-    const { data } = await supabase
-      .from('share_links')
-      .select('user_id, client, project, expires_at, is_active, round_number')
-      .eq('token', token)
-      .single();
-
-    if (data?.is_active && (!data.expires_at || new Date(data.expires_at) > new Date())) {
-      return { userId: data.user_id, client: data.client, project: data.project, roundNumber: data.round_number ?? null };
-    }
-  } catch {
-    // Table not in cache — fall through
-  }
-
-  // Fallback: base64url encoded path (legacy tokens — not round-pinned)
-  try {
-    const decoded = Buffer.from(token, 'base64url').toString('utf-8');
-    const parts = decoded.split('/');
-    if (parts.length === 3) {
-      return { userId: parts[0], client: parts[1], project: parts[2], roundNumber: null };
-    }
-  } catch {
-    // Invalid token
-  }
-
-  return null;
-}
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
-  const resolved = await resolveToken(token);
+  const resolved = await resolveShareToken(token);
   if (!resolved) {
     return NextResponse.json({ error: 'Invalid share link' }, { status: 404 });
   }

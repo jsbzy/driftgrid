@@ -5,7 +5,12 @@ import { cookies } from 'next/headers';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/';
+  const rawNext = searchParams.get('next') ?? '/';
+  // Only allow same-site relative redirects. Reject protocol-relative (`//evil.com`)
+  // and userinfo-based (`/@evil.com` → `https://origin@evil.com`) open-redirect payloads.
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.includes('@')
+    ? rawNext
+    : '/';
 
   if (code) {
     const cookieStore = await cookies();

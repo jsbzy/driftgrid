@@ -19,9 +19,19 @@ const { data: before, error: selErr } = await admin.from('profiles')
 if (selErr) { console.error('select error:', selErr); process.exit(1); }
 
 const withStripe = before.filter(p => p.stripe_customer_id || p.stripe_subscription_id);
+console.log(`Target Supabase: ${env.NEXT_PUBLIC_SUPABASE_URL}`);
 console.log(`Found ${before.length} profiles, ${withStripe.length} with Stripe references`);
 for (const p of withStripe) {
   console.log(`  ${p.email} — customer=${p.stripe_customer_id || '∅'} sub=${p.stripe_subscription_id || '∅'} status=${p.subscription_status || '∅'} tier=${p.tier}`);
+}
+
+// Destructive: demotes EVERY profile to free and clears all Stripe references.
+// Dry-run unless explicitly confirmed. Live subscriptions keep billing in Stripe
+// even after this runs, so an accidental run silently strands paying customers.
+if (!process.argv.includes('--yes')) {
+  console.log('\n⚠️  DRY RUN. This would clear Stripe state on ALL profiles above and set tier=free.');
+  console.log('    Re-run with --yes to execute against the target Supabase printed above.');
+  process.exit(0);
 }
 
 const { data: updated, error: upErr } = await admin.from('profiles').update({

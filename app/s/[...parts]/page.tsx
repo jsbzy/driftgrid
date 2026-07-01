@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
+import { resolveShareToken } from '@/lib/share-token';
 import { Viewer } from '@/components/Viewer';
 
 /**
@@ -42,38 +43,12 @@ export default async function SharePage({
   let project: string | undefined;
 
   if (isCloudMode()) {
-    const supabase = getSupabaseAdmin();
-    try {
-      const { data } = await supabase
-        .from('share_links')
-        .select('user_id, client, project, expires_at, is_active')
-        .eq('token', token!)
-        .single();
-
-      if (data?.is_active) {
-        if (!data.expires_at || new Date(data.expires_at) > new Date()) {
-          userId = data.user_id;
-          actualClient = data.client;
-          project = data.project;
-        }
-      }
-    } catch {
-      // Table may not be in schema cache yet — fall through to base64url decode.
-    }
-  }
-
-  // Fallback: base64url-encoded `userId/client/project` (legacy tokens).
-  if (!actualClient) {
-    try {
-      const decoded = Buffer.from(token!, 'base64url').toString('utf-8');
-      const p = decoded.split('/');
-      if (p.length === 3) {
-        userId = p[0];
-        actualClient = p[1];
-        project = p[2];
-      }
-    } catch {
-      // Invalid token
+    // DB-only resolution (no base64url fallback — see lib/share-token).
+    const resolved = await resolveShareToken(token!);
+    if (resolved) {
+      userId = resolved.userId;
+      actualClient = resolved.client;
+      project = resolved.project;
     }
   }
 
@@ -87,12 +62,15 @@ export default async function SharePage({
     redirect(`/s/${actualClient}/${token!}`);
   }
 
-  // Verify the project exists in storage before rendering.
+  // Verify the project exists in storage before rendering. Sign (don't download)
+  // the manifest — createSignedUrl errors if the object is missing but never
+  // transfers the file, so the client Viewer's own manifest fetch is the only
+  // full download.
   if (isCloudMode() && userId) {
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.storage
       .from('projects')
-      .download(`${userId}/${actualClient}/${project}/manifest.json`);
+      .createSignedUrl(`${userId}/${actualClient}/${project}/manifest.json`, 60);
     if (error) notFound();
   }
 

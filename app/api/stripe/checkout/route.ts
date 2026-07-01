@@ -82,14 +82,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    console.error('Checkout error:', err);
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    const details = err instanceof Error ? err.constructor.name : typeof err;
-    return NextResponse.json({
-      error: message,
-      type: details,
+    // Log full detail server-side; never echo secret-key material to the client.
+    console.error('Checkout error:', err, {
       keyPresent: !!process.env.STRIPE_SECRET_KEY,
       keyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 8),
-    }, { status: 500 });
+    });
+    return NextResponse.json({ error: 'Could not start checkout' }, { status: 500 });
   }
 }

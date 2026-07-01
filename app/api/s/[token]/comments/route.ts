@@ -2,39 +2,12 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
 import { getUserId } from '@/lib/auth';
 import { sendCommentEmail } from '@/lib/email';
+import { resolveShareToken } from '@/lib/share-token';
 
-/** Resolve token to userId/client/project — tries DB first, then base64url path */
-async function resolveToken(token: string): Promise<{ userId: string; client: string; project: string } | null> {
-  const supabase = getSupabaseAdmin();
-
-  // Try database
-  try {
-    const { data } = await supabase
-      .from('share_links')
-      .select('user_id, client, project, expires_at, is_active')
-      .eq('token', token)
-      .single();
-
-    if (data?.is_active && (!data.expires_at || new Date(data.expires_at) > new Date())) {
-      return { userId: data.user_id, client: data.client, project: data.project };
-    }
-  } catch {
-    // Table not in cache — fall through
-  }
-
-  // Fallback: base64url encoded path
-  try {
-    const decoded = Buffer.from(token, 'base64url').toString('utf-8');
-    const parts = decoded.split('/');
-    if (parts.length === 3) {
-      return { userId: parts[0], client: parts[1], project: parts[2] };
-    }
-  } catch {
-    // Invalid token
-  }
-
-  return null;
-}
+// Anonymous comments are unauthenticated — bound their size so a shared link
+// can't be used to flood the DB (and the owner's inbox) with huge payloads.
+const MAX_AUTHOR_NAME = 120;
+const MAX_COMMENT_BODY = 10_000;
 
 /**
  * GET /api/s/[token]/comments?admin=check — returns { isAdmin: boolean } if admin param is set,
@@ -46,7 +19,7 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
-  const resolved = await resolveToken(token);
+  const resolved = await resolveShareToken(token);
   if (!resolved) {
     return NextResponse.json({ error: 'Invalid share link' }, { status: 404 });
   }
@@ -86,7 +59,7 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
-  const resolved = await resolveToken(token);
+  const resolved = await resolveShareToken(token);
   if (!resolved) {
     return NextResponse.json({ error: 'Invalid share link' }, { status: 404 });
   }
@@ -96,6 +69,10 @@ export async function POST(
 
   if (!concept_id || !version_id || !author_name?.trim() || !commentBody?.trim()) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+
+  if (author_name.trim().length > MAX_AUTHOR_NAME || commentBody.trim().length > MAX_COMMENT_BODY) {
+    return NextResponse.json({ error: 'Comment too long' }, { status: 413 });
   }
 
   const supabase = getSupabaseAdmin();
@@ -185,7 +162,7 @@ export async function PATCH(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
-  const resolved = await resolveToken(token);
+  const resolved = await resolveShareToken(token);
   if (!resolved) {
     return NextResponse.json({ error: 'Invalid share link' }, { status: 404 });
   }
@@ -224,7 +201,7 @@ export async function DELETE(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
-  const resolved = await resolveToken(token);
+  const resolved = await resolveShareToken(token);
   if (!resolved) {
     return NextResponse.json({ error: 'Invalid share link' }, { status: 404 });
   }

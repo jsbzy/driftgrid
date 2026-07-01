@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { resolveShareToken } from '@/lib/share-token';
 
 const BUCKET = 'projects';
 
@@ -31,43 +32,12 @@ const STREAMABLE_EXTS = new Set(['.mp3', '.mp4', '.wav', '.ogg', '.webm', '.m4a'
 // short enough that the signed URL can't be cached/scraped indefinitely.
 const SIGNED_URL_TTL_SECONDS = 3600;
 
-/** Resolve token to userId/client/project */
-async function resolveToken(token: string): Promise<{ userId: string; client: string; project: string } | null> {
-  const supabase = getSupabaseAdmin();
-
-  try {
-    const { data } = await supabase
-      .from('share_links')
-      .select('user_id, client, project, expires_at, is_active')
-      .eq('token', token)
-      .single();
-
-    if (data?.is_active && (!data.expires_at || new Date(data.expires_at) > new Date())) {
-      return { userId: data.user_id, client: data.client, project: data.project };
-    }
-  } catch {
-    // Fall through to base64url
-  }
-
-  try {
-    const decoded = Buffer.from(token, 'base64url').toString('utf-8');
-    const parts = decoded.split('/');
-    if (parts.length === 3) {
-      return { userId: parts[0], client: parts[1], project: parts[2] };
-    }
-  } catch {
-    // Invalid
-  }
-
-  return null;
-}
-
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ token: string; path: string[] }> }
 ) {
   const { token, path: pathParts } = await params;
-  const resolved = await resolveToken(token);
+  const resolved = await resolveShareToken(token);
   if (!resolved) {
     return new NextResponse('Not found', { status: 404 });
   }
