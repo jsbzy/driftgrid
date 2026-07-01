@@ -3,6 +3,7 @@ import path from 'path';
 import { getManifest, writeManifest, copyFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import { areValidSlugs } from '@/lib/slug';
+import { findConcept } from '@/lib/manifest-lookup';
 
 export async function POST(request: Request) {
   const { client, project, sourceFile, sourceLabel, sourceNumber, targetConceptId, targetRoundId } = await request.json();
@@ -21,14 +22,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Manifest not found' }, { status: 404 });
   }
 
-  // Find target concept in the correct round
-  let concepts = manifest.concepts;
+  // Find the target concept. `manifest.concepts` is only the latest-round alias,
+  // so pasting into a non-latest round's concept 404s through it (rounds-alias
+  // footgun). Prefer the explicit targetRoundId; otherwise search all rounds.
+  let targetConcept;
   if (targetRoundId) {
     const round = manifest.rounds.find(r => r.id === targetRoundId);
-    if (round) concepts = round.concepts;
+    targetConcept = round?.concepts.find(c => c.id === targetConceptId);
   }
-
-  const targetConcept = concepts.find(c => c.id === targetConceptId);
+  if (!targetConcept) {
+    ({ concept: targetConcept } = findConcept(manifest, targetConceptId));
+  }
   if (!targetConcept) {
     return NextResponse.json({ error: 'Target concept not found' }, { status: 404 });
   }

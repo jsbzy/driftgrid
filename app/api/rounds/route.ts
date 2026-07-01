@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getManifest, writeManifest, writeHtmlFile, copyFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
+import { areValidSlugs } from '@/lib/slug';
 import type { Concept, Manifest, Round } from '@/lib/types';
 
 /**
@@ -17,6 +18,9 @@ export async function POST(request: Request) {
 
   if (!client || !project) {
     return NextResponse.json({ error: 'Missing client or project' }, { status: 400 });
+  }
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const userId = await getUserId();

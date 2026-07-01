@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getManifest, writeManifest, writeHtmlFile, getHtmlFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
+import { areValidSlugs } from '@/lib/slug';
 import type { Manifest } from '@/lib/types';
 import { findConceptAndVersion } from '@/lib/manifest-lookup';
 
@@ -25,6 +26,9 @@ export async function POST(request: Request) {
   if (!client || !project || !versions?.length || !newProject) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
 
   const userId = await getUserId();
   const sourceManifest = await getManifest(userId, client, project);
@@ -33,6 +37,9 @@ export async function POST(request: Request) {
   }
 
   const slug = newProject.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  if (!areValidSlugs(slug)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
   const canvas = newCanvas || sourceManifest.project.canvas;
   const now = new Date().toISOString();
   const projectName = newProject.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');

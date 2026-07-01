@@ -37,7 +37,7 @@ The manifest is shared mutable state across the UI, MCP tools, thumbnail regen, 
 - **One browser tab** per project. Every UI mutation does a full-manifest PUT — two tabs press `D` simultaneously and the second silently wins.
 - **No agent edits while the grid view is opening on a cold cache.** Cold-open triggers ~N parallel thumbnail regenerations; each does a manifest read-modify-write.
 - **Snapshot before risky sessions**: `cp projects/<client>/<project>/manifest.json projects/<client>/<project>/manifest.json.bak-pre-$(date +%s)`. The system also keeps a rotating ring of 5 `.bak-<ts>` files automatically.
-- **Don't branch on rounds projects** — `/api/branch` is silently a no-op on rounds-enabled projects (uses the rounds-alias; fix queued as P2.5). Use drift + manual concept create until the fix lands.
+- **`/api/branch` on rounds projects is fixed** — it uses `findConceptAndVersion` and splices the source round's concepts. (Historical note: it used to be a silent no-op via the rounds-alias.) No smoke guard covers branch-on-rounds yet, so don't regress it without adding one.
 
 ### Sanity check
 
@@ -54,5 +54,5 @@ These are load-bearing — breaking them re-introduces the corruption bug class:
 1. **All manifest writes go through `lib/storage.writeManifest`.** It owns the per-`(client, project)` in-process serializer. Never import `writeManifest` from `lib/manifest` directly. Never `fs.writeFile` a `manifest.json` from anywhere else.
 2. **`lib/manifest.writeManifest` is atomic** (temp file + rename) and rotates 5 `.bak-<ts>` snapshots. Don't replace with a direct `fs.writeFile`.
 3. **`manifest.concepts` is a read-only alias** for the latest round. Never mutate it directly. Mutate `manifest.rounds[N].concepts[]`. The alias is stripped on serialize — splice/push on the alias does not persist.
-4. **Never iterate `manifest.concepts` to find a concept by id on a rounds project.** Use `findConceptAndVersion` (currently in `app/api/annotations/route.ts`, will move to `lib/manifest-lookup.ts` in P2). It searches all rounds.
+4. **Never iterate `manifest.concepts` to find a concept by id on a rounds project.** Use `findConceptAndVersion` / `findConcept` / `getAllConcepts` from `lib/manifest-lookup.ts`. They search all rounds.
 5. **`version.thumbnail` must match `.thumbs/${concept.id}-${version.id}.webp` exactly.** If you write any other value, the doctor will flag it. (Phase 2: this field is deprecated and derived from convention.)

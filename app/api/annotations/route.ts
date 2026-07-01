@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getManifest, writeManifest, writeHtmlFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
+import { areValidSlugs } from '@/lib/slug';
 import type { Annotation, Manifest } from '@/lib/types';
 import { findConceptAndVersion } from '@/lib/manifest-lookup';
 import {
@@ -29,6 +30,9 @@ export async function GET(request: Request) {
   if (!client || !project || !conceptId || !versionId) {
     return NextResponse.json({ error: 'Missing required params' }, { status: 400 });
   }
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
 
   const userId = await getUserId();
   const manifest = await getManifest(userId, client, project);
@@ -49,6 +53,9 @@ export async function POST(request: Request) {
 
   if (!client || !project || !conceptId || !versionId || !text) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const userId = await getUserId();
@@ -94,6 +101,9 @@ export async function DELETE(request: Request) {
   if (!client || !project || !conceptId || !versionId || !annotationId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
 
   const userId = await getUserId();
   const manifest = await getManifest(userId, client, project);
@@ -120,6 +130,9 @@ export async function PATCH(request: Request) {
 
   if (!client || !project || !conceptId || !versionId || !annotationId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const userId = await getUserId();

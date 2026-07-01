@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   const projectDir = path.join(PROJECTS_DIR, client, project);
 
   // Determine which versions to export
-  let versionsToExport: { concept: string; version: string; file: string }[] = [];
+  const versionsToExport: { concept: string; version: string; file: string }[] = [];
 
   if (conceptId && versionId) {
     // Single version — walks all rounds via findConceptAndVersion

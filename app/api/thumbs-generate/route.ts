@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { getManifest, writeManifest, isCloudMode } from '@/lib/storage';
+import { getManifest, isCloudMode } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { generateThumbnail } from '@/lib/thumbnails';
@@ -38,8 +38,8 @@ export async function POST(request: Request) {
     // Find the concept and version — searches all rounds, not just the latest
     // (manifest.concepts is the latest-round alias and would 404 here for
     // rounds projects requesting an older round's concept).
-    const { concept, version } = findConceptAndVersion(manifest, conceptId, versionId);
-    if (!concept || !version) {
+    const { version } = findConceptAndVersion(manifest, conceptId, versionId);
+    if (!version) {
       return NextResponse.json(
         { error: `Version ${versionId} not found in concept ${conceptId}` },
         { status: 404 }
@@ -73,11 +73,13 @@ export async function POST(request: Request) {
     // Generate the thumbnail
     await generateThumbnail(htmlPath, outputPath, width, height);
 
-    // Update manifest with thumbnail path. Routed through lib/storage so the
-    // write is serialized with all other manifest writers (drift, branch,
-    // annotation, UI mutation) — bypassing this re-creates the lost-update race.
-    version.thumbnail = `.thumbs/${thumbName}.webp`;
-    await writeManifest(userId, client, project, manifest);
+    // Intentionally do NOT write version.thumbnail back to the manifest. Readers
+    // derive the thumb path by convention (.thumbs/${concept.id}-${version.id}.webp,
+    // see CanvasView) and ignore the stored field. Writing here re-serialized the
+    // whole manifest from a pre-render snapshot — clobbering any annotation/star/
+    // drift that landed during the multi-second render (the documented
+    // manifest-race-with-annotations bug) and stampeding the write path on cold
+    // grid opens.
 
     // Read and return the generated thumbnail
     const thumbData = await fs.readFile(outputPath);

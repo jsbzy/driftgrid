@@ -37,8 +37,13 @@ export async function exportPdf(
   try {
     if (type === 'puppeteer') {
       const page = await browser.newPage();
+      page.setDefaultTimeout(20000);
       await page.setViewport({ width, height: height === 'auto' ? 900 : height, deviceScaleFactor: 2 });
-      await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle0' });
+      // 'load' + font wait, not 'networkidle0': every board pulls Google Fonts via
+      // a <link>, whose keepalive connection never goes idle, so networkidle hangs
+      // until the function timeout — breaking export on Vercel.
+      await page.goto(`file://${htmlPath}`, { waitUntil: 'load' });
+      await page.evaluate(() => (document as any).fonts?.ready).catch(() => {});
       const dimensions = await page.evaluate(() => ({
         width: document.documentElement.scrollWidth,
         height: document.documentElement.scrollHeight,
@@ -133,8 +138,12 @@ export async function exportPdfFromHtml(
   try {
     if (type === 'puppeteer') {
       const page = await browser.newPage();
+      page.setDefaultTimeout(20000);
       await page.setViewport({ width, height: height === 'auto' ? 900 : height, deviceScaleFactor: 2 });
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      // Images are inlined as base64; only the Google Fonts <link> remains.
+      // 'load' + font wait avoids the networkidle hang (see exportPdf).
+      await page.setContent(html, { waitUntil: 'load' });
+      await page.evaluate(() => (document as any).fonts?.ready).catch(() => {});
       const dimensions = await page.evaluate(() => ({
         width: document.documentElement.scrollWidth,
         height: document.documentElement.scrollHeight,
@@ -190,8 +199,11 @@ export async function exportPng(
   try {
     if (type === 'puppeteer') {
       const page = await browser.newPage();
+      page.setDefaultTimeout(20000);
       await page.setViewport({ width, height: pxHeight, deviceScaleFactor: 2 });
-      await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle0' });
+      // 'load' + font wait, not 'networkidle0' (Google Fonts <link> never idles).
+      await page.goto(`file://${htmlPath}`, { waitUntil: 'load' });
+      await page.evaluate(() => (document as any).fonts?.ready).catch(() => {});
       const pngBuffer = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width, height: pxHeight } });
       return Buffer.from(pngBuffer);
     } else {

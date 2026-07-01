@@ -1,7 +1,8 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 import type { Browser } from 'playwright';
-import { getManifest, writeManifest } from '../lib/manifest';
+import { getManifest } from '../lib/manifest';
+import { getAllConcepts } from '../lib/manifest-lookup';
 import { resolveCanvas } from '../lib/constants';
 import { withBrowser, renderThumbnail } from '../lib/thumbnails';
 
@@ -49,21 +50,23 @@ async function main() {
   let generated = 0;
   let skipped = 0;
 
+  // Every concept across every round — not manifest.concepts, which is only the
+  // latest-round alias and would skip older rounds on a rounds project.
+  const allConcepts = getAllConcepts(manifest);
+
   // One Chromium for the whole run (was: one launch per thumbnail — 24+/run).
   // withBrowser's try/finally guarantees it closes even if a render throws.
   await withBrowser(async (browser) => {
     activeBrowser = browser;
-    for (const concept of manifest.concepts) {
+    for (const { concept } of allConcepts) {
       for (const version of concept.versions) {
         const thumbName = `${concept.id}-${version.id}`;
         const outputPath = path.join(thumbsDir, `${thumbName}.webp`);
-        const thumbRelative = `.thumbs/${thumbName}.webp`;
 
         // Skip if exists (unless --force)
         if (!force) {
           try {
             await fs.access(outputPath);
-            version.thumbnail = thumbRelative;
             skipped++;
             continue;
           } catch {
@@ -74,13 +77,14 @@ async function main() {
         const htmlPath = path.resolve(projectDir, version.file);
         console.log(`  ${version.id}...`);
         await renderThumbnail(browser, htmlPath, outputPath, width, height);
-        version.thumbnail = thumbRelative;
         generated++;
       }
     }
   });
 
-  await writeManifest(client, project, manifest);
+  // No manifest write: thumbnail paths are derived by convention
+  // (.thumbs/${concept.id}-${version.id}.webp), so there's nothing to persist —
+  // and writing back the start-of-run snapshot would clobber any concurrent edit.
   console.log(`Done. ${generated} generated, ${skipped} skipped.`);
 }
 

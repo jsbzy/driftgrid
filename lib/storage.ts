@@ -125,8 +125,10 @@ export async function writeHtmlFile(userId: string | null, client: string, proje
   const { promises: fs } = await import('fs');
   const path = await import('path');
   const PROJECTS_DIR = path.join(process.cwd(), 'projects');
+  const root = path.resolve(PROJECTS_DIR) + path.sep;
   const destPath = path.resolve(path.join(PROJECTS_DIR, client, project, filePath));
-  if (!destPath.startsWith(path.resolve(PROJECTS_DIR))) return;
+  // Trailing separator so a sibling like `projects-x` can't satisfy the prefix.
+  if (!destPath.startsWith(root)) return;
   await fs.mkdir(path.dirname(destPath), { recursive: true });
   await fs.writeFile(destPath, content, 'utf-8');
 }
@@ -140,14 +142,18 @@ export async function copyFile(userId: string | null, client: string, project: s
   const { promises: fs } = await import('fs');
   const pathMod = await import('path');
   const PROJECTS_DIR = pathMod.join(process.cwd(), 'projects');
+  const projectsRoot = pathMod.resolve(PROJECTS_DIR) + pathMod.sep;
   const srcFull = pathMod.resolve(pathMod.join(PROJECTS_DIR, client, project, srcPath));
   const destFull = pathMod.resolve(pathMod.join(PROJECTS_DIR, client, project, destPath));
-  if (!srcFull.startsWith(pathMod.resolve(PROJECTS_DIR))) return;
-  if (!destFull.startsWith(pathMod.resolve(PROJECTS_DIR))) return;
+  if (!srcFull.startsWith(projectsRoot)) return;
+  if (!destFull.startsWith(projectsRoot)) return;
   await fs.mkdir(pathMod.dirname(destFull), { recursive: true });
   try {
     await fs.copyFile(srcFull, destFull);
-  } catch {
+  } catch (err) {
+    // Placeholder keeps the copy from hard-failing, but log it — a placeholder
+    // board is silent data loss otherwise.
+    console.error(`[copyFile] source missing, wrote placeholder: ${srcFull}`, err);
     await fs.writeFile(destFull, '<!-- copied -->', 'utf-8');
   }
 }
@@ -172,7 +178,7 @@ export async function getAsset(userId: string | null, client: string, project: s
   const PROJECTS_DIR = path.join(process.cwd(), 'projects');
   try {
     const fullPath = path.resolve(path.join(PROJECTS_DIR, client, project, filePath));
-    if (!fullPath.startsWith(path.resolve(PROJECTS_DIR))) return null;
+    if (!fullPath.startsWith(path.resolve(PROJECTS_DIR) + path.sep)) return null;
     return await fs.readFile(fullPath);
   } catch {
     return null;

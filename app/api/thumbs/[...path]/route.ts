@@ -4,7 +4,7 @@ import path from 'path';
 import sharp from 'sharp';
 import { getCachedManifest } from '@/lib/manifest-cache';
 import { isCloudMode } from '@/lib/supabase';
-import { getAsset, writeManifest } from '@/lib/storage';
+import { getAsset } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import { CANVAS_PRESETS } from '@/lib/constants';
 import { generateThumbnail } from '@/lib/thumbnails';
@@ -137,37 +137,11 @@ function generateThumbOnce(
     await fs.mkdir(path.dirname(resolved), { recursive: true });
     await generateThumbnail(info.htmlPath, resolved, info.width, info.height);
 
-    // Record the canonical thumbnail path on the manifest. Self-heal a
-    // non-canonical value, and break after the first exact match so repeated
-    // legacy concept IDs across rounds don't all get the same thumb. Routed
-    // through lib/storage.writeManifest so this write is serialized with every
-    // other manifest writer (per-(client,project) lock + cache invalidation).
-    const expectedBase = thumbFilename.replace(/\.(webp|png)$/, '');
-    const canonicalThumb = `.thumbs/${thumbFilename}`;
-    const manifest = await getCachedManifest(client, project);
-    if (manifest) {
-      let updated = false;
-      const allConceptSets = manifest.rounds?.length
-        ? manifest.rounds.map(r => r.concepts)
-        : [manifest.concepts];
-      outer: for (const concepts of allConceptSets) {
-        for (const concept of concepts) {
-          for (const version of concept.versions) {
-            if (`${concept.id}-${version.id}` !== expectedBase) continue;
-            if (version.thumbnail !== canonicalThumb) {
-              version.thumbnail = canonicalThumb;
-              updated = true;
-            }
-            break outer; // first exact match wins
-          }
-        }
-      }
-      if (updated) {
-        const userId = isCloudMode() ? await getUserId() : null;
-        await writeManifest(userId, client, project, manifest);
-      }
-    }
-
+    // Deliberately no manifest write here. Readers derive the thumb path by
+    // convention (.thumbs/${concept.id}-${version.id}.webp — see CanvasView) and
+    // ignore version.thumbnail, so self-healing it served no purpose while
+    // re-serializing the full manifest on every cold-grid miss — stampeding the
+    // write path and racing concurrent UI/annotation writes.
     return await fs.readFile(resolved);
   })();
 

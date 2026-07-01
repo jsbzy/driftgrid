@@ -16,6 +16,26 @@ import { createBrowserClient } from '@supabase/ssr';
  *   origin — the localhost URL of the opener (e.g. http://localhost:3000)
  */
 
+/**
+ * Only local DriftGrid instances (or the Tauri desktop shell) are ever legitimate
+ * openers of this popup. Validate the requested `origin` against that allowlist and
+ * use it as the postMessage targetOrigin — never `'*'`. A `'*'` target would let any
+ * page that opened this popup (e.g. https://evil.com/?origin=*) receive the Supabase
+ * access + refresh tokens, which is full account takeover.
+ */
+function isAllowedOpenerOrigin(origin: string | null): origin is string {
+  if (!origin) return false;
+  let u: URL;
+  try { u = new URL(origin); } catch { return false; }
+  const host = u.hostname;
+  const isLocal = host === 'localhost' || host === '127.0.0.1';
+  if ((u.protocol === 'http:' || u.protocol === 'https:') && isLocal) return true;
+  // Tauri desktop shell origins
+  if (u.protocol === 'tauri:' && host === 'localhost') return true;
+  if ((u.protocol === 'https:') && host === 'tauri.localhost') return true;
+  return false;
+}
+
 function getSupabaseBrowser() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +45,8 @@ function getSupabaseBrowser() {
 
 function ConnectFlow() {
   const searchParams = useSearchParams();
-  const openerOrigin = searchParams.get('origin') || '*';
+  const requestedOrigin = searchParams.get('origin');
+  const openerOrigin = isAllowedOpenerOrigin(requestedOrigin) ? requestedOrigin : null;
   const signOutRequested = searchParams.get('signout') === '1';
 
   const [state, setState] = useState<'checking' | 'login' | 'connected' | 'error'>('checking');
@@ -67,9 +88,18 @@ function ConnectFlow() {
   }
 
   function sendTokensAndClose(accessToken: string, refreshToken: string, userEmail: string) {
+    // Refuse to hand tokens to an unrecognized opener. Without a validated origin
+    // there is no safe targetOrigin to post to, so surface an error instead.
+    if (!openerOrigin) {
+      setError('This window was opened from an unrecognized location. Close it and retry from DriftGrid.');
+      setState('error');
+      return;
+    }
+
     setState('connected');
 
-    // Send credentials back to the opener window
+    // Send credentials back to the opener window. targetOrigin is the validated
+    // local origin — the browser will not deliver to any other origin.
     if (window.opener) {
       window.opener.postMessage({
         type: 'driftgrid-cloud-auth',
@@ -132,6 +162,11 @@ function ConnectFlow() {
   }
 
   async function handleOAuth(provider: 'google' | 'github') {
+    if (!openerOrigin) {
+      setError('This window was opened from an unrecognized location. Close it and retry from DriftGrid.');
+      setState('error');
+      return;
+    }
     setError('');
     setInfo('');
     setLoading(true);
@@ -323,8 +358,8 @@ function ConnectFlow() {
 
       {/* ERROR STATE */}
       {state === 'error' && (
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: 13, color: '#e55', margin: '0 0 8px' }}>Connection failed</p>
+        <div style={{ textAlign: 'center', maxWidth: 280 }}>
+          <p style={{ fontSize: 13, color: '#e55', margin: '0 0 8px' }}>{error || 'Connection failed'}</p>
           <button
             onClick={() => setState('login')}
             style={{

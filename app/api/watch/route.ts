@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { watch, type FSWatcher } from 'fs';
 import path from 'path';
 import { promises as fs } from 'fs';
+import { areValidSlugs } from '@/lib/slug';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -83,6 +84,9 @@ export async function GET(request: NextRequest) {
   const project = searchParams.get('project');
   if (!client || !project) {
     return new NextResponse('client and project query params are required', { status: 400 });
+  }
+  if (!areValidSlugs(client, project)) {
+    return new NextResponse('Invalid slug', { status: 400 });
   }
 
   const encoder = new TextEncoder();

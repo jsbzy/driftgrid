@@ -44,7 +44,7 @@ Cloud mode lets you share projects with clients via `https://yourdomain.com/s/{c
 
 1. Create a Supabase project — free tier works.
 2. Run the migrations in `supabase/migrations/` via `supabase db push` (or paste them into the SQL editor).
-3. Copy `.env.example` → `.env.local` and fill in:
+3. Copy `.env.local.example` → `.env.local` and fill in:
    ```
    NEXT_PUBLIC_SUPABASE_URL=
    NEXT_PUBLIC_SUPABASE_ANON_KEY=
@@ -145,7 +145,7 @@ DriftGrid includes an MCP server for direct agent integration:
 npm run mcp
 ```
 
-Your AI tool can create projects, add versions, read feedback, manage rounds — all without leaving the conversation. See `mcp/README.md` for the tool surface.
+Your AI tool can create projects, add versions, read feedback, manage rounds — all without leaving the conversation. See `AGENTS.md` and `mcp/server.ts` for the tool surface.
 
 ## Contributing
 

@@ -8,7 +8,7 @@ The core loop: **design > drift (iterate) > compare > share > collect feedback >
 
 ## Architecture
 
-- **Next.js 14** (App Router) on **Vercel** (driftgrid.ai)
+- **Next.js 16** (App Router) on **Vercel** (driftgrid.ai)
 - **Supabase** (Postgres + Auth + Storage) for cloud features (sharing, comments, user accounts)
 - **Stripe** for Pro tier billing
 - **Local-first**: the dev server runs on localhost:3000. All project files live on disk. Cloud is opt-in (push-on-share).

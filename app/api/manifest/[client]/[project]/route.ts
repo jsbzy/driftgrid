@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { getManifest as getManifestLocal } from '@/lib/manifest';
 import { getManifest, writeManifest, isCloudMode, ManifestValidationError } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
+import { areValidSlugs } from '@/lib/slug';
 import type { Manifest } from '@/lib/types';
 
 /**
@@ -23,6 +24,9 @@ export async function GET(
   { params }: { params: Promise<{ client: string; project: string }> }
 ) {
   const { client, project } = await params;
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
 
   let manifest: Manifest | null;
   if (isCloudMode()) {
@@ -52,6 +56,9 @@ export async function PUT(
     return NextResponse.json({ error: 'Read-only in production' }, { status: 403 });
   }
   const { client, project } = await params;
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+  }
   const manifest = await request.json();
   const userId = isCloudMode() ? await getUserId() : null;
 

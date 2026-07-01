@@ -132,6 +132,11 @@ export async function POST(request: Request) {
     clientEdits: [],
   };
 
+  // Written directly (not via lib/storage.writeManifest) on purpose: a brand-new
+  // project uses the legacy top-level `concepts` model with no rounds, and the
+  // shared write path strips the `concepts` alias (rounds own concepts there),
+  // which would persist an empty project. There are no concurrent writers for a
+  // just-created project, so the serializer/atomic-write guarantees aren't needed.
   await fs.writeFile(path.join(projectDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf-8');
 
   // Create starter HTML

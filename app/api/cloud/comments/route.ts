@@ -74,7 +74,7 @@ export async function GET(request: Request) {
     .from('projects')
     .download(storagePath);
 
-  let conceptLabels: Record<string, string> = {};
+  const conceptLabels: Record<string, string> = {};
   if (manifestBlob) {
     try {
       const manifest = JSON.parse(await manifestBlob.text());
