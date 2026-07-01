@@ -5,6 +5,7 @@ import { getUserId } from '@/lib/auth';
 import { DRIFT_COPY_CHANGELOG } from '@/lib/constants';
 import { areValidSlugs } from '@/lib/slug';
 import { invalidateManifestCache } from '@/lib/manifest-cache';
+import { findConceptAndVersion } from '@/lib/manifest-lookup';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -25,26 +26,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Manifest not found' }, { status: 404 });
   }
 
-  // Resolve concepts from the target round. `manifest.concepts` is aliased to
-  // the latest round, so drift from a non-latest round must pass roundId.
-  let concepts = manifest.concepts;
+  // Resolve the concept + version across all rounds. `manifest.concepts` is only
+  // the latest-round alias, so drifting a non-latest round via the alias 404s
+  // (the rounds-alias footgun). roundId, when supplied, disambiguates a concept
+  // id that repeats across rounds; otherwise findConceptAndVersion searches all.
+  let concept, version;
   if (roundId) {
     const round = manifest.rounds?.find(r => r.id === roundId);
-    if (round) concepts = round.concepts;
+    concept = round?.concepts.find(c => c.id === conceptId);
+    version = concept?.versions.find(v => v.id === versionId);
   }
-
-  const concept = concepts.find(c => c.id === conceptId);
+  if (!concept || !version) {
+    ({ concept, version } = findConceptAndVersion(manifest, conceptId, versionId));
+  }
   if (!concept) {
     return NextResponse.json({ error: 'Concept not found' }, { status: 404 });
   }
-
-  const version = concept.versions.find(v => v.id === versionId);
   if (!version) {
     return NextResponse.json({ error: 'Version not found' }, { status: 404 });
   }
 
-  // Determine next version number
-  const maxNumber = Math.max(...concept.versions.map(v => v.number));
+  // Determine next version number (defensive: never Math.max of an empty list).
+  const versionNumbers = concept.versions.map(v => v.number);
+  const maxNumber = versionNumbers.length ? Math.max(...versionNumbers) : 0;
   const nextNumber = maxNumber + 1;
   const nextId = `v${nextNumber}`;
 

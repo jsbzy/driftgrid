@@ -5,6 +5,7 @@ import { CANVAS_PRESETS } from '@/lib/constants';
 import { conceptSlug } from '@/lib/letters';
 import type { Manifest } from '@/lib/types';
 import { areValidSlugs } from '@/lib/slug';
+import { writeManifest } from '@/lib/storage';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'projects');
 
@@ -132,7 +133,10 @@ export async function POST(request: Request) {
     clientEdits: [],
   };
 
-  await fs.writeFile(path.join(projectDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf-8');
+  // Route through the storage layer's serialized, atomic, cache-invalidating
+  // write rather than a raw fs.writeFile — keeps this on the one write path that
+  // owns the .bak rotation and the manifest cache (local mode: userId is unused).
+  await writeManifest(null, client, project, manifest);
 
   // Create starter HTML
   const starterHtml = isLocked

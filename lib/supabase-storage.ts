@@ -71,7 +71,10 @@ export async function writeManifestCloud(userId: string, client: string, project
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { concepts: _alias, ...rest } = manifest;
   const blob = new Blob([JSON.stringify(rest, null, 2)], { type: 'application/json' });
-  await supabase.storage.from(BUCKET).upload(path, blob, { upsert: true });
+  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, { upsert: true });
+  // Surface the failure — swallowing it reported a successful save to the route
+  // (and the client) while the manifest never landed in cloud storage.
+  if (error) throw new Error(`Cloud manifest write failed for ${path}: ${error.message}`);
 }
 
 /** List all clients and projects for a user from Supabase Storage */
@@ -130,7 +133,8 @@ export async function writeHtmlFileCloud(userId: string, client: string, project
   const supabase = getSupabaseAdmin();
   const storagePath = `${userId}/${client}/${project}/${filePath}`;
   const blob = new Blob([content], { type: 'text/html; charset=utf-8' });
-  await supabase.storage.from(BUCKET).upload(storagePath, blob, { upsert: true });
+  const { error } = await supabase.storage.from(BUCKET).upload(storagePath, blob, { upsert: true });
+  if (error) throw new Error(`Cloud HTML write failed for ${storagePath}: ${error.message}`);
 }
 
 /** Copy a file within Supabase Storage (read source → write dest) */
@@ -141,7 +145,9 @@ export async function copyFileCloud(userId: string, client: string, project: str
 
   const { data, error } = await supabase.storage.from(BUCKET).download(srcFull);
   if (error || !data) {
-    // Source doesn't exist — write a placeholder
+    // Source doesn't exist — write a placeholder so the copy doesn't hard-fail,
+    // but log it: a placeholder board is data loss masquerading as success.
+    console.error(`[copyFileCloud] source missing, wrote placeholder: ${srcFull}${error ? ` (${error.message})` : ''}`);
     const blob = new Blob(['<!-- copied -->'], { type: 'text/html; charset=utf-8' });
     await supabase.storage.from(BUCKET).upload(destFull, blob, { upsert: true });
     return;
