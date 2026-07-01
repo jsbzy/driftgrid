@@ -1,13 +1,53 @@
 name: CI
 on: [push, pull_request]
+
+# Cancel superseded runs on the same ref (e.g. rapid pushes to a PR).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
+    name: Typecheck · Lint · Unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
       - run: npm ci
-      - run: npx tsc --noEmit
-      - run: npx tsx --test tests/*.test.ts
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npx tsx --test tests/*.test.ts
+
+  smoke:
+    name: API smoke suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start dev server
+        run: |
+          nohup npm run dev:raw > /tmp/dev.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:3000/api/clients >/dev/null; then
+              echo "dev server up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "dev server failed to start"; cat /tmp/dev.log; exit 1
+      - name: Smoke (local mode — cloud/Stripe phases skip)
+        run: npm run smoke
+      - name: Dev server log on failure
+        if: failure()
+        run: cat /tmp/dev.log || true
