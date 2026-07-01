@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getManifest } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
+import { areValidSlugs } from '@/lib/slug';
 import type { Annotation } from '@/lib/types';
 
 export interface ProjectAnnotation {
@@ -35,6 +36,9 @@ export async function GET(request: Request) {
 
   if (!client || !project) {
     return NextResponse.json({ error: 'Missing client or project' }, { status: 400 });
+  }
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const userId = await getUserId();

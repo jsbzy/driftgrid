@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getManifest, getHtmlFile, writeHtmlFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
+import { areValidSlugs } from '@/lib/slug';
 import { findConceptAndVersion } from '@/lib/manifest-lookup';
 
 export async function POST(request: Request) {
@@ -8,6 +9,9 @@ export async function POST(request: Request) {
 
   if (!client || !project || !conceptId || !versionId || !edits) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   if (typeof edits !== 'object' || Object.keys(edits).length === 0) {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getUserId } from '@/lib/auth';
 import { getManifest, writeHtmlFile, writeManifest } from '@/lib/storage';
+import { areValidSlugs } from '@/lib/slug';
 import type { ProjectDocument } from '@/lib/types';
 
 function slugify(input: string): string {
@@ -23,6 +24,9 @@ export async function GET(request: Request) {
 
   if (!client || !project) {
     return NextResponse.json({ error: 'Missing client or project' }, { status: 400 });
+  }
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const userId = await getUserId();
@@ -63,6 +67,9 @@ export async function POST(request: Request) {
 
   if (!client || !project || !title || typeof content !== 'string') {
     return NextResponse.json({ error: 'Missing client, project, title, or content' }, { status: 400 });
+  }
+  if (!areValidSlugs(client, project)) {
+    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
   }
 
   const userId = await getUserId();
