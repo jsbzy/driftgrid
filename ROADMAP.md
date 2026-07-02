@@ -10,7 +10,6 @@
 
 ## 🔴 Now — do next
 
-- [ ] `sec` **Enable RLS on `profiles` + `cloud_annotations`** with owner-scoped policies. Same hole class as the share_links fix; `profiles` (email + Stripe IDs) is likely still anon-readable on prod. Needs `using (auth.uid() = id)` read-own-row policy (the account page reads via user session), not a bare enable. Verify against the anon key before/after. _(agent memory: `prod-rls-gaps.md`)_
 - [ ] `ops` **Rotate the exposed test Supabase key** (`twhanwpskndjgkmnfxav` / "Driftgrid test") — pasted in chat a prior session. Dashboard → Settings → API → roll keys.
 - [ ] `ops` **Preview sandbox** — Vercel Preview deploys currently hit the **prod** DB + **live** Stripe. Stand up a throwaway Supabase + Stripe-test, scope Preview-only env vars in Vercel so PR previews are safe to poke.
 - [ ] `cloud` **⚠️ Blocker: bring `feat/cloud-schema` up to date with `main`.** That branch predates the security work in #4/#5 — merging it as-is would **revert** the share-token fix and re-add the RecovryAI client files. Rebase/merge main in *before* any further cloud work.
@@ -39,5 +38,6 @@
 
 ## ✅ Shipped
 
+- [x] `sec` **profiles + cloud_annotations RLS** — restored RLS on both (prod had drifted with it off, leaking emails + Stripe IDs to the public key). `profiles` gets back its owner-scoped read/update policies; `cloud_annotations` is deny-all except service-role. Applied + verified on prod 2026-07-02 (anon read now returns `[]`). _(agent memory: `prod-rls-gaps.md`)_
 - [x] `sec` **PR #5** — actually closed the `share_links` anon-enumeration hole (RLS enabled on prod; the #4 migration was a no-op + failed to apply). Applied + verified on prod 2026-07-01.
 - [x] `sec` `cloud` `debt` **PR #4** — pre-prod sweep: account-takeover (`/connect`) fix, share-revocation bypass fix, slug/path-traversal guards, prod PDF export fix, manifest-write integrity, thumbnail concurrency cap, Stripe webhook retry, repo hygiene, CI lint+smoke jobs. Merged + deployed 2026-07-01.
