@@ -35,6 +35,7 @@
     "build-exports": "npx tsx scripts/build-exports.ts",
     "mcp": "npx tsx mcp/server.ts",
     "smoke": "tsx bin/smoke.ts",
+    "push": "tsx bin/driftgrid-push.ts",
     "launcher": "node bin/driftgrid-launcher.js",
     "tauri": "tauri",
     "tauri:build": "tauri build"

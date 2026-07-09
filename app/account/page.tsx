@@ -4,6 +4,7 @@ import { getProfile } from '@/lib/auth';
 import { isCloudMode } from '@/lib/supabase';
 import { SignOutButton } from './sign-out-button';
 import { DesktopOnlyGate } from '@/components/DesktopOnlyGate';
+import { AccessTokens } from '@/components/AccessTokens';
 
 export const metadata = {
   title: 'Account — DriftGrid',
@@ -104,6 +105,8 @@ export default async function AccountPage() {
             </Link>
           )}
         </section>
+
+        <AccessTokens />
 
         <section className="space-y-3 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
           <div className="text-[10px] tracking-widest uppercase" style={{ color: 'var(--muted)', opacity: 0.6 }}>

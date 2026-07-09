@@ -67,5 +67,8 @@ src-tauri/gen/schemas/
 # Launch tracker (local tool)
 launch-tracker.html
 
+# Personal access token for headless `npm run push` — never commit
+.driftgrid-pat
+
 # Local Supabase CLI state (temp)
 supabase/.temp/
