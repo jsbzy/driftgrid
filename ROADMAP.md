@@ -19,6 +19,8 @@
 - [ ] `web` **Document PATs + headless push publicly** — the `dg_pat_` flow (account → access tokens → `npm run push -- <client>/<project> --share`) is the agent story ("your agent ships designs straight to the web") and it's invisible. README section + docs.driftgrid.ai page.
 - [ ] `ux` **Onboarding friction pass** — replay of the 2026-07-09 dogfooding session as a fresh user: token minting fails with a raw Postgres error when the migration is missing (needs a human message), the account page doesn't explain what a PAT is for, no guidance on local-vs-cloud project "home", `/admin` vs `/review` vs `/s/` modes are unlabeled in the UI.
 - [ ] `web` **Define + publish the new-user funnel** — two lanes: WEB (sign up on driftgrid.ai, free tier, zero install — most accessible) and LOCAL (git clone, free OSS, agent-first). PAT is the bridge from local → web. Needs a written flow before promotion so the README/landing tell one coherent story.
+- [ ] `web` **Cloud thumbnails are broken on Vercel** — `/api/thumbs-generate` writes to the ephemeral `projects/` fs and renders via `file://` (app/api/thumbs-generate/route.ts:55-85); cloud dashboards get blank/broken tiles. Options: push locally-generated `.thumbs/*.webp` during sync (cheap, works today) and/or a cloud render path via `@sparticuz/chromium` reading from Storage. _(Audit 2026-07-09.)_
+- [ ] `ux` **Seed a demo project for new cloud users** — fresh signups land on an empty dashboard ("No shared projects yet"); copy the bundled demo into `{userId}/demo/...` on first login (or a shared read-only demo) so there's something to explore before installing anything. _(Audit 2026-07-09.)_
 - [ ] `cloud` **Review + merge Phases 1–4** — SQLite + Postgres backends, manifest→DB mapper, DB↔DB Sync, parity tests. Already built on `feat/cloud-schema`, behind a flag. (Blocked by the update-from-main card above.)
 - [ ] `web` **Finish + merge marketing PRs #2 & #3** (em-dash sweep; hero-voice / branching differentiator) — both still Draft. Quick wins.
 - [ ] `sec` **Decision: scrub RecovryAI client IP from git history.** Removed at HEAD in #4, still retrievable from history (commits `9c6bcbc`, `7c8edd1`, `3cb3aee`). Full removal = history rewrite + force-push a public repo. Go / no-go.
@@ -26,6 +28,7 @@
 
 ## 🔵 Later — the rebuild + launch (CLOUD-FOUNDATION phases 5–8)
 
+- [ ] `cloud` **In-browser project creation** — a cloud user cannot create a project at all today: `/api/create-project` is fs-only (no `isCloudMode`/userId branch; would write Vercel's ephemeral disk) and no dashboard UI calls it. This is THE gate on "cloud as the accessible entry point"; until it lands, all promotion routes new users through local install. Natural fit alongside Phase 8's New Project. _(Audit 2026-07-09.)_
 - [ ] `cloud` **Phase 5 — Web MCP.** Host the MCP tool surface on the cloud DB; per-user auth; multi-tenant. The "your agents work your projects from anywhere" premium hook.
 - [ ] `cloud` **Phase 6 — Workspaces UI.** Open / switch between a local and a cloud workspace in the app (Git-client model).
 - [ ] `cloud` **Phase 7 — Billing polish.** Freemium caps (share links / cloud projects); fill Stripe lifecycle gaps: `trialing` / `past_due` / `invoice.payment_failed`.
