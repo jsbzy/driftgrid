@@ -28,8 +28,11 @@
 
 ## 🔵 Later — the rebuild + launch (CLOUD-FOUNDATION phases 5–8)
 
-- [ ] `cloud` **In-browser project creation** — a cloud user cannot create a project at all today: `/api/create-project` is fs-only (no `isCloudMode`/userId branch; would write Vercel's ephemeral disk) and no dashboard UI calls it. This is THE gate on "cloud as the accessible entry point"; until it lands, all promotion routes new users through local install. Natural fit alongside Phase 8's New Project. _(Audit 2026-07-09.)_
-- [ ] `cloud` **Phase 5 — Web MCP.** Host the MCP tool surface on the cloud DB; per-user auth; multi-tenant. The "your agents work your projects from anywhere" premium hook.
+- [ ] `cloud` **In-browser project creation** — **in review: PR #12** (dual-mode `lib/create-project`, Dashboard New Project UI, raw-HTML paste lane). Post-merge acceptance: create→add_version→share on driftgrid.ai with a real PAT.
+- [ ] `cloud` **Phase 5 — Web MCP** — **in review: PR #12** (`/api/mcp`, stateless streamable HTTP, PAT auth, 7 tools; see docs/MCP.md). Follow-ups below.
+- [ ] `cloud` **MCP OAuth for claude.ai web** — claude.ai custom connectors require OAuth (dynamic client registration); PAT headers cover Claude Code / Codex / Cursor but not claude.ai web. Needed for the "connect from any chat" story.
+- [ ] `debt` **Smoke phase for `/api/mcp`** — the endpoint is hand-verified (full loop, local mode); wants a phase in bin/smoke.ts so regressions surface.
+- [ ] `ux` **Cloud thumbnails for cloud-born projects** — PR #10 covers pushed projects (local generates + uploads); projects created in the browser still have no tiles until a cloud render path (`@sparticuz/chromium` reading from Storage) exists.
 - [ ] `cloud` **Phase 6 — Workspaces UI.** Open / switch between a local and a cloud workspace in the app (Git-client model).
 - [ ] `cloud` **Phase 7 — Billing polish.** Freemium caps (share links / cloud projects); fill Stripe lifecycle gaps: `trialing` / `past_due` / `invoice.payment_failed`.
 - [ ] `ux` **Phase 8 — Dashboard reimagine.** Unified visual library — thumbnails, status-first, New Project, kill `LocalServerBar`. Built on the new DB foundation. _(This is the "design UX" track.)_
