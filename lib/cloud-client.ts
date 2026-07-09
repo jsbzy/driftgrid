@@ -47,6 +47,29 @@ export async function verifyToken(accessToken: string): Promise<VerifyResult> {
 }
 
 /**
+ * Fetch the sync-guard state of the cloud copy: whether a manifest exists for
+ * (client, project) under the caller's account and the sha256 of its bytes.
+ * See lib/sync-guard.ts for how callers use this to avoid clobbering cloud
+ * changes. Throws on transport/auth failure so callers can distinguish
+ * "cloud says absent" from "couldn't ask" — the guard must fail closed.
+ */
+export async function getCloudManifestState(
+  accessToken: string,
+  client: string,
+  project: string,
+): Promise<{ exists: boolean; hash: string | null }> {
+  const params = new URLSearchParams({ client, project });
+  const res = await fetch(`${CLOUD_URL}/api/cloud/manifest-state?${params}`, {
+    headers: { 'Authorization': `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `manifest-state failed: HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+/**
  * Refresh an expired access token using the refresh token.
  * Calls Supabase Auth's token refresh endpoint directly.
  */
