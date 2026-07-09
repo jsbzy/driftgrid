@@ -7,6 +7,7 @@ import type { ClientInfo } from '@/lib/types';
 import { resolveCanvas } from '@/lib/constants';
 import { useCopyFeedback } from '@/lib/hooks/useCopyFeedback';
 import { useLocalLauncher, type LauncherStatus } from '@/lib/hooks/useLocalLauncher';
+import { NewProjectForm } from '@/components/NewProjectForm';
 
 const isCloud = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -63,6 +64,7 @@ export function Dashboard() {
     fetcher
   );
   const launcher = useLocalLauncher();
+  const [showNewProject, setShowNewProject] = useState(false);
 
   const isEmpty = clients && clients.length === 0;
 
@@ -88,6 +90,13 @@ export function Dashboard() {
           DriftGrid{isCloud ? ' Cloud' : ''}
         </h1>
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowNewProject(v => !v)}
+            className="text-[10px] tracking-wide text-[var(--muted)] hover:opacity-80"
+            style={{ opacity: 0.5 }}
+          >
+            + New project
+          </button>
           {isCloud && (
             <Link href="/account" className="text-[10px] tracking-wide text-[var(--muted)] no-underline hover:opacity-80" style={{ opacity: 0.5 }}>
               Account
@@ -96,6 +105,12 @@ export function Dashboard() {
           <ThemeToggle />
         </div>
       </header>
+
+      {showNewProject && !isEmpty && (
+        <div className="mb-10">
+          <NewProjectForm onCancel={() => setShowNewProject(false)} />
+        </div>
+      )}
 
       {/* Cloud mode subtitle + local server bar */}
       {isCloud && (
@@ -115,20 +130,13 @@ export function Dashboard() {
       {/* Empty state */}
       {isEmpty && (
         <div className="text-center py-20">
-          {isCloud ? (
-            <div>
-              <p className="text-sm text-[var(--muted)] mb-4">
-                No shared projects yet.
-              </p>
-              <p className="text-xs text-[var(--muted)] mb-6" style={{ opacity: 0.5, maxWidth: 400, margin: '0 auto 24px', lineHeight: 1.6 }}>
-                Design locally with your agent, then click Share in your project to publish it here.
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-[var(--muted)]">
-              No projects yet. Run <code className="text-[var(--foreground)] font-medium">driftgrid init</code> to create one.
-            </p>
-          )}
+          <p className="text-sm text-[var(--muted)] mb-2">No projects yet.</p>
+          <p className="text-xs text-[var(--muted)] mb-6" style={{ opacity: 0.5, maxWidth: 420, margin: '0 auto 24px', lineHeight: 1.6 }}>
+            {isCloud
+              ? 'Create one here and paste HTML from your agent — or design locally and push with Sync / npm run push.'
+              : <>Create one below, or run <code className="text-[var(--foreground)] font-medium">driftgrid init</code>.</>}
+          </p>
+          <NewProjectForm />
         </div>
       )}
 

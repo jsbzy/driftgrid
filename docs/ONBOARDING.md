@@ -4,9 +4,9 @@ This is the canonical map of how someone goes from "never heard of DriftGrid" to
 
 ## The one-sentence model
 
-**Designs are born locally (free, open source); the cloud is where they meet other people** (share links, client comments, review from any device).
+**Two doors, one grid: install nothing (driftgrid.ai) or install locally (free OSS). The cloud is where designs meet other people** (share links, client comments, review from any device).
 
-There is deliberately no third story. Until in-browser project creation ships (see ROADMAP), every user's first project is created on their own machine — so all promotion should route new users through the local quick start, with the cloud presented as the payoff, not the entry.
+Cloud-standalone shipped 2026-07-09: projects can be created in the browser, agents connect via the web MCP (`/api/mcp`, PAT auth — see docs/MCP.md), and chat-only users paste HTML from a Claude/ChatGPT conversation. Promotion can lead with either door — "zero install" for reach, local for the agent-power story.
 
 ## Lane A — the designer with an agent (primary funnel)
 
@@ -54,11 +54,9 @@ Same as Lane A, but instead of driftgrid.ai they run their own Supabase (README 
 
 Audited 2026-07-09 (see ROADMAP for the cards):
 
-- **"Sign up and start designing in your browser"** — false today. No in-browser project creation; a fresh cloud dashboard is empty with a pointer back to local.
-- **Thumbnails on the cloud dashboard** — generation is local-only; cloud-side tiles can be missing until the sync-thumbnails / cloud-render card lands.
+- **Thumbnails for cloud-created projects** — there's no cloud-side renderer; tiles appear only for projects pushed from a local machine (push generates + uploads them). Cloud-born projects show placeholder tiles until the cloud-render card lands.
 - **A demo to explore on driftgrid.ai** — new accounts aren't seeded with one yet.
-
-When these ship, Lane A gets a true zero-install variant and this doc gets a rewrite.
+- **claude.ai web custom connectors** — need OAuth on the MCP endpoint (roadmap card); today claude.ai-web users take the paste lane, while Claude Code / Codex / Cursor use the web MCP with a token.
 
 ## Where the money is
 

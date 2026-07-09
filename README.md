@@ -27,15 +27,13 @@ DriftGrid is the missing layer:
 
 ## Start here — two ways in
 
-DriftGrid is **local-first**: projects are created and designed on your machine (free, open source, no account). The **cloud** ([driftgrid.ai](https://driftgrid.ai)) is where finished work goes — share links, client review and comments, sync across devices.
+DriftGrid runs **local-first** (your machine, free, open source, no account) or **cloud-standalone** ([driftgrid.ai](https://driftgrid.ai) — nothing to install). Both give you the same grid; the cloud adds share links, client review and comments, and access from anywhere.
 
 | You want to… | Do this |
 |---|---|
-| Create designs with your agent | **Local install** (below) — this is the starting point for everyone |
-| Share with a client / review from anywhere | Local install + free [driftgrid.ai](https://driftgrid.ai) account, then push |
-| Just see what a client sees | Open any share link — no account needed |
-
-In-browser project creation on driftgrid.ai is on the roadmap; today, designs are born locally.
+| Work with an agent on your machine (Claude Code, Cursor…) | **Local install** (below) — free, fully offline |
+| Work with zero install | Sign up at [driftgrid.ai](https://driftgrid.ai): create projects in the browser, connect agents via the [web MCP](docs/MCP.md), or paste HTML straight from a Claude/ChatGPT conversation |
+| Share with a client / review from anywhere | Either of the above + Share — clients need no account |
 
 ## Quick Start — local (zero config)
 
@@ -168,15 +166,14 @@ Self-hosted with your own Supabase is free forever. See [driftgrid.ai/pricing](h
 | Tablet | 768 × auto | scroll |
 | Mobile | 375 × auto | scroll |
 
-## MCP server
+## MCP — agents drive DriftGrid directly
 
-DriftGrid includes an MCP server for direct agent integration:
+Two servers, same tools (create projects, add versions, read feedback, share):
 
-```bash
-npm run mcp
-```
+- **Local** — `npm run mcp` (stdio, against your `projects/` folder)
+- **Web** — `https://driftgrid.ai/api/mcp` (streamable HTTP, auth via a personal access token) — agents work your cloud projects from anywhere, no local install
 
-Your AI tool can create projects, add versions, read feedback, manage rounds — all without leaving the conversation. See `AGENTS.md` and `mcp/server.ts` for the tool surface.
+Setup for Claude Code, Codex, and Cursor in [docs/MCP.md](docs/MCP.md). Conventions in `AGENTS.md`.
 
 ## Contributing
 
