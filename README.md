@@ -25,6 +25,18 @@ DriftGrid is the missing layer:
 - **Cloud sharing (optional)** — push to the cloud, share a link, clients review and comment
 - **Live HTML** — every frame is a real HTML page, not a screenshot
 
+## Start here — two ways in
+
+DriftGrid is **local-first**: projects are created and designed on your machine (free, open source, no account). The **cloud** ([driftgrid.ai](https://driftgrid.ai)) is where finished work goes — share links, client review and comments, sync across devices.
+
+| You want to… | Do this |
+|---|---|
+| Create designs with your agent | **Local install** (below) — this is the starting point for everyone |
+| Share with a client / review from anywhere | Local install + free [driftgrid.ai](https://driftgrid.ai) account, then push |
+| Just see what a client sees | Open any share link — no account needed |
+
+In-browser project creation on driftgrid.ai is on the roadmap; today, designs are born locally.
+
 ## Quick Start — local (zero config)
 
 Everything below works with no Supabase, no Stripe, no accounts. Your designs stay on your machine.
@@ -60,7 +72,7 @@ Cloud mode lets you share projects with clients via `https://yourdomain.com/s/{c
    ```
 5. Restart `npm run dev`.
 
-For the hosted version, just sign up at [driftgrid.ai](https://driftgrid.ai).
+Prefer not to run your own Supabase? Sign up at [driftgrid.ai](https://driftgrid.ai) and push your local projects there instead — that's the hosted cloud. (Note: the hosted dashboard is for sharing and reviewing what you push; creating projects still happens locally.)
 
 ## The workflow
 
@@ -73,6 +85,25 @@ Agent creates HTML → DriftGrid organizes it → Push to cloud → Share with c
 2. **Browse the grid** — zoom, navigate, compare concepts side by side. Star your picks.
 3. **Push to cloud** — one button on the dashboard uploads the starred versions from the current round.
 4. **Share a link** — your client gets a public review URL. No login needed. Republish and they see the update at the same URL.
+
+## Headless push — agents ship straight to the web
+
+The dashboard buttons need a browser. Agents and CI don't have one — so DriftGrid has **personal access tokens**. Mint one once, then any headless client can publish:
+
+```bash
+npm run push -- acme/landing-page --share
+# → authenticated as you@example.com (pro)
+# → pushing 12 file(s)…
+# ✓ synced 12 file(s) to the cloud
+# ✓ public share: https://driftgrid.ai/s/acme/3f9c…
+```
+
+Setup (once):
+
+1. Sign in at [driftgrid.ai/account](https://driftgrid.ai/account) → **access tokens** → generate. The `dg_pat_…` token is shown a single time (only its hash is stored).
+2. Put it in a `.driftgrid-pat` file at the repo root (gitignored), or export `DRIFTGRID_PAT`.
+
+That's the loop closed: *tell your agent what to change → it edits and pushes → you (or your client) refresh the share URL.* No tunnels, no browser session on the dev box. Pushes are overwrite-guarded — if the cloud copy changed since your machine last pushed, the CLI refuses unless you pass `--force`. Revoke tokens anytime from the same account page.
 
 ## How it works
 
