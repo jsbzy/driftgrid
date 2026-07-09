@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
+import { resolveCloudUser } from '@/lib/cloud-auth-server';
 
 /**
  * POST /api/cloud/share — create or republish a share link via JWT auth.
@@ -17,20 +18,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Cloud mode only' }, { status: 400 });
   }
 
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Missing authorization' }, { status: 401 });
+  const resolved = await resolveCloudUser(request.headers.get('authorization'));
+  if (!resolved) {
+    return NextResponse.json({ error: 'Invalid or expired credential' }, { status: 401 });
   }
 
-  const token = authHeader.slice(7);
+  const userId = resolved.userId;
   const supabase = getSupabaseAdmin();
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
-  }
-
-  const userId = user.id;
   const body = await request.json();
   const { client, project } = body;
   const roundNumber = typeof body.roundNumber === 'number' ? body.roundNumber : null;

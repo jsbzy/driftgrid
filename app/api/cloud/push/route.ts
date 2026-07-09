@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin, isCloudMode } from '@/lib/supabase';
+import { resolveCloudUser } from '@/lib/cloud-auth-server';
 
 const BUCKET = 'projects';
 
 /**
  * POST /api/cloud/push — receive files from a local DriftGrid instance and write to Supabase Storage.
  *
- * Auth: JWT in Authorization header (not cookie-based).
+ * Auth: Bearer credential in Authorization header (not cookie-based) — either a
+ * Supabase JWT or a DriftGrid personal access token (`dg_pat_…`), which is what
+ * lets headless / CLI clients push without a browser session.
  * Body: { client, project, files: [{ path, content, contentType }] }
  *
  * Files with binary content (images) should be base64-encoded with contentType set.
@@ -19,21 +22,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Cloud mode only' }, { status: 400 });
   }
 
-  // Validate JWT from Authorization header
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Missing authorization' }, { status: 401 });
+  const resolved = await resolveCloudUser(request.headers.get('authorization'));
+  if (!resolved) {
+    return NextResponse.json({ error: 'Invalid or expired credential' }, { status: 401 });
   }
 
-  const token = authHeader.slice(7);
+  const userId = resolved.userId;
   const supabase = getSupabaseAdmin();
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
-  }
-
-  const userId = user.id;
 
   const body = await request.json();
   const { client, project, files, scope } = body;
