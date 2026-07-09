@@ -8,8 +8,12 @@
  * can mirror a project to the cloud and optionally mint a public share link.
  *
  * Usage:
- *   npm run push -- <client>/<project> [--share] [--include-media] [--force]
+ *   npm run push -- <client>/<project> [--share] [--include-media] [--force] [--no-thumbs]
  *   tsx bin/driftgrid-push.ts <client>/<project> [--share]
+ *
+ * Thumbnails are generated before pushing (cloud has no render path — it can
+ * only serve what we upload). Best-effort: --no-thumbs skips, and a broken
+ * local chromium won't block the push.
  *
  * Auth (first found wins):
  *   • DRIFTGRID_PAT env var
@@ -26,6 +30,7 @@
  */
 
 import { promises as fs } from 'fs';
+import { spawnSync } from 'child_process';
 import { createHash } from 'crypto';
 import path from 'path';
 import { collectFiles } from '../lib/cloud-files';
@@ -77,9 +82,10 @@ async function main() {
   const doShare = args.includes('--share');
   const includeMedia = args.includes('--include-media');
   const force = args.includes('--force');
+  const noThumbs = args.includes('--no-thumbs');
 
   if (!target || !target.includes('/')) {
-    fail('Usage: driftgrid push <client>/<project> [--share] [--include-media] [--force]');
+    fail('Usage: driftgrid push <client>/<project> [--share] [--include-media] [--force] [--no-thumbs]');
   }
 
   const [client, project] = target.split('/');
@@ -107,20 +113,36 @@ async function main() {
   const localManifestBytes = await fs.readFile(path.join(projectDir, 'manifest.json'));
   const localManifestHash = createHash('sha256').update(localManifestBytes).digest('hex');
 
-  const cloudState = await getCloudManifestState(pat, client, project).catch((e) => {
-    // Fail closed: if we can't determine cloud state we must not blind-write.
-    fail(`Could not check the cloud copy before pushing (${e instanceof Error ? e.message : e}). ` +
-      'Re-run when the cloud is reachable, or pass --force to push anyway.');
-  });
+  if (force) {
+    console.log('! --force: skipping the cloud overwrite check');
+  } else {
+    const cloudState = await getCloudManifestState(pat, client, project).catch((e) => {
+      // Fail closed: if we can't determine cloud state we must not blind-write.
+      fail(`Could not check the cloud copy before pushing (${e instanceof Error ? e.message : e}). ` +
+        'Re-run when the cloud is reachable, or pass --force to push anyway.');
+    });
 
-  const safety = decideSyncSafety(await readSyncMarker(projectDir), cloudState);
-  if (!safety.safe) {
-    if (!force) {
+    const safety = decideSyncSafety(await readSyncMarker(projectDir), cloudState);
+    if (!safety.safe) {
       fail(`${explainBlockedSync(safety.reason)}\n` +
         '  To inspect the cloud copy: open the project on driftgrid.ai first.\n' +
         '  To overwrite it anyway:   re-run with --force.');
     }
-    console.log(`! overwriting cloud copy (--force, ${safety.reason})`);
+  }
+
+  // --- Thumbnails (cloud mode serves them from storage; they only exist if we
+  // generate and upload them — Vercel has no render path). Best-effort: a
+  // missing chromium install should not block the push itself. ---
+  if (!noThumbs) {
+    console.log('→ ensuring thumbnails…');
+    const gen = spawnSync(
+      'npx', ['tsx', path.join(ROOT, 'scripts/generate-thumbnails.ts'), client, project],
+      { cwd: ROOT, stdio: ['ignore', 'inherit', 'pipe'], timeout: 180_000 },
+    );
+    if (gen.status !== 0) {
+      const err = (gen.stderr?.toString() || '').trim().split('\n').slice(-2).join(' ');
+      console.log(`  (thumbnail generation failed — pushing without fresh thumbs: ${err || 'unknown error'})`);
+    }
   }
 
   // Collect the whole project directory (the sync marker is local bookkeeping — never uploaded).
