@@ -15,6 +15,10 @@
 
 ## 🟡 Next
 
+- [ ] `cloud` **Sync-overwrite guard** — `npm run push` / Sync silently clobbers the cloud copy with local state. Fine for one careful user; data loss for everyone else. Compare a last-synced marker against the cloud manifest before writing; require `--force` (CLI) / explicit confirm (UI) when cloud is newer. _(Found dogfooding 2026-07-09: the storyboard now lives in two places with no conflict signal.)_
+- [ ] `web` **Document PATs + headless push publicly** — the `dg_pat_` flow (account → access tokens → `npm run push -- <client>/<project> --share`) is the agent story ("your agent ships designs straight to the web") and it's invisible. README section + docs.driftgrid.ai page.
+- [ ] `ux` **Onboarding friction pass** — replay of the 2026-07-09 dogfooding session as a fresh user: token minting fails with a raw Postgres error when the migration is missing (needs a human message), the account page doesn't explain what a PAT is for, no guidance on local-vs-cloud project "home", `/admin` vs `/review` vs `/s/` modes are unlabeled in the UI.
+- [ ] `web` **Define + publish the new-user funnel** — two lanes: WEB (sign up on driftgrid.ai, free tier, zero install — most accessible) and LOCAL (git clone, free OSS, agent-first). PAT is the bridge from local → web. Needs a written flow before promotion so the README/landing tell one coherent story.
 - [ ] `cloud` **Review + merge Phases 1–4** — SQLite + Postgres backends, manifest→DB mapper, DB↔DB Sync, parity tests. Already built on `feat/cloud-schema`, behind a flag. (Blocked by the update-from-main card above.)
 - [ ] `web` **Finish + merge marketing PRs #2 & #3** (em-dash sweep; hero-voice / branching differentiator) — both still Draft. Quick wins.
 - [ ] `sec` **Decision: scrub RecovryAI client IP from git history.** Removed at HEAD in #4, still retrievable from history (commits `9c6bcbc`, `7c8edd1`, `3cb3aee`). Full removal = history rewrite + force-push a public repo. Go / no-go.
@@ -37,6 +41,7 @@
 
 ## ✅ Shipped
 
+- [x] `cloud` **Personal access tokens + headless push (PR #9)** — `dg_pat_` tokens (hashed at rest, mint/revoke on `/account`), `resolveCloudUser` accepts JWT or PAT on `verify`/`push`/`share`, and `npm run push -- <client>/<project> --share` pushes a project to the cloud with no browser session. Migration applied to prod + verified end-to-end (storyboard pushed headless) 2026-07-09. _(agent memory: `headless-push-pat.md`)_
 - [x] `ops` **Rotated the exposed test Supabase key** — deleted the leaked `default` secret key on the `twhanwpskndjgkmnfxav` ("Driftgrid test") project; a fresh secret key replaces it. 2026-07-02.
 - [x] `sec` **profiles + cloud_annotations RLS** — restored RLS on both (prod had drifted with it off, leaking emails + Stripe IDs to the public key). `profiles` gets back its owner-scoped read/update policies; `cloud_annotations` is deny-all except service-role. Applied + verified on prod 2026-07-02 (anon read now returns `[]`). _(agent memory: `prod-rls-gaps.md`)_
 - [x] `sec` **PR #5** — actually closed the `share_links` anon-enumeration hole (RLS enabled on prod; the #4 migration was a no-op + failed to apply). Applied + verified on prod 2026-07-01.
