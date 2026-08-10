@@ -70,5 +70,8 @@ launch-tracker.html
 # Personal access token for headless `npm run push` — never commit
 .driftgrid-pat
 
+# Per-machine sync markers written by `npm run push` (see lib/sync-guard.ts)
+**/.driftgrid-sync.json
+
 # Local Supabase CLI state (temp)
 supabase/.temp/
