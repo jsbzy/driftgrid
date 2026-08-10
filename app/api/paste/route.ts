@@ -1,15 +1,30 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
-import { getManifest, writeManifest, copyFile } from '@/lib/storage';
+import { getManifest, writeManifest, copyFile, writeHtmlFile } from '@/lib/storage';
 import { getUserId } from '@/lib/auth';
 import { areValidSlugs } from '@/lib/slug';
 import { findConcept } from '@/lib/manifest-lookup';
 
-export async function POST(request: Request) {
-  const { client, project, sourceFile, sourceLabel, sourceNumber, targetConceptId, targetRoundId } = await request.json();
+// Raw pastes are full HTML documents from a chat agent; anything bigger than
+// this is almost certainly not a design file.
+const MAX_RAW_HTML_BYTES = 2 * 1024 * 1024;
 
-  if (!client || !project || !sourceFile || !targetConceptId) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+export async function POST(request: Request) {
+  const { client, project, sourceFile, sourceLabel, sourceNumber, targetConceptId, targetRoundId, html, changelog: rawChangelog } = await request.json();
+
+  // Two paste modes: duplicate an existing version's file (sourceFile — the
+  // grid's Cmd+V), or write raw HTML content (html — pasted from a chat agent
+  // like Claude or Codex; also the web MCP's add_version primitive).
+  if (!client || !project || !targetConceptId || (!sourceFile && !html)) {
+    return NextResponse.json({ error: 'Missing required fields (need sourceFile or html)' }, { status: 400 });
+  }
+  if (html !== undefined) {
+    if (typeof html !== 'string' || !html.trim()) {
+      return NextResponse.json({ error: 'html must be a non-empty string' }, { status: 400 });
+    }
+    if (Buffer.byteLength(html, 'utf-8') > MAX_RAW_HTML_BYTES) {
+      return NextResponse.json({ error: 'html too large (max 2MB)' }, { status: 413 });
+    }
   }
 
   if (!areValidSlugs(client, project)) {
@@ -50,12 +65,18 @@ export async function POST(request: Request) {
     : targetConceptId;
   const newFile = `${conceptFolder}/v${nextNumber}.html`;
 
-  // Copy the HTML file via storage dispatch
-  await copyFile(userId, client, project, sourceFile, newFile);
-
-  // Build changelog
-  const fromLabel = sourceLabel ? `${sourceLabel} v${sourceNumber || '?'}` : 'clipboard';
-  const changelog = `Pasted from ${fromLabel}`;
+  // Write the HTML: raw content when provided, otherwise copy the source file.
+  let changelog: string;
+  if (html) {
+    await writeHtmlFile(userId, client, project, newFile, html);
+    changelog = typeof rawChangelog === 'string' && rawChangelog.trim()
+      ? rawChangelog.trim().slice(0, 300)
+      : 'Pasted HTML';
+  } else {
+    await copyFile(userId, client, project, sourceFile, newFile);
+    const fromLabel = sourceLabel ? `${sourceLabel} v${sourceNumber || '?'}` : 'clipboard';
+    changelog = `Pasted from ${fromLabel}`;
+  }
 
   const newVersion = {
     id: nextId,
