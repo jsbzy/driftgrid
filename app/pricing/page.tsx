@@ -109,8 +109,8 @@ export default function PricingPage() {
             </div>
             <ul className="space-y-2 text-xs" style={{ color: 'var(--foreground)' }}>
               <Feature text="Unlimited local projects" />
-              <Feature text="One shareable project — all its rounds" />
-              <Feature text="Every feature — grid, drift, compare, present" />
+              <Feature text="One shareable project, all its rounds" />
+              <Feature text="Every feature (grid, drift, compare, present)" />
               <Feature text="MCP server for agent integration" />
               <Feature text="File watcher for live updates" />
               <Feature text="BYO agent (Claude Code, Cursor, etc.)" />
@@ -131,8 +131,8 @@ export default function PricingPage() {
             <ul className="space-y-2 text-xs mb-6" style={{ color: 'var(--foreground)' }}>
               <Feature text="Everything in Free" />
               <Feature text="Share every round of every project, unlimited" highlight />
-              <Feature text="Pick up projects on any machine — cloud sync" highlight />
-              <Feature text="Clients leave inline comments — no login" highlight />
+              <Feature text="Pick up projects on any machine, cloud sync" highlight />
+              <Feature text="Clients leave inline comments, no login" highlight />
               <Feature text="Priority support from the team" />
             </ul>
             <button

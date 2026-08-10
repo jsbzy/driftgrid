@@ -148,8 +148,8 @@ function QuickStart() {
                 </div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8 }}>
                   Claude clones the repo, installs dependencies, and walks you<br />
-                  through creating your first project — client name, canvas size,<br />
-                  brand guidelines. Then it starts designing.
+                  through creating your first project (client name, canvas size,<br />
+                  brand guidelines). Then it starts designing.
                 </div>
               </div>
             </>
@@ -349,7 +349,7 @@ export function LandingPage() {
             letterSpacing: '0.01em',
           }}>
             Your AI agent writes HTML. DriftGrid versions it on an infinite canvas.
-            Browse, compare, and share with clients — all from one place.
+            Browse, compare, and share with clients, all from one place.
           </p>
 
           {/* CTAs */}
